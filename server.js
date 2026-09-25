@@ -185,7 +185,7 @@ function logEkle(lisansKod, cihazKimlik, islem, ip) {
 // =====================================================================
 // SÜRÜM ZORUNLULUĞU (Eski sürümleri engelleme) & İNDİRME LİNKLERİ
 // =====================================================================
-const EN_DUSUK_SURUM = "1.0.3";
+const EN_DUSUK_SURUM = "1.0.4";
 const SETUP_INDIRME_LINKI = "https://drive.usercontent.google.com/download?id=1g-dEVnq_8ksvCTuHq9q7Ur-MGiFBpzND&export=download&confirm=t";
 const SETUP_WEB_LINKI = "https://drive.google.com/file/d/1g-dEVnq_8ksvCTuHq9q7Ur-MGiFBpzND/view?usp=sharing";
 
