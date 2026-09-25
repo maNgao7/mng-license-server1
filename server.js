@@ -248,17 +248,17 @@ function logEkle(lisansKod, cihazKimlik, islem, ip) {
 // =====================================================================
 // SÜRÜM ZORUNLULUĞU (Eski sürümleri engelleme) & İNDİRME LİNKLERİ
 // =====================================================================
-const EN_DUSUK_SURUM = "1.0.8";
+const EN_DUSUK_SURUM = "1.0.9";
 const SETUP_INDIRME_LINKI = "https://drive.usercontent.google.com/download?id=1g-dEVnq_8ksvCTuHq9q7Ur-MGiFBpzND&export=download&confirm=t";
 const SETUP_WEB_LINKI = "https://drive.google.com/file/d/1g-dEVnq_8ksvCTuHq9q7Ur-MGiFBpzND/view?usp=sharing";
 
 // Her güncellemede eklenen/değişen özellikler listesi
 const SURUM_NOTLARI = [
-    "TikTok VS Widget: Hediye simgelerinin altına net PUAN yazıları eklendi (Örn: 1 PUAN, 5 PUAN, 99 PUAN, 1.000 PUAN).",
-    "TikTok VS Widget: Profil isimlerindeki çift @@ işareti düzeltildi, tertemiz tek @ yapıldı.",
-    "Kalıcı Lisans Mimarisi: Güncellemelerde lisans süresi sıfırlanmaz, kaldığı süreden kesintisiz devam eder.",
-    "Otomatik Süre Kilidi: Süresi dolan lisanslar kilitlenir, açık olan oyunlar otomatik kapatılır.",
-    "Sürüm Geçiş Ekranı: Mevcut sürüm ve yeni sürüm kartları çok daha net ve belirgin hale getirildi."
+    "TikTok VS OBS Widget: Hediyeler her iki taraf için de 3'lü 3'lü alt alta (3x2 ızgara) düzenine getirildi.",
+    "Canlı Widget Senkronizasyonu: Oyunda hediye değiştirildiğinde veya sıfırlandığında OBS widget'ı anında otomatik güncellenir.",
+    "Hediye Değiştirme ve Sıfırlama: Hediyeler arasında çakışma olmadan hızlı yer değiştirme (swap) ve varsayılana sıfırlama eklendi.",
+    "Profil Puanlama Ekranı: Arka plandaki VS ve canlı yayın kontrolleri tamamen gizlendi, sadece puanlama oyunu görünür hale getirildi.",
+    "Kalıcı Lisans & Token Koruması: Süreler güncellemelerde sıfırlanmaz, süre bittiğinde otomatik kilitlenir."
 ];
 
 function surumKarsilastir(v1, v2) {
