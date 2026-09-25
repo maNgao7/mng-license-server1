@@ -248,17 +248,17 @@ function logEkle(lisansKod, cihazKimlik, islem, ip) {
 // =====================================================================
 // SÜRÜM ZORUNLULUĞU (Eski sürümleri engelleme) & İNDİRME LİNKLERİ
 // =====================================================================
-const EN_DUSUK_SURUM = "1.0.7";
+const EN_DUSUK_SURUM = "1.0.8";
 const SETUP_INDIRME_LINKI = "https://drive.usercontent.google.com/download?id=1g-dEVnq_8ksvCTuHq9q7Ur-MGiFBpzND&export=download&confirm=t";
 const SETUP_WEB_LINKI = "https://drive.google.com/file/d/1g-dEVnq_8ksvCTuHq9q7Ur-MGiFBpzND/view?usp=sharing";
 
 // Her güncellemede eklenen/değişen özellikler listesi
 const SURUM_NOTLARI = [
-    "Kalıcı Lisans Mimarisi: Güncelleme yapılsa dahi lisans süresi asla sıfırlanmaz, kaldığı süreden devam eder.",
-    "Otomatik Süre Kilidi: Lisans süresi bittiğinde oyun başlatılamaz, açık olan oyunlar güvenlik amacıyla otomatik kapatılır.",
-    "TikTok VS OBS Widget'ı (widget-vs.html): Profil fotoğrafları ve hediye simgeleri kristal netliğinde ve yüksek çözünürlükle yenilendi.",
-    "Profil Puanlama: Süre bittiğinde profil ekrandan otomatik silinir, büyük neon sayaç eklendi.",
-    "İzleyici Listesi: Canlı yayında mesaj yazanlar ve çift tıklayanlar (beğeni) listenin en üstüne çıkar."
+    "TikTok VS Widget: Hediye simgelerinin altına net PUAN yazıları eklendi (Örn: 1 PUAN, 5 PUAN, 99 PUAN, 1.000 PUAN).",
+    "TikTok VS Widget: Profil isimlerindeki çift @@ işareti düzeltildi, tertemiz tek @ yapıldı.",
+    "Kalıcı Lisans Mimarisi: Güncellemelerde lisans süresi sıfırlanmaz, kaldığı süreden kesintisiz devam eder.",
+    "Otomatik Süre Kilidi: Süresi dolan lisanslar kilitlenir, açık olan oyunlar otomatik kapatılır.",
+    "Sürüm Geçiş Ekranı: Mevcut sürüm ve yeni sürüm kartları çok daha net ve belirgin hale getirildi."
 ];
 
 function surumKarsilastir(v1, v2) {
