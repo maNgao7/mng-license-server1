@@ -185,9 +185,18 @@ function logEkle(lisansKod, cihazKimlik, islem, ip) {
 // =====================================================================
 // SÜRÜM ZORUNLULUĞU (Eski sürümleri engelleme) & İNDİRME LİNKLERİ
 // =====================================================================
-const EN_DUSUK_SURUM = "1.0.4";
+const EN_DUSUK_SURUM = "1.0.5";
 const SETUP_INDIRME_LINKI = "https://drive.usercontent.google.com/download?id=1g-dEVnq_8ksvCTuHq9q7Ur-MGiFBpzND&export=download&confirm=t";
 const SETUP_WEB_LINKI = "https://drive.google.com/file/d/1g-dEVnq_8ksvCTuHq9q7Ur-MGiFBpzND/view?usp=sharing";
+
+// Her güncellemede eklenen/değişen özellikler listesi
+const SURUM_NOTLARI = [
+    "Arka plan videoları çok daha canlı, parlak ve kristal netliğinde yapıldı.",
+    "Oyun kartlarına mouse ile gelindiğinde arkadan yayılan neon parlama efekti eklendi.",
+    "Profil Puanlama listesindeki profiller aşağıdan yukarıya akıcı kayan animasyona kavuştu.",
+    "Masaüstü oyun ve kurulum setup simgeleri modern neon TikTok tasarımıyla yenilendi.",
+    "Her güncellemede yapılan değişiklikleri gösteren yenilikler penceresi eklendi."
+];
 
 function surumKarsilastir(v1, v2) {
     if (!v1) return -1;
@@ -208,7 +217,8 @@ app.get("/api/version", (req, res) => {
         latestVersion: EN_DUSUK_SURUM,
         minVersion: EN_DUSUK_SURUM,
         downloadUrl: SETUP_INDIRME_LINKI,
-        webUrl: SETUP_WEB_LINKI
+        webUrl: SETUP_WEB_LINKI,
+        changelog: SURUM_NOTLARI
     });
 });
 
@@ -227,6 +237,7 @@ app.post("/api/license/verify", (req, res) => {
             reason: "update_required",
             latestVersion: EN_DUSUK_SURUM,
             downloadUrl: SETUP_INDIRME_LINKI,
+            changelog: SURUM_NOTLARI,
             message: `⚠️ YENİ GÜNCELLEME MEVCUT (v${EN_DUSUK_SURUM})! Eski sürüm kullanımdan kaldırılmıştır. Lütfen güncel sürümü indirin.`
         });
     }
@@ -356,6 +367,7 @@ app.post("/api/license/check", (req, res) => {
             reason: "update_required",
             latestVersion: EN_DUSUK_SURUM,
             downloadUrl: SETUP_INDIRME_LINKI,
+            changelog: SURUM_NOTLARI,
             message: `⚠️ YENİ GÜNCELLEME MEVCUT (v${EN_DUSUK_SURUM})! Eski sürüm kullanımdan kaldırılmıştır. Lütfen güncel sürümü indirin.`
         });
     }
