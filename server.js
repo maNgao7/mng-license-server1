@@ -179,12 +179,39 @@ function logEkle(lisansKod, cihazKimlik, islem, ip) {
 }
 
 // =====================================================================
+// SÜRÜM ZORUNLULUĞU (Eski sürümleri engelleme)
+// =====================================================================
+const EN_DUSUK_SURUM = "1.0.2";
+
+function surumKarsilastir(v1, v2) {
+    if (!v1) return -1;
+    const p1 = String(v1).split(".").map(n => parseInt(n, 10) || 0);
+    const p2 = String(v2).split(".").map(n => parseInt(n, 10) || 0);
+    for (let i = 0; i < Math.max(p1.length, p2.length); i++) {
+        const n1 = p1[i] || 0;
+        const n2 = p2[i] || 0;
+        if (n1 > n2) return 1;
+        if (n1 < n2) return -1;
+    }
+    return 0;
+}
+
+// =====================================================================
 // MÜŞTERİ LİSANS DOĞRULAMA APİSİ (Launcher Bağlantısı)
 // =====================================================================
 
 app.post("/api/license/verify", (req, res) => {
-    const { code, deviceId } = req.body;
+    const { code, deviceId, clientVersion } = req.body;
     const ip = req.headers["x-forwarded-for"] || req.socket.remoteAddress;
+
+    // Sürüm kontrolü (Eski sürümleri engelle)
+    if (!clientVersion || surumKarsilastir(clientVersion, EN_DUSUK_SURUM) < 0) {
+        return res.json({
+            valid: false,
+            reason: "update_required",
+            message: `⚠️ YENİ GÜNCELLEME MEVCUT (v${EN_DUSUK_SURUM})! Eski sürüm kullanımdan kaldırılmıştır. Lütfen en güncel sürümü indirin.`
+        });
+    }
 
     if (!code || !deviceId) {
         return res.json({
@@ -302,7 +329,17 @@ app.post("/api/license/verify", (req, res) => {
 });
 
 app.post("/api/license/check", (req, res) => {
-    const { code, deviceId } = req.body;
+    const { code, deviceId, clientVersion } = req.body;
+
+    // Sürüm kontrolü (Eski sürümleri engelle)
+    if (!clientVersion || surumKarsilastir(clientVersion, EN_DUSUK_SURUM) < 0) {
+        return res.json({
+            valid: false,
+            reason: "update_required",
+            message: `⚠️ YENİ GÜNCELLEME MEVCUT (v${EN_DUSUK_SURUM})! Eski sürüm kullanımdan kaldırılmıştır. Lütfen en güncel sürümü indirin.`
+        });
+    }
+
     if (!code || !deviceId) return res.json({ valid: false, reason: "invalid_license" });
 
     const temizKod = String(code).trim().toUpperCase();
@@ -376,12 +413,8 @@ app.post("/api/talep-gonder", (req, res) => {
 // =====================================================================
 
 app.get("/download/setup", (req, res) => {
-    const setupYolu = path.join(DOWNLOADS_DIR, "MNG-TikTok-Game-Setup.exe");
-    if (fs.existsSync(setupYolu)) {
-        res.download(setupYolu, "MNG-TikTok-Game-Setup.exe");
-    } else {
-        res.status(404).send("Kurulum dosyası henüz oluşturulmadı. Lütfen yöneticiyle iletişime geçin.");
-    }
+    const driveLink = "https://drive.google.com/file/d/1g-dEVnq_8ksvCTuHq9q7Ur-MGiFBpzND/view?usp=sharing";
+    res.redirect(driveLink);
 });
 
 app.get("/download/portable", (req, res) => {
@@ -526,10 +559,26 @@ app.get("/api/admin/istatistikler", adminKontrol, (req, res) => {
     res.json({ toplam, aktif, beklemede, iptal, doldu, bekleyenTalep });
 });
 
-// Admin Paneli Sayfası
-app.get("/admin", (req, res) => {
-    res.sendFile(path.join(__dirname, "admin", "public", "index.html"));
+app.get("/api/health", (req, res) => {
+    res.json({ status: "ok", time: Date.now() });
 });
+
+// =====================================================================
+// CANLI TUTMA BOTU (Render 7/24 Uyanık Tutucu - KeepAlive Bot)
+// =====================================================================
+const CANLI_URL = "https://mng-license-server1.onrender.com/";
+
+function pingBot() {
+    try {
+        const lib = CANLI_URL.startsWith("https") ? https : http;
+        lib.get(CANLI_URL, (res) => {
+            // Sunucu uyanık tutuldu
+        }).on("error", () => {});
+    } catch {}
+}
+
+// Her 10 dakikada bir istek atarak Render'ı asla uyutmaz
+setInterval(pingBot, 10 * 60 * 1000);
 
 // Sunucuyu Başlat
 app.listen(PORT, "0.0.0.0", () => {
@@ -542,3 +591,4 @@ app.listen(PORT, "0.0.0.0", () => {
     console.log("==================================================");
     console.log("");
 });
+
