@@ -115,6 +115,10 @@ app.use(express.json());
 // Web Sitesi Ana Sayfası: web/ klasörü
 app.use(express.static(path.join(__dirname, "web")));
 // Admin Paneli
+app.use("/admin", express.static(path.join(__dirname, "admin", "public")));
+app.get(["/admin", "/admin/*"], (req, res) => {
+    res.sendFile(path.join(__dirname, "admin", "public", "index.html"));
+});
 app.use("/admin-assets", express.static(path.join(__dirname, "admin", "public")));
 
 // Admin yetkilendirme middleware
@@ -179,9 +183,11 @@ function logEkle(lisansKod, cihazKimlik, islem, ip) {
 }
 
 // =====================================================================
-// SÜRÜM ZORUNLULUĞU (Eski sürümleri engelleme)
+// SÜRÜM ZORUNLULUĞU (Eski sürümleri engelleme) & İNDİRME LİNKLERİ
 // =====================================================================
 const EN_DUSUK_SURUM = "1.0.2";
+const SETUP_INDIRME_LINKI = "https://drive.usercontent.google.com/download?id=1g-dEVnq_8ksvCTuHq9q7Ur-MGiFBpzND&export=download&confirm=t";
+const SETUP_WEB_LINKI = "https://drive.google.com/file/d/1g-dEVnq_8ksvCTuHq9q7Ur-MGiFBpzND/view?usp=sharing";
 
 function surumKarsilastir(v1, v2) {
     if (!v1) return -1;
@@ -196,6 +202,16 @@ function surumKarsilastir(v1, v2) {
     return 0;
 }
 
+// Sürüm Kontrolü API'si (Launcher kontrol eder)
+app.get("/api/version", (req, res) => {
+    res.json({
+        latestVersion: EN_DUSUK_SURUM,
+        minVersion: EN_DUSUK_SURUM,
+        downloadUrl: SETUP_INDIRME_LINKI,
+        webUrl: SETUP_WEB_LINKI
+    });
+});
+
 // =====================================================================
 // MÜŞTERİ LİSANS DOĞRULAMA APİSİ (Launcher Bağlantısı)
 // =====================================================================
@@ -209,7 +225,9 @@ app.post("/api/license/verify", (req, res) => {
         return res.json({
             valid: false,
             reason: "update_required",
-            message: `⚠️ YENİ GÜNCELLEME MEVCUT (v${EN_DUSUK_SURUM})! Eski sürüm kullanımdan kaldırılmıştır. Lütfen en güncel sürümü indirin.`
+            latestVersion: EN_DUSUK_SURUM,
+            downloadUrl: SETUP_INDIRME_LINKI,
+            message: `⚠️ YENİ GÜNCELLEME MEVCUT (v${EN_DUSUK_SURUM})! Eski sürüm kullanımdan kaldırılmıştır. Lütfen güncel sürümü indirin.`
         });
     }
 
@@ -336,7 +354,9 @@ app.post("/api/license/check", (req, res) => {
         return res.json({
             valid: false,
             reason: "update_required",
-            message: `⚠️ YENİ GÜNCELLEME MEVCUT (v${EN_DUSUK_SURUM})! Eski sürüm kullanımdan kaldırılmıştır. Lütfen en güncel sürümü indirin.`
+            latestVersion: EN_DUSUK_SURUM,
+            downloadUrl: SETUP_INDIRME_LINKI,
+            message: `⚠️ YENİ GÜNCELLEME MEVCUT (v${EN_DUSUK_SURUM})! Eski sürüm kullanımdan kaldırılmıştır. Lütfen güncel sürümü indirin.`
         });
     }
 
@@ -413,8 +433,11 @@ app.post("/api/talep-gonder", (req, res) => {
 // =====================================================================
 
 app.get("/download/setup", (req, res) => {
-    const driveLink = "https://drive.google.com/file/d/1g-dEVnq_8ksvCTuHq9q7Ur-MGiFBpzND/view?usp=sharing";
-    res.redirect(driveLink);
+    res.redirect(SETUP_WEB_LINKI);
+});
+
+app.get("/download/setup-direct", (req, res) => {
+    res.redirect(SETUP_INDIRME_LINKI);
 });
 
 app.get("/download/portable", (req, res) => {
