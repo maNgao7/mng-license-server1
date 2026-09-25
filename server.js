@@ -34,11 +34,13 @@ const ADMIN_SIFRE = adminSifreBul();
 const DB_DOSYASI = path.join(__dirname, "lisanslar.json");
 const LOG_DOSYASI = path.join(__dirname, "aktivasyon_log.json");
 const TALEPLER_DOSYASI = path.join(__dirname, "talepler.json");
+const KARA_LISTE_DOSYASI = path.join(__dirname, "kara_liste.json");
 const DOWNLOADS_DIR = path.join(__dirname, "downloads");
 
 let lisanslarVeritabani = [];
 let aktivasyonLogVeritabani = [];
 let taleplerVeritabani = [];
+let karaListeVeritabani = [];
 
 function dbYukle() {
     try {
@@ -73,6 +75,17 @@ function dbYukle() {
     } catch (e) {
         taleplerVeritabani = [];
     }
+
+    try {
+        if (fs.existsSync(KARA_LISTE_DOSYASI)) {
+            karaListeVeritabani = JSON.parse(fs.readFileSync(KARA_LISTE_DOSYASI, "utf-8"));
+        } else {
+            karaListeVeritabani = [];
+            karaListeKaydet();
+        }
+    } catch (e) {
+        karaListeVeritabani = [];
+    }
 }
 
 function dbKaydet() {
@@ -96,6 +109,14 @@ function talepKaydet() {
         const tmp = TALEPLER_DOSYASI + ".tmp";
         fs.writeFileSync(tmp, JSON.stringify(taleplerVeritabani, null, 2), "utf-8");
         fs.renameSync(tmp, TALEPLER_DOSYASI);
+    } catch (e) {}
+}
+
+function karaListeKaydet() {
+    try {
+        const tmp = KARA_LISTE_DOSYASI + ".tmp";
+        fs.writeFileSync(tmp, JSON.stringify(karaListeVeritabani, null, 2), "utf-8");
+        fs.renameSync(tmp, KARA_LISTE_DOSYASI);
     } catch (e) {}
 }
 
@@ -148,12 +169,54 @@ function sureMsHesapla(sureObj) {
 
 function lisansKoduUret(sureObj) {
     let prefix = "MNG";
-    if (sureObj.birim === "sinirsiz") prefix = "MNG-INF";
+    if (sureObj.birim === "sinirsiz") prefix = "MNGINF";
     else if (sureObj.birim === "dakika") prefix = `MNG${sureObj.miktar}M`;
     else prefix = `MNG${sureObj.miktar}D`;
 
-    const rastgele = () => crypto.randomBytes(2).toString("hex").toUpperCase();
-    return `${prefix}-${rastgele()}-${rastgele()}`;
+    const rand = crypto.randomBytes(3).toString("hex").toUpperCase();
+    const sig = crypto.createHmac("sha256", ADMIN_SIFRE)
+                      .update(`${prefix}-${rand}`)
+                      .digest("hex")
+                      .substring(0, 6)
+                      .toUpperCase();
+    return `${prefix}-${rand}-${sig}`;
+}
+
+function kodKriptoKontrol(kod) {
+    if (!kod || typeof kod !== "string") return null;
+    const parcalar = kod.trim().toUpperCase().split("-");
+    if (parcalar.length !== 3) return null;
+    const [prefix, rand, sig] = parcalar;
+    const beklenenSig = crypto.createHmac("sha256", ADMIN_SIFRE)
+                              .update(`${prefix}-${rand}`)
+                              .digest("hex")
+                              .substring(0, 6)
+                              .toUpperCase();
+    if (sig !== beklenenSig) return null;
+
+    if (prefix === "MNGINF") {
+        return { birim: "sinirsiz", miktar: -1 };
+    }
+    const matchMin = prefix.match(/^MNG(\d+)M$/);
+    if (matchMin) {
+        return { birim: "dakika", miktar: parseInt(matchMin[1], 10) };
+    }
+    const matchDay = prefix.match(/^MNG(\d+)D$/);
+    if (matchDay) {
+        return { birim: "gun", miktar: parseInt(matchDay[1], 10) };
+    }
+    return null;
+}
+
+function aktivasyonTokenUret(kod, deviceId, bitisZamani) {
+    const raw = `${kod.trim().toUpperCase()}:${deviceId.trim()}:${bitisZamani || "INF"}`;
+    return crypto.createHmac("sha256", ADMIN_SIFRE).update(raw).digest("hex");
+}
+
+function aktivasyonTokenDogrula(kod, deviceId, bitisZamani, token) {
+    if (!kod || !deviceId || !token) return false;
+    const beklenen = aktivasyonTokenUret(kod, deviceId, bitisZamani);
+    return token === beklenen;
 }
 
 function sureliDurumGuncelle(lisans) {
@@ -185,17 +248,17 @@ function logEkle(lisansKod, cihazKimlik, islem, ip) {
 // =====================================================================
 // SÜRÜM ZORUNLULUĞU (Eski sürümleri engelleme) & İNDİRME LİNKLERİ
 // =====================================================================
-const EN_DUSUK_SURUM = "1.0.6";
+const EN_DUSUK_SURUM = "1.0.7";
 const SETUP_INDIRME_LINKI = "https://drive.usercontent.google.com/download?id=1g-dEVnq_8ksvCTuHq9q7Ur-MGiFBpzND&export=download&confirm=t";
 const SETUP_WEB_LINKI = "https://drive.google.com/file/d/1g-dEVnq_8ksvCTuHq9q7Ur-MGiFBpzND/view?usp=sharing";
 
 // Her güncellemede eklenen/değişen özellikler listesi
 const SURUM_NOTLARI = [
-    "Profil Puanlama widget'ında süre bittiğinde profil ekrandan otomatik yok oluyor.",
-    "Puanlama widget'ına çok daha belirgin, büyük ve neon dijital süre sayacı eklendi.",
-    "TikTok VS izleyici listesinde mesaj yazanlar ve beğeni/çift tıklayanlar da en üste çıkıyor.",
-    "TikTok VS Battle için OBS Canlı Yayın şeffaf widget'ı (widget-vs.html) eklendi.",
-    "İzleyici listesinden anında tek tıkla SOL veya SAĞ tarafa oyuncu atama geliştirildi."
+    "Kalıcı Lisans Mimarisi: Güncelleme yapılsa dahi lisans süresi asla sıfırlanmaz, kaldığı süreden devam eder.",
+    "Otomatik Süre Kilidi: Lisans süresi bittiğinde oyun başlatılamaz, açık olan oyunlar güvenlik amacıyla otomatik kapatılır.",
+    "TikTok VS OBS Widget'ı (widget-vs.html): Profil fotoğrafları ve hediye simgeleri kristal netliğinde ve yüksek çözünürlükle yenilendi.",
+    "Profil Puanlama: Süre bittiğinde profil ekrandan otomatik silinir, büyük neon sayaç eklendi.",
+    "İzleyici Listesi: Canlı yayında mesaj yazanlar ve çift tıklayanlar (beğeni) listenin en üstüne çıkar."
 ];
 
 function surumKarsilastir(v1, v2) {
@@ -251,7 +314,40 @@ app.post("/api/license/verify", (req, res) => {
     }
 
     const temizKod = String(code).trim().toUpperCase();
-    const lisans = lisanslarVeritabani.find(l => l.kod === temizKod);
+
+    // Kara liste kontrolü
+    if (karaListeVeritabani.includes(temizKod)) {
+        logEkle(temizKod, deviceId, "red_kara_liste", ip);
+        return res.json({
+            valid: false,
+            reason: "revoked",
+            message: "Bu lisans kalıcı olarak iptal edilmiştir."
+        });
+    }
+
+    let lisans = lisanslarVeritabani.find(l => l.kod === temizKod);
+
+    // Kendi Kendini Kurtaran Lisans: Eğer sunucu yeniden başladığında lisanslar.json sıfırlandıysa
+    // kriptografik olarak imzalanmış geçerli kodları anında otomatik kurtarır!
+    if (!lisans) {
+        const kriptoBilgi = kodKriptoKontrol(temizKod);
+        if (kriptoBilgi) {
+            lisans = {
+                id: Date.now() + "_" + Math.random().toString(36).substr(2, 6),
+                kod: temizKod,
+                sure_birim: kriptoBilgi.birim,
+                sure_miktar: kriptoBilgi.miktar,
+                durum: "beklemede",
+                olusturma_zamani: Date.now(),
+                aktivasyon_zamani: null,
+                bitis_zamani: null,
+                cihaz_kimlik: null,
+                notlar: "Kriptografik Doğrulandı"
+            };
+            lisanslarVeritabani.unshift(lisans);
+            dbKaydet();
+        }
+    }
 
     if (!lisans) {
         logEkle(temizKod, deviceId, "red_gecersiz", ip);
@@ -282,7 +378,7 @@ app.post("/api/license/verify", (req, res) => {
         });
     }
 
-    // 1. İLK AKTİVASYON (Süre burada başlar!)
+    // 1. İLK AKTİVASYON (Süre sadece ilk aktivasyonda başlar!)
     if (lisans.durum === "beklemede") {
         const simdi = Date.now();
         const sureMs = sureMsHesapla({ birim: lisans.sure_birim, miktar: lisans.sure_miktar });
@@ -292,10 +388,13 @@ app.post("/api/license/verify", (req, res) => {
             bitisZamani = simdi + sureMs;
         }
 
+        const token = aktivasyonTokenUret(temizKod, deviceId, bitisZamani);
+
         lisans.durum = "aktif";
         lisans.aktivasyon_zamani = simdi;
         lisans.bitis_zamani = bitisZamani;
         lisans.cihaz_kimlik = deviceId;
+        lisans.activation_token = token;
 
         dbKaydet();
         logEkle(temizKod, deviceId, "ilk_aktivasyon", ip);
@@ -306,7 +405,8 @@ app.post("/api/license/verify", (req, res) => {
         return res.json({
             valid: true,
             expiresAt: bitisZamani,
-            remainingDays: lisans.sure_birim === "gun" ? lisans.sure_miktar : 0,
+            activationToken: token,
+            remainingDays: lisans.sure_birim === "gun" ? lisans.sure_miktar : (isUnlimited ? -1 : Math.ceil(remainingSeconds / 86400)),
             remainingSeconds: remainingSeconds,
             isUnlimited: isUnlimited,
             message: "Lisans başarıyla aktifleştirildi."
@@ -343,11 +443,15 @@ app.post("/api/license/verify", (req, res) => {
 
         logEkle(temizKod, deviceId, "dogrulama", ip);
         const isUnlimited = (lisans.sure_birim === "sinirsiz" || lisans.sure_miktar === -1);
+        const token = lisans.activation_token || aktivasyonTokenUret(temizKod, deviceId, lisans.bitis_zamani);
+        lisans.activation_token = token;
+        dbKaydet();
 
         return res.json({
             valid: true,
             expiresAt: lisans.bitis_zamani,
-            remainingDays: Math.ceil(remainingSeconds / 86400),
+            activationToken: token,
+            remainingDays: isUnlimited ? -1 : Math.ceil(remainingSeconds / 86400),
             remainingSeconds: remainingSeconds,
             isUnlimited: isUnlimited,
             message: "Lisans geçerli."
@@ -358,7 +462,7 @@ app.post("/api/license/verify", (req, res) => {
 });
 
 app.post("/api/license/check", (req, res) => {
-    const { code, deviceId, clientVersion } = req.body;
+    const { code, deviceId, activationToken, expiresAt, clientVersion } = req.body;
 
     // Sürüm kontrolü (Eski sürümleri engelle)
     if (!clientVersion || surumKarsilastir(clientVersion, EN_DUSUK_SURUM) < 0) {
@@ -375,17 +479,48 @@ app.post("/api/license/check", (req, res) => {
     if (!code || !deviceId) return res.json({ valid: false, reason: "invalid_license" });
 
     const temizKod = String(code).trim().toUpperCase();
-    const lisans = lisanslarVeritabani.find(l => l.kod === temizKod);
+
+    // Kara liste kontrolü
+    if (karaListeVeritabani.includes(temizKod)) {
+        return res.json({ valid: false, reason: "revoked", message: "Bu lisans kalıcı olarak iptal edilmiştir." });
+    }
+
+    let lisans = lisanslarVeritabani.find(l => l.kod === temizKod);
+
+    // Kendi Kendini Onaran / Kurtaran Senkronizasyon:
+    // Eğer Render yeniden başladıysa ve lisanslar.json sıfırlandıysa,
+    // istemcinin sunduğu aktivasyon tokeni ile bitiş zamanı matematiksel olarak doğrulanır.
+    if (!lisans && activationToken) {
+        const tokenGecerli = aktivasyonTokenDogrula(temizKod, deviceId, expiresAt, activationToken);
+        if (tokenGecerli) {
+            lisans = {
+                id: "restore_" + Date.now(),
+                kod: temizKod,
+                sure_birim: expiresAt ? "gun" : "sinirsiz",
+                sure_miktar: 0,
+                durum: (expiresAt && Date.now() > Number(expiresAt)) ? "suresi_doldu" : "aktif",
+                olusturma_zamani: Date.now(),
+                aktivasyon_zamani: Date.now(),
+                bitis_zamani: expiresAt ? Number(expiresAt) : null,
+                cihaz_kimlik: deviceId,
+                activation_token: activationToken,
+                notlar: "Otomatik Kurtarılan Lisans"
+            };
+            lisanslarVeritabani.unshift(lisans);
+            dbKaydet();
+        }
+    }
 
     if (!lisans) return res.json({ valid: false, reason: "invalid_license", message: "Geçersiz lisans kodu." });
 
     sureliDurumGuncelle(lisans);
 
     if (lisans.durum === "iptal") return res.json({ valid: false, reason: "revoked", message: "Bu lisans iptal edilmiş." });
-    if (lisans.durum === "suresi_doldu") return res.json({ valid: false, reason: "expired", message: "Lisansınızın süresi dolmuş." });
     if (lisans.cihaz_kimlik && lisans.cihaz_kimlik !== deviceId) {
         return res.json({ valid: false, reason: "device_mismatch", message: "Bu lisans başka bir bilgisayara kayıtlı." });
     }
+
+    if (lisans.durum === "suresi_doldu") return res.json({ valid: false, reason: "expired", message: "Lisansınızın süresi dolmuş." });
 
     if (lisans.durum === "aktif") {
         const simdi = Date.now();
@@ -402,10 +537,13 @@ app.post("/api/license/check", (req, res) => {
         }
 
         const isUnlimited = (lisans.sure_birim === "sinirsiz" || lisans.sure_miktar === -1);
+        const token = lisans.activation_token || aktivasyonTokenUret(temizKod, deviceId, lisans.bitis_zamani);
+
         return res.json({
             valid: true,
             expiresAt: lisans.bitis_zamani,
-            remainingDays: Math.ceil(remainingSeconds / 86400),
+            activationToken: token,
+            remainingDays: isUnlimited ? -1 : Math.ceil(remainingSeconds / 86400),
             remainingSeconds: remainingSeconds,
             isUnlimited: isUnlimited
         });
@@ -538,6 +676,10 @@ app.post("/api/admin/lisans/:kod/iptal", adminKontrol, (req, res) => {
     if (!lisans) return res.status(404).json({ error: "Lisans bulunamadı." });
 
     lisans.durum = "iptal";
+    if (!karaListeVeritabani.includes(kod)) {
+        karaListeVeritabani.push(kod);
+        karaListeKaydet();
+    }
     dbKaydet();
     res.json({ mesaj: "Lisans iptal edildi." });
 });
@@ -546,6 +688,9 @@ app.post("/api/admin/lisans/:kod/aktif-et", adminKontrol, (req, res) => {
     const kod = req.params.kod.toUpperCase();
     const lisans = lisanslarVeritabani.find(l => l.kod === kod);
     if (!lisans) return res.status(404).json({ error: "Lisans bulunamadı." });
+
+    karaListeVeritabani = karaListeVeritabani.filter(k => k !== kod);
+    karaListeKaydet();
 
     if (lisans.aktivasyon_zamani) {
         if (lisans.sure_birim === "sinirsiz" || (lisans.bitis_zamani && Date.now() < lisans.bitis_zamani)) {
@@ -567,6 +712,8 @@ app.delete("/api/admin/lisans/:kod", adminKontrol, (req, res) => {
     if (index === -1) return res.status(404).json({ error: "Lisans bulunamadı." });
 
     lisanslarVeritabani.splice(index, 1);
+    karaListeVeritabani = karaListeVeritabani.filter(k => k !== kod);
+    karaListeKaydet();
     dbKaydet();
     res.json({ mesaj: "Lisans silindi." });
 });
