@@ -248,17 +248,16 @@ function logEkle(lisansKod, cihazKimlik, islem, ip) {
 // =====================================================================
 // SÜRÜM ZORUNLULUĞU (Eski sürümleri engelleme) & İNDİRME LİNKLERİ
 // =====================================================================
-const EN_DUSUK_SURUM = "1.0.9";
+const EN_DUSUK_SURUM = "1.1.0";
 const SETUP_INDIRME_LINKI = "https://drive.usercontent.google.com/download?id=1g-dEVnq_8ksvCTuHq9q7Ur-MGiFBpzND&export=download&confirm=t";
 const SETUP_WEB_LINKI = "https://drive.google.com/file/d/1g-dEVnq_8ksvCTuHq9q7Ur-MGiFBpzND/view?usp=sharing";
 
 // Her güncellemede eklenen/değişen özellikler listesi
 const SURUM_NOTLARI = [
-    "TikTok VS OBS Widget: Hediyeler her iki taraf için de 3'lü 3'lü alt alta (3x2 ızgara) düzenine getirildi.",
-    "Canlı Widget Senkronizasyonu: Oyunda hediye değiştirildiğinde veya sıfırlandığında OBS widget'ı anında otomatik güncellenir.",
-    "Hediye Değiştirme ve Sıfırlama: Hediyeler arasında çakışma olmadan hızlı yer değiştirme (swap) ve varsayılana sıfırlama eklendi.",
-    "Profil Puanlama Ekranı: Arka plandaki VS ve canlı yayın kontrolleri tamamen gizlendi, sadece puanlama oyunu görünür hale getirildi.",
-    "Kalıcı Lisans & Token Koruması: Süreler güncellemelerde sıfırlanmaz, süre bittiğinde otomatik kilitlenir."
+    "TikTok PP VS Canlı Sohbet: Beğeni yapanlar listeyi kaydırmaz; sadece yorum ve mesaj atanlar anında en üste çıkar.",
+    "Tüm Bilgisayarlarda HD Profil Desteği: Yerleşik Windows Chromium (Edge) altyapısı sayesinde oyuncu fotoğrafları her bilgisayarda kristal netliğinde (HD) yüklenir.",
+    "Canlı Hediye Görselleri: Yayına gelen yeni/özel hediyeler fotoğraflarıyla ve doğru puanlarıyla otomatik ekrana gelir.",
+    "Hızlı Lisans Yenileme & Başlatma: Lisans süresi dolduğunda yeni anahtar girildiği anda oyun otomatik olarak açılır."
 ];
 
 function surumKarsilastir(v1, v2) {
