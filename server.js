@@ -246,18 +246,20 @@ function logEkle(lisansKod, cihazKimlik, islem, ip) {
 }
 
 // =====================================================================
-// SÜRÜM ZORUNLULUĞU (Eski sürümleri engelleme) & İNDİRME LİNKLERİ
+// SÜRÜM BİLGİLERİ & İNDİRME LİNKLERİ
 // =====================================================================
-const EN_DUSUK_SURUM = "1.1.0";
+const EN_GUNCEL_SURUM = "1.1.1";
+const EN_DUSUK_SURUM = "1.0.0";
 const SETUP_INDIRME_LINKI = "https://drive.usercontent.google.com/download?id=1g-dEVnq_8ksvCTuHq9q7Ur-MGiFBpzND&export=download&confirm=t";
 const SETUP_WEB_LINKI = "https://drive.google.com/file/d/1g-dEVnq_8ksvCTuHq9q7Ur-MGiFBpzND/view?usp=sharing";
 
 // Her güncellemede eklenen/değişen özellikler listesi
 const SURUM_NOTLARI = [
+    "Evrensel Lisans Desteği: Yönetici panelinden oluşturulan lisans kodları tüm sürümlerde anında ve engelsiz çalışır.",
     "TikTok PP VS Canlı Sohbet: Beğeni yapanlar listeyi kaydırmaz; sadece yorum ve mesaj atanlar anında en üste çıkar.",
-    "Tüm Bilgisayarlarda HD Profil Desteği: Yerleşik Windows Chromium (Edge) altyapısı sayesinde oyuncu fotoğrafları her bilgisayarda kristal netliğinde (HD) yüklenir.",
+    "Tüm Bilgisayarlarda HD Profil Desteği: Yerleşik Windows Chromium (Edge) altyapısıyla oyuncu fotoğrafları her bilgisayarda kristal netliğinde (HD) açılır.",
     "Canlı Hediye Görselleri: Yayına gelen yeni/özel hediyeler fotoğraflarıyla ve doğru puanlarıyla otomatik ekrana gelir.",
-    "Hızlı Lisans Yenileme & Başlatma: Lisans süresi dolduğunda yeni anahtar girildiği anda oyun otomatik olarak açılır."
+    "Hızlı Başlatma: Lisans süresi yenilendiğinde oyun doğrudan ve takılmadan açılır."
 ];
 
 function surumKarsilastir(v1, v2) {
@@ -276,7 +278,7 @@ function surumKarsilastir(v1, v2) {
 // Sürüm Kontrolü API'si (Launcher kontrol eder)
 app.get("/api/version", (req, res) => {
     res.json({
-        latestVersion: EN_DUSUK_SURUM,
+        latestVersion: EN_GUNCEL_SURUM,
         minVersion: EN_DUSUK_SURUM,
         downloadUrl: SETUP_INDIRME_LINKI,
         webUrl: SETUP_WEB_LINKI,
@@ -292,15 +294,15 @@ app.post("/api/license/verify", (req, res) => {
     const { code, deviceId, clientVersion } = req.body;
     const ip = req.headers["x-forwarded-for"] || req.socket.remoteAddress;
 
-    // Sürüm kontrolü (Eski sürümleri engelle)
-    if (!clientVersion || surumKarsilastir(clientVersion, EN_DUSUK_SURUM) < 0) {
+    // Sürüm kontrolü (Çok eski sürümleri engelle)
+    if (clientVersion && surumKarsilastir(clientVersion, EN_DUSUK_SURUM) < 0) {
         return res.json({
             valid: false,
             reason: "update_required",
-            latestVersion: EN_DUSUK_SURUM,
+            latestVersion: EN_GUNCEL_SURUM,
             downloadUrl: SETUP_INDIRME_LINKI,
             changelog: SURUM_NOTLARI,
-            message: `⚠️ YENİ GÜNCELLEME MEVCUT (v${EN_DUSUK_SURUM})! Eski sürüm kullanımdan kaldırılmıştır. Lütfen güncel sürümü indirin.`
+            message: `⚠️ YENİ GÜNCELLEME MEVCUT (v${EN_GUNCEL_SURUM})! Lütfen güncel sürümü indirin.`
         });
     }
 
@@ -463,15 +465,15 @@ app.post("/api/license/verify", (req, res) => {
 app.post("/api/license/check", (req, res) => {
     const { code, deviceId, activationToken, expiresAt, clientVersion } = req.body;
 
-    // Sürüm kontrolü (Eski sürümleri engelle)
-    if (!clientVersion || surumKarsilastir(clientVersion, EN_DUSUK_SURUM) < 0) {
+    // Sürüm kontrolü (Çok eski sürümleri engelle)
+    if (clientVersion && surumKarsilastir(clientVersion, EN_DUSUK_SURUM) < 0) {
         return res.json({
             valid: false,
             reason: "update_required",
-            latestVersion: EN_DUSUK_SURUM,
+            latestVersion: EN_GUNCEL_SURUM,
             downloadUrl: SETUP_INDIRME_LINKI,
             changelog: SURUM_NOTLARI,
-            message: `⚠️ YENİ GÜNCELLEME MEVCUT (v${EN_DUSUK_SURUM})! Eski sürüm kullanımdan kaldırılmıştır. Lütfen güncel sürümü indirin.`
+            message: `⚠️ YENİ GÜNCELLEME MEVCUT (v${EN_GUNCEL_SURUM})! Lütfen güncel sürümü indirin.`
         });
     }
 
