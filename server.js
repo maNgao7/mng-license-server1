@@ -248,18 +248,18 @@ function logEkle(lisansKod, cihazKimlik, islem, ip) {
 // =====================================================================
 // SÜRÜM BİLGİLERİ & İNDİRME LİNKLERİ
 // =====================================================================
-const EN_GUNCEL_SURUM = "1.1.1";
+const EN_GUNCEL_SURUM = "1.1.3";
 const EN_DUSUK_SURUM = "1.0.0";
 const SETUP_INDIRME_LINKI = "https://drive.usercontent.google.com/download?id=1g-dEVnq_8ksvCTuHq9q7Ur-MGiFBpzND&export=download&confirm=t";
 const SETUP_WEB_LINKI = "https://drive.google.com/file/d/1g-dEVnq_8ksvCTuHq9q7Ur-MGiFBpzND/view?usp=sharing";
 
 // Her güncellemede eklenen/değişen özellikler listesi
 const SURUM_NOTLARI = [
-    "Evrensel Lisans Desteği: Yönetici panelinden oluşturulan lisans kodları tüm sürümlerde anında ve engelsiz çalışır.",
-    "TikTok PP VS Canlı Sohbet: Beğeni yapanlar listeyi kaydırmaz; sadece yorum ve mesaj atanlar anında en üste çıkar.",
-    "Tüm Bilgisayarlarda HD Profil Desteği: Yerleşik Windows Chromium (Edge) altyapısıyla oyuncu fotoğrafları her bilgisayarda kristal netliğinde (HD) açılır.",
-    "Canlı Hediye Görselleri: Yayına gelen yeni/özel hediyeler fotoğraflarıyla ve doğru puanlarıyla otomatik ekrana gelir.",
-    "Hızlı Başlatma: Lisans süresi yenilendiğinde oyun doğrudan ve takılmadan açılır."
+    "Tek Tıkla Bağlan: Ana ekranda TikTok kullanıcı adını bir kez kaydet — oyun açıldığında otomatik bağlanır, tekrar bağlanmaya gerek kalmaz.",
+    "Otomatik Yeniden Bağlanma: İnternet koptuğunda uygulama kendiliğinden yayına tekrar bağlanır.",
+    "Duraklat Sesi Düzeltildi: DURAKLAT tuşuna basınca artık başlangıç sesi çalmıyor.",
+    "Widget Hediye Animasyonu: OBS widget'ında ana ekranla aynı hediye ikonu animasyonu gösteriliyor.",
+    "İzleyici Listesi Temizlendi: Beğeni yapanlar artık listede görünmüyor; yalnızca yorum, mesaj ve hediye gönderenler listeleniyor."
 ];
 
 function surumKarsilastir(v1, v2) {
