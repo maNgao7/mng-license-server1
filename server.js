@@ -248,13 +248,17 @@ function logEkle(lisansKod, cihazKimlik, islem, ip) {
 // =====================================================================
 // SÜRÜM BİLGİLERİ & İNDİRME LİNKLERİ
 // =====================================================================
-const EN_GUNCEL_SURUM = "1.3.0";
+const EN_GUNCEL_SURUM = "1.4.0";
 const EN_DUSUK_SURUM = "1.0.0";
 const SETUP_INDIRME_LINKI = "https://drive.usercontent.google.com/download?id=1g-dEVnq_8ksvCTuHq9q7Ur-MGiFBpzND&export=download&confirm=t";
 const SETUP_WEB_LINKI = "https://drive.google.com/file/d/1g-dEVnq_8ksvCTuHq9q7Ur-MGiFBpzND/view?usp=sharing";
 
 // Her güncellemede eklenen/değişen özellikler listesi
 const SURUM_NOTLARI = [
+    "MNG Orbit Ayarları yenilendi: Hediye görseli, seçilebilir hediye, büyüme miktarı ve tek Haritayı Parçala hediyesi eklendi.",
+    "MNG Orbit Kontrolleri: Hediye testleri, turu yeniden başlatma, duraklat/devam et ve doğru çalışan süre sayacı eklendi.",
+    "MNG Orbit Yayın Araçları: Büyük WIN ekranı, tur galibi sayacı, kazanan widget'ı ve sıralama widget'ı eklendi.",
+    "MNG Orbit Arka Planları: TikTok VS oyunundaki hazır video arka planları Orbit seçim menüsüne eklendi.",
     "MNG Orbit Ayarları: Takip, beğeni ve seçilen TikTok hediyelerinin büyüme değerleri artık launcher'dan düzenlenebilir.",
     "MNG Orbit Olayları: Seçilen yüksek hediyeyle tüm arenayı parçalama efekti eklendi.",
     "MNG Orbit Penceresi: Oyun Windows küçült, büyüt ve kapat düğmeleriyle açılır; yayıncı adı her açılışta yeniden sorulur.",
