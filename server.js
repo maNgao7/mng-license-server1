@@ -248,13 +248,18 @@ function logEkle(lisansKod, cihazKimlik, islem, ip) {
 // =====================================================================
 // SÜRÜM BİLGİLERİ & İNDİRME LİNKLERİ
 // =====================================================================
-const EN_GUNCEL_SURUM = "1.1.3";
+const EN_GUNCEL_SURUM = "1.3.0";
 const EN_DUSUK_SURUM = "1.0.0";
 const SETUP_INDIRME_LINKI = "https://drive.usercontent.google.com/download?id=1g-dEVnq_8ksvCTuHq9q7Ur-MGiFBpzND&export=download&confirm=t";
 const SETUP_WEB_LINKI = "https://drive.google.com/file/d/1g-dEVnq_8ksvCTuHq9q7Ur-MGiFBpzND/view?usp=sharing";
 
 // Her güncellemede eklenen/değişen özellikler listesi
 const SURUM_NOTLARI = [
+    "MNG Orbit Ayarları: Takip, beğeni ve seçilen TikTok hediyelerinin büyüme değerleri artık launcher'dan düzenlenebilir.",
+    "MNG Orbit Olayları: Seçilen yüksek hediyeyle tüm arenayı parçalama efekti eklendi.",
+    "MNG Orbit Penceresi: Oyun Windows küçült, büyüt ve kapat düğmeleriyle açılır; yayıncı adı her açılışta yeniden sorulur.",
+    "MNG Orbit: Hediye, beğeni ve takip etkileşimleriyle büyüyen yeni canlı arena oyunu eklendi.",
+    "MNG Orbit: Yüksek kaliteli TikTok profil görselleri, tur süresi seçimi, liderlik widget'ı ve video arka planları eklendi.",
     "Tek Tıkla Bağlan: Ana ekranda TikTok kullanıcı adını bir kez kaydet — oyun açıldığında otomatik bağlanır, tekrar bağlanmaya gerek kalmaz.",
     "Otomatik Yeniden Bağlanma: İnternet koptuğunda uygulama kendiliğinden yayına tekrar bağlanır.",
     "Duraklat Sesi Düzeltildi: DURAKLAT tuşuna basınca artık başlangıç sesi çalmıyor.",
@@ -774,4 +779,3 @@ app.listen(PORT, "0.0.0.0", () => {
     console.log("==================================================");
     console.log("");
 });
-
