@@ -248,13 +248,15 @@ function logEkle(lisansKod, cihazKimlik, islem, ip) {
 // =====================================================================
 // SÜRÜM BİLGİLERİ & İNDİRME LİNKLERİ
 // =====================================================================
-const EN_GUNCEL_SURUM = "1.5.1";
+const EN_GUNCEL_SURUM = "1.6.0";
 const EN_DUSUK_SURUM = "1.0.0";
 const SETUP_INDIRME_LINKI = "https://drive.usercontent.google.com/download?id=1g-dEVnq_8ksvCTuHq9q7Ur-MGiFBpzND&export=download&confirm=t";
 const SETUP_WEB_LINKI = "https://drive.google.com/file/d/1g-dEVnq_8ksvCTuHq9q7Ur-MGiFBpzND/view?usp=sharing";
 
 // Her güncellemede eklenen/değişen özellikler listesi
 const SURUM_NOTLARI = [
+    "MNG Orbit 1.6: Hediyeler görsellerden seçilir; coin değerine göre otomatik ve belirgin kütle büyümesi eklendi.",
+    "MNG Orbit 1.6: Büyüme ses efekti, indirilebilir hediye kural görseli, geniş yakınlaştırma ve kayarak güncellenen galip listesi eklendi.",
     "MNG Orbit Final: Oyun içi hediye ayarları, çalışan hediye görselleri, tek tuşla test profili ve Haritayı Parçala testi eklendi.",
     "MNG Orbit Final: Küçük video ön izlemeli arka plan seçimi, tur süresi kontrolleri ve hediye patlamalı kazanan ekranı tamamlandı.",
     "MNG Orbit Final: Hediye büyüme kuralları artık oyun içinden kaydedilir; TikTok hediye görselleri ve yüksek kaliteli profil akışı iyileştirildi.",
