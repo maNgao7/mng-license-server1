@@ -1,6 +1,6 @@
 {
   "name": "mng-license-server",
-  "version": "1.5.0",
+  "version": "1.8.0",
   "description": "MNG TikTok Game Lisans Sunucusu",
   "type": "module",
   "main": "server.js",
