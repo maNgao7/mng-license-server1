@@ -133,8 +133,26 @@ app.use(cors({
 
 app.use(express.json());
 
-// Web Sitesi Ana Sayfası: web/ klasörü
+// Web Sitesi & Statik Dosyalar (Önbellek Engelleme ve Çift Konum Koruması)
+app.use((req, res, next) => {
+    if (req.url === "/" || req.url.endsWith(".html")) {
+        res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+        res.setHeader("Pragma", "no-cache");
+        res.setHeader("Expires", "0");
+    }
+    next();
+});
+
+app.get("/", (req, res) => {
+    const webPath = path.join(__dirname, "web", "index.html");
+    const rootPath = path.join(__dirname, "index.html");
+    if (fs.existsSync(webPath)) return res.sendFile(webPath);
+    if (fs.existsSync(rootPath)) return res.sendFile(rootPath);
+    res.send("MNG TikTok Game Web Portal");
+});
+
 app.use(express.static(path.join(__dirname, "web")));
+app.use(express.static(__dirname));
 // Admin Paneli
 app.use("/admin", express.static(path.join(__dirname, "admin", "public")));
 app.get(["/admin", "/admin/*"], (req, res) => {
