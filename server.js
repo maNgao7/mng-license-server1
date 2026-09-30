@@ -1,4 +1,4 @@
-﻿import express from "express";
+import express from "express";
 import cors from "cors";
 import crypto from "crypto";
 import fs from "fs";
@@ -12,7 +12,7 @@ const app = express();
 const PORT = process.env.PORT || 4000;
 
 // =====================================================================
-// ADMIN ÅÄ°FRESÄ°
+// ADMIN ÅİFRESİ
 // =====================================================================
 function adminSifreBul() {
     if (process.env.ADMIN_SIFRE) return process.env.ADMIN_SIFRE.trim();
@@ -29,7 +29,7 @@ function adminSifreBul() {
 const ADMIN_SIFRE = adminSifreBul();
 
 // =====================================================================
-// KALICI VERÄ°TABANI (JSON Dosya TabanlÄ±)
+// KALICI VERİTABANI (JSON Dosya Tabanlı)
 // =====================================================================
 const DB_DOSYASI = path.join(__dirname, "lisanslar.json");
 const LOG_DOSYASI = path.join(__dirname, "aktivasyon_log.json");
@@ -123,7 +123,7 @@ function karaListeKaydet() {
 dbYukle();
 
 // =====================================================================
-// MIDDLEWARE & STATÄ°K DOSYALAR
+// MIDDLEWARE & STATİK DOSYALAR
 // =====================================================================
 app.use(cors({
     origin: "*",
@@ -133,7 +133,7 @@ app.use(cors({
 
 app.use(express.json());
 
-// Web Sitesi Ana SayfasÄ±: web/ klasÃ¶rÃ¼
+// Web Sitesi Ana Sayfası: web/ klasörü
 app.use(express.static(path.join(__dirname, "web")));
 // Admin Paneli
 app.use("/admin", express.static(path.join(__dirname, "admin", "public")));
@@ -148,22 +148,22 @@ function adminKontrol(req, res, next) {
     if (!token) return res.status(401).json({ error: "Admin token gerekli" });
 
     const beklenen = crypto.createHmac("sha256", ADMIN_SIFRE).update("mng-admin").digest("hex");
-    if (token !== beklenen) return res.status(403).json({ error: "GeÃ§ersiz admin token" });
+    if (token !== beklenen) return res.status(403).json({ error: "Geçersiz admin token" });
     next();
 }
 
 // =====================================================================
-// YARDIMCI SÃœRE FONKSÄ°YONLARI (Dakika, GÃ¼n, SÄ±nÄ±rsÄ±z)
+// YARDIMCI SÜRE FONKSİYONLARI (Dakika, Gün, Sınırsız)
 // =====================================================================
 // sureObj: { birim: "dakika"|"gun"|"sinirsiz", miktar: number }
 function sureMsHesapla(sureObj) {
     if (!sureObj || sureObj.birim === "sinirsiz" || sureObj.miktar === -1) {
-        return -1; // SÄ±nÄ±rsÄ±z
+        return -1; // Sınırsız
     }
     if (sureObj.birim === "dakika") {
         return sureObj.miktar * 60 * 1000;
     }
-    // VarsayÄ±lan gÃ¼n
+    // Varsayılan gün
     return sureObj.miktar * 24 * 60 * 60 * 1000;
 }
 
@@ -246,30 +246,30 @@ function logEkle(lisansKod, cihazKimlik, islem, ip) {
 }
 
 // =====================================================================
-// SÃœRÃœM BÄ°LGÄ°LERÄ° & Ä°NDÄ°RME LÄ°NKLERÄ°
+// SÜRÜM BİLGİLERİ & İNDİRME LİNKLERİ
 // =====================================================================
 const EN_GUNCEL_SURUM = "1.9.1";
 const EN_DUSUK_SURUM = "1.0.0";
 const SETUP_INDIRME_LINKI = "https://drive.usercontent.google.com/download?id=1g-dEVnq_8ksvCTuHq9q7Ur-MGiFBpzND&export=download&confirm=t";
 const SETUP_WEB_LINKI = "https://drive.google.com/file/d/1g-dEVnq_8ksvCTuHq9q7Ur-MGiFBpzND/view?usp=sharing";
 
-// Her gÃ¼ncellemede eklenen/deÄŸiÅŸen Ã¶zellikler listesi
+// Her güncellemede eklenen/değişen özellikler listesi
 const SURUM_NOTLARI = [
-    "v1.9.1 â€” MNG Orbit Donma DÃ¼zeltildi: Ayarlar aÃ§Ä±lÄ±nca oyun artÄ±k donmuyor; hediye gÃ¶rselleri sadece seÃ§im aÃ§Ä±ldÄ±ÄŸÄ±nda yÃ¼kleniyor.",
-    "v1.9.1 â€” KullanÄ±cÄ± AdÄ± HatÄ±rlama: BaÄŸlan ekranÄ±nda son kullanÄ±cÄ± adÄ± otomatik dolu geliyor.",
-    "v1.9.1 â€” Oyun BÃ¼yÃ¼k Ekran: TÃ¼m oyunlar artÄ±k tam ekran (maximize) aÃ§Ä±lÄ±yor.",
-    "v1.9.1 â€” WebSocket KararlÄ±lÄ±k: BaÄŸlantÄ± koptuÄŸunda baloncuklar kaybolmuyor, yeniden baÄŸlantÄ± daha hÄ±zlÄ±.",
-    "v1.9.0 â€” KUR / YÃœKLE Butonu: Oyunlar artÄ±k isteÄŸe baÄŸlÄ± kurulabilir; mevcut kurulu oyunlara asla dokunmaz.",
-    "v1.9.0 â€” MNG Orbit AyarlarÄ± BÃ¼yÃ¼tÃ¼ldÃ¼: Ayarlar paneli tam geniÅŸliÄŸe alÄ±ndÄ±, sÃ¼rÃ¼kleme iptal edildi.",
-    "v1.9.0 â€” MNG Orbit Yutma Sesi: Biri iÃ§ine Ã§ekildiÄŸinde 0 ms gecikmeyle anÄ±nda yutma sesi Ã§alar.",
-    "v1.9.0 â€” MNG Orbit Kazanan EkranÄ±: Profil fotoÄŸrafÄ± ekranÄ±n 2/3'Ã¼nÃ¼ kaplayacak bÃ¼yÃ¼klÃ¼kte gÃ¶sterilir.",
-    "v1.9.0 â€” MNG Orbit KalÄ±cÄ± Kurallar: Takip = 250 kÃ¼tle, Ä°lk 100 beÄŸeni = 200 kÃ¼tle giriÅŸi, Her 100 beÄŸeni = +150 kÃ¼tle.",
-    "TikTok Profil VS 1.7: OBS VS widget'Ä±na canlÄ± geri sayÄ±m ve tur sonu kazanan ekranÄ± eklendi.",
-    "MNG Orbit Final: Oyun iÃ§i hediye ayarlarÄ±, Ã§alÄ±ÅŸan hediye gÃ¶rselleri ve HaritayÄ± ParÃ§ala testi eklendi.",
-    "MNG Orbit AyarlarÄ±: Takip, beÄŸeni ve hediye bÃ¼yÃ¼me deÄŸerleri launcher'dan dÃ¼zenlenebilir.",
-    "MNG Orbit: Hediye, beÄŸeni ve takip etkileÅŸimleriyle bÃ¼yÃ¼yen canlÄ± arena oyunu.",
-    "Tek TÄ±kla BaÄŸlan: TikTok kullanÄ±cÄ± adÄ±nÄ± bir kez kaydet â€” oyun aÃ§Ä±ldÄ±ÄŸÄ±nda otomatik baÄŸlanÄ±r.",
-    "Otomatik Yeniden BaÄŸlanma: Ä°nternet koptuÄŸunda uygulama kendiliÄŸinden yayÄ±na tekrar baÄŸlanÄ±r."
+    "v1.9.1 — MNG Orbit Donma Düzeltildi: Ayarlar açılınca oyun artık donmuyor; hediye görselleri sadece seçim açıldığında yükleniyor.",
+    "v1.9.1 — Kullanıcı Adı Hatırlama: Bağlan ekranında son kullanıcı adı otomatik dolu geliyor.",
+    "v1.9.1 — Oyun Büyük Ekran: Tüm oyunlar artık tam ekran (maximize) açılıyor.",
+    "v1.9.1 — WebSocket Kararlılık: Bağlantı koptuğunda baloncuklar kaybolmuyor, yeniden bağlantı daha hızlı.",
+    "v1.9.0 — KUR / YÜKLE Butonu: Oyunlar artık isteğe bağlı kurulabilir; mevcut kurulu oyunlara asla dokunmaz.",
+    "v1.9.0 — MNG Orbit Ayarları Büyütüldü: Ayarlar paneli tam genişliğe alındı, sürükleme iptal edildi.",
+    "v1.9.0 — MNG Orbit Yutma Sesi: Biri içine çekildiğinde 0 ms gecikmeyle anında yutma sesi çalar.",
+    "v1.9.0 — MNG Orbit Kazanan Ekranı: Profil fotoğrafı ekranın 2/3'ünü kaplayacak büyüklükte gösterilir.",
+    "v1.9.0 — MNG Orbit Kalıcı Kurallar: Takip = 250 kütle, İlk 100 beğeni = 200 kütle girişi, Her 100 beğeni = +150 kütle.",
+    "TikTok Profil VS 1.7: OBS VS widget'ına canlı geri sayım ve tur sonu kazanan ekranı eklendi.",
+    "MNG Orbit Final: Oyun içi hediye ayarları, çalışan hediye görselleri ve Haritayı Parçala testi eklendi.",
+    "MNG Orbit Ayarları: Takip, beğeni ve hediye büyüme değerleri launcher'dan düzenlenebilir.",
+    "MNG Orbit: Hediye, beğeni ve takip etkileşimleriyle büyüyen canlı arena oyunu.",
+    "Tek Tıkla Bağlan: TikTok kullanıcı adını bir kez kaydet — oyun açıldığında otomatik bağlanır.",
+    "Otomatik Yeniden Bağlanma: İnternet koptuğunda uygulama kendiliğinden yayına tekrar bağlanır."
 ];
 
 function surumKarsilastir(v1, v2) {
@@ -285,7 +285,7 @@ function surumKarsilastir(v1, v2) {
     return 0;
 }
 
-// SÃ¼rÃ¼m KontrolÃ¼ API'si (Launcher kontrol eder)
+// Sürüm Kontrolü API'si (Launcher kontrol eder)
 app.get("/api/version", (req, res) => {
     res.json({
         latestVersion: EN_GUNCEL_SURUM,
@@ -297,14 +297,14 @@ app.get("/api/version", (req, res) => {
 });
 
 // =====================================================================
-// MÃœÅTERÄ° LÄ°SANS DOÄRULAMA APÄ°SÄ° (Launcher BaÄŸlantÄ±sÄ±)
+// MÜÅTERİ LİSANS DOÄRULAMA APİSİ (Launcher Bağlantısı)
 // =====================================================================
 
 app.post("/api/license/verify", (req, res) => {
     const { code, deviceId, clientVersion } = req.body;
     const ip = req.headers["x-forwarded-for"] || req.socket.remoteAddress;
 
-    // SÃ¼rÃ¼m kontrolÃ¼ (Ã‡ok eski sÃ¼rÃ¼mleri engelle)
+    // Sürüm kontrolü (Çok eski sürümleri engelle)
     if (clientVersion && surumKarsilastir(clientVersion, EN_DUSUK_SURUM) < 0) {
         return res.json({
             valid: false,
@@ -312,7 +312,7 @@ app.post("/api/license/verify", (req, res) => {
             latestVersion: EN_GUNCEL_SURUM,
             downloadUrl: SETUP_INDIRME_LINKI,
             changelog: SURUM_NOTLARI,
-            message: `âš ï¸ YENÄ° GÃœNCELLEME MEVCUT (v${EN_GUNCEL_SURUM})! LÃ¼tfen gÃ¼ncel sÃ¼rÃ¼mÃ¼ indirin.`
+            message: `âš ï¸ YENİ GÜNCELLEME MEVCUT (v${EN_GUNCEL_SURUM})! Lütfen güncel sürümü indirin.`
         });
     }
 
@@ -320,26 +320,26 @@ app.post("/api/license/verify", (req, res) => {
         return res.json({
             valid: false,
             reason: "invalid_license",
-            message: "LÃ¼tfen lisans kodunuzu eksiksiz girin."
+            message: "Lütfen lisans kodunuzu eksiksiz girin."
         });
     }
 
     const temizKod = String(code).trim().toUpperCase();
 
-    // Kara liste kontrolÃ¼
+    // Kara liste kontrolü
     if (karaListeVeritabani.includes(temizKod)) {
         logEkle(temizKod, deviceId, "red_kara_liste", ip);
         return res.json({
             valid: false,
             reason: "revoked",
-            message: "Bu lisans kalÄ±cÄ± olarak iptal edilmiÅŸtir."
+            message: "Bu lisans kalıcı olarak iptal edilmiştir."
         });
     }
 
     let lisans = lisanslarVeritabani.find(l => l.kod === temizKod);
 
-    // Kendi Kendini Kurtaran Lisans: EÄŸer sunucu yeniden baÅŸladÄ±ÄŸÄ±nda lisanslar.json sÄ±fÄ±rlandÄ±ysa
-    // kriptografik olarak imzalanmÄ±ÅŸ geÃ§erli kodlarÄ± anÄ±nda otomatik kurtarÄ±r!
+    // Kendi Kendini Kurtaran Lisans: Eğer sunucu yeniden başladığında lisanslar.json sıfırlandıysa
+    // kriptografik olarak imzalanmış geçerli kodları anında otomatik kurtarır!
     if (!lisans) {
         const kriptoBilgi = kodKriptoKontrol(temizKod);
         if (kriptoBilgi) {
@@ -353,7 +353,7 @@ app.post("/api/license/verify", (req, res) => {
                 aktivasyon_zamani: null,
                 bitis_zamani: null,
                 cihaz_kimlik: null,
-                notlar: "Kriptografik DoÄŸrulandÄ±"
+                notlar: "Kriptografik Doğrulandı"
             };
             lisanslarVeritabani.unshift(lisans);
             dbKaydet();
@@ -365,7 +365,7 @@ app.post("/api/license/verify", (req, res) => {
         return res.json({
             valid: false,
             reason: "invalid_license",
-            message: "GeÃ§ersiz lisans kodu."
+            message: "Geçersiz lisans kodu."
         });
     }
 
@@ -376,7 +376,7 @@ app.post("/api/license/verify", (req, res) => {
         return res.json({
             valid: false,
             reason: "revoked",
-            message: "Bu lisans iptal edilmiÅŸ."
+            message: "Bu lisans iptal edilmiş."
         });
     }
 
@@ -385,11 +385,11 @@ app.post("/api/license/verify", (req, res) => {
         return res.json({
             valid: false,
             reason: "expired",
-            message: "LisansÄ±nÄ±zÄ±n sÃ¼resi dolmuÅŸ."
+            message: "Lisansınızın süresi dolmuş."
         });
     }
 
-    // 1. Ä°LK AKTÄ°VASYON (SÃ¼re sadece ilk aktivasyonda baÅŸlar!)
+    // 1. İLK AKTİVASYON (Süre sadece ilk aktivasyonda başlar!)
     if (lisans.durum === "beklemede") {
         const simdi = Date.now();
         const sureMs = sureMsHesapla({ birim: lisans.sure_birim, miktar: lisans.sure_miktar });
@@ -420,18 +420,18 @@ app.post("/api/license/verify", (req, res) => {
             remainingDays: lisans.sure_birim === "gun" ? lisans.sure_miktar : (isUnlimited ? -1 : Math.ceil(remainingSeconds / 86400)),
             remainingSeconds: remainingSeconds,
             isUnlimited: isUnlimited,
-            message: "Lisans baÅŸarÄ±yla aktifleÅŸtirildi."
+            message: "Lisans başarıyla aktifleştirildi."
         });
     }
 
-    // 2. DAHA Ã–NCE AKTÄ°F EDÄ°LMÄ°Å LÄ°SANS
+    // 2. DAHA ÖNCE AKTİF EDİLMİÅ LİSANS
     if (lisans.durum === "aktif") {
         if (lisans.cihaz_kimlik && lisans.cihaz_kimlik !== deviceId) {
             logEkle(temizKod, deviceId, "red_cihaz_uyusmazligi", ip);
             return res.json({
                 valid: false,
                 reason: "device_mismatch",
-                message: "Bu lisans baÅŸka bir bilgisayara kayÄ±tlÄ±."
+                message: "Bu lisans başka bir bilgisayara kayıtlı."
             });
         }
 
@@ -446,7 +446,7 @@ app.post("/api/license/verify", (req, res) => {
                 return res.json({
                     valid: false,
                     reason: "expired",
-                    message: "LisansÄ±nÄ±zÄ±n sÃ¼resi dolmuÅŸ."
+                    message: "Lisansınızın süresi dolmuş."
                 });
             }
             remainingSeconds = Math.max(0, Math.floor(kalanMs / 1000));
@@ -465,17 +465,17 @@ app.post("/api/license/verify", (req, res) => {
             remainingDays: isUnlimited ? -1 : Math.ceil(remainingSeconds / 86400),
             remainingSeconds: remainingSeconds,
             isUnlimited: isUnlimited,
-            message: "Lisans geÃ§erli."
+            message: "Lisans geçerli."
         });
     }
 
-    return res.json({ valid: false, reason: "invalid_license", message: "GeÃ§ersiz lisans kodu." });
+    return res.json({ valid: false, reason: "invalid_license", message: "Geçersiz lisans kodu." });
 });
 
 app.post("/api/license/check", (req, res) => {
     const { code, deviceId, activationToken, expiresAt, clientVersion } = req.body;
 
-    // SÃ¼rÃ¼m kontrolÃ¼ (Ã‡ok eski sÃ¼rÃ¼mleri engelle)
+    // Sürüm kontrolü (Çok eski sürümleri engelle)
     if (clientVersion && surumKarsilastir(clientVersion, EN_DUSUK_SURUM) < 0) {
         return res.json({
             valid: false,
@@ -483,7 +483,7 @@ app.post("/api/license/check", (req, res) => {
             latestVersion: EN_GUNCEL_SURUM,
             downloadUrl: SETUP_INDIRME_LINKI,
             changelog: SURUM_NOTLARI,
-            message: `âš ï¸ YENÄ° GÃœNCELLEME MEVCUT (v${EN_GUNCEL_SURUM})! LÃ¼tfen gÃ¼ncel sÃ¼rÃ¼mÃ¼ indirin.`
+            message: `âš ï¸ YENİ GÜNCELLEME MEVCUT (v${EN_GUNCEL_SURUM})! Lütfen güncel sürümü indirin.`
         });
     }
 
@@ -491,16 +491,16 @@ app.post("/api/license/check", (req, res) => {
 
     const temizKod = String(code).trim().toUpperCase();
 
-    // Kara liste kontrolÃ¼
+    // Kara liste kontrolü
     if (karaListeVeritabani.includes(temizKod)) {
-        return res.json({ valid: false, reason: "revoked", message: "Bu lisans kalÄ±cÄ± olarak iptal edilmiÅŸtir." });
+        return res.json({ valid: false, reason: "revoked", message: "Bu lisans kalıcı olarak iptal edilmiştir." });
     }
 
     let lisans = lisanslarVeritabani.find(l => l.kod === temizKod);
 
     // Kendi Kendini Onaran / Kurtaran Senkronizasyon:
-    // EÄŸer Render yeniden baÅŸladÄ±ysa ve lisanslar.json sÄ±fÄ±rlandÄ±ysa,
-    // istemcinin sunduÄŸu aktivasyon tokeni ile bitiÅŸ zamanÄ± matematiksel olarak doÄŸrulanÄ±r.
+    // Eğer Render yeniden başladıysa ve lisanslar.json sıfırlandıysa,
+    // istemcinin sunduğu aktivasyon tokeni ile bitiş zamanı matematiksel olarak doğrulanır.
     if (!lisans && activationToken) {
         const tokenGecerli = aktivasyonTokenDogrula(temizKod, deviceId, expiresAt, activationToken);
         if (tokenGecerli) {
@@ -515,23 +515,23 @@ app.post("/api/license/check", (req, res) => {
                 bitis_zamani: expiresAt ? Number(expiresAt) : null,
                 cihaz_kimlik: deviceId,
                 activation_token: activationToken,
-                notlar: "Otomatik KurtarÄ±lan Lisans"
+                notlar: "Otomatik Kurtarılan Lisans"
             };
             lisanslarVeritabani.unshift(lisans);
             dbKaydet();
         }
     }
 
-    if (!lisans) return res.json({ valid: false, reason: "invalid_license", message: "GeÃ§ersiz lisans kodu." });
+    if (!lisans) return res.json({ valid: false, reason: "invalid_license", message: "Geçersiz lisans kodu." });
 
     sureliDurumGuncelle(lisans);
 
-    if (lisans.durum === "iptal") return res.json({ valid: false, reason: "revoked", message: "Bu lisans iptal edilmiÅŸ." });
+    if (lisans.durum === "iptal") return res.json({ valid: false, reason: "revoked", message: "Bu lisans iptal edilmiş." });
     if (lisans.cihaz_kimlik && lisans.cihaz_kimlik !== deviceId) {
-        return res.json({ valid: false, reason: "device_mismatch", message: "Bu lisans baÅŸka bir bilgisayara kayÄ±tlÄ±." });
+        return res.json({ valid: false, reason: "device_mismatch", message: "Bu lisans başka bir bilgisayara kayıtlı." });
     }
 
-    if (lisans.durum === "suresi_doldu") return res.json({ valid: false, reason: "expired", message: "LisansÄ±nÄ±zÄ±n sÃ¼resi dolmuÅŸ." });
+    if (lisans.durum === "suresi_doldu") return res.json({ valid: false, reason: "expired", message: "Lisansınızın süresi dolmuş." });
 
     if (lisans.durum === "aktif") {
         const simdi = Date.now();
@@ -542,7 +542,7 @@ app.post("/api/license/check", (req, res) => {
             if (kalanMs <= 0) {
                 lisans.durum = "suresi_doldu";
                 dbKaydet();
-                return res.json({ valid: false, reason: "expired", message: "LisansÄ±nÄ±zÄ±n sÃ¼resi dolmuÅŸ." });
+                return res.json({ valid: false, reason: "expired", message: "Lisansınızın süresi dolmuş." });
             }
             remainingSeconds = Math.max(0, Math.floor(kalanMs / 1000));
         }
@@ -560,21 +560,23 @@ app.post("/api/license/check", (req, res) => {
         });
     }
 
-    return res.json({ valid: false, reason: "invalid_license", message: "Lisans aktif deÄŸil." });
+    return res.json({ valid: false, reason: "invalid_license", message: "Lisans aktif değil." });
 });
 
 // =====================================================================
-// WEB SÄ°TESÄ° LÄ°SANS TALEP APÄ°SÄ°
+// WEB SİTESİ LİSANS TALEP APİSİ
 // =====================================================================
 
 app.post("/api/talep-gonder", (req, res) => {
-    const { ad, tiktok_kullanici, iletisim, mesaj } = req.body;
+    const { ad, tiktok_kullanici, iletisim, mesaj, tur, konu } = req.body;
     if (!ad || !iletisim) {
-        return res.status(400).json({ error: "LÃ¼tfen adÄ±nÄ±zÄ± ve iletiÅŸim bilginizi girin." });
+        return res.status(400).json({ error: "Lütfen adınızı ve iletişim bilginizi girin." });
     }
 
     const yeniTalep = {
         id: Date.now() + "_" + Math.random().toString(36).substr(2, 5),
+        tur: tur || "lisans", // lisans | soru | oneri
+        konu: (konu || "").trim(),
         ad: ad.trim(),
         tiktok_kullanici: (tiktok_kullanici || "").trim(),
         iletisim: iletisim.trim(),
@@ -586,11 +588,17 @@ app.post("/api/talep-gonder", (req, res) => {
     taleplerVeritabani.unshift(yeniTalep);
     talepKaydet();
 
-    res.json({ basarili: true, mesaj: "Talebiniz yÃ¶neticiye iletildi! En kÄ±sa sÃ¼rede sizinle iletiÅŸime geÃ§ilecektir." });
+    const cevapMesaji = yeniTalep.tur === "oneri"
+        ? "Harika öneriniz için çok teşekkür ederiz! Yönetim ekibimiz önerinizi inceleyecek."
+        : yeniTalep.tur === "soru"
+        ? "Sorunuz başarıyla iletildi! En kısa sürede sizinle iletişime geçilecektir."
+        : "Talebiniz yöneticiye iletildi! En kısa sürede sizinle iletişime geçilecektir.";
+
+    res.json({ basarili: true, mesaj: cevapMesaji });
 });
 
 // =====================================================================
-// DOSYA Ä°NDÄ°RME ENDPOINTLERÄ°
+// DOSYA İNDİRME ENDPOINTLERİ
 // =====================================================================
 
 app.get("/download/setup", (req, res) => {
@@ -606,32 +614,32 @@ app.get("/download/portable", (req, res) => {
     if (fs.existsSync(portableYolu)) {
         res.download(portableYolu, "MNG-TikTok-Game-Portable.exe");
     } else {
-        res.status(404).send("TaÅŸÄ±nabilir dosya henÃ¼z oluÅŸturulmadÄ±.");
+        res.status(404).send("Taşınabilir dosya henüz oluşturulmadı.");
     }
 });
 
 // =====================================================================
-// ADMÄ°N APÄ°LERÄ°
+// ADMİN APİLERİ
 // =====================================================================
 
 app.post("/api/admin/giris", (req, res) => {
     const { sifre } = req.body;
-    if (!sifre || sifre !== ADMIN_SIFRE) return res.status(403).json({ error: "YanlÄ±ÅŸ ÅŸifre" });
+    if (!sifre || sifre !== ADMIN_SIFRE) return res.status(403).json({ error: "Yanlış şifre" });
     const token = crypto.createHmac("sha256", ADMIN_SIFRE).update("mng-admin").digest("hex");
     res.json({ token });
 });
 
-// Yeni Lisans OluÅŸtur (1 dk, 10 dk, 20 dk, 1 gÃ¼n, 3 gÃ¼n, 7 gÃ¼n, 30 gÃ¼n, sÄ±nÄ±rsÄ±z)
+// Yeni Lisans Oluştur (1 dk, 10 dk, 20 dk, 1 gün, 3 gün, 7 gün, 30 gün, sınırsız)
 app.post("/api/admin/lisans-olustur", adminKontrol, (req, res) => {
     const { sure_birim, sure_miktar, notlar } = req.body;
     // sure_birim: "dakika" | "gun" | "sinirsiz"
-    // sure_miktar: number (Ã¶rn 1, 10, 20, 1, 3, 7, 30, -1)
+    // sure_miktar: number (örn 1, 10, 20, 1, 3, 7, 30, -1)
 
     const birim = sure_birim || "gun";
     const miktar = Number(sure_miktar);
 
     if (isNaN(miktar) && birim !== "sinirsiz") {
-        return res.status(400).json({ error: "GeÃ§ersiz sÃ¼re miktarÄ±!" });
+        return res.status(400).json({ error: "Geçersiz süre miktarı!" });
     }
 
     const sureObj = { birim, miktar: birim === "sinirsiz" ? -1 : miktar };
@@ -664,15 +672,15 @@ app.post("/api/admin/lisans-olustur", adminKontrol, (req, res) => {
     dbKaydet();
 
     let sureEtiketi = "";
-    if (birim === "sinirsiz") sureEtiketi = "SÄ±nÄ±rsÄ±z";
-    else if (birim === "dakika") sureEtiketi = `${miktar} DakikalÄ±k`;
-    else sureEtiketi = `${miktar} GÃ¼nlÃ¼k`;
+    if (birim === "sinirsiz") sureEtiketi = "Sınırsız";
+    else if (birim === "dakika") sureEtiketi = `${miktar} Dakikalık`;
+    else sureEtiketi = `${miktar} Günlük`;
 
     res.json({
         kod,
         durum: "beklemede",
         sure_etiketi: sureEtiketi,
-        mesaj: `${sureEtiketi} lisans oluÅŸturuldu: ${kod}`
+        mesaj: `${sureEtiketi} lisans oluşturuldu: ${kod}`
     });
 });
 
@@ -684,7 +692,7 @@ app.get("/api/admin/lisanslar", adminKontrol, (req, res) => {
 app.post("/api/admin/lisans/:kod/iptal", adminKontrol, (req, res) => {
     const kod = req.params.kod.toUpperCase();
     const lisans = lisanslarVeritabani.find(l => l.kod === kod);
-    if (!lisans) return res.status(404).json({ error: "Lisans bulunamadÄ±." });
+    if (!lisans) return res.status(404).json({ error: "Lisans bulunamadı." });
 
     lisans.durum = "iptal";
     if (!karaListeVeritabani.includes(kod)) {
@@ -698,7 +706,7 @@ app.post("/api/admin/lisans/:kod/iptal", adminKontrol, (req, res) => {
 app.post("/api/admin/lisans/:kod/aktif-et", adminKontrol, (req, res) => {
     const kod = req.params.kod.toUpperCase();
     const lisans = lisanslarVeritabani.find(l => l.kod === kod);
-    if (!lisans) return res.status(404).json({ error: "Lisans bulunamadÄ±." });
+    if (!lisans) return res.status(404).json({ error: "Lisans bulunamadı." });
 
     karaListeVeritabani = karaListeVeritabani.filter(k => k !== kod);
     karaListeKaydet();
@@ -720,7 +728,7 @@ app.post("/api/admin/lisans/:kod/aktif-et", adminKontrol, (req, res) => {
 app.delete("/api/admin/lisans/:kod", adminKontrol, (req, res) => {
     const kod = req.params.kod.toUpperCase();
     const index = lisanslarVeritabani.findIndex(l => l.kod === kod);
-    if (index === -1) return res.status(404).json({ error: "Lisans bulunamadÄ±." });
+    if (index === -1) return res.status(404).json({ error: "Lisans bulunamadı." });
 
     lisanslarVeritabani.splice(index, 1);
     karaListeVeritabani = karaListeVeritabani.filter(k => k !== kod);
@@ -757,7 +765,7 @@ app.get("/api/health", (req, res) => {
 });
 
 // =====================================================================
-// CANLI TUTMA BOTU (Render 7/24 UyanÄ±k Tutucu - KeepAlive Bot)
+// CANLI TUTMA BOTU (Render 7/24 Uyanık Tutucu - KeepAlive Bot)
 // =====================================================================
 const CANLI_URL = "https://mng-license-server1.onrender.com/";
 
@@ -765,22 +773,22 @@ function pingBot() {
     try {
         const lib = CANLI_URL.startsWith("https") ? https : http;
         lib.get(CANLI_URL, (res) => {
-            // Sunucu uyanÄ±k tutuldu
+            // Sunucu uyanık tutuldu
         }).on("error", () => {});
     } catch {}
 }
 
-// Her 10 dakikada bir istek atarak Render'Ä± asla uyutmaz
+// Her 10 dakikada bir istek atarak Render'ı asla uyutmaz
 setInterval(pingBot, 10 * 60 * 1000);
 
-// Sunucuyu BaÅŸlat
+// Sunucuyu Başlat
 app.listen(PORT, "0.0.0.0", () => {
     console.log("");
     console.log("==================================================");
-    console.log("  MNG TikTok Game â€” Web Sitesi & Lisans Sunucusu");
-    console.log(`  Web PortalÄ± : http://localhost:${PORT}`);
+    console.log("  MNG TikTok Game — Web Sitesi & Lisans Sunucusu");
+    console.log(`  Web Portalı : http://localhost:${PORT}`);
     console.log(`  Admin Paneli : http://localhost:${PORT}/admin`);
-    console.log(`  Ä°ndirme Linki: http://localhost:${PORT}/download/setup`);
+    console.log(`  İndirme Linki: http://localhost:${PORT}/download/setup`);
     console.log("==================================================");
     console.log("");
 });
