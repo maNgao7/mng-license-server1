@@ -468,7 +468,7 @@
                     <div class="stat-val iptal" id="statIptal">0</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-label">Gelen Lisans Talepleri</div>
+                    <div class="stat-label">Gelen Talep & Soru/Öneri</div>
                     <div class="stat-val talep" id="statTalep">0</div>
                 </div>
             </div>
@@ -511,7 +511,7 @@
             <!-- SEKMELER -->
             <div class="tabs">
                 <button class="tab-btn active" id="tabBtnLicenses" onclick="switchTab('licenses')">📋 Lisanslar Listesi</button>
-                <button class="tab-btn" id="tabBtnRequests" onclick="switchTab('requests')">📩 Web Sitesinden Gelen Talepler (<span id="reqCountBadge">0</span>)</button>
+                <button class="tab-btn" id="tabBtnRequests" onclick="switchTab('requests')">📬 Gelen Talepler, Sorular & Öneriler (<span id="reqCountBadge">0</span>)</button>
             </div>
 
             <!-- LİSANS TABLOSU -->
@@ -539,25 +539,26 @@
                 </table>
             </div>
 
-            <!-- TALEPLER TABLOSU -->
+            <!-- TALEPLER, SORULAR & ÖNERİLER TABLOSU -->
             <div class="list-card" id="tabRequests" style="display:none;">
                 <div class="list-header">
-                    <div class="section-title" style="margin-bottom:0;">Web Sitesinden Gelen Lisans Talepleri</div>
+                    <div class="section-title" style="margin-bottom:0;">Web Sitesinden Gelen Talepler, Sorular ve Öneriler</div>
                 </div>
 
                 <table>
                     <thead>
                         <tr>
                             <th>Tarih</th>
+                            <th>Tür</th>
                             <th>Ad Soyad</th>
                             <th>İletişim (Tel/WP)</th>
                             <th>TikTok Kullanıcı</th>
-                            <th>Mesaj / İstek</th>
+                            <th>Mesaj / Soru / Öneri</th>
                             <th>İşlem</th>
                         </tr>
                     </thead>
                     <tbody id="requestsTableBody">
-                        <tr><td colspan="6" class="empty-row">Henüz gelen talep yok.</td></tr>
+                        <tr><td colspan="7" class="empty-row">Henüz gelen talep, soru veya öneri yok.</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -854,18 +855,25 @@
         function renderRequestsTable() {
             const tbody = document.getElementById("requestsTableBody");
             if (allRequests.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="6" class="empty-row">Henüz gelen talep yok.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="7" class="empty-row">Henüz gelen talep, soru veya öneri yok.</td></tr>';
                 return;
             }
 
             tbody.innerHTML = allRequests.map(r => {
                 const tarih = new Date(r.tarih).toLocaleString('tr-TR');
+                const turBadge = r.tur === "oneri"
+                    ? `<span style="background:rgba(142,212,98,0.18); color:#8ed462; border:1px solid #8ed462; padding:3px 8px; border-radius:12px; font-size:11px; font-weight:700;">💡 Öneri</span>`
+                    : r.tur === "soru"
+                    ? `<span style="background:rgba(43,160,255,0.18); color:#2ba0ff; border:1px solid #2ba0ff; padding:3px 8px; border-radius:12px; font-size:11px; font-weight:700;">❓ Soru</span>`
+                    : `<span style="background:rgba(254,44,85,0.18); color:#fe2c55; border:1px solid #fe2c55; padding:3px 8px; border-radius:12px; font-size:11px; font-weight:700;">🔑 Lisans</span>`;
+
                 return `
                     <tr>
                         <td>${tarih}</td>
+                        <td>${turBadge}</td>
                         <td><strong>${r.ad}</strong></td>
                         <td><span style="color:var(--green); font-weight:700;">${r.iletisim}</span></td>
-                        <td>${r.tiktok_kullanici || '-'}</td>
+                        <td>${r.tiktok_kullanici ? '@' + r.tiktok_kullanici.replace(/^@/, '') : '-'}</td>
                         <td>${r.mesaj || '-'}</td>
                         <td>
                             <div class="action-btns">
