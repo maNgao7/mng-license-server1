@@ -3,895 +3,1385 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MNG TikTok Game — Yönetici Paneli</title>
+    <title>MNG TikTok Game — Yayıncılar İçin Canlı Yayın Oyunları</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        
+        /* MindMarket Design System Tokens */
         :root {
-            --bg: #0d0d1a;
-            --surface: #1a1a2e;
-            --surface2: #16213e;
-            --accent: #fe2c55;
-            --accent2: #25f4ee;
-            --text: #eaeaea;
-            --text-dim: #8888aa;
-            --green: #00d4aa;
-            --yellow: #ffd700;
-            --red: #ff4444;
-            --border: #2a2a4a;
+            --color-fresh-grass: #8ed462;
+            --color-cream-paper: #f5f1e4;
+            --color-ink-black: #2c2e2a;
+            --color-pure-white: #ffffff;
+            --color-sandstone: #e0dbce;
+            --color-stone-gray: #80827f;
+            --color-hairline-mist: #d5d5d4;
+            --color-pure-ink: #000000;
+            --color-sky-pop: #2ba0ff;
+            --color-coral-pop: #ff705d;
+            --color-sunshine-pop: #f5e211;
+            --color-tiktok-red: #fe2c55;
+            --color-tiktok-cyan: #25f4ee;
+
+            --font-inter: 'Inter', system-ui, -apple-system, sans-serif;
+            --radius-nav: 50px;
+            --radius-cards: 50px;
+            --radius-buttons: 50px;
+            --radius-pill: 50px;
+            --radius-chip: 12px;
+            --radius-illustration: 63.75px;
+
+            --page-max-width: 1200px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
         }
 
         body {
-            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-            background: var(--bg);
-            color: var(--text);
-            min-height: 100vh;
+            font-family: var(--font-inter);
+            background-color: var(--color-cream-paper);
+            color: var(--color-ink-black);
+            line-height: 1.5;
+            -webkit-font-smoothing: antialiased;
+            overflow-x: hidden;
         }
 
-        /* GİRİŞ EKRANI */
-        #loginPage {
+        /* NAVIGATION BAR — Floating Pill Navigation */
+        .nav-wrapper {
+            position: sticky;
+            top: 20px;
+            z-index: 1000;
+            padding: 0 24px;
+            max-width: var(--page-max-width);
+            margin: 0 auto;
+        }
+
+        .nav-pill {
+            background-color: var(--color-pure-white);
+            border-radius: var(--radius-nav);
+            border: 1px solid var(--color-hairline-mist);
+            padding: 10px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            box-shadow: 0 4px 20px rgba(44, 46, 42, 0.04);
+        }
+
+        .brand-logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-decoration: none;
+            color: var(--color-ink-black);
+            font-weight: 800;
+            font-size: 17px;
+            letter-spacing: -0.02em;
+        }
+
+        .brand-badge {
+            width: 36px;
+            height: 36px;
+            border-radius: 12px;
+            background: #111;
+            color: #fff;
             display: flex;
             align-items: center;
             justify-content: center;
-            min-height: 100vh;
-            background: radial-gradient(ellipse at center, #1a1a3e 0%, #0d0d1a 70%);
-        }
-
-        .login-box {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: 16px;
-            padding: 40px;
-            width: 380px;
-            text-align: center;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
-        }
-
-        .login-logo { font-size: 42px; margin-bottom: 12px; }
-        .login-title { font-size: 22px; font-weight: 700; color: var(--accent); margin-bottom: 4px; }
-        .login-sub { font-size: 13px; color: var(--text-dim); margin-bottom: 24px; }
-
-        .login-input {
-            width: 100%;
-            padding: 12px 16px;
-            background: var(--bg);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            color: var(--text);
-            font-size: 15px;
-            margin-bottom: 16px;
-            outline: none;
-            transition: border-color 0.2s;
-        }
-        .login-input:focus { border-color: var(--accent); }
-
-        .btn-primary {
-            width: 100%;
-            padding: 12px;
-            background: linear-gradient(135deg, var(--accent), #c0392b);
-            color: #fff;
-            border: none;
-            border-radius: 8px;
-            font-size: 15px;
-            font-weight: 700;
-            cursor: pointer;
-            transition: opacity 0.2s;
-        }
-        .btn-primary:hover { opacity: 0.9; }
-
-        .login-error {
-            color: var(--red);
-            font-size: 13px;
-            margin-top: 12px;
-            display: none;
-        }
-
-        /* YÖNETİM PANELİ ANA ALANI */
-        #adminPanel { display: none; }
-
-        .header {
-            background: var(--surface);
-            border-bottom: 1px solid var(--border);
-            padding: 16px 32px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-
-        .header-title {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            font-size: 20px;
-            font-weight: 700;
-        }
-
-        .header-actions {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .badge-live {
-            background: rgba(0,212,170,0.15);
-            color: var(--green);
-            border: 1px solid var(--green);
-            font-size: 11px;
-            padding: 3px 8px;
-            border-radius: 20px;
-            font-weight: 600;
-        }
-
-        .btn-top {
-            padding: 8px 14px;
-            background: transparent;
-            border: 1px solid var(--border);
-            border-radius: 6px;
-            color: var(--text-dim);
-            cursor: pointer;
-            font-size: 13px;
-            text-decoration: none;
-            transition: all 0.2s;
-        }
-        .btn-top:hover { border-color: #fff; color: #fff; }
-        .btn-top.logout:hover { border-color: var(--red); color: var(--red); }
-
-        .main {
-            max-width: 1280px;
-            margin: 0 auto;
-            padding: 28px 24px;
-        }
-
-        /* İSTATİSTİKLER */
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
-            gap: 16px;
-            margin-bottom: 28px;
-        }
-
-        .stat-card {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 18px 20px;
-        }
-
-        .stat-label {
-            font-size: 12px;
-            color: var(--text-dim);
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-bottom: 6px;
-        }
-
-        .stat-val {
-            font-size: 28px;
-            font-weight: 800;
-            color: var(--text);
-        }
-
-        .stat-val.aktif { color: var(--green); }
-        .stat-val.beklemede { color: var(--yellow); }
-        .stat-val.iptal { color: var(--red); }
-        .stat-val.talep { color: var(--accent2); }
-
-        /* LİSANS OLUŞTURMA ALANI */
-        .create-card {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: 14px;
-            padding: 24px;
-            margin-bottom: 28px;
-        }
-
-        .section-title {
-            font-size: 16px;
-            font-weight: 700;
-            margin-bottom: 16px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .duration-group-label {
-            font-size: 12px;
-            color: var(--text-dim);
-            margin-bottom: 8px;
-            font-weight: 600;
-        }
-
-        .duration-buttons {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-            margin-bottom: 16px;
-        }
-
-        .dur-btn {
-            padding: 9px 14px;
-            background: var(--surface2);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            color: var(--text);
-            cursor: pointer;
-            font-size: 13px;
-            font-weight: 600;
-            transition: all 0.2s;
-        }
-
-        .dur-btn.quick {
-            border-color: rgba(37, 244, 238, 0.4);
-            color: var(--accent2);
-        }
-
-        .dur-btn:hover, .dur-btn.active {
-            background: var(--accent);
-            border-color: var(--accent);
-            color: #fff;
-        }
-
-        .form-row {
-            display: flex;
-            gap: 12px;
-            flex-wrap: wrap;
-        }
-
-        .form-input {
-            flex: 1;
-            min-width: 240px;
-            padding: 10px 14px;
-            background: var(--bg);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            color: var(--text);
-            font-size: 14px;
-            outline: none;
-        }
-        .form-input:focus { border-color: var(--accent); }
-
-        .btn-create {
-            padding: 10px 24px;
-            background: linear-gradient(135deg, var(--green), #00a87d);
-            border: none;
-            border-radius: 8px;
-            color: #0d0d1a;
-            font-weight: 700;
-            font-size: 14px;
-            cursor: pointer;
-            transition: opacity 0.2s;
-        }
-        .btn-create:hover { opacity: 0.9; }
-
-        .new-license-box {
-            display: none;
-            background: rgba(0,212,170,0.1);
-            border: 1px solid var(--green);
-            border-radius: 10px;
-            padding: 14px 18px;
-            margin-top: 16px;
-            align-items: center;
-            justify-content: space-between;
-        }
-
-        .new-code {
-            font-family: monospace;
             font-size: 18px;
-            font-weight: 800;
-            color: var(--green);
-            letter-spacing: 1px;
+            box-shadow: 2px 2px 0 var(--color-tiktok-cyan), -2px -2px 0 var(--color-tiktok-red);
         }
 
-        .btn-copy {
-            padding: 6px 14px;
-            background: var(--green);
-            border: none;
-            border-radius: 6px;
-            color: #0d0d1a;
-            font-size: 12px;
-            font-weight: 700;
-            cursor: pointer;
-        }
-
-        /* SEKMELER */
-        .tabs {
+        .nav-links {
             display: flex;
-            gap: 12px;
-            margin-bottom: 16px;
-            border-bottom: 1px solid var(--border);
-            padding-bottom: 8px;
+            align-items: center;
+            gap: 22px;
+            list-style: none;
         }
 
-        .tab-btn {
-            padding: 8px 18px;
-            background: transparent;
-            border: none;
-            border-bottom: 2px solid transparent;
-            color: var(--text-dim);
-            cursor: pointer;
+        @media (max-width: 820px) {
+            .nav-links { display: none; }
+        }
+
+        .nav-link {
+            text-decoration: none;
+            color: var(--color-ink-black);
+            font-size: 15px;
+            font-weight: 500;
+            transition: color 0.15s ease;
+        }
+
+        .nav-link:hover {
+            color: var(--color-coral-pop);
+        }
+
+        .nav-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .btn-nav-admin {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 9px 18px;
+            border-radius: var(--radius-buttons);
+            background: var(--color-cream-paper);
+            color: var(--color-ink-black);
+            text-decoration: none;
             font-size: 14px;
-            font-weight: 700;
-        }
-        .tab-btn.active {
-            color: var(--accent2);
-            border-bottom-color: var(--accent2);
+            font-weight: 600;
+            border: 1px solid var(--color-hairline-mist);
+            transition: all 0.2s ease;
         }
 
-        /* TABLOLAR */
-        .list-card {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: 14px;
-            padding: 24px;
-            overflow-x: auto;
+        .btn-nav-admin:hover {
+            background: var(--color-sandstone);
+            border-color: var(--color-ink-black);
+        }
+
+        /* HERO SECTION */
+        .hero-section {
+            padding: 60px 24px 70px;
+            max-width: var(--page-max-width);
+            margin: 0 auto;
+            text-align: center;
+            position: relative;
+        }
+
+        .chips-row {
+            display: inline-flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
             margin-bottom: 24px;
         }
 
-        .list-header {
+        .chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            padding: 6px 14px;
+            border-radius: var(--radius-chip);
+            font-size: 13px;
+            font-weight: 600;
+            background: var(--color-pure-white);
+            border: 1px solid var(--color-hairline-mist);
+            color: var(--color-ink-black);
+        }
+
+        .chip.highlight {
+            border-color: var(--color-fresh-grass);
+            background: #f1fbe9;
+            color: #2e6812;
+        }
+
+        .chip-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: var(--color-fresh-grass);
+            display: inline-block;
+        }
+
+        .hero-display-title {
+            font-size: clamp(38px, 6.2vw, 82px);
+            font-weight: 800;
+            line-height: 1.02;
+            letter-spacing: -0.04em;
+            color: var(--color-ink-black);
+            max-width: 1000px;
+            margin: 0 auto 22px;
+        }
+
+        .hero-display-title span.accent-text {
+            color: var(--color-coral-pop);
+            position: relative;
+            display: inline-block;
+        }
+
+        .hero-subhead {
+            font-size: clamp(17px, 2.1vw, 20px);
+            font-weight: 400;
+            line-height: 1.55;
+            color: var(--color-stone-gray);
+            max-width: 760px;
+            margin: 0 auto 36px;
+        }
+
+        /* HERO CTA DOWNLOAD BOX */
+        .hero-cta-box {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 14px;
+            margin-bottom: 50px;
+        }
+
+        .btn-download-hero {
+            display: inline-flex;
+            align-items: center;
+            gap: 14px;
+            padding: 18px 44px;
+            border-radius: var(--radius-buttons);
+            background-color: var(--color-ink-black);
+            color: var(--color-pure-white);
+            text-decoration: none;
+            font-size: 18px;
+            font-weight: 700;
+            letter-spacing: -0.01em;
+            border: 2px solid var(--color-ink-black);
+            transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .btn-download-hero:hover {
+            background-color: #171815;
+            transform: translateY(-2px);
+            box-shadow: 0 14px 30px rgba(44, 46, 42, 0.16);
+        }
+
+        .btn-dot-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background-color: var(--color-fresh-grass);
+            box-shadow: 0 0 10px var(--color-fresh-grass);
+        }
+
+        .download-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 14px;
+            color: var(--color-stone-gray);
+        }
+
+        .download-meta strong {
+            color: var(--color-ink-black);
+            background: var(--color-pure-white);
+            padding: 2px 10px;
+            border-radius: 10px;
+            border: 1px solid var(--color-hairline-mist);
+        }
+
+        .direct-drive-link {
+            font-size: 13px;
+            color: var(--color-stone-gray);
+            text-decoration: none;
+            border-bottom: 1px dotted var(--color-stone-gray);
+            transition: color 0.15s;
+        }
+
+        .direct-drive-link:hover {
+            color: var(--color-ink-black);
+        }
+
+        /* ========================================================= */
+        /* OYNANABİLİR & SCROLL İLE HAREKET EDEN YÖRÜNGE ARENA SAHNESİ */
+        /* ========================================================= */
+        .interactive-stage-container {
+            background: var(--color-pure-white);
+            border-radius: var(--radius-cards);
+            border: 1px solid var(--color-hairline-mist);
+            padding: 30px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 6px 30px rgba(44,46,42,0.04);
+            margin: 20px auto 40px;
+            max-width: 1080px;
+        }
+
+        .stage-header-bar {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            margin-bottom: 16px;
-            flex-wrap: wrap;
-            gap: 12px;
-        }
-
-        .search-box {
-            padding: 8px 14px;
-            background: var(--bg);
-            border: 1px solid var(--border);
-            border-radius: 6px;
-            color: var(--text);
+            padding-bottom: 16px;
+            border-bottom: 1px solid var(--color-sandstone);
+            margin-bottom: 20px;
             font-size: 13px;
-            width: 240px;
-            outline: none;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 13px;
-            text-align: left;
-        }
-
-        th {
-            padding: 12px 14px;
-            color: var(--text-dim);
             font-weight: 600;
-            border-bottom: 1px solid var(--border);
-            white-space: nowrap;
+            color: var(--color-stone-gray);
         }
 
-        td {
-            padding: 14px;
-            border-bottom: 1px solid rgba(42,42,74,0.5);
-            vertical-align: middle;
-        }
-
-        tr:hover td { background: rgba(255,255,255,0.02); }
-
-        .code-pill {
-            font-family: monospace;
+        .stage-interactive-pill {
+            background: #f1fbe9;
+            color: #2e6812;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
             font-weight: 700;
-            background: var(--surface2);
-            padding: 4px 8px;
-            border-radius: 4px;
-            color: var(--text);
-            letter-spacing: 0.5px;
-        }
-
-        .status-badge {
-            display: inline-block;
-            padding: 3px 8px;
-            border-radius: 12px;
-            font-size: 11px;
-            font-weight: 700;
-        }
-        .status-badge.beklemede { background: rgba(255,215,0,0.15); color: var(--yellow); }
-        .status-badge.aktif { background: rgba(0,212,170,0.15); color: var(--green); }
-        .status-badge.iptal { background: rgba(255,68,68,0.15); color: var(--red); }
-        .status-badge.suresi_doldu { background: rgba(136,136,170,0.2); color: var(--text-dim); }
-
-        .action-btns {
-            display: flex;
+            border: 1px solid var(--color-fresh-grass);
+            display: inline-flex;
+            align-items: center;
             gap: 6px;
         }
 
-        .btn-action {
-            padding: 5px 10px;
-            border: 1px solid var(--border);
-            background: transparent;
-            border-radius: 6px;
-            color: var(--text);
-            cursor: pointer;
-            font-size: 11px;
-            font-weight: 600;
-            transition: all 0.2s;
+        .canvas-wrapper {
+            position: relative;
+            width: 100%;
+            height: 480px;
+            background: radial-gradient(circle at center, #111a36 0%, #060914 100%);
+            border-radius: 36px;
+            overflow: hidden;
+            cursor: grab;
+            user-select: none;
+            box-shadow: inset 0 0 40px rgba(0,0,0,0.5);
         }
-        .btn-action:hover { border-color: var(--text); }
-        .btn-action.btn-revoke:hover { border-color: var(--red); color: var(--red); }
-        .btn-action.btn-unrevoke:hover { border-color: var(--green); color: var(--green); }
-        .btn-action.btn-delete:hover { border-color: var(--red); color: var(--red); }
 
-        .empty-row {
+        .canvas-wrapper:active {
+            cursor: grabbing;
+        }
+
+        #interactiveCanvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        .stage-overlay-tip {
+            position: absolute;
+            bottom: 18px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(10, 16, 36, 0.85);
+            color: #dffbf8;
+            backdrop-filter: blur(10px);
+            padding: 8px 20px;
+            border-radius: 30px;
+            font-size: 13px;
+            font-weight: 600;
+            border: 1px solid rgba(37, 244, 238, 0.3);
+            pointer-events: none;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            z-index: 5;
+        }
+
+        .stage-stats-badges {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            pointer-events: none;
+            z-index: 5;
+        }
+
+        .stage-stat-item {
+            background: rgba(8, 14, 34, 0.75);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #fff;
+            padding: 5px 14px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 700;
+            backdrop-filter: blur(6px);
+        }
+
+        /* SECTIONS COMMON */
+        .section-container {
+            max-width: var(--page-max-width);
+            margin: 0 auto;
+            padding: 60px 24px;
+        }
+
+        .section-header {
             text-align: center;
-            padding: 30px;
-            color: var(--text-dim);
+            margin-bottom: 48px;
+        }
+
+        .section-tag {
+            display: inline-block;
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            color: var(--color-fresh-grass);
+            margin-bottom: 8px;
+        }
+
+        .section-title {
+            font-size: clamp(28px, 4.2vw, 53px);
+            font-weight: 700;
+            letter-spacing: -0.03em;
+            line-height: 1.1;
+            color: var(--color-ink-black);
+        }
+
+        .section-desc {
+            font-size: 17px;
+            color: var(--color-stone-gray);
+            max-width: 640px;
+            margin: 12px auto 0;
+        }
+
+        /* GAMES SHOWCASE GRID */
+        .games-grid {
+            display: grid;
+            grid-template-columns: repeat(12, 1fr);
+            gap: 28px;
+        }
+
+        /* FEATURED STAR GAME CARD (ORBIT) */
+        .game-card-featured {
+            grid-column: span 12;
+            background-color: var(--color-pure-white);
+            border-radius: var(--radius-cards);
+            border: 1px solid var(--color-hairline-mist);
+            padding: 42px 48px;
+            display: grid;
+            grid-template-columns: 1.2fr 0.8fr;
+            gap: 36px;
+            align-items: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        @media (max-width: 860px) {
+            .game-card-featured {
+                grid-template-columns: 1fr;
+                padding: 32px 24px;
+            }
+        }
+
+        .game-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 700;
+            background-color: #f1fbe9;
+            color: #276310;
+            border: 1px solid var(--color-fresh-grass);
+            margin-bottom: 14px;
+        }
+
+        .game-title {
+            font-size: clamp(26px, 3.2vw, 38px);
+            font-weight: 800;
+            letter-spacing: -0.03em;
+            color: var(--color-ink-black);
+            margin-bottom: 12px;
+        }
+
+        .game-desc {
+            font-size: 16px;
+            line-height: 1.6;
+            color: var(--color-ink-black);
+            margin-bottom: 24px;
+        }
+
+        .game-feature-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 28px;
+        }
+
+        .game-tag-pill {
+            background-color: var(--color-cream-paper);
+            color: var(--color-ink-black);
+            padding: 6px 14px;
+            border-radius: var(--radius-pill);
+            font-size: 13px;
+            font-weight: 600;
+            border: 1px solid var(--color-sandstone);
+        }
+
+        .orbit-visual-box {
+            background: linear-gradient(135deg, #090e21, #131c3b);
+            border-radius: var(--radius-illustration);
+            padding: 36px;
+            color: #fff;
+            position: relative;
+            border: 2px solid #25f4ee33;
+            box-shadow: 6px 6px 0 var(--color-sandstone);
+            text-align: center;
+        }
+
+        .orbit-circles-art {
+            width: 140px;
+            height: 140px;
+            margin: 0 auto 20px;
+            border-radius: 50%;
+            border: 3px dashed rgba(37, 244, 238, 0.4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            animation: rotateOrbit 16s linear infinite;
+        }
+
+        @keyframes rotateOrbit {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .orbit-center-ball {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: radial-gradient(circle, #fe2c55, #a30e2f);
+            box-shadow: 0 0 25px rgba(254, 44, 85, 0.8);
+        }
+
+        .orbit-sub-ball {
+            position: absolute;
+            top: 5px;
+            left: 5px;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: radial-gradient(circle, #25f4ee, #0b807c);
+            box-shadow: 0 0 15px rgba(37, 244, 238, 0.8);
+        }
+
+        /* REGULAR GAME CARDS */
+        .game-card-half {
+            grid-column: span 6;
+            background-color: var(--color-pure-white);
+            border-radius: var(--radius-cards);
+            border: 1px solid var(--color-hairline-mist);
+            padding: 36px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        @media (max-width: 760px) {
+            .game-card-half {
+                grid-column: span 12;
+            }
+        }
+
+        .game-card-header {
+            margin-bottom: 20px;
+        }
+
+        .game-card-header h3 {
+            font-size: 26px;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+            margin-top: 8px;
+        }
+
+        .feature-bullets {
+            list-style: none;
+            margin: 18px 0 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .feature-bullets li {
+            font-size: 14px;
+            color: var(--color-ink-black);
+            display: flex;
+            align-items: center;
+            gap: 9px;
+        }
+
+        .feature-bullets li::before {
+            content: "•";
+            color: var(--color-fresh-grass);
+            font-size: 20px;
+            line-height: 0;
+        }
+
+        /* UPCOMING GAMES TEASER CARD */
+        .upcoming-games-card {
+            grid-column: span 12;
+            background-color: #f0ecdf;
+            border-radius: var(--radius-cards);
+            border: 2px dashed var(--color-sandstone);
+            padding: 38px 44px;
+            text-align: center;
+        }
+
+        .upcoming-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 18px;
+            margin-top: 24px;
+        }
+
+        .upcoming-item {
+            background-color: var(--color-pure-white);
+            padding: 20px;
+            border-radius: 24px;
+            border: 1px solid var(--color-hairline-mist);
+            text-align: left;
+        }
+
+        .upcoming-item strong {
+            display: block;
+            font-size: 17px;
+            margin: 8px 0 4px;
+            color: var(--color-ink-black);
+        }
+
+        .upcoming-item p {
+            font-size: 13px;
+            color: var(--color-stone-gray);
+        }
+
+        /* INTERACTIVE FORMS HUB (LISANS & SORU/ONERI) */
+        .interactive-hub {
+            background-color: var(--color-pure-white);
+            border-radius: var(--radius-cards);
+            border: 1px solid var(--color-hairline-mist);
+            padding: 48px;
+            max-width: 860px;
+            margin: 0 auto;
+            box-shadow: 0 4px 20px rgba(44,46,42,0.03);
+        }
+
+        @media (max-width: 600px) {
+            .interactive-hub {
+                padding: 28px 20px;
+            }
+        }
+
+        .form-tabs {
+            display: flex;
+            background-color: var(--color-cream-paper);
+            border-radius: var(--radius-pill);
+            padding: 5px;
+            margin-bottom: 32px;
+            border: 1px solid var(--color-hairline-mist);
+        }
+
+        .form-tab-btn {
+            flex: 1;
+            padding: 12px 18px;
+            border: none;
+            background: transparent;
+            font-family: var(--font-inter);
+            font-size: 14px;
+            font-weight: 600;
+            border-radius: var(--radius-pill);
+            cursor: pointer;
+            color: var(--color-stone-gray);
+            transition: all 0.2s ease;
+        }
+
+        .form-tab-btn.active {
+            background-color: var(--color-pure-white);
+            color: var(--color-ink-black);
+            font-weight: 700;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+
+        .input-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+
+        @media (max-width: 600px) {
+            .input-row { grid-template-columns: 1fr; }
+        }
+
+        .form-field {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            margin-bottom: 16px;
+        }
+
+        .form-field label {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--color-ink-black);
+        }
+
+        .form-input, .form-select, .form-textarea {
+            width: 100%;
+            padding: 14px 18px;
+            border-radius: 16px;
+            border: 1px solid var(--color-hairline-mist);
+            background-color: var(--color-cream-paper);
+            font-family: var(--font-inter);
+            font-size: 15px;
+            color: var(--color-ink-black);
+            outline: none;
+            transition: all 0.2s ease;
+        }
+
+        .form-input:focus, .form-select:focus, .form-textarea:focus {
+            background-color: var(--color-pure-white);
+            border-color: var(--color-ink-black);
+        }
+
+        .btn-submit-action {
+            width: 100%;
+            padding: 17px 28px;
+            border-radius: var(--radius-buttons);
+            background-color: var(--color-ink-black);
+            color: var(--color-pure-white);
+            border: none;
+            font-family: var(--font-inter);
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            transition: all 0.2s ease;
+            margin-top: 8px;
+        }
+
+        .btn-submit-action:hover {
+            background-color: #171815;
+            transform: translateY(-1px);
+        }
+
+        .response-box {
+            display: none;
+            margin-top: 18px;
+            padding: 16px;
+            border-radius: 16px;
+            font-size: 14px;
+            font-weight: 600;
+            text-align: center;
+            background-color: #f1fbe9;
+            color: #276310;
+            border: 1px solid var(--color-fresh-grass);
+        }
+
+        /* MINDMARKET SUNSHINE FOOTER ACCENT BAND */
+        .footer-sunshine-band {
+            background-color: var(--color-sunshine-pop);
+            padding: 34px 24px;
+            margin-top: 80px;
+            border-top: 2px solid var(--color-sandstone);
+        }
+
+        .footer-sunshine-inner {
+            max-width: var(--page-max-width);
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 20px;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--color-ink-black);
+        }
+
+        .footer-links {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .footer-links a {
+            color: var(--color-ink-black);
+            text-decoration: none;
+            border-bottom: 1px solid rgba(44,46,42,0.3);
+        }
+
+        .footer-links a:hover {
+            border-bottom-color: var(--color-ink-black);
         }
     </style>
 </head>
 <body>
 
-    <!-- GİRİŞ EKRANI -->
-    <div id="loginPage">
-        <div class="login-box">
-            <div class="login-logo">🔐</div>
-            <div class="login-title">Yönetici Girişi</div>
-            <div class="login-sub">MNG TikTok Game Yönetim Paneli</div>
-            
-            <input type="password" id="adminPassword" class="login-input" placeholder="Yönetici Şifreniz" onkeydown="if(event.key==='Enter') login()">
-            <button class="btn-primary" onclick="login()">Giriş Yap</button>
-            <div id="loginError" class="login-error">Hatalı şifre! Lütfen tekrar deneyin.</div>
-        </div>
+    <!-- FLOATING PILL NAVBAR -->
+    <div class="nav-wrapper">
+        <nav class="nav-pill">
+            <a href="/" class="brand-logo">
+                <div class="brand-badge">🎮</div>
+                <span>MNG TikTok Game</span>
+            </a>
+            <ul class="nav-links">
+                <li><a href="#arena" class="nav-link">Canlı Yörünge</a></li>
+                <li><a href="#oyunlar" class="nav-link">Oyunlarımız</a></li>
+                <li><a href="#yenilikler" class="nav-link">Yenilikler (v1.9.1)</a></li>
+                <li><a href="#talep" class="nav-link">Lisans & Talepler</a></li>
+                <li><a href="#sorular" class="nav-link">Soru & Öneri</a></li>
+            </ul>
+            <div class="nav-actions">
+                <a href="/admin" class="btn-nav-admin">
+                    <span>🔐</span> Yönetici Girişi
+                </a>
+            </div>
+        </nav>
     </div>
 
-    <!-- YÖNETİM PANELİ -->
-    <div id="adminPanel">
-        <header class="header">
-            <div class="header-title">
-                <span>🎮 MNG TikTok Game</span>
-                <span class="badge-live">Yönetici Paneli</span>
+    <!-- HERO SECTION -->
+    <section class="hero-section">
+        <div class="chips-row">
+            <div class="chip highlight">
+                <span class="chip-dot"></span>
+                <span>v1.9.1 Güncellemesi Canlıda</span>
             </div>
-            <div class="header-actions">
-                <a href="/" target="_blank" class="btn-top">🌐 Web Sitesini Aç</a>
-                <button class="btn-top logout" onclick="logout()">Çıkış ✕</button>
+            <div class="chip">
+                <span>⚡ Sıfır Kurulum Zahmeti</span>
             </div>
-        </header>
+            <div class="chip">
+                <span>🛡️ Windows 10 & 11 Uyumlu</span>
+            </div>
+        </div>
 
-        <div class="main">
-            <!-- İSTATİSTİKLER -->
-            <div class="stats-grid">
-                <div class="stat-card">
-                    <div class="stat-label">Toplam Lisans</div>
-                    <div class="stat-val" id="statToplam">0</div>
+        <h1 class="hero-display-title">
+            TikTok Canlı Yayınlarınızı <br>
+            <span class="accent-text">Özel Yayıncı Oyunlarıyla</span> Zirveye Taşıyın
+        </h1>
+
+        <p class="hero-subhead">
+            Yayıncılarımızın canlı yayın etkileşimini, takipçilerini ve hediyelerini katlayan profesyonel Windows masaüstü oyun paketi. Tek tıkla TikTok hesabına bağlanır, OBS ile kusursuz çalışır.
+        </p>
+
+        <div class="hero-cta-box" id="indir">
+            <a href="https://drive.google.com/file/d/1g-dEVnq_8ksvCTuHq9q7Ur-MGiFBpzND/view?usp=sharing" target="_blank" class="btn-download-hero">
+                <span class="btn-dot-indicator"></span>
+                <span>Windows İçin İndir (Setup 1.9.1.exe)</span>
+                <span>⬇️</span>
+            </a>
+            <div class="download-meta">
+                <span>Resmi Paket: <strong>v1.9.1</strong></span>
+                <span>•</span>
+                <span>MNG Orbit Arena, TikTok VS & Puanlama Dahil</span>
+            </div>
+            <a href="https://drive.google.com/file/d/1g-dEVnq_8ksvCTuHq9q7Ur-MGiFBpzND/view?usp=sharing" target="_blank" class="direct-drive-link">
+                Alternatif Bağlantı: Google Drive Üzerinden Doğrudan İndir
+            </a>
+        </div>
+
+        <!-- ======================================================== -->
+        <!-- OYNANABİLİR & SCROLL İLE HAREKET EDEN YÖRÜNGE ARENASI -->
+        <!-- ======================================================== -->
+        <div class="interactive-stage-container" id="arena">
+            <div class="stage-header-bar">
+                <div class="stage-interactive-pill">
+                    <span style="font-size:14px;">🎮</span>
+                    <span>Canlı İnteraktif Yörünge Simülatörü</span>
                 </div>
-                <div class="stat-card">
-                    <div class="stat-label">Aktif Kullanımda</div>
-                    <div class="stat-val aktif" id="statAktif">0</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-label">Beklemede</div>
-                    <div class="stat-val beklemede" id="statBeklemede">0</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-label">İptal Edildi</div>
-                    <div class="stat-val iptal" id="statIptal">0</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-label">Gelen Talep & Soru/Öneri</div>
-                    <div class="stat-val talep" id="statTalep">0</div>
-                </div>
+                <div>Fareyi gezdir • Tıkla hediye fırlat • Tekerlekle kaydır!</div>
             </div>
 
-            <!-- YENİ LİSANS OLUŞTUR -->
-            <div class="create-card">
-                <div class="section-title">🔑 Yeni Lisans Kodu Oluştur</div>
-                
-                <div class="duration-group-label">⚡ HIZLI DENEME SÜRELERİ (DAKİKA BAZLI):</div>
-                <div class="duration-buttons">
-                    <button class="dur-btn quick" onclick="selectDuration('dakika', 1, this)">⚡ 1 Dakika (Test)</button>
-                    <button class="dur-btn quick" onclick="selectDuration('dakika', 10, this)">⚡ 10 Dakika</button>
-                    <button class="dur-btn quick" onclick="selectDuration('dakika', 20, this)">⚡ 20 Dakika</button>
+            <div class="canvas-wrapper" id="canvasWrapper">
+                <div class="stage-stats-badges">
+                    <div class="stage-stat-item" id="stageSpeedBadge">⚡ Yörünge Hızı: 1.0x</div>
+                    <div class="stage-stat-item" id="stageMassBadge">🪐 Toplam Arena Kütlesi: 12,450</div>
                 </div>
 
-                <div class="duration-group-label">📅 STANDART & SINIRSIZ PAKETLER (GÜN BAZLI):</div>
-                <div class="duration-buttons">
-                    <button class="dur-btn" onclick="selectDuration('gun', 1, this)">1 Günlük</button>
-                    <button class="dur-btn" onclick="selectDuration('gun', 3, this)">3 Günlük</button>
-                    <button class="dur-btn active" onclick="selectDuration('gun', 7, this)">7 Günlük (Standart)</button>
-                    <button class="dur-btn" onclick="selectDuration('gun', 30, this)">30 Günlük (Aylık)</button>
-                    <button class="dur-btn" onclick="selectDuration('sinirsiz', -1, this)">♾️ Sınırsız Lisans</button>
-                </div>
+                <canvas id="interactiveCanvas"></canvas>
 
-                <div class="form-row">
-                    <input type="text" id="licenseNote" class="form-input" placeholder="Müşteri Adı / Not Açıklaması (Örn: Mehmet - TikTok Canlı)">
-                    <button class="btn-create" onclick="createLicense()">+ Lisansı Oluştur</button>
+                <div class="stage-overlay-tip">
+                    <span>🖱️</span>
+                    <span>Aşağı kaydırdıkça yörünge hareket eder & hızlanır • Tıklayarak hediye bırak!</span>
                 </div>
+            </div>
+        </div>
+    </section>
 
-                <div class="new-license-box" id="newLicenseBox">
-                    <div>
-                        <div style="font-size:12px; color:var(--text-dim); margin-bottom:4px;">YENİ OLUŞTURULAN LİSANS KODU:</div>
-                        <div class="new-code" id="newLicenseCode"></div>
-                        <div style="font-size:11px; color:var(--text-dim); margin-top:2px;" id="newLicenseDesc"></div>
+    <!-- OYUNLARIMIZ BÖLÜMÜ -->
+    <section class="section-container" id="oyunlar">
+        <div class="section-header">
+            <span class="section-tag">Yayıncılarımız İçin Özel Paket</span>
+            <h2 class="section-title">Canlı Yayınlarınıza Özel 3 Dev Oyun</h2>
+            <p class="section-desc">Her oyun TikTok canlı yayın verilerini anlık okur; hediyeler, beğeniler ve takipler doğrudan oyunun gidişatını belirler.</p>
+        </div>
+
+        <div class="games-grid">
+            <!-- 1. MNG ORBIT ARENA (YILDIZ OYUN) -->
+            <article class="game-card-featured">
+                <div>
+                    <div class="game-badge">🌟 Yeni Nesil Canlı Arena</div>
+                    <h3 class="game-title">MNG Orbit: Yörünge Arenası</h3>
+                    <p class="game-desc">
+                        Yayıncıların en çok beğendiği, arena mantığıyla çalışan canlı etkileşim oyunu! Takip edenler ve beğeni atanlar kendi gezegen baloncuklarıyla haritaya doğar. İzleyicilerin gönderdiği TikTok hediyeleri baloncukları büyütür, büyükler küçükleri içine çeker ve yutar.
+                    </p>
+                    <div class="game-feature-tags">
+                        <span class="game-tag-pill">⚡ 0 ms Gecikmesiz Yutma Sesi</span>
+                        <span class="game-tag-pill">💥 Money Gun ile Haritayı Parçalama</span>
+                        <span class="game-tag-pill">🏆 Dev Kazanan Şampiyon Ekranı</span>
+                        <span class="game-tag-pill">📺 OBS Tarayıcı Widget Desteği</span>
+                        <span class="game-tag-pill">⏱️ 5 Dakikalık Canlı Tur Süresi</span>
                     </div>
-                    <button class="btn-copy" onclick="copyNewCode()">Kopyala 📋</button>
+                    <a href="#indir" class="btn-nav-admin" style="display:inline-flex;">
+                        <span>Oyunu Oynamaya Başla</span> ➔
+                    </a>
+                </div>
+                <div class="orbit-visual-box">
+                    <div class="orbit-circles-art">
+                        <div class="orbit-sub-ball"></div>
+                        <div class="orbit-center-ball"></div>
+                    </div>
+                    <h4 style="font-size:18px; margin-bottom:6px;">Canlı Yörünge Fiziği</h4>
+                    <p style="font-size:13px; opacity:0.8;">Takip: 250 Kütle • Beğeni: Büyüme • Hediye: Dev Patlama</p>
+                </div>
+            </article>
+
+            <!-- 2. TIKTOK VS PROFIL -->
+            <article class="game-card-half">
+                <div class="game-card-header">
+                    <span class="game-tag-pill">⚔️ Rekabet & Düello</span>
+                    <h3>TikTok VS Profil</h3>
+                    <p style="font-size:15px; color:var(--color-stone-gray); margin-top:8px;">
+                        İki TikTok profilini veya yayıncıyı canlı yayında ringe çıkartın! İzleyicilerinizin attığı hediyelerle profiller puan kazanır, tur sonunda kazanan belirlenir.
+                    </p>
+                    <ul class="feature-bullets">
+                        <li>Otomatik ultra yüksek çözünürlüklü avatar çekme</li>
+                        <li>Canlı hediye & coin sayacı senkronizasyonu</li>
+                        <li>Tur süresi geri sayımı ve tur sonu kazanan animasyonu</li>
+                        <li>OBS Studio için şeffaf tarayıcı kaynağı widget'ı</li>
+                    </ul>
+                </div>
+                <a href="#talep" class="btn-nav-admin" style="align-self:flex-start;">Lisans Al & Başla ➔</a>
+            </article>
+
+            <!-- 3. PROFIL PUANLAMA -->
+            <article class="game-card-half">
+                <div class="game-card-header">
+                    <span class="game-tag-pill">⭐ Chat Oylaması</span>
+                    <h3>Profil Puanlama</h3>
+                    <p style="font-size:15px; color:var(--color-stone-gray); margin-top:8px;">
+                        Canlı yayına katılan izleyicilerin profillerini ekrana yansıtın; chate yazılan 0-10 arası notları yapay zeka ve sistem anında toplayıp ortalama hesaplasın!
+                    </p>
+                    <ul class="feature-bullets">
+                        <li>Canlı chatten gelen puanları filtreleyip anlık ortalama alma</li>
+                        <li>Oy veren kullanıcıların canlı listesi ve katılım grafiği</li>
+                        <li>Yayıncıya özel puanlama süresi ve başlat/durdur butonları</li>
+                        <li>Yüksek izleyici katılımı ve chat hareketliliği sağlar</li>
+                    </ul>
+                </div>
+                <a href="#talep" class="btn-nav-admin" style="align-self:flex-start;">Lisans Al & Başla ➔</a>
+            </article>
+
+            <!-- 4. YAKINDA GELECEK YENİ OYUNLAR -->
+            <div class="upcoming-games-card" id="yenilikler">
+                <span class="section-tag">Ar-Ge & Geliştirme Laboratuvarı</span>
+                <h3 style="font-size:26px; font-weight:800; color:var(--color-ink-black);">Yakında Gelecek Yeni Oyunlar</h3>
+                <p style="font-size:15px; color:var(--color-stone-gray); max-width:620px; margin:8px auto 0;">
+                    Yayıncılarımız için sürekli yeni eğlenceli oyunlar geliştiriyoruz. Bu oyunlar çok yakında tek tıkla güncelleme ile launcher'ınıza eklenecek!
+                </p>
+                <div class="upcoming-grid">
+                    <div class="upcoming-item">
+                        <span style="font-size:24px;">🎁</span>
+                        <strong>Canlı Kutu Açılımı</strong>
+                        <p>İzleyicilerin hediyeleriyle sandıklar açılır, içinden sürpriz ödüller ve efektler fırlar.</p>
+                    </div>
+                    <div class="upcoming-item">
+                        <span style="font-size:24px;">🎡</span>
+                        <strong>Hediye Çarkıfeleği</strong>
+                        <p>Yayıncının belirlediği görevler veya hediye eşikleriyle dönen canlı yayın şans çarkı.</p>
+                    </div>
+                    <div class="upcoming-item">
+                        <span style="font-size:24px;">🧠</span>
+                        <strong>Chat Kelime & Trivia</strong>
+                        <p>Chatten doğru cevabı en hızlı yazan izleyicinin ekranda yıldızlaştığı canlı bilgi yarışması.</p>
+                    </div>
                 </div>
             </div>
-
-            <!-- SEKMELER -->
-            <div class="tabs">
-                <button class="tab-btn active" id="tabBtnLicenses" onclick="switchTab('licenses')">📋 Lisanslar Listesi</button>
-                <button class="tab-btn" id="tabBtnRequests" onclick="switchTab('requests')">📬 Gelen Talepler, Sorular & Öneriler (<span id="reqCountBadge">0</span>)</button>
-            </div>
-
-            <!-- LİSANS TABLOSU -->
-            <div class="list-card" id="tabLicenses">
-                <div class="list-header">
-                    <div class="section-title" style="margin-bottom:0;">Mevcut Lisanslar</div>
-                    <input type="text" id="searchInput" class="search-box" placeholder="Kod veya not ile filtrele..." oninput="renderTable()">
-                </div>
-
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Lisans Kodu</th>
-                            <th>Paket Süresi</th>
-                            <th>Durum</th>
-                            <th>Kalan Süre</th>
-                            <th>Cihaz</th>
-                            <th>Müşteri / Not</th>
-                            <th>İşlemler</th>
-                        </tr>
-                    </thead>
-                    <tbody id="licensesTableBody">
-                        <tr><td colspan="7" class="empty-row">Yükleniyor...</td></tr>
-                    </tbody>
-                </table>
-            </div>
-
-            <!-- TALEPLER, SORULAR & ÖNERİLER TABLOSU -->
-            <div class="list-card" id="tabRequests" style="display:none;">
-                <div class="list-header">
-                    <div class="section-title" style="margin-bottom:0;">Web Sitesinden Gelen Talepler, Sorular ve Öneriler</div>
-                </div>
-
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Tarih</th>
-                            <th>Tür</th>
-                            <th>Ad Soyad</th>
-                            <th>İletişim (Tel/WP)</th>
-                            <th>TikTok Kullanıcı</th>
-                            <th>Mesaj / Soru / Öneri</th>
-                            <th>İşlem</th>
-                        </tr>
-                    </thead>
-                    <tbody id="requestsTableBody">
-                        <tr><td colspan="7" class="empty-row">Henüz gelen talep, soru veya öneri yok.</td></tr>
-                    </tbody>
-                </table>
-            </div>
-
         </div>
-    </div>
+    </section>
 
+    <!-- ETKİLEŞİMLİ FORM MERKEZİ: LİSANS TALEBİ & SORULAR/ÖNERİLER -->
+    <section class="section-container" id="talep">
+        <div class="section-header">
+            <span class="section-tag">İletişim & Talep Merkezi</span>
+            <h2 class="section-title">Lisans Alın veya Bize Yazın</h2>
+            <p class="section-desc">Uygulamayı hemen kullanmaya başlamak için lisans talep edebilir, yeni oyun fikirlerinizi veya sorularınızı doğrudan yönetici panelimize iletebilirsiniz.</p>
+        </div>
+
+        <div class="interactive-hub" id="sorular">
+            <!-- TABS -->
+            <div class="form-tabs">
+                <button type="button" class="form-tab-btn active" id="tabBtnLisans" onclick="switchFormTab('lisans')">
+                    🔑 Lisans Anahtarı Talep Et
+                </button>
+                <button type="button" class="form-tab-btn" id="tabBtnSoruOneri" onclick="switchFormTab('soru_oneri')">
+                    💡 Soru Sor veya Öneri Bırak
+                </button>
+            </div>
+
+            <!-- FORM -->
+            <form id="universalForm" onsubmit="handleFormSubmit(event)">
+                <input type="hidden" id="formType" value="lisans">
+
+                <div class="input-row">
+                    <div class="form-field">
+                        <label for="formName">Adınız Soyadınız *</label>
+                        <input type="text" id="formName" class="form-input" placeholder="Örn: Ahmet Yılmaz" required>
+                    </div>
+                    <div class="form-field">
+                        <label for="formContact">İletişim (WhatsApp / Telefon) *</label>
+                        <input type="text" id="formContact" class="form-input" placeholder="05XX XXX XX XX" required>
+                    </div>
+                </div>
+
+                <div class="input-row">
+                    <div class="form-field">
+                        <label for="formTiktok">TikTok Kullanıcı Adınız (İsteğe Bağlı)</label>
+                        <input type="text" id="formTiktok" class="form-input" placeholder="@kullaniciadiniz">
+                    </div>
+                    <div class="form-field" id="topicField" style="display:none;">
+                        <label for="formTopic">Konu Türü</label>
+                        <select id="formTopic" class="form-select">
+                            <option value="oneri">💡 Yeni Oyun veya Özellik Önerisi</option>
+                            <option value="soru">❓ Kurulum veya Genel Soru</option>
+                            <option value="hata">🛠️ Hata Bildirimi</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-field">
+                    <label id="formMessageLabel" for="formMessage">Talep Ettiğiniz Süre veya Notunuz</label>
+                    <textarea id="formMessage" class="form-textarea" rows="3" placeholder="Örn: 3 günlük deneme lisansı istiyorum veya yayın bilgilerim..."></textarea>
+                </div>
+
+                <button type="submit" class="btn-submit-action" id="btnSubmitForm">
+                    <span id="btnSubmitText">Lisans Talebini Gönder</span>
+                    <span>➔</span>
+                </button>
+            </form>
+
+            <div class="response-box" id="formResponseBox"></div>
+        </div>
+    </section>
+
+    <!-- SUNSHINE POP CLOSING FOOTER BAND -->
+    <footer class="footer-sunshine-band">
+        <div class="footer-sunshine-inner">
+            <div>
+                <strong>MNG TikTok Game</strong> • © 2024 Tüm hakları saklıdır.
+            </div>
+            <div class="footer-links">
+                <a href="#indir">Windows İndir</a>
+                <a href="#oyunlar">Oyunlarımız</a>
+                <a href="#talep">Lisans Talebi</a>
+                <a href="/admin">Yönetici Paneli</a>
+            </div>
+        </div>
+    </footer>
+
+    <!-- INTERACTION LOGIC & PLAYABLE SCROLL-REACTIVE CANVAS SIMULATOR -->
     <script>
-        let adminToken = localStorage.getItem("mng_admin_token");
-        let selectedBirim = "gun";
-        let selectedMiktar = 7;
-        let allLicenses = [];
-        let allRequests = [];
+        // TAB DEĞİŞİMİ
+        function switchFormTab(type) {
+            const tabLisans = document.getElementById("tabBtnLisans");
+            const tabSoruOneri = document.getElementById("tabBtnSoruOneri");
+            const formTypeInput = document.getElementById("formType");
+            const topicField = document.getElementById("topicField");
+            const msgLabel = document.getElementById("formMessageLabel");
+            const msgInput = document.getElementById("formMessage");
+            const btnText = document.getElementById("btnSubmitText");
+            const responseBox = document.getElementById("formResponseBox");
 
-        window.onload = () => {
-            if (adminToken) {
-                checkAuthAndLoad();
+            responseBox.style.display = "none";
+
+            if (type === "lisans") {
+                tabLisans.classList.add("active");
+                tabSoruOneri.classList.remove("active");
+                formTypeInput.value = "lisans";
+                topicField.style.display = "none";
+                msgLabel.textContent = "Talep Ettiğiniz Süre veya Notunuz";
+                msgInput.placeholder = "Örn: 3 günlük deneme lisansı istiyorum veya yayın bilgilerim...";
+                btnText.textContent = "Lisans Talebini Gönder";
             } else {
-                showLogin();
+                tabSoruOneri.classList.add("active");
+                tabLisans.classList.remove("active");
+                formTypeInput.value = "soru_oneri";
+                topicField.style.display = "flex";
+                msgLabel.textContent = "Mesajınız / Öneriniz / Sorunuz *";
+                msgInput.placeholder = "Yeni bir oyun fikriniz, yayıncı öneriniz veya sormak istediğiniz bir şey...";
+                btnText.textContent = "Mesajı Yöneticiye İlet";
             }
-        };
-
-        function showLogin() {
-            document.getElementById("loginPage").style.display = "flex";
-            document.getElementById("adminPanel").style.display = "none";
         }
 
-        function showPanel() {
-            document.getElementById("loginPage").style.display = "none";
-            document.getElementById("adminPanel").style.display = "block";
-            loadData();
-        }
+        async function handleFormSubmit(e) {
+            e.preventDefault();
+            const btn = document.getElementById("btnSubmitForm");
+            const btnText = document.getElementById("btnSubmitText");
+            const responseBox = document.getElementById("formResponseBox");
+            const formType = document.getElementById("formType").value;
+            const topic = document.getElementById("formTopic").value;
 
-        async function login() {
-            const pw = document.getElementById("adminPassword").value.trim();
-            const err = document.getElementById("loginError");
-            err.style.display = "none";
+            btn.disabled = true;
+            const originalText = btnText.textContent;
+            btnText.textContent = "İletiliyor...";
 
-            if (!pw) return;
+            const tur = formType === "lisans" ? "lisans" : (topic || "oneri");
+
+            const payload = {
+                ad: document.getElementById("formName").value,
+                iletisim: document.getElementById("formContact").value,
+                tiktok_kullanici: document.getElementById("formTiktok").value,
+                mesaj: document.getElementById("formMessage").value,
+                tur: tur,
+                konu: formType === "lisans" ? "Lisans Talebi" : document.getElementById("formTopic").options[document.getElementById("formTopic").selectedIndex].text
+            };
 
             try {
-                const res = await fetch("/api/admin/giris", {
+                const res = await fetch("/api/talep-gonder", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ sifre: pw })
+                    body: JSON.stringify(payload)
                 });
-
                 const data = await res.json();
-                if (data.token) {
-                    adminToken = data.token;
-                    localStorage.setItem("mng_admin_token", adminToken);
-                    showPanel();
+                if (data.basarili) {
+                    responseBox.style.display = "block";
+                    responseBox.textContent = "✓ " + (data.mesaj || "Başarıyla iletildi!");
+                    document.getElementById("universalForm").reset();
+                    btnText.textContent = "İletildi ✓";
+                    setTimeout(() => {
+                        btn.disabled = false;
+                        btnText.textContent = originalText;
+                    }, 4000);
                 } else {
-                    err.style.display = "block";
+                    alert(data.error || "Hata oluştu.");
+                    btn.disabled = false;
+                    btnText.textContent = originalText;
                 }
-            } catch (e) {
-                err.textContent = "Sunucuya bağlanılamadı!";
-                err.style.display = "block";
+            } catch (err) {
+                alert("Bağlantı hatası: " + err.message);
+                btn.disabled = false;
+                btnText.textContent = originalText;
             }
         }
 
-        function logout() {
-            localStorage.removeItem("mng_admin_token");
-            adminToken = null;
-            showLogin();
-        }
+        // =========================================================
+        // OYNANABİLİR & FARE TEKERLEĞİ (SCROLL) ETKİLEŞİMLİ CANVAS
+        // =========================================================
+        (function initInteractiveArena() {
+            const canvas = document.getElementById("interactiveCanvas");
+            if (!canvas) return;
+            const ctx = canvas.getContext("2d");
+            const wrapper = document.getElementById("canvasWrapper");
+            const speedBadge = document.getElementById("stageSpeedBadge");
+            const massBadge = document.getElementById("stageMassBadge");
 
-        async function checkAuthAndLoad() {
-            try {
-                const res = await fetch("/api/admin/istatistikler", {
-                    headers: { "X-Admin-Token": adminToken }
+            let width, height;
+            function resize() {
+                width = canvas.width = wrapper.clientWidth;
+                height = canvas.height = wrapper.clientHeight;
+            }
+            window.addEventListener("resize", resize);
+            resize();
+
+            // Simülasyon Durumu
+            let scrollMomentum = 1.0;
+            let targetSpeed = 1.0;
+            let angleBase = 0;
+            let mouseX = width / 2;
+            let mouseY = height / 2;
+            let isHovered = false;
+            let totalMass = 12450;
+
+            // Oyuncu Gezegen Baloncukları
+            const players = [
+                { name: "Canlı Yayıncı", color: "#fe2c55", radius: 36, orbitRadius: 90, speed: 0.015, angle: 0, avatar: "👑" },
+                { name: "Yörünge Kralı", color: "#25f4ee", radius: 28, orbitRadius: 155, speed: -0.011, angle: 1.2, avatar: "⭐" },
+                { name: "Takip Şampiyonu", color: "#8ed462", radius: 24, orbitRadius: 210, speed: 0.009, angle: 2.7, avatar: "🚀" },
+                { name: "Hediye Avcısı", color: "#f5e211", radius: 22, orbitRadius: 260, speed: -0.007, angle: 4.1, avatar: "🔥" },
+                { name: "Arena Yıldızı", color: "#ff705d", radius: 19, orbitRadius: 310, speed: 0.006, angle: 5.3, avatar: "⚡" }
+            ];
+
+            // Tıklayınca fırlatılan hediyeler
+            const floatingGifts = [];
+            const giftIcons = ["🌹", "🍩", "💸", "🦁", "💎", "💖"];
+
+            // FARE HAREKETİ
+            wrapper.addEventListener("mousemove", (e) => {
+                const rect = canvas.getBoundingClientRect();
+                mouseX = e.clientX - rect.left;
+                mouseY = e.clientY - rect.top;
+                isHovered = true;
+            });
+
+            wrapper.addEventListener("mouseleave", () => {
+                isHovered = false;
+                mouseX = width / 2;
+                mouseY = height / 2;
+            });
+
+            // TIKLAMA İLE OYNANABİLİRLİK (Hediye ve Balon Ekleme)
+            wrapper.addEventListener("click", (e) => {
+                const rect = canvas.getBoundingClientRect();
+                const clickX = e.clientX - rect.left;
+                const clickY = e.clientY - rect.top;
+                
+                const icon = giftIcons[Math.floor(Math.random() * giftIcons.length)];
+                floatingGifts.push({
+                    x: clickX,
+                    y: clickY,
+                    vx: (Math.random() - 0.5) * 4,
+                    vy: -Math.random() * 4 - 2,
+                    alpha: 1.0,
+                    icon: icon,
+                    size: 26,
+                    label: "+150 Kütle"
                 });
-                if (res.status === 200) {
-                    showPanel();
-                } else {
-                    logout();
+
+                totalMass += 150;
+                massBadge.textContent = "🪐 Toplam Arena Kütlesi: " + totalMass.toLocaleString("tr-TR");
+                targetSpeed += 0.4;
+            });
+
+            // SCROLL (MOUSE ORTA TEKERLEĞİ) İLE HAREKET ETME DİNAMİĞİ
+            let lastScrollY = window.scrollY;
+            window.addEventListener("scroll", () => {
+                const currentY = window.scrollY;
+                const delta = Math.abs(currentY - lastScrollY);
+                // Aşağı veya yukarı kaydırdıkça yörünge hızlanır ve açı değişir
+                targetSpeed = Math.min(4.5, 1.0 + delta * 0.08);
+                angleBase += (currentY - lastScrollY) * 0.005;
+                lastScrollY = currentY;
+            }, { passive: true });
+
+            // TEKERLEK DOĞRUDAN DÖNDÜRÜLDÜĞÜNDE
+            wrapper.addEventListener("wheel", (e) => {
+                targetSpeed = Math.min(5.0, targetSpeed + Math.abs(e.deltaY) * 0.006);
+                angleBase += e.deltaY * 0.002;
+            }, { passive: true });
+
+            // RENDER DÖNGÜSÜ
+            function loop() {
+                ctx.clearRect(0, 0, width, height);
+
+                // Hız sönümleme
+                scrollMomentum += (targetSpeed - scrollMomentum) * 0.05;
+                targetSpeed += (1.0 - targetSpeed) * 0.02;
+
+                speedBadge.textContent = "⚡ Yörünge Hızı: " + scrollMomentum.toFixed(1) + "x";
+
+                const centerX = width / 2;
+                const centerY = height / 2;
+
+                // Arka plan ızgara ve parıltı çizgileri
+                ctx.strokeStyle = "rgba(37, 244, 238, 0.07)";
+                ctx.lineWidth = 1;
+                for (let r = 80; r < Math.max(width, height); r += 65) {
+                    ctx.beginPath();
+                    ctx.arc(centerX, centerY, r, 0, Math.PI * 2);
+                    ctx.stroke();
                 }
-            } catch {
-                showPanel();
-            }
-        }
 
-        function selectDuration(birim, miktar, btn) {
-            selectedBirim = birim;
-            selectedMiktar = miktar;
-            document.querySelectorAll(".dur-btn").forEach(b => b.classList.remove("active"));
-            btn.classList.add("active");
-        }
+                // MERKEZ GÜNEŞ/ARENA GEZEGENİ
+                const pulse = Math.sin(Date.now() * 0.004) * 4;
+                const centerRadius = 46 + pulse;
 
-        function switchTab(tab) {
-            document.getElementById("tabBtnLicenses").classList.toggle("active", tab === 'licenses');
-            document.getElementById("tabBtnRequests").classList.toggle("active", tab === 'requests');
-            document.getElementById("tabLicenses").style.display = tab === 'licenses' ? 'block' : 'none';
-            document.getElementById("tabRequests").style.display = tab === 'requests' ? 'block' : 'none';
-        }
+                // Dış Halka
+                ctx.save();
+                ctx.beginPath();
+                ctx.arc(centerX, centerY, centerRadius + 14, 0, Math.PI * 2);
+                ctx.fillStyle = "rgba(254, 44, 85, 0.12)";
+                ctx.fill();
 
-        async function loadData() {
-            loadStats();
-            loadLicenses();
-            loadRequests();
-        }
+                // Merkez Gezegen Gradye
+                const centerGrad = ctx.createRadialGradient(centerX - 10, centerY - 10, 4, centerX, centerY, centerRadius);
+                centerGrad.addColorStop(0, "#ff5b79");
+                centerGrad.addColorStop(0.5, "#fe2c55");
+                centerGrad.addColorStop(1, "#8e0a24");
+                ctx.fillStyle = centerGrad;
+                ctx.beginPath();
+                ctx.arc(centerX, centerY, centerRadius, 0, Math.PI * 2);
+                ctx.fill();
 
-        async function loadStats() {
-            try {
-                const res = await fetch("/api/admin/istatistikler", {
-                    headers: { "X-Admin-Token": adminToken }
-                });
-                const data = await res.json();
-                document.getElementById("statToplam").textContent = data.toplam || 0;
-                document.getElementById("statAktif").textContent = data.aktif || 0;
-                document.getElementById("statBeklemede").textContent = data.beklemede || 0;
-                document.getElementById("statIptal").textContent = data.iptal || 0;
-                document.getElementById("statTalep").textContent = data.bekleyenTalep || 0;
-                document.getElementById("reqCountBadge").textContent = data.bekleyenTalep || 0;
-            } catch {}
-        }
+                ctx.strokeStyle = "#ffffff";
+                ctx.lineWidth = 2.5;
+                ctx.stroke();
 
-        async function loadLicenses() {
-            try {
-                const res = await fetch("/api/admin/lisanslar", {
-                    headers: { "X-Admin-Token": adminToken }
-                });
-                allLicenses = await res.json();
-                renderTable();
-            } catch {}
-        }
+                ctx.fillStyle = "#ffffff";
+                ctx.font = "800 13px Inter, sans-serif";
+                ctx.textAlign = "center";
+                ctx.textBaseline = "middle";
+                ctx.fillText("MNG ORBIT", centerX, centerY);
+                ctx.restore();
 
-        async function loadRequests() {
-            try {
-                const res = await fetch("/api/admin/talepler", {
-                    headers: { "X-Admin-Token": adminToken }
-                });
-                allRequests = await res.json();
-                renderRequestsTable();
-            } catch {}
-        }
+                // DÖNEN OYUNCU BALONCUKLARI
+                angleBase += 0.008 * scrollMomentum;
 
-        async function createLicense() {
-            const notlar = document.getElementById("licenseNote").value.trim();
-            try {
-                const res = await fetch("/api/admin/lisans-olustur", {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        "X-Admin-Token": adminToken
-                    },
-                    body: JSON.stringify({
-                        sure_birim: selectedBirim,
-                        sure_miktar: selectedMiktar,
-                        notlar: notlar
-                    })
-                });
-                const data = await res.json();
-                if (data.kod) {
-                    const box = document.getElementById("newLicenseBox");
-                    document.getElementById("newLicenseCode").textContent = data.kod;
-                    document.getElementById("newLicenseDesc").textContent = `(${data.sure_etiketi} - Süre müşteri ilk açtığında başlar)`;
-                    box.style.display = "flex";
-                    document.getElementById("licenseNote").value = "";
-                    loadData();
-                }
-            } catch (e) {
-                alert("Lisans oluşturulamadı: " + e.message);
-            }
-        }
+                players.forEach((p, idx) => {
+                    p.angle += p.speed * scrollMomentum;
+                    const curAngle = p.angle + angleBase * (idx % 2 === 0 ? 1 : -1);
 
-        function copyNewCode() {
-            const code = document.getElementById("newLicenseCode").textContent;
-            navigator.clipboard.writeText(code);
-            alert("Lisans kodu kopyalandı: " + code);
-        }
+                    // Parallaks ve mouse çekimi
+                    let x = centerX + Math.cos(curAngle) * p.orbitRadius;
+                    let y = centerY + Math.sin(curAngle) * (p.orbitRadius * 0.72); // Elips yörünge
 
-        async function revokeLicense(kod) {
-            if (!confirm(`'${kod}' lisansını iptal etmek istediğinize emin misiniz?`)) return;
-            try {
-                await fetch(`/api/admin/lisans/${kod}/iptal`, {
-                    method: "POST",
-                    headers: { "X-Admin-Token": adminToken }
-                });
-                loadData();
-            } catch (e) { alert("Hata: " + e.message); }
-        }
-
-        async function unrevokeLicense(kod) {
-            if (!confirm(`'${kod}' lisansını tekrar AKTİF etmek istiyor musunuz?`)) return;
-            try {
-                await fetch(`/api/admin/lisans/${kod}/aktif-et`, {
-                    method: "POST",
-                    headers: { "X-Admin-Token": adminToken }
-                });
-                loadData();
-            } catch (e) { alert("Hata: " + e.message); }
-        }
-
-        async function deleteLicense(kod) {
-            if (!confirm(`'${kod}' lisansını KALICI OLARAK silmek istediğinize emin misiniz?`)) return;
-            try {
-                await fetch(`/api/admin/lisans/${kod}`, {
-                    method: "DELETE",
-                    headers: { "X-Admin-Token": adminToken }
-                });
-                loadData();
-            } catch (e) { alert("Hata: " + e.message); }
-        }
-
-        async function deleteRequest(id) {
-            if (!confirm("Bu talebi silmek istediğinize emin misiniz?")) return;
-            try {
-                await fetch(`/api/admin/talep/${id}`, {
-                    method: "DELETE",
-                    headers: { "X-Admin-Token": adminToken }
-                });
-                loadData();
-            } catch (e) { alert("Hata: " + e.message); }
-        }
-
-        function createForRequest(ad, iletisim) {
-            document.getElementById("licenseNote").value = `${ad} (${iletisim})`;
-            window.scrollTo({ top: 200, behavior: 'smooth' });
-        }
-
-        function renderTable() {
-            const q = (document.getElementById("searchInput").value || "").toLowerCase();
-            const tbody = document.getElementById("licensesTableBody");
-            
-            const filtered = allLicenses.filter(l => 
-                l.kod.toLowerCase().includes(q) || 
-                (l.notlar && l.notlar.toLowerCase().includes(q))
-            );
-
-            if (filtered.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="7" class="empty-row">Kayıtlı lisans bulunamadı.</td></tr>';
-                return;
-            }
-
-            tbody.innerHTML = filtered.map(l => {
-                let sureLabel = "";
-                if (l.sure_birim === "sinirsiz") sureLabel = "♾️ Sınırsız";
-                else if (l.sure_birim === "dakika") sureLabel = `⚡ ${l.sure_miktar} Dk`;
-                else sureLabel = `📅 ${l.sure_miktar} Gün`;
-
-                let durumClass = l.durum;
-                let durumText = l.durum === "aktif" ? "Aktif" :
-                                l.durum === "beklemede" ? "Beklemede" :
-                                l.durum === "iptal" ? "İptal Edildi" : "Süresi Doldu";
-
-                let kalanMetin = "-";
-                if (l.sure_birim === "sinirsiz") {
-                    kalanMetin = "♾️ Sınırsız";
-                } else if (l.durum === "aktif" && l.bitis_zamani) {
-                    const kalanMs = l.bitis_zamani - Date.now();
-                    if (kalanMs <= 0) {
-                        kalanMetin = "Süre doldu";
-                    } else {
-                        const saniyeToplam = Math.floor(kalanMs / 1000);
-                        const gun = Math.floor(saniyeToplam / 86400);
-                        const saat = Math.floor((saniyeToplam % 86400) / 3600);
-                        const dakika = Math.floor((saniyeToplam % 3600) / 60);
-                        const saniye = saniyeToplam % 60;
-
-                        if (gun > 0) kalanMetin = `${gun}g ${saat}s kaldı`;
-                        else if (saat > 0) kalanMetin = `${saat}s ${dakika}dk kaldı`;
-                        else kalanMetin = `${dakika}dk ${saniye}sn kaldı`;
+                    if (isHovered) {
+                        const dx = mouseX - x;
+                        const dy = mouseY - y;
+                        const dist = Math.sqrt(dx * dx + dy * dy);
+                        if (dist < 180 && dist > 1) {
+                            x += (dx / dist) * 15;
+                            y += (dy / dist) * 15;
+                        }
                     }
-                } else if (l.durum === "beklemede") {
-                    kalanMetin = "(İlk açılışta başlayacak)";
+
+                    // Balon Çizimi
+                    ctx.save();
+                    ctx.beginPath();
+                    ctx.arc(x, y, p.radius + 3, 0, Math.PI * 2);
+                    ctx.fillStyle = p.color + "33";
+                    ctx.fill();
+
+                    ctx.beginPath();
+                    ctx.arc(x, y, p.radius, 0, Math.PI * 2);
+                    ctx.fillStyle = p.color;
+                    ctx.fill();
+                    ctx.strokeStyle = "#ffffff";
+                    ctx.lineWidth = 2;
+                    ctx.stroke();
+
+                    // Emoji Avatar
+                    ctx.font = (p.radius * 0.95) + "px sans-serif";
+                    ctx.textAlign = "center";
+                    ctx.textBaseline = "middle";
+                    ctx.fillText(p.avatar, x, y);
+
+                    // İsim Etiketi
+                    ctx.fillStyle = "#ffffff";
+                    ctx.font = "600 11px Inter, sans-serif";
+                    ctx.fillText(p.name, x, y + p.radius + 14);
+
+                    ctx.restore();
+                });
+
+                // FIRLATILAN HEDİYELER VE PUANLAR
+                for (let i = floatingGifts.length - 1; i >= 0; i--) {
+                    const g = floatingGifts[i];
+                    g.x += g.vx;
+                    g.y += g.vy;
+                    g.alpha -= 0.015;
+
+                    ctx.save();
+                    ctx.globalAlpha = Math.max(0, g.alpha);
+                    ctx.font = g.size + "px sans-serif";
+                    ctx.textAlign = "center";
+                    ctx.fillText(g.icon, g.x, g.y);
+
+                    ctx.font = "800 12px Inter, sans-serif";
+                    ctx.fillStyle = "#f5e211";
+                    ctx.fillText(g.label, g.x, g.y - 18);
+                    ctx.restore();
+
+                    if (g.alpha <= 0) floatingGifts.splice(i, 1);
                 }
 
-                let cihazMetin = l.cihaz_kimlik ? l.cihaz_kimlik.substring(0, 10) + "..." : "Henüz Yok";
-
-                return `
-                    <tr>
-                        <td><span class="code-pill">${l.kod}</span></td>
-                        <td><strong>${sureLabel}</strong></td>
-                        <td><span class="status-badge ${durumClass}">${durumText}</span></td>
-                        <td><strong>${kalanMetin}</strong></td>
-                        <td title="${l.cihaz_kimlik || ''}">${cihazMetin}</td>
-                        <td>${l.notlar || '-'}</td>
-                        <td>
-                            <div class="action-btns">
-                                <button class="btn-action" onclick="navigator.clipboard.writeText('${l.kod}'); alert('Kopyalandı: ${l.kod}')">📋</button>
-                                ${l.durum === 'iptal' 
-                                    ? `<button class="btn-action btn-unrevoke" onclick="unrevokeLicense('${l.kod}')">Aktif Et</button>`
-                                    : `<button class="btn-action btn-revoke" onclick="revokeLicense('${l.kod}')">İptal Et</button>`
-                                }
-                                <button class="btn-action btn-delete" onclick="deleteLicense('${l.kod}')">Sil</button>
-                            </div>
-                        </td>
-                    </tr>
-                `;
-            }).join("");
-        }
-
-        function renderRequestsTable() {
-            const tbody = document.getElementById("requestsTableBody");
-            if (allRequests.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="7" class="empty-row">Henüz gelen talep, soru veya öneri yok.</td></tr>';
-                return;
+                requestAnimationFrame(loop);
             }
 
-            tbody.innerHTML = allRequests.map(r => {
-                const tarih = new Date(r.tarih).toLocaleString('tr-TR');
-                const turBadge = r.tur === "oneri"
-                    ? `<span style="background:rgba(142,212,98,0.18); color:#8ed462; border:1px solid #8ed462; padding:3px 8px; border-radius:12px; font-size:11px; font-weight:700;">💡 Öneri</span>`
-                    : r.tur === "soru"
-                    ? `<span style="background:rgba(43,160,255,0.18); color:#2ba0ff; border:1px solid #2ba0ff; padding:3px 8px; border-radius:12px; font-size:11px; font-weight:700;">❓ Soru</span>`
-                    : `<span style="background:rgba(254,44,85,0.18); color:#fe2c55; border:1px solid #fe2c55; padding:3px 8px; border-radius:12px; font-size:11px; font-weight:700;">🔑 Lisans</span>`;
-
-                return `
-                    <tr>
-                        <td>${tarih}</td>
-                        <td>${turBadge}</td>
-                        <td><strong>${r.ad}</strong></td>
-                        <td><span style="color:var(--green); font-weight:700;">${r.iletisim}</span></td>
-                        <td>${r.tiktok_kullanici ? '@' + r.tiktok_kullanici.replace(/^@/, '') : '-'}</td>
-                        <td>${r.mesaj || '-'}</td>
-                        <td>
-                            <div class="action-btns">
-                                <button class="btn-action" style="color:var(--accent2); border-color:var(--accent2)" onclick="createForRequest('${r.ad}', '${r.iletisim}')">+ Kod Üret</button>
-                                <button class="btn-action btn-delete" onclick="deleteRequest('${r.id}')">Sil</button>
-                            </div>
-                        </td>
-                    </tr>
-                `;
-            }).join("");
-        }
-
-        // Kalan süreleri canlı güncelle
-        setInterval(() => {
-            if (document.getElementById("adminPanel").style.display === "block") {
-                renderTable();
-            }
-        }, 1000);
+            requestAnimationFrame(loop);
+        })();
     </script>
 </body>
 </html>
