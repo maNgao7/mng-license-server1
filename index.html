@@ -517,6 +517,45 @@
             opacity: 1;
         }
 
+        /* Kıvılcımlı Yeni Oyun Rozeti */
+        .sparkle-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 4px 12px;
+            border-radius: var(--radius-pill);
+            font-size: 11px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            background: linear-gradient(135deg, rgba(254, 44, 85, 0.35) 0%, rgba(37, 244, 238, 0.35) 100%);
+            border: 1px solid #25f4ee;
+            color: #ffffff;
+            box-shadow: 0 0 12px rgba(37, 244, 238, 0.5), inset 0 0 10px rgba(254, 44, 85, 0.4);
+            animation: sparkleGlowWeb 2s infinite alternate ease-in-out;
+            position: relative;
+            overflow: hidden;
+            width: fit-content;
+        }
+
+        @keyframes sparkleGlowWeb {
+            0% {
+                box-shadow: 0 0 10px rgba(37, 244, 238, 0.4), 0 0 20px rgba(254, 44, 85, 0.3);
+                border-color: #25f4ee;
+                transform: scale(1);
+            }
+            50% {
+                box-shadow: 0 0 18px rgba(254, 44, 85, 0.7), 0 0 28px rgba(37, 244, 238, 0.6);
+                border-color: #fe2c55;
+                transform: scale(1.04);
+            }
+            100% {
+                box-shadow: 0 0 10px rgba(37, 244, 238, 0.4), 0 0 20px rgba(254, 44, 85, 0.3);
+                border-color: #25f4ee;
+                transform: scale(1);
+            }
+        }
+
         .game-card-badge {
             display: inline-flex;
             align-items: center;
@@ -895,7 +934,7 @@
             <div class="hero-content">
                 <div class="hero-badge-pill">
                     <span class="dot"></span>
-                    YENİ SÜRÜM v1.9.2 HAZIR
+                    YENİ SÜRÜM v1.9.3 HAZIR
                 </div>
 
                 <h1 class="hero-title">
@@ -908,10 +947,10 @@
                 </p>
 
                 <div class="hero-cta-group">
-                    <a href="https://drive.google.com/file/d/1g-dEVnq_8ksvCTuHq9q7Ur-MGiFBpzND/view?usp=sharing" target="_blank" class="btn btn-tiktok" style="font-size: 16px; padding: 16px 30px;">
+                    <button onclick="hemenIndir()" class="btn btn-tiktok" style="font-size: 16px; padding: 16px 30px;">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
-                        WINDOWS İÇİN İNDİR (v1.9.2)
-                    </a>
+                        WINDOWS İÇİN İNDİR (v1.9.3)
+                    </button>
                     
                     <a href="#sim" class="btn btn-outline" style="font-size: 16px; padding: 16px 26px;">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
@@ -965,7 +1004,10 @@
                 <!-- Oyun 1: MNG Orbit -->
                 <div class="game-card highlight">
                     <div>
-                        <div class="game-card-badge badge-active">● ŞU AN YAYINDA</div>
+                        <div style="display:flex; align-items:center; gap:8px; margin-bottom:20px; flex-wrap:wrap;">
+                            <div class="sparkle-badge">✨ YENİ OYUNUMUZ</div>
+                            <div class="game-card-badge badge-active" style="margin-bottom:0;">● ŞU AN YAYINDA</div>
+                        </div>
                         <div class="game-card-icon" style="background: rgba(254, 44, 85, 0.15); border-color: rgba(254, 44, 85, 0.3);">🪐</div>
                         <h3 class="game-card-title">MNG TikTok Orbit</h3>
                         <p class="game-card-desc">
@@ -1102,17 +1144,17 @@
                 <div class="section-tag" style="color: var(--color-tiktok-cyan);">HAZIR MISINIZ?</div>
                 <h2 class="section-title" style="font-size: 38px; margin-bottom: 16px;">YAYINLARINIZI BİR ÜST SEVİYEYE TAŞIYIN</h2>
                 <p class="section-desc" style="max-width: 620px; margin: 0 auto 36px auto;">
-                    MNG TikTok Game v1.9.2 sürümünü hemen ücretsiz indirin. Türkçe karakter düzeltmeleri, donma engellemeleri ve otomatik kullanıcı adı hatırlama özellikleriyle hemen deneyin.
+                    MNG TikTok Game v1.9.3 sürümünü hemen ücretsiz indirin. Türkçe karakter düzeltmeleri, donma engellemeleri ve otomatik kullanıcı adı hatırlama özellikleriyle hemen deneyin.
                 </p>
 
                 <div style="display: flex; justify-content: center; gap: 18px; flex-wrap: wrap;">
-                    <a href="https://drive.google.com/file/d/1g-dEVnq_8ksvCTuHq9q7Ur-MGiFBpzND/view?usp=sharing" target="_blank" class="btn btn-tiktok" style="font-size: 17px; padding: 18px 36px;">
+                    <button onclick="hemenIndir()" class="btn btn-tiktok" style="font-size: 17px; padding: 18px 36px; cursor: pointer;">
                         <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
                         MNG TikTok Game Setup 1.9.2 İndir
-                    </a>
-                    <a href="/download/setup-direct" class="btn btn-outline" style="font-size: 16px; padding: 18px 30px;">
-                        Doğrudan Sunucudan İndir (.exe)
-                    </a>
+                    </button>
+                    <button onclick="hemenIndir()" class="btn btn-outline" style="font-size: 16px; padding: 18px 30px; cursor: pointer;">
+                        Doğrudan İndir (.exe)
+                    </button>
                 </div>
                 <div style="margin-top: 18px; font-size: 13px; color: var(--color-greyple);">
                     Windows 10 / 11 Desteklenir • Boyut: ~110 MB • Virüssüz & Güvenli
@@ -1186,7 +1228,7 @@
                         TikTok canlı yayıncılarının yayınlarını unutulmaz bir oyun şölenine dönüştüren yeni nesil interaktif eğlence platformu.
                     </p>
                     <div style="display: flex; gap: 12px;">
-                        <span style="display: inline-block; padding: 4px 10px; background: rgba(255,255,255,0.06); border-radius: 8px; font-size: 12px;">v1.9.2</span>
+                        <span style="display: inline-block; padding: 4px 10px; background: rgba(255,255,255,0.06); border-radius: 8px; font-size: 12px;">v1.9.3</span>
                         <span style="display: inline-block; padding: 4px 10px; background: rgba(87,242,135,0.1); color: var(--color-spring-green); border-radius: 8px; font-size: 12px;">Tüm Sistemler Aktif</span>
                     </div>
                 </div>
@@ -1431,6 +1473,65 @@
                 submitBtn.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg> Talebi Gönder';
             }
         });
+
+        // =====================================================================
+        // DOĞRUDAN İNDİRME FONKSİYONU (Google Drive Sayfası Açılmaz, Direkt İner!)
+        // =====================================================================
+        function hemenIndir() {
+            // Toast / Bildirim Kutusu Oluştur
+            let toast = document.getElementById('downloadToast');
+            if (!toast) {
+                toast = document.createElement('div');
+                toast.id = 'downloadToast';
+                toast.style.cssText = `
+                    position: fixed;
+                    bottom: 30px;
+                    right: 30px;
+                    background: linear-gradient(135deg, #161829 0%, #1e2138 100%);
+                    border: 1px solid #25f4ee;
+                    box-shadow: 0 10px 40px rgba(0,0,0,0.8), 0 0 20px rgba(37,244,238,0.3);
+                    border-radius: 16px;
+                    padding: 20px 24px;
+                    color: #ffffff;
+                    z-index: 9999;
+                    display: flex;
+                    align-items: center;
+                    gap: 16px;
+                    font-family: 'Inter', sans-serif;
+                    animation: slideUp 0.4s ease forwards;
+                `;
+                document.body.appendChild(toast);
+            }
+
+            toast.innerHTML = `
+                <div style="width: 44px; height: 44px; border-radius: 12px; background: rgba(37,244,238,0.15); display: flex; align-items: center; justify-content: center; font-size: 22px;">
+                    ⚡
+                </div>
+                <div>
+                    <div style="font-weight: 700; font-size: 15px; margin-bottom: 4px; color: #25f4ee;">İndirme Başlatılıyor...</div>
+                    <div style="font-size: 13px; color: #babcd9;">MNG TikTok Game Setup 1.9.3 indiriliyor. Tarayıcınızı kapatmayın.</div>
+                </div>
+            `;
+            toast.style.display = 'flex';
+
+            // Gizli iframe üzerinden doğrudan indirmeyi tetikle (Yeni sekme açılmaz, Drive sayfası görülmez!)
+            let hiddenFrame = document.getElementById('hiddenDownloadFrame');
+            if (!hiddenFrame) {
+                hiddenFrame = document.createElement('iframe');
+                hiddenFrame.id = 'hiddenDownloadFrame';
+                hiddenFrame.style.display = 'none';
+                document.body.appendChild(hiddenFrame);
+            }
+            
+            // Doğrudan indirme URL'si (Google Drive virüs/onay atlamalı doğrudan stream)
+            const directUrl = "https://drive.usercontent.google.com/download?id=1g-dEVnq_8ksvCTuHq9q7Ur-MGiFBpzND&export=download&confirm=t";
+            hiddenFrame.src = directUrl;
+
+            // 6 saniye sonra bildirimi kaldır
+            setTimeout(() => {
+                if (toast) toast.style.display = 'none';
+            }, 6000);
+        }
     </script>
 </body>
 </html>
