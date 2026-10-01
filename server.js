@@ -266,13 +266,20 @@ function logEkle(lisansKod, cihazKimlik, islem, ip) {
 // =====================================================================
 // SÜRÜM BİLGİLERİ & İNDİRME LİNKLERİ
 // =====================================================================
-const EN_GUNCEL_SURUM = "2.0.3";
+const EN_GUNCEL_SURUM = "3.0.0";
 const EN_DUSUK_SURUM = "1.0.0";
 const SETUP_INDIRME_LINKI = "https://drive.usercontent.google.com/download?id=1g-dEVnq_8ksvCTuHq9q7Ur-MGiFBpzND&export=download&confirm=t";
 const SETUP_WEB_LINKI = "https://drive.google.com/file/d/1g-dEVnq_8ksvCTuHq9q7Ur-MGiFBpzND/view?usp=sharing";
 
 // Her güncellemede eklenen/değişen özellikler listesi
 const SURUM_NOTLARI = [
+    "v3.0.0 — MNG Orbit Profesyonel Ayarlar & Özel Kütle: Her hediyeye istenen kütle elle yazılabilir, önerilen kütle butonları eklendi (+150 Gül, +300 Kalp, +500 Buket, +1100 Çay, +1600 Şapka ve Bıyık).",
+    "v3.0.0 — MNG Orbit Hediye & Görsel Donması Çözüldü: Buket, Çay, Şapka ve popüler tüm Türkçe hediyelerin PNG eşleşmesi düzeltildi; hediye seçimi asla dondurmaz.",
+    "v3.0.0 — MNG Orbit Beğeni & Takip Giriş Kuralları: Takip giriş kütlesi, beğeni giriş barajı (ör. 100 beğeni) ve sonrasında sürekli beğendikçe kütle artışı eksiksiz ayarlanabilir.",
+    "v3.0.0 — Haritayı Parçala Güçlendirildi: Harita parçalama tetiklendiğinde arenadaki tüm oyuncular anında parçalanır.",
+    "v3.0.0 — MNG Orbit Arka Plan Sorunu Düzeltildi: Arka plan seçiminde 40+ video eşzamanlı oynatma kaldırıldı, GPU kilitlenmesi bitti; arka plan seçimi kusursuz ve kalıcı çalışır.",
+    "v3.0.0 — OBS Kazananlar & Sıralama Widget'ı: Kazananlar widget'ı küçük profil avatarları, kullanıcı adı ve X galibiyet sayacıyla en çok kazanandan küçüğe sıralanır.",
+    "v3.0.0 — TikTok VS OBS Widget & Profil Puanlama: OBS VS widget altındaki hediye slotları onarıldı; puanlamada eksik/kırık avatarlar için renkli baş harf SVG sistemi ve takipçileri otomatik ekleme devreye alındı.",
     "v2.0.3 - MNG Orbit Hediye Değiştir: Her hediye için tek, sade bir görsel seçme penceresi eklendi. Seçim ve arama oyun akışını dondurmaz.",
     "v2.0.3 - Kaliteli Hediye Görselleri: Hediye küçük resimleri yerel yüksek kaliteli katalogdan hızlı yüklenir ve önbelleğe alınır.",
     "v2.0.3 - Lisans Koruması: Güncelleme kurulurken aktif lisans bilgisi aynı bilgisayarda yedeklenir; lisans ve oyun ayarları korunur.",
