@@ -934,7 +934,7 @@
             <div class="hero-content">
                 <div class="hero-badge-pill">
                     <span class="dot"></span>
-                    YENİ SÜRÜM v1.9.4 HAZIR
+                    YENİ SÜRÜM v2.0.0 HAZIR
                 </div>
 
                 <h1 class="hero-title">
@@ -949,7 +949,7 @@
                 <div class="hero-cta-group">
                     <button onclick="hemenIndir()" class="btn btn-tiktok" style="font-size: 16px; padding: 16px 30px;">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
-                        WINDOWS İÇİN İNDİR (v1.9.4)
+                        WINDOWS İÇİN İNDİR (v2.0.0)
                     </button>
                     
                     <a href="#sim" class="btn btn-outline" style="font-size: 16px; padding: 16px 26px;">
@@ -1102,13 +1102,13 @@
                 <div class="section-tag" style="color: var(--color-tiktok-cyan);">HAZIR MISINIZ?</div>
                 <h2 class="section-title" style="font-size: 38px; margin-bottom: 16px;">YAYINLARINIZI BİR ÜST SEVİYEYE TAŞIYIN</h2>
                 <p class="section-desc" style="max-width: 620px; margin: 0 auto 36px auto;">
-                    MNG TikTok Game v1.9.4 sürümünü hemen ücretsiz indirin. Hediye listesi donma düzeltmesi, web sitesi doğrudan indirme ve MNG Orbit iyileştirmeleriyle deneyin.
+                    MNG TikTok Game v2.0.0 sürümünü hemen ücretsiz indirin. Hediye listesi donma düzeltmesi, web sitesi doğrudan indirme ve MNG Orbit iyileştirmeleriyle deneyin.
                 </p>
 
                 <div style="display: flex; justify-content: center; gap: 18px; flex-wrap: wrap;">
                     <button onclick="hemenIndir()" class="btn btn-tiktok" style="font-size: 17px; padding: 18px 36px; cursor: pointer;">
                         <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
-                        MNG TikTok Game Setup 1.9.4 İndir
+                        MNG TikTok Game Setup 2.0.0 İndir
                     </button>
                     <button onclick="hemenIndir()" class="btn btn-outline" style="font-size: 16px; padding: 18px 30px; cursor: pointer;">
                         Doğrudan İndir (.exe)
@@ -1186,7 +1186,7 @@
                         TikTok canlı yayıncılarının yayınlarını unutulmaz bir oyun şölenine dönüştüren yeni nesil interaktif eğlence platformu.
                     </p>
                     <div style="display: flex; gap: 12px;">
-                        <span style="display: inline-block; padding: 4px 10px; background: rgba(255,255,255,0.06); border-radius: 8px; font-size: 12px;">v1.9.4</span>
+                        <span style="display: inline-block; padding: 4px 10px; background: rgba(255,255,255,0.06); border-radius: 8px; font-size: 12px;">v2.0.0</span>
                         <span style="display: inline-block; padding: 4px 10px; background: rgba(87,242,135,0.1); color: var(--color-spring-green); border-radius: 8px; font-size: 12px;">Tüm Sistemler Aktif</span>
                     </div>
                 </div>
@@ -1432,53 +1432,10 @@
         });
 
         // =====================================================================
-        // DOĞRUDAN İNDİRME FONKSİYONU (Google Drive Sayfası Açılmaz, Direkt İner!)
+        // İNDİRME FONKSİYONU — Google Drive sayfasını yeni sekmede açar
         // =====================================================================
         function hemenIndir() {
-            // Toast / Bildirim Kutusu Oluştur
-            let toast = document.getElementById('downloadToast');
-            if (!toast) {
-                toast = document.createElement('div');
-                toast.id = 'downloadToast';
-                toast.style.cssText = `
-                    position: fixed;
-                    bottom: 30px;
-                    right: 30px;
-                    background: linear-gradient(135deg, #161829 0%, #1e2138 100%);
-                    border: 1px solid #25f4ee;
-                    box-shadow: 0 10px 40px rgba(0,0,0,0.8), 0 0 20px rgba(37,244,238,0.3);
-                    border-radius: 16px;
-                    padding: 20px 24px;
-                    color: #ffffff;
-                    z-index: 9999;
-                    display: flex;
-                    align-items: center;
-                    gap: 16px;
-                    font-family: 'Inter', sans-serif;
-                    animation: slideUp 0.4s ease forwards;
-                `;
-                document.body.appendChild(toast);
-            }
-
-            toast.innerHTML = `
-                <div style="width: 44px; height: 44px; border-radius: 12px; background: rgba(37,244,238,0.15); display: flex; align-items: center; justify-content: center; font-size: 22px;">
-                    ⚡
-                </div>
-                <div>
-                    <div style="font-weight: 700; font-size: 15px; margin-bottom: 4px; color: #25f4ee;">İndirme Başlatılıyor...</div>
-                    <div style="font-size: 13px; color: #babcd9;">MNG TikTok Game Setup 1.9.4 indiriliyor. Tarayıcınızı kapatmayın.</div>
-                </div>
-            `;
-            toast.style.display = 'flex';
-
-            // Doğrudan indirme — tarayıcı navigasyonuyla başlatılır, Google Drive onay sayfasını atlar
-            const directUrl = "https://drive.usercontent.google.com/download?id=1g-dEVnq_8ksvCTuHq9q7Ur-MGiFBpzND&export=download&confirm=t";
-            window.location.href = directUrl;
-
-            // 6 saniye sonra bildirimi kaldır
-            setTimeout(() => {
-                if (toast) toast.style.display = 'none';
-            }, 6000);
+            window.open('https://drive.google.com/file/d/1g-dEVnq_8ksvCTuHq9q7Ur-MGiFBpzND/view?usp=sharing', '_blank');
         }
     </script>
 </body>
