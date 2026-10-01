@@ -266,16 +266,18 @@ function logEkle(lisansKod, cihazKimlik, islem, ip) {
 // =====================================================================
 // SÜRÜM BİLGİLERİ & İNDİRME LİNKLERİ
 // =====================================================================
-const EN_GUNCEL_SURUM = "1.9.3";
+const EN_GUNCEL_SURUM = "1.9.4";
 const EN_DUSUK_SURUM = "1.0.0";
 const SETUP_INDIRME_LINKI = "https://drive.usercontent.google.com/download?id=1g-dEVnq_8ksvCTuHq9q7Ur-MGiFBpzND&export=download&confirm=t";
 const SETUP_WEB_LINKI = "https://drive.google.com/file/d/1g-dEVnq_8ksvCTuHq9q7Ur-MGiFBpzND/view?usp=sharing";
 
 // Her güncellemede eklenen/değişen özellikler listesi
 const SURUM_NOTLARI = [
+    "v1.9.4 — MNG Orbit Hediye Donma Giderildi: Hediye listesi açılırken yaşanan tam ekran donması artık yaşanmıyor; görsel sayısı optimize edildi ve DOM güncellemesi requestAnimationFrame ile ertelendi.",
+    "v1.9.4 — Web Sitesi İndirme Düzeltildi: 'İndir' butonuna basıldığında artık gerçekten indirme başlıyor; iframe yöntemi kaldırıldı, tarayıcı navigasyonuyla direkt indirme tetikleniyor.",
+    "v1.9.4 — Web Sitesi Temizliği: Henüz çıkmayan oyun kartları kaldırıldı; yeni oyun eklendiğinde site güncellenecek.",
     "v1.9.3 — Sessiz & Temiz Güncelleme: Güncellemeler artık hiçbir kurulum penceresi açmadan, tüm verilerinizi ve lisansınızı koruyarak arka planda sessizce uygulanır.",
     "v1.9.3 — MNG Orbit Kıvılcım Rozeti: Yeni eklenen oyunlar için parıldayan özel ışıltı rozeti eklendi.",
-    "v1.9.3 — Web Sitesi Doğrudan İndirme: Web sitesinden indirme yaparken Google Drive sayfası açılmaz, doğrudan tarayıcıya iner.",
     "v1.9.2 — Türkçe Karakter ve Yazı Düzeltmeleri: Tüm oyun içi ve arayüzdeki bozuk Türkçe karakterler tamamen onarıldı.",
     "v1.9.2 — Web Sitesi & Soru/Öneri Sistemi: TikTok & Discord temalı yeni interaktif web portalı ve geri bildirim sistemi eklendi.",
     "v1.9.1 — MNG Orbit Donma Düzeltildi: Ayarlar açılınca oyun artık donmuyor; hediye görselleri sadece seçim açıldığında yükleniyor.",
