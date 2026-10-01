@@ -3,513 +3,1434 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MNG TikTok Game — Resmi Web Portalı & İndirme</title>
+    <title>MNG TikTok Game — Canlı Yayın Oyunları & Yayıncı Portalı</title>
+    <meta name="description" content="TikTok canlı yayınları için tasarlanmış yüksek etkileşimli yerçekimi ve arena oyunları. Hediyeler, beğeniler ve takiplerle yayınlarınızı bir oyun dünyasına dönüştürün!">
+    
+    <!-- Google Fonts: Inter & Poppins (Discord ABC Ginto Nord & GG Sans alternatifi) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@700;800;900&display=swap" rel="stylesheet">
+    
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-
         :root {
-            --bg: #090912;
-            --surface: #121224;
-            --surface2: #1b1b36;
-            --accent: #fe2c55;
-            --accent2: #25f4ee;
-            --text: #ffffff;
-            --text-dim: #9da3b4;
-            --border: #282846;
-            --glow: rgba(254, 44, 85, 0.4);
+            /* Refero Discord x TikTok Color System */
+            --color-blurple: #5865f2;
+            --color-dark-blurple: #3442d9;
+            --color-hover-blurple: #8891f2;
+            --color-tiktok-red: #fe2c55;
+            --color-tiktok-cyan: #25f4ee;
+            --color-spring-green: #57f287;
+            --color-fuchsia: #eb459e;
+            --color-vivid-cerulean: #00b0f4;
+            --color-ember-orange: #fda220;
+            --color-snow: #ffffff;
+            --color-void: #000000;
+            --color-fog: #babcd9;
+            --color-greyple: #99aab5;
+            --color-dim-grey: #50555f;
+
+            /* Surfaces */
+            --surface-cosmic-page: #090a18;
+            --surface-cosmic-deep: #05060f;
+            --surface-app-chrome: #161829;
+            --surface-app-surface: #1e2138;
+            --surface-feature-card: rgba(22, 24, 45, 0.75);
+            --surface-card-border: rgba(88, 101, 242, 0.22);
+            --surface-glow-cyan: rgba(37, 244, 238, 0.15);
+            --surface-glow-red: rgba(254, 44, 85, 0.15);
+
+            /* Typography */
+            --font-display: 'Poppins', system-ui, -apple-system, sans-serif;
+            --font-body: 'Inter', system-ui, -apple-system, sans-serif;
+
+            /* Border Radii */
+            --radius-btn: 12px;
+            --radius-btn-lg: 16px;
+            --radius-card: 24px;
+            --radius-pill: 104px;
+
+            --page-max-width: 1200px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html {
+            scroll-behavior: smooth;
         }
 
         body {
-            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-            background: var(--bg);
-            color: var(--text);
-            line-height: 1.6;
+            font-family: var(--font-body);
+            background-color: var(--surface-cosmic-page);
+            color: var(--color-snow);
+            line-height: 1.5;
             overflow-x: hidden;
+            position: relative;
+            background-image: 
+                radial-gradient(circle at 15% 15%, rgba(88, 101, 242, 0.18) 0%, transparent 45%),
+                radial-gradient(circle at 85% 25%, rgba(254, 44, 85, 0.14) 0%, transparent 40%),
+                radial-gradient(circle at 50% 65%, rgba(37, 244, 238, 0.12) 0%, transparent 50%),
+                radial-gradient(circle at 80% 85%, rgba(88, 101, 242, 0.15) 0%, transparent 45%);
+            background-attachment: fixed;
         }
 
-        /* NAVBAR */
-        .navbar {
+        /* Ambient Stars / Dust Background */
+        .cosmic-mesh {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            pointer-events: none;
+            z-index: 0;
+            opacity: 0.6;
+            background-image: radial-gradient(rgba(255, 255, 255, 0.12) 1px, transparent 1px);
+            background-size: 32px 32px;
+        }
+
+        /* Container */
+        .container {
+            max-width: var(--page-max-width);
+            margin: 0 auto;
+            padding: 0 24px;
+            position: relative;
+            z-index: 2;
+        }
+
+        /* Navigation Header */
+        header.nav-header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            z-index: 100;
+            padding: 16px 0;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            background: rgba(9, 10, 24, 0.7);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+        }
+
+        .nav-wrapper {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 18px 40px;
-            background: rgba(18, 18, 36, 0.85);
-            backdrop-filter: blur(12px);
-            border-bottom: 1px solid var(--border);
-            position: sticky;
-            top: 0;
-            z-index: 100;
         }
 
-        .nav-logo {
+        .brand-logo {
             display: flex;
             align-items: center;
             gap: 12px;
-            font-size: 20px;
-            font-weight: 800;
-            letter-spacing: 0.5px;
             text-decoration: none;
-            color: #fff;
+            color: var(--color-snow);
         }
 
-        .nav-logo span.tiktok-gradient {
-            background: linear-gradient(90deg, var(--accent2), #fff, var(--accent));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
+        .brand-badge {
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, var(--color-tiktok-red), var(--color-blurple), var(--color-tiktok-cyan));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: var(--font-display);
+            font-weight: 900;
+            font-size: 20px;
+            box-shadow: 0 0 20px rgba(254, 44, 85, 0.4);
+            animation: pulseGlow 3s infinite alternate;
+        }
+
+        @keyframes pulseGlow {
+            0% { box-shadow: 0 0 15px rgba(254, 44, 85, 0.4); }
+            100% { box-shadow: 0 0 25px rgba(37, 244, 238, 0.6); }
+        }
+
+        .brand-title {
+            font-family: var(--font-display);
+            font-weight: 800;
+            font-size: 22px;
+            letter-spacing: -0.5px;
+            text-transform: uppercase;
+        }
+
+        .brand-title span {
+            color: var(--color-tiktok-cyan);
+            text-shadow: 0 0 10px rgba(37, 244, 238, 0.5);
         }
 
         .nav-links {
             display: flex;
             align-items: center;
-            gap: 20px;
+            gap: 28px;
+            list-style: none;
         }
 
-        .nav-link {
-            color: var(--text-dim);
+        .nav-links a {
+            color: var(--color-fog);
             text-decoration: none;
-            font-size: 14px;
-            font-weight: 600;
-            transition: color 0.2s;
+            font-size: 15px;
+            font-weight: 500;
+            transition: color 0.2s ease;
         }
-        .nav-link:hover { color: #fff; }
 
-        .btn-nav-admin {
-            padding: 8px 16px;
-            background: var(--surface2);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            color: #fff;
-            text-decoration: none;
-            font-size: 13px;
-            font-weight: 600;
-            transition: all 0.2s;
+        .nav-links a:hover {
+            color: var(--color-snow);
+        }
+
+        .nav-actions {
             display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-        .btn-nav-admin:hover {
-            border-color: var(--accent);
-            box-shadow: 0 0 15px var(--glow);
-        }
-
-        /* HERO ALANI */
-        .hero {
-            padding: 90px 24px 70px;
-            text-align: center;
-            position: relative;
-            background: radial-gradient(circle at 50% 20%, rgba(254, 44, 85, 0.12) 0%, rgba(37, 244, 238, 0.05) 45%, transparent 70%);
-        }
-
-        .hero-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            background: rgba(254, 44, 85, 0.1);
-            border: 1px solid rgba(254, 44, 85, 0.3);
-            color: var(--accent);
-            padding: 6px 16px;
-            border-radius: 30px;
-            font-size: 13px;
-            font-weight: 700;
-            margin-bottom: 24px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-
-        .hero-title {
-            font-size: clamp(32px, 5vw, 56px);
-            font-weight: 900;
-            line-height: 1.15;
-            margin-bottom: 20px;
-            max-width: 900px;
-            margin-left: auto;
-            margin-right: auto;
-        }
-
-        .hero-desc {
-            font-size: clamp(16px, 2vw, 19px);
-            color: var(--text-dim);
-            max-width: 680px;
-            margin: 0 auto 36px;
-        }
-
-        .download-actions {
-            display: flex;
-            flex-direction: column;
             align-items: center;
             gap: 14px;
         }
 
-        .btn-download-main {
+        /* Buttons */
+        .btn {
             display: inline-flex;
             align-items: center;
-            gap: 12px;
-            padding: 18px 42px;
-            background: linear-gradient(135deg, var(--accent), #d61840);
-            color: #fff;
+            justify-content: center;
+            gap: 10px;
+            font-family: var(--font-body);
+            font-weight: 600;
+            font-size: 15px;
+            padding: 13px 24px;
+            border-radius: var(--radius-btn);
+            cursor: pointer;
             text-decoration: none;
-            border-radius: 14px;
-            font-size: 18px;
-            font-weight: 800;
-            letter-spacing: 0.5px;
-            box-shadow: 0 10px 30px var(--glow);
-            transition: all 0.25s ease;
+            transition: all 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+            border: none;
+            outline: none;
         }
 
-        .btn-download-main:hover {
+        .btn-sm {
+            padding: 9px 18px;
+            font-size: 14px;
+            border-radius: 10px;
+        }
+
+        .btn-blurple {
+            background-color: var(--color-blurple);
+            color: var(--color-snow);
+            box-shadow: 0 4px 18px rgba(88, 101, 242, 0.35);
+        }
+
+        .btn-blurple:hover {
+            background-color: var(--color-dark-blurple);
+            box-shadow: 0 6px 24px rgba(88, 101, 242, 0.55);
             transform: translateY(-2px);
-            box-shadow: 0 15px 40px rgba(254, 44, 85, 0.6);
         }
 
-        .portable-link {
-            color: var(--text-dim);
+        .btn-tiktok {
+            background: linear-gradient(135deg, var(--color-tiktok-red) 0%, #d41842 100%);
+            color: var(--color-snow);
+            box-shadow: 0 4px 20px rgba(254, 44, 85, 0.4);
+            font-weight: 700;
+        }
+
+        .btn-tiktok:hover {
+            box-shadow: 0 6px 28px rgba(254, 44, 85, 0.6);
+            transform: translateY(-2px);
+        }
+
+        .btn-white {
+            background-color: var(--color-snow);
+            color: var(--surface-cosmic-deep);
+            font-weight: 700;
+        }
+
+        .btn-white:hover {
+            background-color: #e5e5f0;
+            transform: translateY(-2px);
+        }
+
+        .btn-outline {
+            background: transparent;
+            color: var(--color-snow);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .btn-outline:hover {
+            border-color: var(--color-tiktok-cyan);
+            color: var(--color-tiktok-cyan);
+            background: rgba(37, 244, 238, 0.05);
+        }
+
+        /* Hero Section */
+        .hero {
+            padding: 170px 0 90px 0;
+            position: relative;
+        }
+
+        .hero-grid {
+            display: grid;
+            grid-template-columns: 1.15fr 0.85fr;
+            gap: 48px;
+            align-items: center;
+        }
+
+        .hero-badge-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(88, 101, 242, 0.15);
+            border: 1px solid rgba(88, 101, 242, 0.4);
+            border-radius: var(--radius-pill);
+            padding: 6px 16px;
             font-size: 13px;
-            text-decoration: none;
-            transition: color 0.2s;
+            font-weight: 600;
+            color: var(--color-tiktok-cyan);
+            margin-bottom: 24px;
         }
-        .portable-link:hover { color: var(--accent2); text-decoration: underline; }
 
-        /* OYUNLAR BÖLÜMÜ */
-        .section {
-            padding: 80px 24px;
-            max-width: 1200px;
-            margin: 0 auto;
+        .hero-badge-pill .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: var(--color-spring-green);
+            box-shadow: 0 0 10px var(--color-spring-green);
+            animation: blink 1.5s infinite;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+
+        /* Discord ABC Ginto Nord / Stamped Metal All-Caps Style */
+        .hero-title {
+            font-family: var(--font-display);
+            font-weight: 900;
+            font-size: 58px;
+            line-height: 1.05;
+            letter-spacing: -1.2px;
+            text-transform: uppercase;
+            margin-bottom: 20px;
+            color: var(--color-snow);
+        }
+
+        .hero-title .gradient-text {
+            background: linear-gradient(90deg, var(--color-tiktok-cyan), #ffffff, var(--color-tiktok-red));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .hero-desc {
+            font-size: 18px;
+            line-height: 1.6;
+            color: var(--color-fog);
+            max-width: 580px;
+            margin-bottom: 36px;
+        }
+
+        .hero-cta-group {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            flex-wrap: wrap;
+            margin-bottom: 32px;
+        }
+
+        .hero-version-tag {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            font-size: 13px;
+            color: var(--color-greyple);
+        }
+
+        .hero-version-tag span {
+            color: var(--color-spring-green);
+            font-weight: 600;
+        }
+
+        /* Interactive Canvas Simulator Card (Refero 3D / Playable Scene) */
+        .arena-interactive-card {
+            background: var(--surface-feature-card);
+            border: 1px solid var(--surface-card-border);
+            border-radius: var(--radius-card);
+            padding: 20px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5), inset 0 0 30px rgba(88, 101, 242, 0.1);
+            position: relative;
+            overflow: hidden;
+            backdrop-filter: blur(20px);
+        }
+
+        .arena-card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 14px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .arena-title-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .arena-dot-live {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: var(--color-tiktok-red);
+            box-shadow: 0 0 12px var(--color-tiktok-red);
+            animation: pulseGlow 1s infinite alternate;
+        }
+
+        .arena-title {
+            font-family: var(--font-display);
+            font-size: 15px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .arena-instructions {
+            font-size: 12px;
+            color: var(--color-tiktok-cyan);
+            background: rgba(37, 244, 238, 0.1);
+            padding: 4px 10px;
+            border-radius: var(--radius-pill);
+            border: 1px solid rgba(37, 244, 238, 0.25);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        #heroCanvas {
+            width: 100%;
+            height: 380px;
+            display: block;
+            border-radius: 16px;
+            background: radial-gradient(circle at center, #12142d 0%, #080914 100%);
+            cursor: crosshair;
+        }
+
+        .canvas-footer-stats {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 14px;
+            font-size: 13px;
+            color: var(--color-fog);
+        }
+
+        .canvas-footer-stats strong {
+            color: var(--color-snow);
+        }
+
+        /* Section Global Settings */
+        section {
+            padding: 90px 0;
+            position: relative;
         }
 
         .section-header {
             text-align: center;
-            margin-bottom: 50px;
+            max-width: 760px;
+            margin: 0 auto 56px auto;
         }
 
         .section-tag {
-            color: var(--accent2);
+            font-family: var(--font-display);
             font-size: 13px;
-            font-weight: 700;
+            font-weight: 800;
+            letter-spacing: 1.5px;
             text-transform: uppercase;
-            letter-spacing: 2px;
-            margin-bottom: 8px;
+            color: var(--color-tiktok-red);
+            margin-bottom: 12px;
+            display: inline-block;
         }
 
         .section-title {
-            font-size: clamp(24px, 3.5vw, 36px);
-            font-weight: 800;
+            font-family: var(--font-display);
+            font-weight: 900;
+            font-size: 44px;
+            line-height: 1.1;
+            text-transform: uppercase;
+            letter-spacing: -0.8px;
+            margin-bottom: 18px;
         }
 
+        .section-desc {
+            font-size: 17px;
+            color: var(--color-fog);
+            line-height: 1.6;
+        }
+
+        /* Feature Cards Grid (Discord 24px Radius) */
         .games-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
             gap: 28px;
+            margin-bottom: 40px;
         }
 
         .game-card {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: 20px;
+            background: var(--surface-feature-card);
+            border: 1px solid var(--surface-card-border);
+            border-radius: var(--radius-card);
             padding: 32px;
-            transition: all 0.3s;
+            backdrop-filter: blur(16px);
+            transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
             position: relative;
             overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .game-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: linear-gradient(90deg, var(--color-blurple), transparent);
+            opacity: 0;
+            transition: opacity 0.3s ease;
         }
 
         .game-card:hover {
-            transform: translateY(-4px);
+            transform: translateY(-6px);
+            border-color: rgba(88, 101, 242, 0.5);
+            box-shadow: 0 16px 40px rgba(0, 0, 0, 0.4), 0 0 30px rgba(88, 101, 242, 0.2);
+        }
+
+        .game-card:hover::before {
+            opacity: 1;
+        }
+
+        .game-card.highlight {
             border-color: rgba(254, 44, 85, 0.4);
-            box-shadow: 0 15px 35px rgba(0,0,0,0.4);
+            background: linear-gradient(180deg, rgba(254, 44, 85, 0.08) 0%, rgba(22, 24, 45, 0.85) 100%);
+        }
+
+        .game-card.highlight::before {
+            background: linear-gradient(90deg, var(--color-tiktok-red), var(--color-tiktok-cyan));
+            opacity: 1;
+        }
+
+        .game-card-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 12px;
+            border-radius: var(--radius-pill);
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 20px;
+            width: fit-content;
+        }
+
+        .badge-active {
+            background: rgba(87, 242, 135, 0.15);
+            color: var(--color-spring-green);
+            border: 1px solid rgba(87, 242, 135, 0.3);
+        }
+
+        .badge-new {
+            background: rgba(254, 44, 85, 0.15);
+            color: var(--color-tiktok-red);
+            border: 1px solid rgba(254, 44, 85, 0.3);
+        }
+
+        .badge-upcoming {
+            background: rgba(0, 176, 244, 0.15);
+            color: var(--color-vivid-cerulean);
+            border: 1px solid rgba(0, 176, 244, 0.3);
         }
 
         .game-card-icon {
-            font-size: 40px;
-            margin-bottom: 20px;
+            width: 56px;
+            height: 56px;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            margin-bottom: 18px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.08);
         }
 
         .game-card-title {
-            font-size: 22px;
+            font-family: var(--font-display);
             font-weight: 800;
+            font-size: 24px;
+            text-transform: uppercase;
             margin-bottom: 12px;
+            letter-spacing: -0.4px;
         }
 
         .game-card-desc {
-            color: var(--text-dim);
+            color: var(--color-fog);
             font-size: 15px;
-            margin-bottom: 20px;
+            line-height: 1.6;
+            margin-bottom: 24px;
         }
 
-        .game-features {
+        .game-card-features {
             list-style: none;
+            margin-bottom: 24px;
             display: flex;
             flex-direction: column;
             gap: 10px;
             font-size: 14px;
-            color: #d1d5db;
+            color: var(--color-snow);
         }
 
-        .game-features li {
+        .game-card-features li {
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 10px;
         }
 
-        .game-features li::before {
-            content: "✓";
-            color: var(--accent2);
-            font-weight: bold;
+        .game-card-features li svg {
+            width: 16px;
+            height: 16px;
+            color: var(--color-tiktok-cyan);
+            flex-shrink: 0;
         }
 
-        /* LİSANS TALEP FORMU */
-        .license-request-section {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: 24px;
-            padding: 48px;
+        /* Ecosystem Roadmap Paragraph */
+        .ecosystem-banner {
+            background: linear-gradient(135deg, rgba(88, 101, 242, 0.2) 0%, rgba(254, 44, 85, 0.15) 100%);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: var(--radius-card);
+            padding: 36px 44px;
+            display: flex;
+            align-items: center;
+            gap: 32px;
+            margin-top: 20px;
+        }
+
+        .ecosystem-icon {
+            font-size: 48px;
+            flex-shrink: 0;
+        }
+
+        .ecosystem-content h3 {
+            font-family: var(--font-display);
+            font-weight: 800;
+            font-size: 20px;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+            color: var(--color-snow);
+        }
+
+        .ecosystem-content p {
+            font-size: 15px;
+            color: var(--color-fog);
+            line-height: 1.6;
+        }
+
+        /* Steps / How It Works */
+        .steps-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 24px;
+        }
+
+        .step-box {
+            background: var(--surface-feature-card);
+            border: 1px solid var(--surface-card-border);
+            border-radius: var(--radius-card);
+            padding: 30px;
+            text-align: center;
+            position: relative;
+        }
+
+        .step-number {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: var(--color-blurple);
+            color: var(--color-snow);
+            font-family: var(--font-display);
+            font-weight: 800;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 18px auto;
+            box-shadow: 0 0 16px rgba(88, 101, 242, 0.5);
+        }
+
+        .step-title {
+            font-family: var(--font-display);
+            font-weight: 700;
+            font-size: 18px;
+            text-transform: uppercase;
+            margin-bottom: 10px;
+        }
+
+        .step-desc {
+            font-size: 14px;
+            color: var(--color-fog);
+            line-height: 1.5;
+        }
+
+        /* Feedback / Request Section */
+        .feedback-section {
+            background: linear-gradient(180deg, transparent 0%, rgba(14, 15, 45, 0.6) 100%);
+            padding-bottom: 120px;
+        }
+
+        .feedback-card {
+            background: var(--surface-feature-card);
+            border: 1px solid rgba(88, 101, 242, 0.3);
+            border-radius: var(--radius-card);
+            padding: 44px;
             max-width: 800px;
             margin: 0 auto;
-            position: relative;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(20px);
         }
 
         .form-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 16px;
-            margin-bottom: 16px;
+            gap: 20px;
+            margin-bottom: 20px;
         }
 
-        @media (max-width: 650px) {
-            .form-grid { grid-template-columns: 1fr; }
-            .license-request-section { padding: 24px; }
+        .form-group-full {
+            grid-column: 1 / -1;
         }
 
-        .input-group {
+        .form-label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--color-fog);
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .form-input, .form-select, .form-textarea {
+            width: 100%;
+            background: rgba(10, 11, 24, 0.85);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 12px;
+            padding: 13px 16px;
+            color: var(--color-snow);
+            font-family: var(--font-body);
+            font-size: 15px;
+            outline: none;
+            transition: all 0.2s ease;
+        }
+
+        .form-input:focus, .form-select:focus, .form-textarea:focus {
+            border-color: var(--color-tiktok-cyan);
+            box-shadow: 0 0 14px rgba(37, 244, 238, 0.3);
+            background: rgba(14, 16, 35, 0.95);
+        }
+
+        .form-select option {
+            background: #161829;
+            color: #ffffff;
+        }
+
+        .form-textarea {
+            resize: vertical;
+            min-height: 110px;
+        }
+
+        .form-status {
+            margin-top: 16px;
+            padding: 12px 18px;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 500;
+            display: none;
+        }
+
+        .form-status.success {
+            display: block;
+            background: rgba(87, 242, 135, 0.15);
+            color: var(--color-spring-green);
+            border: 1px solid rgba(87, 242, 135, 0.4);
+        }
+
+        .form-status.error {
+            display: block;
+            background: rgba(254, 44, 85, 0.15);
+            color: var(--color-tiktok-red);
+            border: 1px solid rgba(254, 44, 85, 0.4);
+        }
+
+        /* Footer (Discord Fog / Void Style) */
+        footer.site-footer {
+            background-color: var(--surface-cosmic-deep);
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+            padding: 70px 0 30px 0;
+            color: var(--color-fog);
+            font-size: 14px;
+        }
+
+        .footer-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 1fr;
+            gap: 48px;
+            margin-bottom: 50px;
+        }
+
+        .footer-col h4 {
+            font-family: var(--font-display);
+            font-weight: 800;
+            font-size: 15px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--color-snow);
+            margin-bottom: 18px;
+        }
+
+        .footer-links {
+            list-style: none;
             display: flex;
             flex-direction: column;
-            gap: 6px;
-            text-align: left;
+            gap: 10px;
         }
 
-        .input-group label {
+        .footer-links a {
+            color: var(--color-fog);
+            text-decoration: none;
+            transition: color 0.2s ease;
+        }
+
+        .footer-links a:hover {
+            color: var(--color-tiktok-cyan);
+        }
+
+        .footer-bottom {
+            padding-top: 24px;
+            border-top: 1px solid rgba(255, 255, 255, 0.06);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
             font-size: 13px;
-            font-weight: 600;
-            color: var(--text-dim);
+            color: var(--color-greyple);
         }
 
-        .input-control {
-            width: 100%;
-            padding: 12px 16px;
-            background: var(--bg);
-            border: 1px solid var(--border);
-            border-radius: 10px;
-            color: #fff;
-            font-size: 14px;
-            outline: none;
-            transition: border-color 0.2s;
-        }
-        .input-control:focus { border-color: var(--accent); }
-
-        .btn-submit-request {
-            width: 100%;
-            padding: 15px;
-            background: linear-gradient(135deg, var(--accent2), #00b4d8);
-            border: none;
-            border-radius: 12px;
-            color: #090912;
-            font-size: 16px;
-            font-weight: 800;
-            cursor: pointer;
-            transition: all 0.2s;
-            margin-top: 10px;
-        }
-        .btn-submit-request:hover { opacity: 0.9; }
-
-        .request-success {
-            display: none;
-            background: rgba(0, 212, 170, 0.15);
-            border: 1px solid #00d4aa;
-            color: #00d4aa;
-            padding: 16px;
-            border-radius: 10px;
-            margin-top: 16px;
-            text-align: center;
-            font-weight: 600;
-            font-size: 14px;
+        /* Responsive */
+        @media (max-width: 992px) {
+            .hero-grid {
+                grid-template-columns: 1fr;
+                gap: 40px;
+            }
+            .hero-title {
+                font-size: 42px;
+            }
+            .footer-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+            .nav-links {
+                display: none;
+            }
         }
 
-        /* FOOTER */
-        .footer {
-            border-top: 1px solid var(--border);
-            padding: 40px 24px;
-            text-align: center;
-            font-size: 13px;
-            color: var(--text-dim);
-            background: #06060c;
+        @media (max-width: 600px) {
+            .hero-title {
+                font-size: 34px;
+            }
+            .section-title {
+                font-size: 32px;
+            }
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+            .footer-grid {
+                grid-template-columns: 1fr;
+            }
+            .ecosystem-banner {
+                flex-direction: column;
+                text-align: center;
+                padding: 24px;
+            }
         }
-
-        .footer a { color: var(--text-dim); text-decoration: none; }
-        .footer a:hover { color: #fff; }
     </style>
 </head>
 <body>
 
-    <!-- NAVBAR -->
-    <nav class="navbar">
-        <a href="/" class="nav-logo">
-            <span>🎮</span>
-            <span class="tiktok-gradient">MNG TikTok Game</span>
-        </a>
-        <div class="nav-links">
-            <a href="#oyunlar" class="nav-link">Oyunlar</a>
-            <a href="#indir" class="nav-link">İndir</a>
-            <a href="#lisans" class="nav-link">Lisans Al</a>
-            <a href="/admin" class="btn-nav-admin">
-                <span>🔐</span> Yönetici Girişi
+    <div class="cosmic-mesh"></div>
+
+    <!-- Navigation Bar (Discord Full-Width Frosted Strip) -->
+    <header class="nav-header">
+        <div class="container nav-wrapper">
+            <a href="#" class="brand-logo">
+                <div class="brand-badge">M</div>
+                <div class="brand-title">MNG <span>TIKTOK</span> GAME</div>
             </a>
-        </div>
-    </nav>
 
-    <!-- HERO BÖLÜMÜ -->
-    <section class="hero" id="indir">
-        <div class="hero-badge">⚡ Canlı Yayın Oyun Paketi</div>
-        <h1 class="hero-title">
-            TikTok Canlı Yayınlarınızı <br>
-            <span style="background: linear-gradient(90deg, #fe2c55, #25f4ee); -webkit-background-clip:text; -webkit-text-fill-color:transparent;">İki Popüler Oyunla</span> Zirveye Taşıyın!
-        </h1>
-        <p class="hero-desc">
-            TikTok VS Battle ve Profil Puanlama oyunları tek bir Windows masaüstü programında.
-            Yüksek çözünürlüklü otomatik profil fotoğrafları, canlı hediye takibi ve ses efektleri hazır!
-        </p>
+            <ul class="nav-links">
+                <li><a href="#games">Oyunlarımız</a></li>
+                <li><a href="#sim">Canlı Simülatör</a></li>
+                <li><a href="#how">Nasıl Çalışır?</a></li>
+                <li><a href="#talep">Soru & Öneri</a></li>
+                <li><a href="/admin">Yönetim Paneli</a></li>
+            </ul>
 
-        <div class="download-actions">
-            <a href="https://drive.google.com/file/d/1g-dEVnq_8ksvCTuHq9q7Ur-MGiFBpzND/view?usp=sharing" target="_blank" class="btn-download-main">
-                <span>⬇️</span> Windows İçin İndir (Setup .exe)
-            </a>
-            <a href="https://drive.google.com/file/d/1g-dEVnq_8ksvCTuHq9q7Ur-MGiFBpzND/view?usp=sharing" target="_blank" class="portable-link">
-                Alternatif Bağlantı: Google Drive Üzerinden Doğrudan İndir
-            </a>
-        </div>
-    </section>
-
-    <!-- OYUNLAR BÖLÜMÜ -->
-    <section class="section" id="oyunlar">
-        <div class="section-header">
-            <div class="section-tag">Paket İçeriği</div>
-            <h2 class="section-title">İki Büyük Oyun Tek Ekranda</h2>
-        </div>
-
-        <div class="games-grid">
-            <!-- OYUN 1 -->
-            <div class="game-card">
-                <div class="game-card-icon">⚔️</div>
-                <h3 class="game-card-title">TikTok VS Profil</h3>
-                <p class="game-card-desc">İki TikTok profilini canlı yayında karşılaştırın. İzleyicilerinizin hediyeleriyle skorlar yarışsın!</p>
-                <ul class="game-features">
-                    <li>Otomatik en yüksek çözünürlüklü profil çekme</li>
-                    <li>Canlı yayın hediye & coin sayacı</li>
-                    <li>Tur süresi ve geri sayım animasyonları</li>
-                    <li>En çok hediye gönderenler liderlik tablosu</li>
-                </ul>
-            </div>
-
-            <!-- OYUN 2 -->
-            <div class="game-card">
-                <div class="game-card-icon">⭐</div>
-                <h3 class="game-card-title">Profil Puanlama</h3>
-                <p class="game-card-desc">Canlı yayındaki izleyicilerinizin profillerini ekrana yansıtın ve chatten gelen 0-10 puanları canlı hesaplayın!</p>
-                <ul class="game-features">
-                    <li>Canlı chatten 0-10 arası oyları otomatik toplama</li>
-                    <li>Anlık ortalama puan ve oy sayacı</li>
-                    <li>Oylamaya katılan izleyicilerin canlı listesi</li>
-                    <li>Yayıncıya özel puanlama süresi ve kontrolleri</li>
-                </ul>
+            <div class="nav-actions">
+                <a href="#download" class="btn btn-sm btn-tiktok">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
+                    Hemen İndir
+                </a>
             </div>
         </div>
-    </section>
+    </header>
 
-    <!-- LİSANS TALEP ETME FORMU -->
-    <section class="section" id="lisans">
-        <div class="section-header">
-            <div class="section-tag">Lisans Edinme</div>
-            <h2 class="section-title">Lisans Anahtarı Talep Edin</h2>
-            <p style="color:var(--text-dim); margin-top:8px;">Uygulamayı indirdikten sonra oyuna giriş yapmak için bir lisans anahtarı gereklidir.</p>
-        </div>
+    <!-- Hero Section (Deep Indigo Cosmic Space) -->
+    <section class="hero" id="home">
+        <div class="container hero-grid">
+            <div class="hero-content">
+                <div class="hero-badge-pill">
+                    <span class="dot"></span>
+                    YENİ SÜRÜM v1.9.2 HAZIR
+                </div>
 
-        <div class="license-request-section">
-            <form id="licenseRequestForm" onsubmit="submitLicenseRequest(event)">
-                <div class="form-grid">
-                    <div class="input-group">
-                        <label>Adınız Soyadınız *</label>
-                        <input type="text" id="reqName" class="input-control" placeholder="Örn: Ahmet Yılmaz" required>
+                <h1 class="hero-title">
+                    CANLI YAYININI <br>
+                    <span class="gradient-text">ARENAYA ÇEVİR</span>
+                </h1>
+
+                <p class="hero-desc">
+                    TikTok canlı yayınlarında izleyicilerinizi pasif seyircilerden kurtarın. Hediyeler, beğeniler ve takiplerle anında ekranda canlanan interaktif oyunlar ile etkileşiminizi ve gelirinizi 10 katına çıkarın!
+                </p>
+
+                <div class="hero-cta-group">
+                    <a href="https://drive.google.com/file/d/1g-dEVnq_8ksvCTuHq9q7Ur-MGiFBpzND/view?usp=sharing" target="_blank" class="btn btn-tiktok" style="font-size: 16px; padding: 16px 30px;">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
+                        WINDOWS İÇİN İNDİR (v1.9.2)
+                    </a>
+                    
+                    <a href="#sim" class="btn btn-outline" style="font-size: 16px; padding: 16px 26px;">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+                        Arenayı Test Et
+                    </a>
+                </div>
+
+                <div class="hero-version-tag">
+                    <div><span>✓</span> Otomatik TikTok Bağlantısı</div>
+                    <div><span>✓</span> 0 ms Ses Gecikmesi</div>
+                    <div><span>✓</span> Tek Tık Kurulum</div>
+                </div>
+            </div>
+
+            <!-- Interaktif Oynanabilir Görsel (Refero Style Canvas Arena) -->
+            <div class="arena-interactive-card" id="sim">
+                <div class="arena-card-header">
+                    <div class="arena-title-wrapper">
+                        <div class="arena-dot-live"></div>
+                        <div class="arena-title">CANLI ORBIT SİMÜLATÖRÜ</div>
                     </div>
-                    <div class="input-group">
-                        <label>İletişim Bilgisi (WhatsApp / Telefon) *</label>
-                        <input type="text" id="reqContact" class="input-control" placeholder="05XX XXX XX XX" required>
+                    <div class="arena-instructions">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+                        Tıkla veya Kaydır: Hediye Fırlat!
                     </div>
                 </div>
 
-                <div class="input-group" style="margin-bottom:16px;">
-                    <label>TikTok Kullanıcı Adınız (İsteğe bağlı)</label>
-                    <input type="text" id="reqTiktok" class="input-control" placeholder="@kullaniciadiniz">
+                <canvas id="heroCanvas"></canvas>
+
+                <div class="canvas-footer-stats">
+                    <div>Arenadaki Küreler: <strong id="orbCount">18</strong></div>
+                    <div>Yörünge Hızı: <strong id="speedIndicator">1.0x (Kaydır)</strong></div>
+                    <div>Fırlatılan: <strong id="giftThrownCount" style="color:var(--color-tiktok-cyan)">0</strong></div>
                 </div>
-
-                <div class="input-group" style="margin-bottom:16px;">
-                    <label>Talep Edilen Lisans / Notunuz</label>
-                    <input type="text" id="reqMessage" class="input-control" placeholder="Örn: 7 günlük denemek istiyorum veya bilgi almak istiyorum">
-                </div>
-
-                <button type="submit" class="btn-submit-request" id="btnReqSubmit">
-                    Lisans Talebini Gönder 📩
-                </button>
-            </form>
-
-            <div class="request-success" id="reqSuccess">
-                ✓ Talebiniz başarıyla yöneticiye iletildi! En kısa sürede iletişime geçilecektir.
             </div>
         </div>
     </section>
 
-    <!-- FOOTER -->
-    <footer class="footer">
-        <p>© 2024 MNG TikTok Game. Tüm hakları saklıdır.</p>
-        <p style="margin-top:8px;">
-            <a href="/admin">Yönetici Paneli</a> • <a href="#indir">Windows İndir</a>
-        </p>
+    <!-- Oyunlarımız Bölümü (Discord 24px Feature Cards) -->
+    <section id="games">
+        <div class="container">
+            <div class="section-header">
+                <div class="section-tag">YAYINCILAR İÇİN ÖZEL OYUNLAR</div>
+                <h2 class="section-title">ETKİLEŞİM VE REKABET DOLU BİR DÜNYA</h2>
+                <p class="section-desc">
+                    Tüm oyunlarımız TikTok Canlı Yayın altyapısıyla doğrudan entegre çalışır. İzleyicinin gönderdiği tek bir gül veya beğeni bile oyundaki tüm dengeleri anında değiştirir.
+                </p>
+            </div>
+
+            <div class="games-grid">
+                <!-- Oyun 1: MNG Orbit -->
+                <div class="game-card highlight">
+                    <div>
+                        <div class="game-card-badge badge-active">● ŞU AN YAYINDA</div>
+                        <div class="game-card-icon" style="background: rgba(254, 44, 85, 0.15); border-color: rgba(254, 44, 85, 0.3);">🪐</div>
+                        <h3 class="game-card-title">MNG TikTok Orbit</h3>
+                        <p class="game-card-desc">
+                            Yerçekimi arenasında geçen devasa rekabet! İzleyiciler profil fotoğraflarıyla yörüngede küreler oluşturur. Hediyeler geldikçe kütle büyür, küçük küreleri yutarak arenanın tek hakimi olmaya çalışırlar.
+                        </p>
+                        <ul class="game-card-features">
+                            <li><svg viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg> 0 ms Anında Yutma & Büyüme Sesleri</li>
+                            <li><svg viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg> Dev Profil Fotoğraflı Kazanan Ekranı</li>
+                            <li><svg viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg> Özelleştirilebilir Hediye & Kütle Ayarları</li>
+                        </ul>
+                    </div>
+                    <a href="#download" class="btn btn-tiktok btn-sm">Hemen Oyna</a>
+                </div>
+
+                <!-- Oyun 2: MNG Profil VS -->
+                <div class="game-card">
+                    <div>
+                        <div class="game-card-badge badge-active">● AKTİF WİDGET</div>
+                        <div class="game-card-icon" style="background: rgba(88, 101, 242, 0.15); border-color: rgba(88, 101, 242, 0.3);">⚔️</div>
+                        <h3 class="game-card-title">TikTok Profil VS</h3>
+                        <p class="game-card-desc">
+                            İki rakip veya iki izleyici grubu arasında kafes dövüşü! Hediyeler ve beğenilerle bar dolar, animasyonlu canlı düello ekranı OBS yayınına saniyeler içinde eklenir.
+                        </p>
+                        <ul class="game-card-features">
+                            <li><svg viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg> Canlı Geri Sayım & Tur Sistemi</li>
+                            <li><svg viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg> OBS Şeffaf Tarayıcı Kaynağı</li>
+                            <li><svg viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg> Otomatik Kazanan İlanı</li>
+                        </ul>
+                    </div>
+                    <a href="#download" class="btn btn-outline btn-sm">Widget'ı İncele</a>
+                </div>
+
+                <!-- Oyun 3: Tower Wars (YENİ) -->
+                <div class="game-card">
+                    <div>
+                        <div class="game-card-badge badge-new">★ YENİ GELİYOR</div>
+                        <div class="game-card-icon" style="background: rgba(37, 244, 238, 0.15); border-color: rgba(37, 244, 238, 0.3);">🏰</div>
+                        <h3 class="game-card-title">TikTok Tower Wars</h3>
+                        <p class="game-card-desc">
+                            Yayıncıya karşı tüm chat! İzleyiciler sohbete yazdıkları komutlarla minyon dalgaları gönderir; hediyelerle dev canavarlar çağırarak yayıncının kalesini yıkmaya çalışırlar.
+                        </p>
+                        <ul class="game-card-features">
+                            <li><svg viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg> Chat Yorumlarıyla Asker Spawn Etme</li>
+                            <li><svg viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg> Hediye Bazlı Savunma Kuleleri</li>
+                            <li><svg viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg> Epik Boss Savaşları</li>
+                        </ul>
+                    </div>
+                    <span class="btn btn-outline btn-sm" style="opacity: 0.6; cursor: default;">Çok Yakında</span>
+                </div>
+
+                <!-- Oyun 4: Chat Speed Run (GELECEK) -->
+                <div class="game-card">
+                    <div>
+                        <div class="game-card-badge badge-upcoming">⚡ GELECEK OYUN</div>
+                        <div class="game-card-icon" style="background: rgba(253, 162, 32, 0.15); border-color: rgba(253, 162, 32, 0.3);">🏎️</div>
+                        <h3 class="game-card-title">Cyber Chat Race</h3>
+                        <p class="game-card-desc">
+                            Seyircilerin kendi arabalarını seçip yarıştığı neon pist. Hediyeler nitro basar, beğeniler virajlarda drift açar. İlk bitiş çizgisini geçen ekranın ortasında kupayı kaldırır!
+                        </p>
+                        <ul class="game-card-features">
+                            <li><svg viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg> 32 Kişilik Eş Zamanlı Neon Pist</li>
+                            <li><svg viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg> Canlı Spiker & Hediye Nitrosu</li>
+                        </ul>
+                    </div>
+                    <span class="btn btn-outline btn-sm" style="opacity: 0.6; cursor: default;">Geliştiriliyor</span>
+                </div>
+
+                <!-- Oyun 5: Bilgi Arenası -->
+                <div class="game-card">
+                    <div>
+                        <div class="game-card-badge badge-upcoming">⚡ GELECEK OYUN</div>
+                        <div class="game-card-icon" style="background: rgba(235, 69, 158, 0.15); border-color: rgba(235, 69, 158, 0.3);">🧠</div>
+                        <h3 class="game-card-title">Kelime & Bilgi Arenası</h3>
+                        <p class="game-card-desc">
+                            Yapay zeka destekli soru havuzuyla sohbeti canlandıran bilgi düellosu. Yorumlara ilk doğru cevabı yazan izleyicinin avatarı basamak atlar ve ödül havuzundan payını alır.
+                        </p>
+                        <ul class="game-card-features">
+                            <li><svg viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg> Binlerce Güncel Genel Kültür Sorusu</li>
+                            <li><svg viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg> Anlık Sohbet Okuma ve Doğrulama</li>
+                        </ul>
+                    </div>
+                    <span class="btn btn-outline btn-sm" style="opacity: 0.6; cursor: default;">Planlandı</span>
+                </div>
+            </div>
+
+            <!-- Gelecek Oyunlar Ekosistem Paragrafı -->
+            <div class="ecosystem-banner">
+                <div class="ecosystem-icon">🚀</div>
+                <div class="ecosystem-content">
+                    <h3>Yayıncılarımız İçin Sürekli Büyüyen Oyun Ekosistemi</h3>
+                    <p>
+                        MNG TikTok Game yalnızca tek bir oyun değil; canlı yayıncıların tüm ihtiyaçlarına cevap veren profesyonel bir interaktif oyun motorudur. Yeni eklediğimiz <strong>TikTok Tower Wars</strong> ile strateji ve kule savunmasını canlı yayına taşırken, yolda olan <strong>Cyber Chat Race</strong> ve <strong>Kelime & Bilgi Arenası</strong> ile her yayıncı kendi kitlesine uygun benzersiz bir oyun deneyimi sunabilecek. Tek bir launcher ile tüm oyunlar tek tıkla indirilir, otomatik güncellenir ve yayına anında hazır hale gelir!
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Nasıl Çalışır? (3 Adım) -->
+    <section id="how">
+        <div class="container">
+            <div class="section-header">
+                <div class="section-tag">KOLAY ENTEGRASYON</div>
+                <h2 class="section-title">3 ADIMDA YAYINA BAŞLA</h2>
+                <p class="section-desc">Karmaşık ayarlara, saatlerce süren kodlamalara son. 2 dakikada her şey hazır.</p>
+            </div>
+
+            <div class="steps-grid">
+                <div class="step-box">
+                    <div class="step-number">1</div>
+                    <h3 class="step-title">Launcher'ı İndir</h3>
+                    <p class="step-desc">Windows kurulum dosyamızı indirin ve tek tıkla kurun. Masaüstü kısayolundan başlatın.</p>
+                </div>
+
+                <div class="step-box">
+                    <div class="step-number">2</div>
+                    <h3 class="step-title">Kullanıcı Adını Gir</h3>
+                    <p class="step-desc">TikTok kullanıcı adınızı yazın. Şifre gerekmez; sistem yayınınıza halka açık canlı soketle bağlanır.</p>
+                </div>
+
+                <div class="step-box">
+                    <div class="step-number">3</div>
+                    <h3 class="step-title">OBS'e Ekle & Başlat</h3>
+                    <p class="step-desc">Oyun penceresini OBS veya TikTok Live Studio'da ekran/pencere yakalama ile yayına verin!</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- İndirme Bölümü CTA -->
+    <section id="download" style="text-align: center;">
+        <div class="container">
+            <div style="background: linear-gradient(135deg, rgba(88, 101, 242, 0.25) 0%, rgba(254, 44, 85, 0.2) 100%); border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 32px; padding: 60px 30px; max-width: 900px; margin: 0 auto; box-shadow: 0 20px 60px rgba(0,0,0,0.5);">
+                <div class="section-tag" style="color: var(--color-tiktok-cyan);">HAZIR MISINIZ?</div>
+                <h2 class="section-title" style="font-size: 38px; margin-bottom: 16px;">YAYINLARINIZI BİR ÜST SEVİYEYE TAŞIYIN</h2>
+                <p class="section-desc" style="max-width: 620px; margin: 0 auto 36px auto;">
+                    MNG TikTok Game v1.9.2 sürümünü hemen ücretsiz indirin. Türkçe karakter düzeltmeleri, donma engellemeleri ve otomatik kullanıcı adı hatırlama özellikleriyle hemen deneyin.
+                </p>
+
+                <div style="display: flex; justify-content: center; gap: 18px; flex-wrap: wrap;">
+                    <a href="https://drive.google.com/file/d/1g-dEVnq_8ksvCTuHq9q7Ur-MGiFBpzND/view?usp=sharing" target="_blank" class="btn btn-tiktok" style="font-size: 17px; padding: 18px 36px;">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
+                        MNG TikTok Game Setup 1.9.2 İndir
+                    </a>
+                    <a href="/download/setup-direct" class="btn btn-outline" style="font-size: 16px; padding: 18px 30px;">
+                        Doğrudan Sunucudan İndir (.exe)
+                    </a>
+                </div>
+                <div style="margin-top: 18px; font-size: 13px; color: var(--color-greyple);">
+                    Windows 10 / 11 Desteklenir • Boyut: ~110 MB • Virüssüz & Güvenli
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Soru, Öneri & Lisans Talep Bölümü -->
+    <section class="feedback-section" id="talep">
+        <div class="container">
+            <div class="section-header">
+                <div class="section-tag">BİZE ULAŞIN</div>
+                <h2 class="section-title">SORU, ÖNERİ VE LİSANS TALEBİ</h2>
+                <p class="section-desc">Yeni oyun fikirleriniz, karşılaştığınız sorunlar veya lisans aktivasyon talepleriniz doğrudan ekibimize ve admin panelimize iletilir.</p>
+            </div>
+
+            <div class="feedback-card">
+                <form id="talepForm">
+                    <div class="form-grid">
+                        <div>
+                            <label class="form-label" for="ad">Adınız / Yayıncı Adınız *</label>
+                            <input class="form-input" type="text" id="ad" name="ad" placeholder="Örn: Mehmet veya @mng_streamer" required>
+                        </div>
+                        <div>
+                            <label class="form-label" for="iletisim">E-Posta veya Telefon / Discord *</label>
+                            <input class="form-input" type="text" id="iletisim" name="iletisim" placeholder="Örn: yayinci@gmail.com veya Discord Tag" required>
+                        </div>
+                        <div>
+                            <label class="form-label" for="tur">Talep / İleti Türü *</label>
+                            <select class="form-select" id="tur" name="tur">
+                                <option value="öneri">💡 Yeni Oyun / Özellik Önerisi</option>
+                                <option value="soru">❓ Soru / Yardım Talebi</option>
+                                <option value="lisans">🔑 Lisans Satın Alma / Aktivasyon</option>
+                                <option value="hata">🐛 Hata Bildirimi</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="form-label" for="konu">Konu Başlığı</label>
+                            <input class="form-input" type="text" id="konu" name="konu" placeholder="Örn: Yeni bir kule savunma modu önerisi">
+                        </div>
+                        <div class="form-group-full">
+                            <label class="form-label" for="mesaj">Mesajınız / Detaylar *</label>
+                            <textarea class="form-textarea" id="mesaj" name="mesaj" placeholder="Önerinizi, sorunuzu veya lisans talebinizin ayrıntılarını buraya yazın..." required></textarea>
+                        </div>
+                    </div>
+
+                    <div style="display: flex; justify-content: flex-end;">
+                        <button type="submit" class="btn btn-blurple" id="talepSubmitBtn" style="padding: 15px 36px; font-size: 16px;">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+                            Talebi Gönder
+                        </button>
+                    </div>
+
+                    <div class="form-status" id="talepStatus"></div>
+                </form>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="site-footer">
+        <div class="container">
+            <div class="footer-grid">
+                <div class="footer-col">
+                    <div class="brand-logo" style="margin-bottom: 16px;">
+                        <div class="brand-badge" style="width: 36px; height: 36px; font-size: 16px;">M</div>
+                        <div class="brand-title" style="font-size: 18px;">MNG <span>TIKTOK</span> GAME</div>
+                    </div>
+                    <p style="line-height: 1.6; max-width: 340px; margin-bottom: 16px;">
+                        TikTok canlı yayıncılarının yayınlarını unutulmaz bir oyun şölenine dönüştüren yeni nesil interaktif eğlence platformu.
+                    </p>
+                    <div style="display: flex; gap: 12px;">
+                        <span style="display: inline-block; padding: 4px 10px; background: rgba(255,255,255,0.06); border-radius: 8px; font-size: 12px;">v1.9.2</span>
+                        <span style="display: inline-block; padding: 4px 10px; background: rgba(87,242,135,0.1); color: var(--color-spring-green); border-radius: 8px; font-size: 12px;">Tüm Sistemler Aktif</span>
+                    </div>
+                </div>
+
+                <div class="footer-col">
+                    <h4>Oyunlar</h4>
+                    <ul class="footer-links">
+                        <li><a href="#games">MNG Orbit (Canlı)</a></li>
+                        <li><a href="#games">Profil VS (Aktif)</a></li>
+                        <li><a href="#games">Tower Wars (Yeni)</a></li>
+                        <li><a href="#games">Cyber Race (Yakında)</a></li>
+                    </ul>
+                </div>
+
+                <div class="footer-col">
+                    <h4>Hızlı Bağlantılar</h4>
+                    <ul class="footer-links">
+                        <li><a href="#sim">Canlı Simülatör</a></li>
+                        <li><a href="#download">İndir (Setup)</a></li>
+                        <li><a href="#talep">Öneri & Soru</a></li>
+                        <li><a href="/admin">Yönetici Girişi</a></li>
+                    </ul>
+                </div>
+
+                <div class="footer-col">
+                    <h4>Yayıncı Desteği</h4>
+                    <ul class="footer-links">
+                        <li><a href="#talep">Canlı Destek Talebi</a></li>
+                        <li><a href="#how">OBS Entegrasyon Rehberi</a></li>
+                        <li><a href="#talep">Lisans Aktivasyonu</a></li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="footer-bottom">
+                <div>© 2026 MNG TikTok Game Ecosystem. Tüm Hakları Saklıdır.</div>
+                <div>Geliştirici & Tasarım: MNG Studio</div>
+            </div>
+        </div>
     </footer>
 
+    <!-- Interactive Canvas & Form JavaScript -->
     <script>
-        async function submitLicenseRequest(e) {
-            e.preventDefault();
-            const btn = document.getElementById("btnReqSubmit");
-            const success = document.getElementById("reqSuccess");
+        // =====================================================================
+        // OYNANABİLİR ETKİLEŞİMLİ CANVAS ARENA (Mouse Kaydırma ve Tıklama)
+        // =====================================================================
+        const canvas = document.getElementById('heroCanvas');
+        const ctx = canvas.getContext('2d');
+        const orbCountEl = document.getElementById('orbCount');
+        const speedIndicatorEl = document.getElementById('speedIndicator');
+        const giftCountEl = document.getElementById('giftThrownCount');
 
-            btn.disabled = true;
-            btn.textContent = "Gönderiliyor...";
+        let width, height;
+        let giftCount = 0;
+        let globalSpeed = 1.0;
+        let lastScrollY = window.scrollY;
+
+        function resize() {
+            width = canvas.parentElement.clientWidth - 40;
+            height = 380;
+            canvas.width = width * window.devicePixelRatio;
+            canvas.height = height * window.devicePixelRatio;
+            ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+            canvas.style.width = width + 'px';
+            canvas.style.height = height + 'px';
+        }
+        window.addEventListener('resize', resize);
+        resize();
+
+        // Parçacıklar / Küreler (TikTok & Discord Paleti)
+        const colors = ['#fe2c55', '#25f4ee', '#5865f2', '#57f287', '#fda220', '#ffffff'];
+        const usernames = ['@yayinci', '@tiktok_star', '@mehmet99', '@berke_can', '@ayse_vip', '@hakan_pro', '@queen_live'];
+
+        class Orb {
+            constructor(x, y, r, color, name) {
+                this.x = x || Math.random() * (width - 80) + 40;
+                this.y = y || Math.random() * (height - 80) + 40;
+                this.r = r || Math.random() * 14 + 10;
+                this.color = color || colors[Math.floor(Math.random() * colors.length)];
+                this.name = name || usernames[Math.floor(Math.random() * usernames.length)];
+                this.vx = (Math.random() - 0.5) * 2;
+                this.vy = (Math.random() - 0.5) * 2;
+                this.pulse = Math.random() * Math.PI;
+            }
+
+            update(speed) {
+                this.pulse += 0.05;
+                this.x += this.vx * speed;
+                this.y += this.vy * speed;
+
+                if (this.x - this.r < 0) { this.x = this.r; this.vx *= -1; }
+                if (this.x + this.r > width) { this.x = width - this.r; this.vx *= -1; }
+                if (this.y - this.r < 0) { this.y = this.r; this.vy *= -1; }
+                if (this.y + this.r > height) { this.y = height - this.r; this.vy *= -1; }
+            }
+
+            draw() {
+                ctx.save();
+                
+                // Glow efekti
+                ctx.shadowBlur = 15;
+                ctx.shadowColor = this.color;
+
+                // Dış Halka / Küre
+                ctx.beginPath();
+                const displayR = this.r + Math.sin(this.pulse) * 1.5;
+                ctx.arc(this.x, this.y, displayR, 0, Math.PI * 2);
+                ctx.fillStyle = this.color;
+                ctx.fill();
+
+                // İç parlama
+                ctx.beginPath();
+                ctx.arc(this.x - displayR * 0.3, this.y - displayR * 0.3, displayR * 0.35, 0, Math.PI * 2);
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+                ctx.fill();
+
+                // İsim etiketi
+                ctx.shadowBlur = 0;
+                ctx.fillStyle = '#ffffff';
+                ctx.font = '10px Inter, sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText(this.name, this.x, this.y + displayR + 13);
+
+                ctx.restore();
+            }
+        }
+
+        const orbs = [];
+        for (let i = 0; i < 18; i++) {
+            orbs.push(new Orb());
+        }
+
+        // Mouse Tekerleğiyle Hızlandırma & Scroll Tepkisi
+        window.addEventListener('wheel', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            // Sayfa kaydırıldıkça veya canvas üzerindeyken hızlandır
+            globalSpeed = Math.min(4.5, globalSpeed + Math.abs(e.deltaY) * 0.003);
+            speedIndicatorEl.textContent = globalSpeed.toFixed(1) + 'x';
+        }, { passive: true });
+
+        // Tıklayınca Hediye & Yeni Küre Fırlatma
+        canvas.addEventListener('click', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const mouseX = e.clientX - rect.left;
+            const mouseY = e.clientY - rect.top;
+
+            // Hediye patlaması: 3 yeni parça
+            for (let i = 0; i < 2; i++) {
+                const newOrb = new Orb(mouseX, mouseY, 16, '#fe2c55', '🎁 HEDİYE');
+                newOrb.vx = (Math.random() - 0.5) * 6;
+                newOrb.vy = (Math.random() - 0.5) * 6;
+                orbs.push(newOrb);
+            }
+
+            giftCount++;
+            giftCountEl.textContent = giftCount;
+            orbCountEl.textContent = orbs.length;
+
+            if (orbs.length > 40) orbs.shift(); // Hafıza kontrolü
+        });
+
+        // Çizim Döngüsü
+        function animate() {
+            ctx.clearRect(0, 0, width, height);
+
+            // Bağlantı çizgileri
+            for (let i = 0; i < orbs.length; i++) {
+                for (let j = i + 1; j < orbs.length; j++) {
+                    const dx = orbs[i].x - orbs[j].x;
+                    const dy = orbs[i].y - orbs[j].y;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+                    if (dist < 110) {
+                        ctx.beginPath();
+                        ctx.moveTo(orbs[i].x, orbs[i].y);
+                        ctx.lineTo(orbs[j].x, orbs[j].y);
+                        ctx.strokeStyle = `rgba(88, 101, 242, ${0.35 * (1 - dist / 110)})`;
+                        ctx.lineWidth = 1;
+                        ctx.stroke();
+                    }
+                }
+            }
+
+            // Hızı yavaşça normale döndür
+            if (globalSpeed > 1.0) {
+                globalSpeed -= 0.015;
+                if (globalSpeed < 1.0) globalSpeed = 1.0;
+                speedIndicatorEl.textContent = globalSpeed.toFixed(1) + 'x';
+            }
+
+            orbs.forEach(orb => {
+                orb.update(globalSpeed);
+                orb.draw();
+            });
+
+            requestAnimationFrame(animate);
+        }
+        animate();
+
+        // =====================================================================
+        // SORU & ÖNERİ TALEP FORMU GÖNDERİMİ (Backend API)
+        // =====================================================================
+        const talepForm = document.getElementById('talepForm');
+        const talepStatus = document.getElementById('talepStatus');
+        const submitBtn = document.getElementById('talepSubmitBtn');
+
+        talepForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'İletiliyor...';
+            talepStatus.className = 'form-status';
+            talepStatus.style.display = 'none';
 
             const payload = {
-                ad: document.getElementById("reqName").value,
-                iletisim: document.getElementById("reqContact").value,
-                tiktok_kullanici: document.getElementById("reqTiktok").value,
-                mesaj: document.getElementById("reqMessage").value
+                ad: document.getElementById('ad').value.trim(),
+                iletisim: document.getElementById('iletisim').value.trim(),
+                tur: document.getElementById('tur').value,
+                konu: document.getElementById('konu').value.trim(),
+                mesaj: document.getElementById('mesaj').value.trim()
             };
 
             try {
-                const res = await fetch("/api/talep-gonder", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
+                const res = await fetch('/api/talep', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)
                 });
                 const data = await res.json();
-                if (data.basarili) {
-                    success.style.display = "block";
-                    document.getElementById("licenseRequestForm").reset();
-                    btn.textContent = "Talep İletildi ✓";
+
+                if (res.ok && data.success) {
+                    talepStatus.textContent = '✓ Harika! Talebiniz başarıyla alındı ve yönetim panelimize iletildi. En kısa sürede dönüş yapacağız.';
+                    talepStatus.className = 'form-status success';
+                    talepForm.reset();
                 } else {
-                    alert(data.error || "Hata oluştu");
-                    btn.disabled = false;
-                    btn.textContent = "Lisans Talebini Gönder 📩";
+                    talepStatus.textContent = '✕ Hata: ' + (data.message || 'Talep gönderilemedi. Lütfen tekrar deneyin.');
+                    talepStatus.className = 'form-status error';
                 }
             } catch (err) {
-                alert("Bağlantı hatası: " + err.message);
-                btn.disabled = false;
-                btn.textContent = "Lisans Talebini Gönder 📩";
+                talepStatus.textContent = '✕ Sunucuya bağlanırken bir sorun oluştu. Lütfen internetinizi kontrol edin.';
+                talepStatus.className = 'form-status error';
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg> Talebi Gönder';
             }
-        }
+        });
     </script>
 </body>
 </html>
