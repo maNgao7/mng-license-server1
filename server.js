@@ -266,13 +266,15 @@ function logEkle(lisansKod, cihazKimlik, islem, ip) {
 // =====================================================================
 // SÜRÜM BİLGİLERİ & İNDİRME LİNKLERİ
 // =====================================================================
-const EN_GUNCEL_SURUM = "2.0.1";
+const EN_GUNCEL_SURUM = "2.0.2";
 const EN_DUSUK_SURUM = "1.0.0";
 const SETUP_INDIRME_LINKI = "https://drive.usercontent.google.com/download?id=1g-dEVnq_8ksvCTuHq9q7Ur-MGiFBpzND&export=download&confirm=t";
 const SETUP_WEB_LINKI = "https://drive.google.com/file/d/1g-dEVnq_8ksvCTuHq9q7Ur-MGiFBpzND/view?usp=sharing";
 
 // Her güncellemede eklenen/değişen özellikler listesi
 const SURUM_NOTLARI = [
+    "v2.0.2 — MNG Orbit Hediye Seçimi: Hediye görselleri artık küçük, hızlı ve aranabilir sayfalarla yüklenir; seçim sonrası oyun donmaz veya çökmez.",
+    "v2.0.2 — Güncelleme Ekranı: İndirme tamamlandığında MNG TikTok Game markalı tam ekran güncelleniyor ekranı ve hareketli ilerleme göstergesi görünür.",
     "v2.0.1 — Otomatik Başlatma Düzeltildi: Launcher açıldığında TikTok VS Profil oyununa otomatik girme sorunu çözüldü, kullanıcı istediği oyunu seçer.",
     "v2.0.1 — MNG Orbit Tüm Hediyeler Aktif: TikTok VS Profil kütüphanesindeki tüm popüler yerel hediyeler entegre edildi, aranabilir ve eksiksiz görünüyor.",
     "v2.0.1 — Anında Ses Tepkisi (0 ms): Yutma ve büyüme sesleri donanımsal 0 ms Web Audio ile anında çalar.",
