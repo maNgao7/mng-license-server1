@@ -266,13 +266,16 @@ function logEkle(lisansKod, cihazKimlik, islem, ip) {
 // =====================================================================
 // SÜRÜM BİLGİLERİ & İNDİRME LİNKLERİ
 // =====================================================================
-const EN_GUNCEL_SURUM = "3.5.0";
+const EN_GUNCEL_SURUM = "3.5.1";
 const EN_DUSUK_SURUM = "1.0.0";
 const SETUP_INDIRME_LINKI = "https://drive.usercontent.google.com/download?id=1g-dEVnq_8ksvCTuHq9q7Ur-MGiFBpzND&export=download&confirm=t";
 const SETUP_WEB_LINKI = "https://drive.google.com/file/d/1g-dEVnq_8ksvCTuHq9q7Ur-MGiFBpzND/view?usp=sharing";
 
 // Her güncellemede eklenen/değişen özellikler listesi
 const SURUM_NOTLARI = [
+    "v3.5.1 — Modüler Oyun Kurulumu: MNG Crowd Control artık harici indirilebilir modüler paket olarak sunulur; kurulum dosyası hafifletildi ve 'KUR / YÜKLE' butonu ile tek tıkla yüklenir.",
+    "v3.5.1 — Oyun Kapanış & Yeniden Giriş Onarımı: Oyundan çıkıldığında arka plan sunucusu ve bağlantılar anında temizlenir; butonlar serbest bırakılarak tekrar oyuna giriş pürüzsüz hale getirildi.",
+    "v3.5.1 — Profil, İsim & Engel Boyut Ayarları: Ayarlar paneline 'Genel Engel Boyutu' ve 'Profil & İsim Boyutu' sürgüleri eklendi. Geniş ekranlarda bile profil resimleri ve kullanıcı adları devasa ve net ölçeklenebilir.",
     "v3.5.0 — Yeni Oyunumuz: MNG Crowd Control İnteraktif Hayatta Kalma Oyunu yayına alındı!",
     "v3.5.0 — 1v1 Arena Düellosu & Mega Boss: 50 hediye puanında veya Para Tabancası ile en çok hediye atan izleyici dev patron olarak sahaya iner, çevre temizlenir, ekran genişler ve yayıncının hasarı 1.5x katına çıkar!",
     "v3.5.0 — Belirgin Kullanıcı Adları & Hediye Rozetleri: Engel ve bossların üzerinde gönderen kişinin net kullanıcı adı ve hediye puanı gösterilir.",
@@ -662,6 +665,19 @@ app.get("/download/portable", (req, res) => {
     } else {
         res.status(404).send("Taşınabilir dosya henüz oluşturulmadı.");
     }
+});
+
+app.get("/download/game/:gameZip", (req, res) => {
+    const dosya = req.params.gameZip;
+    const zipYolu = path.join(DOWNLOADS_DIR, "games", dosya);
+    if (fs.existsSync(zipYolu)) {
+        return res.download(zipYolu);
+    }
+    const altYolu = path.join(DOWNLOADS_DIR, dosya);
+    if (fs.existsSync(altYolu)) {
+        return res.download(altYolu);
+    }
+    res.status(404).json({ error: "Oyun paketi bulunamadı: " + dosya });
 });
 
 // =====================================================================
