@@ -402,6 +402,38 @@
             gap: 6px;
         }
 
+        .demo-tabs {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .demo-tab {
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            color: var(--color-fog);
+            padding: 6px 14px;
+            border-radius: var(--radius-pill);
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.25s ease;
+        }
+
+        .demo-tab:hover {
+            background: rgba(255, 255, 255, 0.14);
+            color: #ffffff;
+            transform: translateY(-1px);
+        }
+
+        .demo-tab.active {
+            background: linear-gradient(135deg, var(--color-tiktok-red), var(--color-tiktok-cyan));
+            color: #ffffff;
+            border-color: transparent;
+            box-shadow: 0 0 16px rgba(37, 244, 238, 0.45);
+        }
+
         #heroCanvas {
             width: 100%;
             height: 380px;
@@ -934,7 +966,7 @@
             <div class="hero-content">
                 <div class="hero-badge-pill">
                     <span class="dot"></span>
-                    YENİ SÜRÜM v3.5.1 HAZIR
+                    YENİ SÜRÜM v3.5.5 HAZIR
                 </div>
 
                 <h1 class="hero-title">
@@ -949,12 +981,12 @@
                 <div class="hero-cta-group">
                     <button onclick="hemenIndir()" class="btn btn-tiktok" style="font-size: 16px; padding: 16px 30px;">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
-                        WINDOWS İÇİN İNDİR (v3.5.1)
+                        WINDOWS İÇİN İNDİR (v3.5.5)
                     </button>
                     
                     <a href="#sim" class="btn btn-outline" style="font-size: 16px; padding: 16px 26px;">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
-                        Arenayı Test Et
+                        Demoları Test Et
                     </a>
                 </div>
 
@@ -967,23 +999,31 @@
 
             <!-- Interaktif Oynanabilir Görsel (Refero Style Canvas Arena) -->
             <div class="arena-interactive-card" id="sim">
-                <div class="arena-card-header">
-                    <div class="arena-title-wrapper">
-                        <div class="arena-dot-live"></div>
-                        <div class="arena-title">CANLI ORBIT SİMÜLATÖRÜ</div>
+                <div class="arena-card-header" style="flex-direction: column; align-items: stretch; gap: 12px;">
+                    <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+                        <div class="arena-title-wrapper">
+                            <div class="arena-dot-live"></div>
+                            <div class="arena-title" id="simTitle">🪐 CANLI ORBIT SİMÜLATÖRÜ</div>
+                        </div>
+                        <div class="arena-instructions" id="simInstructions">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+                            Tıkla veya Kaydır: Hediye Fırlat!
+                        </div>
                     </div>
-                    <div class="arena-instructions">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
-                        Tıkla veya Kaydır: Hediye Fırlat!
+                    <div class="demo-tabs">
+                        <button class="demo-tab active" id="tab-orbit" onclick="seciliDemoGoster('orbit')">🪐 MNG Orbit</button>
+                        <button class="demo-tab" id="tab-crowd" onclick="seciliDemoGoster('crowd')">🎯 Crowd Control</button>
+                        <button class="demo-tab" id="tab-vs" onclick="seciliDemoGoster('vs')">⚔️ TikTok VS</button>
+                        <button class="demo-tab" id="tab-savas" onclick="seciliDemoGoster('savas')">🏰 Savaş Alanı (Demo)</button>
                     </div>
                 </div>
 
                 <canvas id="heroCanvas"></canvas>
 
                 <div class="canvas-footer-stats">
-                    <div>Arenadaki Küreler: <strong id="orbCount">18</strong></div>
-                    <div>Yörünge Hızı: <strong id="speedIndicator">1.0x (Kaydır)</strong></div>
-                    <div>Fırlatılan: <strong id="giftThrownCount" style="color:var(--color-tiktok-cyan)">0</strong></div>
+                    <div><span id="stat1Label">Arenadaki Küreler:</span> <strong id="orbCount">18</strong></div>
+                    <div><span id="stat2Label">Yörünge Hızı:</span> <strong id="speedIndicator">1.0x (Kaydır)</strong></div>
+                    <div><span id="stat3Label">Fırlatılan:</span> <strong id="giftThrownCount" style="color:var(--color-tiktok-cyan)">0</strong></div>
                 </div>
             </div>
         </div>
@@ -1002,16 +1042,16 @@
 
             <div class="games-grid">
                 <!-- Oyun 1: MNG Crowd Control (Yeni Oyunumuz) -->
-                <div class="game-card highlight">
+                <div class="game-card highlight" style="border-color: rgba(255, 107, 53, 0.4); background: linear-gradient(180deg, rgba(255, 107, 53, 0.09) 0%, rgba(22, 24, 45, 0.85) 100%);">
                     <div>
                         <div style="display:flex; align-items:center; gap:8px; margin-bottom:20px; flex-wrap:wrap;">
-                            <div class="sparkle-badge">✨ YENİ OYUNUMUZ</div>
-                            <div class="game-card-badge badge-active" style="margin-bottom:0;">● ŞU AN YAYINDA (v3.5.1)</div>
+                            <div class="sparkle-badge" style="background: linear-gradient(135deg, #ff6b35, #f53b57);">✨ YENİ OYUNUMUZ</div>
+                            <div class="game-card-badge badge-active" style="margin-bottom:0;">● ŞU AN YAYINDA (v3.5.5)</div>
                         </div>
-                        <div class="game-card-icon" style="background: rgba(254, 44, 85, 0.15); border-color: rgba(254, 44, 85, 0.3); font-size: 32px;">🎯</div>
+                        <div class="game-card-icon" style="background: rgba(255, 107, 53, 0.15); border-color: rgba(255, 107, 53, 0.3); font-size: 32px;">🎯</div>
                         <h3 class="game-card-title">MNG Crowd Control</h3>
                         <p class="game-card-desc">
-                            TikTok izleyicileri hediye göndererek yayıncıya engel veya destek olur. Gül'den engeller, Money Gun ve 50 puan hedefinden devasa boss! 1v1 Arena Düellosu, 1.5x hasar modu ve canlı OBS sıralama widget'ı!
+                            TikTok izleyicileri hediye göndererek yayıncıya canlı engel fırlatır veya koruma kalkanı verir. Gül'den engeller, Money Gun ve 50 hediye puanından devasa Mega Boss! 1v1 Arena Düellosu, 1.5x hasar modu ve canlı OBS sıralama widget'ı!
                         </p>
                         <ul class="game-card-features">
                             <li><svg viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg> Hediye = Canlı Engel veya Destek</li>
@@ -1019,7 +1059,10 @@
                             <li><svg viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg> Gönderen Profil Fotoğraflı Boss & Canlı OBS Widget</li>
                         </ul>
                     </div>
-                    <button onclick="hemenIndir()" class="btn btn-tiktok btn-sm">Hemen Oyna</button>
+                    <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:16px;">
+                        <button onclick="seciliDemoGoster('crowd')" class="btn btn-tiktok btn-sm" style="background:linear-gradient(135deg, #ff6b35, #f53b57);">🎮 Demoyu Oyna</button>
+                        <button onclick="hemenIndir()" class="btn btn-outline btn-sm">Hemen İndir</button>
+                    </div>
                 </div>
 
                 <!-- Oyun 2: MNG Orbit -->
@@ -1037,7 +1080,10 @@
                             <li><svg viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg> Özelleştirilebilir Hediye & Kütle Ayarları</li>
                         </ul>
                     </div>
-                    <a href="#sim" class="btn btn-outline btn-sm">Arenayı İncele</a>
+                    <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:16px;">
+                        <button onclick="seciliDemoGoster('orbit')" class="btn btn-tiktok btn-sm">🎮 Demoyu Oyna</button>
+                        <a href="#sim" class="btn btn-outline btn-sm">Arenayı İncele</a>
+                    </div>
                 </div>
 
                 <!-- Oyun 3: MNG Profil VS -->
@@ -1055,7 +1101,31 @@
                             <li><svg viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg> Beyaz, Siyah-Beyaz & Neon Efektleri</li>
                         </ul>
                     </div>
-                    <button onclick="hemenIndir()" class="btn btn-outline btn-sm">Widget'ı İncele</button>
+                    <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:16px;">
+                        <button onclick="seciliDemoGoster('vs')" class="btn btn-tiktok btn-sm" style="background:linear-gradient(135deg, #fe2c55, #8b5cf6);">🎮 Demoyu Oyna</button>
+                        <button onclick="hemenIndir()" class="btn btn-outline btn-sm">Widget'ı İncele</button>
+                    </div>
+                </div>
+
+                <!-- Oyun 4: Savaş Alanı (Battlefield) -->
+                <div class="game-card" style="border-color: rgba(245, 158, 11, 0.4); background: linear-gradient(180deg, rgba(245, 158, 11, 0.08) 0%, rgba(22, 24, 45, 0.85) 100%);">
+                    <div>
+                        <div class="game-card-badge" style="background: rgba(245, 158, 11, 0.15); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.4);">● ÇOK YAKINDA (v3.6.0)</div>
+                        <div class="game-card-icon" style="background: rgba(245, 158, 11, 0.15); border-color: rgba(245, 158, 11, 0.3); font-size: 32px;">🏰</div>
+                        <h3 class="game-card-title">Savaş Alanı (Battlefield)</h3>
+                        <p class="game-card-desc">
+                            İki krallığın canlı yayında devasa strateji savaşı! İzleyicilerin gönderdiği her hediye savaş alanına piyadeler, okçular, ejderhalar ve mancınıklar indirir. Rakip kaleyi ilk yıkan taraf yayının şampiyonu olur!
+                        </p>
+                        <ul class="game-card-features">
+                            <li><svg viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg> Hediyeye Göre Farklı Birlik Üretimi (Piyade, Ejderha, Mancınık)</li>
+                            <li><svg viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg> Canlı Çatışma Fiziği & Kale Kuşatması</li>
+                            <li><svg viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg> Canlı OBS Şeffaf Katman & Zafer Efektleri</li>
+                        </ul>
+                    </div>
+                    <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:16px;">
+                        <button onclick="seciliDemoGoster('savas')" class="btn btn-tiktok btn-sm" style="background:linear-gradient(135deg, #f59e0b, #d97706);">🎮 Demoyu Oyna</button>
+                        <button class="btn btn-outline btn-sm" style="opacity:0.7; cursor:not-allowed;" title="v3.6.0 Güncellemesiyle Gelecek">🔒 Çok Yakında</button>
+                    </div>
                 </div>
             </div>
 
@@ -1113,13 +1183,13 @@
                 <div class="section-tag" style="color: var(--color-tiktok-cyan);">HAZIR MISINIZ?</div>
                 <h2 class="section-title" style="font-size: 38px; margin-bottom: 16px;">YAYINLARINIZI BİR ÜST SEVİYEYE TAŞIYIN</h2>
                 <p class="section-desc" style="max-width: 620px; margin: 0 auto 36px auto;">
-                    MNG TikTok Game v2.0.1 sürümünü hemen ücretsiz indirin. Hediye listesi donma düzeltmesi, web sitesi doğrudan indirme ve MNG Orbit iyileştirmeleriyle deneyin.
+                    MNG TikTok Game v3.5.5 sürümünü hemen ücretsiz indirin. Yeni Savaş Alanı strateji oyunu, MNG Crowd Control yükleme sistemi, özel kart renkleri ve sıfır gecikmeli canlı yayın entegrasyonuyla deneyin.
                 </p>
 
                 <div style="display: flex; justify-content: center; gap: 18px; flex-wrap: wrap;">
                     <button onclick="hemenIndir()" class="btn btn-tiktok" style="font-size: 17px; padding: 18px 36px; cursor: pointer;">
                         <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
-                        MNG TikTok Game Setup 2.0.1 İndir
+                        MNG TikTok Game Setup 3.5.5 İndir
                     </button>
                     <button onclick="hemenIndir()" class="btn btn-outline" style="font-size: 16px; padding: 18px 30px; cursor: pointer;">
                         Doğrudan İndir (.exe)
@@ -1197,7 +1267,7 @@
                         TikTok canlı yayıncılarının yayınlarını unutulmaz bir oyun şölenine dönüştüren yeni nesil interaktif eğlence platformu.
                     </p>
                     <div style="display: flex; gap: 12px;">
-                        <span style="display: inline-block; padding: 4px 10px; background: rgba(255,255,255,0.06); border-radius: 8px; font-size: 12px;">v3.5.1</span>
+                        <span style="display: inline-block; padding: 4px 10px; background: rgba(255,255,255,0.06); border-radius: 8px; font-size: 12px;">v3.5.5</span>
                         <span style="display: inline-block; padding: 4px 10px; background: rgba(87,242,135,0.1); color: var(--color-spring-green); border-radius: 8px; font-size: 12px;">Tüm Sistemler Aktif</span>
                     </div>
                 </div>
@@ -1205,9 +1275,10 @@
                 <div class="footer-col">
                     <h4>Oyunlar</h4>
                     <ul class="footer-links">
-                        <li><a href="#games">MNG Orbit (Canlı)</a></li>
-                        <li><a href="#games">Profil VS (Aktif)</a></li>
-                        <li><a href="#games">Yeni Oyunlar Yakında 🔜</a></li>
+                        <li><a href="#games">🎯 MNG Crowd Control</a></li>
+                        <li><a href="#games">🪐 MNG Orbit (Canlı)</a></li>
+                        <li><a href="#games">⚔️ Profil VS (Aktif)</a></li>
+                        <li><a href="#games">🏰 Savaş Alanı (Yakında)</a></li>
                     </ul>
                 </div>
 
@@ -1238,10 +1309,10 @@
         </div>
     </footer>
 
-    <!-- Interactive Canvas & Form JavaScript -->
+    <!-- Interactive Multi-Game Canvas & Form JavaScript -->
     <script>
         // =====================================================================
-        // OYNANABİLİR ETKİLEŞİMLİ CANVAS ARENA (Mouse Kaydırma ve Tıklama)
+        // ÇOKLU OYUN DEMO ARENASI (Orbit, Crowd Control, TikTok VS, Savaş Alanı)
         // =====================================================================
         const canvas = document.getElementById('heroCanvas');
         const ctx = canvas.getContext('2d');
@@ -1250,9 +1321,11 @@
         const giftCountEl = document.getElementById('giftThrownCount');
 
         let width, height;
+        let currentDemo = 'orbit';
         let giftCount = 0;
         let globalSpeed = 1.0;
-        let lastScrollY = window.scrollY;
+        let demoKills = 0;
+        let vsRed = 50, vsBlue = 50;
 
         function resize() {
             width = canvas.parentElement.clientWidth - 40;
@@ -1266,7 +1339,9 @@
         window.addEventListener('resize', resize);
         resize();
 
-        // Parçacıklar / Küreler (TikTok & Discord Paleti)
+        // -------------------------------------------------------------
+        // ORBIT MODU VERİLERİ
+        // -------------------------------------------------------------
         const colors = ['#fe2c55', '#25f4ee', '#5865f2', '#57f287', '#fda220', '#ffffff'];
         const usernames = ['@yayinci', '@tiktok_star', '@mehmet99', '@berke_can', '@ayse_vip', '@hakan_pro', '@queen_live'];
 
@@ -1281,115 +1356,594 @@
                 this.vy = (Math.random() - 0.5) * 2;
                 this.pulse = Math.random() * Math.PI;
             }
-
             update(speed) {
                 this.pulse += 0.05;
                 this.x += this.vx * speed;
                 this.y += this.vy * speed;
-
                 if (this.x - this.r < 0) { this.x = this.r; this.vx *= -1; }
                 if (this.x + this.r > width) { this.x = width - this.r; this.vx *= -1; }
                 if (this.y - this.r < 0) { this.y = this.r; this.vy *= -1; }
                 if (this.y + this.r > height) { this.y = height - this.r; this.vy *= -1; }
             }
-
             draw() {
                 ctx.save();
-                
-                // Glow efekti
                 ctx.shadowBlur = 15;
                 ctx.shadowColor = this.color;
-
-                // Dış Halka / Küre
                 ctx.beginPath();
                 const displayR = this.r + Math.sin(this.pulse) * 1.5;
                 ctx.arc(this.x, this.y, displayR, 0, Math.PI * 2);
                 ctx.fillStyle = this.color;
                 ctx.fill();
 
-                // İç parlama
                 ctx.beginPath();
                 ctx.arc(this.x - displayR * 0.3, this.y - displayR * 0.3, displayR * 0.35, 0, Math.PI * 2);
                 ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
                 ctx.fill();
 
-                // İsim etiketi
                 ctx.shadowBlur = 0;
                 ctx.fillStyle = '#ffffff';
                 ctx.font = '10px Inter, sans-serif';
                 ctx.textAlign = 'center';
                 ctx.fillText(this.name, this.x, this.y + displayR + 13);
-
                 ctx.restore();
             }
         }
-
         const orbs = [];
-        for (let i = 0; i < 18; i++) {
-            orbs.push(new Orb());
+        for (let i = 0; i < 18; i++) orbs.push(new Orb());
+
+        // -------------------------------------------------------------
+        // CROWD CONTROL MODU VERİLERİ (Yayıncı + Engeller + Lazerler)
+        // -------------------------------------------------------------
+        let crowdPlayer = { x: 0, y: 0, r: 18, shield: 100, angle: 0 };
+        let obstacles = [];
+        let lasers = [];
+        let particles = [];
+
+        function initCrowdDemo() {
+            crowdPlayer.x = width / 2;
+            crowdPlayer.y = height / 2;
+            obstacles = [];
+            lasers = [];
+            for (let i = 0; i < 7; i++) spawnCrowdObstacle();
+            updateStatsUI(obstacles.length, '1.5x (Aktif)', demoKills);
         }
 
-        // Mouse Tekerleğiyle Hızlandırma & Scroll Tepkisi
-        window.addEventListener('wheel', (e) => {
-            const rect = canvas.getBoundingClientRect();
-            // Sayfa kaydırıldıkça veya canvas üzerindeyken hızlandır
-            globalSpeed = Math.min(4.5, globalSpeed + Math.abs(e.deltaY) * 0.003);
-            speedIndicatorEl.textContent = globalSpeed.toFixed(1) + 'x';
-        }, { passive: true });
+        function spawnCrowdObstacle(isBoss = false) {
+            const side = Math.floor(Math.random() * 4);
+            let x = 0, y = 0;
+            if (side === 0) { x = Math.random() * width; y = -30; }
+            else if (side === 1) { x = width + 30; y = Math.random() * height; }
+            else if (side === 2) { x = Math.random() * width; y = height + 30; }
+            else { x = -30; y = Math.random() * height; }
 
-        // Tıklayınca Hediye & Yeni Küre Fırlatma
-        canvas.addEventListener('click', (e) => {
-            const rect = canvas.getBoundingClientRect();
-            const mouseX = e.clientX - rect.left;
-            const mouseY = e.clientY - rect.top;
+            const user = usernames[Math.floor(Math.random() * usernames.length)];
+            obstacles.push({
+                x, y,
+                r: isBoss ? 26 : 14,
+                hp: isBoss ? 4 : 1,
+                maxHp: isBoss ? 4 : 1,
+                speed: isBoss ? 0.9 : 1.3 + Math.random() * 0.7,
+                color: isBoss ? '#ff5722' : '#fe2c55',
+                name: isBoss ? '👑 ' + user : user,
+                isBoss
+            });
+        }
 
-            // Hediye patlaması: 3 yeni parça
-            for (let i = 0; i < 2; i++) {
-                const newOrb = new Orb(mouseX, mouseY, 16, '#fe2c55', '🎁 HEDİYE');
-                newOrb.vx = (Math.random() - 0.5) * 6;
-                newOrb.vy = (Math.random() - 0.5) * 6;
-                orbs.push(newOrb);
+        // -------------------------------------------------------------
+        // TIKTOK PROFIL VS MODU VERİLERİ
+        // -------------------------------------------------------------
+        let vsFighters = [];
+        let vsEffects = [];
+
+        function initVsDemo() {
+            vsRed = 52;
+            vsBlue = 48;
+            vsFighters = [
+                { side: 'red', x: width * 0.35, y: height / 2, vx: 1.2, vy: 0.6, name: '@kırmızı_kral', color: '#fe2c55', score: 324 },
+                { side: 'blue', x: width * 0.65, y: height / 2, vx: -1.2, vy: -0.6, name: '@mavi_şampiyon', color: '#25f4ee', score: 298 }
+            ];
+            vsEffects = [];
+            updateStatsUI(vsRed + ' Puan', (vsRed / (vsRed + vsBlue) * 100).toFixed(0) + '% - ' + (vsBlue / (vsRed + vsBlue) * 100).toFixed(0) + '%', vsBlue + ' Puan');
+        }
+
+        // -------------------------------------------------------------
+        // SAVAŞ ALANI (BATTLEFIELD) MODU VERİLERİ
+        // -------------------------------------------------------------
+        let armyUnits = [];
+        let castleBlue = 100;
+        let castleRed = 100;
+
+        function initSavasDemo() {
+            armyUnits = [];
+            castleBlue = 100;
+            castleRed = 100;
+            for (let i = 0; i < 4; i++) {
+                spawnArmyUnit('blue', 60 + i * 20);
+                spawnArmyUnit('red', width - 60 - i * 20);
+            }
+            updateStatsUI('Kale HP: %' + castleBlue, 'Ordu: ' + armyUnits.length, 'Kale HP: %' + castleRed);
+        }
+
+        function spawnArmyUnit(team, spawnX) {
+            const types = [
+                { icon: '⚔️', hp: 20, speed: 1.2, r: 12, name: 'Piyade' },
+                { icon: '🏹', hp: 15, speed: 1.0, r: 10, name: 'Okçu' },
+                { icon: '🐉', hp: 45, speed: 0.8, r: 16, name: 'Ejderha' }
+            ];
+            const t = types[Math.floor(Math.random() * types.length)];
+            armyUnits.push({
+                team,
+                x: spawnX || (team === 'blue' ? 50 : width - 50),
+                y: height * 0.55 + (Math.random() - 0.5) * 80,
+                hp: t.hp,
+                maxHp: t.hp,
+                speed: team === 'blue' ? t.speed : -t.speed,
+                icon: t.icon,
+                r: t.r,
+                name: t.name,
+                attackCool: 0
+            });
+        }
+
+        // -------------------------------------------------------------
+        // DEMO GEÇİŞ FONKSİYONU
+        // -------------------------------------------------------------
+        function updateStatsUI(s1, s2, s3) {
+            if (orbCountEl) orbCountEl.textContent = s1;
+            if (speedIndicatorEl) speedIndicatorEl.textContent = s2;
+            if (giftCountEl) giftCountEl.textContent = s3;
+        }
+
+        window.seciliDemoGoster = function(mod) {
+            currentDemo = mod;
+            document.querySelectorAll('.demo-tab').forEach(b => b.classList.remove('active'));
+            const activeBtn = document.getElementById('tab-' + mod);
+            if (activeBtn) activeBtn.classList.add('active');
+
+            const titleEl = document.getElementById('simTitle');
+            const instrEl = document.getElementById('simInstructions');
+            const stat1L = document.getElementById('stat1Label');
+            const stat2L = document.getElementById('stat2Label');
+            const stat3L = document.getElementById('stat3Label');
+
+            if (mod === 'orbit') {
+                if (titleEl) titleEl.textContent = '🪐 CANLI ORBIT SİMÜLATÖRÜ';
+                if (instrEl) instrEl.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg> Tıkla: Hediye Fırlat • Kaydır: Hızlandır';
+                if (stat1L) stat1L.textContent = 'Arenadaki Küreler:';
+                if (stat2L) stat2L.textContent = 'Yörünge Hızı:';
+                if (stat3L) stat3L.textContent = 'Fırlatılan:';
+                updateStatsUI(orbs.length, globalSpeed.toFixed(1) + 'x (Kaydır)', giftCount);
+            } else if (mod === 'crowd') {
+                if (titleEl) titleEl.textContent = '🎯 CROWD CONTROL ARENASI';
+                if (instrEl) instrEl.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg> Tıkla: Lazer Ateşle & Engelleri Parçala!';
+                if (stat1L) stat1L.textContent = 'Canlı Engeller:';
+                if (stat2L) stat2L.textContent = 'Hasar Çarpanı:';
+                if (stat3L) stat3L.textContent = 'Yok Edilen:';
+                initCrowdDemo();
+            } else if (mod === 'vs') {
+                if (titleEl) titleEl.textContent = '⚔️ TIKTOK PROFIL VS DÜELLOSU';
+                if (instrEl) instrEl.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg> Sol/Sağ Tıkla: Takımlara Hediye Gönder!';
+                if (stat1L) stat1L.textContent = 'Kırmızı Takım:';
+                if (stat2L) stat2L.textContent = 'Canlı Denge:';
+                if (stat3L) stat3L.textContent = 'Mavi Takım:';
+                initVsDemo();
+            } else if (mod === 'savas') {
+                if (titleEl) titleEl.textContent = '🏰 SAVAŞ ALANI (BATTLEFIELD) DEMOSU';
+                if (instrEl) instrEl.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg> Tıkla: Savaş Alanına Takviye Birlik İndir!';
+                if (stat1L) stat1L.textContent = 'Mavi Kale:';
+                if (stat2L) stat2L.textContent = 'Savaş Durumu:';
+                if (stat3L) stat3L.textContent = 'Kırmızı Kale:';
+                initSavasDemo();
             }
 
-            giftCount++;
-            giftCountEl.textContent = giftCount;
-            orbCountEl.textContent = orbs.length;
+            const simCard = document.getElementById('sim');
+            if (simCard) {
+                simCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        };
 
-            if (orbs.length > 40) orbs.shift(); // Hafıza kontrolü
+        // -------------------------------------------------------------
+        // ETKİLEŞİM (Mouse Tıklama ve Tekerlek)
+        // -------------------------------------------------------------
+        window.addEventListener('wheel', (e) => {
+            if (currentDemo === 'orbit') {
+                globalSpeed = Math.min(4.5, globalSpeed + Math.abs(e.deltaY) * 0.003);
+                speedIndicatorEl.textContent = globalSpeed.toFixed(1) + 'x';
+            }
+        }, { passive: true });
+
+        canvas.addEventListener('click', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const clickX = e.clientX - rect.left;
+            const clickY = e.clientY - rect.top;
+
+            if (currentDemo === 'orbit') {
+                for (let i = 0; i < 2; i++) {
+                    const newOrb = new Orb(clickX, clickY, 16, '#fe2c55', '🎁 HEDİYE');
+                    newOrb.vx = (Math.random() - 0.5) * 6;
+                    newOrb.vy = (Math.random() - 0.5) * 6;
+                    orbs.push(newOrb);
+                }
+                giftCount++;
+                updateStatsUI(orbs.length, globalSpeed.toFixed(1) + 'x', giftCount);
+                if (orbs.length > 40) orbs.shift();
+            } 
+            else if (currentDemo === 'crowd') {
+                // Merkeze göre hedef yönü
+                const dx = clickX - crowdPlayer.x;
+                const dy = clickY - crowdPlayer.y;
+                const angle = Math.atan2(dy, dx);
+                lasers.push({
+                    x: crowdPlayer.x,
+                    y: crowdPlayer.y,
+                    vx: Math.cos(angle) * 14,
+                    vy: Math.sin(angle) * 14,
+                    life: 40
+                });
+                // Parçacık
+                for (let i = 0; i < 5; i++) {
+                    particles.push({
+                        x: crowdPlayer.x, y: crowdPlayer.y,
+                        vx: Math.cos(angle + (Math.random() - 0.5)) * (4 + Math.random() * 4),
+                        vy: Math.sin(angle + (Math.random() - 0.5)) * (4 + Math.random() * 4),
+                        color: '#25f4ee', r: 3, life: 18
+                    });
+                }
+            } 
+            else if (currentDemo === 'vs') {
+                if (clickX < width / 2) {
+                    vsRed += 15;
+                    vsEffects.push({ x: clickX, y: clickY, text: '+15 🌹 Gül', color: '#fe2c55', life: 40 });
+                } else {
+                    vsBlue += 15;
+                    vsEffects.push({ x: clickX, y: clickY, text: '+15 💎 Elmas', color: '#25f4ee', life: 40 });
+                }
+                updateStatsUI(vsRed + ' Puan', (vsRed / (vsRed + vsBlue) * 100).toFixed(0) + '% - ' + (vsBlue / (vsRed + vsBlue) * 100).toFixed(0) + '%', vsBlue + ' Puan');
+            } 
+            else if (currentDemo === 'savas') {
+                const team = clickX < width / 2 ? 'blue' : 'red';
+                spawnArmyUnit(team, clickX);
+                for (let i = 0; i < 8; i++) {
+                    particles.push({
+                        x: clickX, y: clickY,
+                        vx: (Math.random() - 0.5) * 6,
+                        vy: (Math.random() - 0.5) * 6,
+                        color: team === 'blue' ? '#25f4ee' : '#fe2c55',
+                        r: 4, life: 25
+                    });
+                }
+                updateStatsUI('Kale HP: %' + Math.max(0, Math.round(castleBlue)), 'Ordu: ' + armyUnits.length, 'Kale HP: %' + Math.max(0, Math.round(castleRed)));
+            }
         });
 
-        // Çizim Döngüsü
+        // -------------------------------------------------------------
+        // ANA RENDER DÖNGÜSÜ (Tüm Oyunları Çizer)
+        // -------------------------------------------------------------
         function animate() {
             ctx.clearRect(0, 0, width, height);
 
-            // Bağlantı çizgileri
-            for (let i = 0; i < orbs.length; i++) {
-                for (let j = i + 1; j < orbs.length; j++) {
-                    const dx = orbs[i].x - orbs[j].x;
-                    const dy = orbs[i].y - orbs[j].y;
-                    const dist = Math.sqrt(dx * dx + dy * dy);
-                    if (dist < 110) {
-                        ctx.beginPath();
-                        ctx.moveTo(orbs[i].x, orbs[i].y);
-                        ctx.lineTo(orbs[j].x, orbs[j].y);
-                        ctx.strokeStyle = `rgba(88, 101, 242, ${0.35 * (1 - dist / 110)})`;
-                        ctx.lineWidth = 1;
-                        ctx.stroke();
+            if (currentDemo === 'orbit') {
+                // Bağlantı çizgileri
+                for (let i = 0; i < orbs.length; i++) {
+                    for (let j = i + 1; j < orbs.length; j++) {
+                        const dx = orbs[i].x - orbs[j].x;
+                        const dy = orbs[i].y - orbs[j].y;
+                        const dist = Math.sqrt(dx * dx + dy * dy);
+                        if (dist < 110) {
+                            ctx.beginPath();
+                            ctx.moveTo(orbs[i].x, orbs[i].y);
+                            ctx.lineTo(orbs[j].x, orbs[j].y);
+                            ctx.strokeStyle = `rgba(88, 101, 242, ${0.35 * (1 - dist / 110)})`;
+                            ctx.lineWidth = 1;
+                            ctx.stroke();
+                        }
                     }
+                }
+                if (globalSpeed > 1.0) {
+                    globalSpeed -= 0.015;
+                    if (globalSpeed < 1.0) globalSpeed = 1.0;
+                    speedIndicatorEl.textContent = globalSpeed.toFixed(1) + 'x';
+                }
+                orbs.forEach(orb => { orb.update(globalSpeed); orb.draw(); });
+            } 
+            else if (currentDemo === 'crowd') {
+                // 1. Zemin ızgarası
+                ctx.strokeStyle = 'rgba(255, 107, 53, 0.08)';
+                ctx.lineWidth = 1;
+                for (let x = 0; x < width; x += 40) {
+                    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, height); ctx.stroke();
+                }
+                for (let y = 0; y < height; y += 40) {
+                    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(width, y); ctx.stroke();
+                }
+
+                // 2. Yayıncı Karakteri (Merkez)
+                crowdPlayer.x = width / 2;
+                crowdPlayer.y = height / 2;
+                crowdPlayer.angle += 0.04;
+
+                // Kalkan halkası
+                ctx.save();
+                ctx.strokeStyle = 'rgba(37, 244, 238, 0.6)';
+                ctx.lineWidth = 2;
+                ctx.setLineDash([8, 6]);
+                ctx.beginPath();
+                ctx.arc(crowdPlayer.x, crowdPlayer.y, 34, 0, Math.PI * 2);
+                ctx.stroke();
+
+                // Dönen kalkan topları
+                for (let i = 0; i < 3; i++) {
+                    const sa = crowdPlayer.angle + (i * Math.PI * 2 / 3);
+                    const sx = crowdPlayer.x + Math.cos(sa) * 34;
+                    const sy = crowdPlayer.y + Math.sin(sa) * 34;
+                    ctx.beginPath();
+                    ctx.arc(sx, sy, 5, 0, Math.PI * 2);
+                    ctx.fillStyle = '#25f4ee';
+                    ctx.fill();
+                }
+
+                // Oyuncu gövdesi
+                ctx.shadowBlur = 18;
+                ctx.shadowColor = '#ffd000';
+                ctx.beginPath();
+                ctx.arc(crowdPlayer.x, crowdPlayer.y, crowdPlayer.r, 0, Math.PI * 2);
+                ctx.fillStyle = '#ffb703';
+                ctx.fill();
+
+                ctx.shadowBlur = 0;
+                ctx.fillStyle = '#0f1123';
+                ctx.font = 'bold 11px Inter, sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText('YAYIN', crowdPlayer.x, crowdPlayer.y + 4);
+                ctx.restore();
+
+                // 3. Lazerler
+                for (let i = lasers.length - 1; i >= 0; i--) {
+                    const l = lasers[i];
+                    l.x += l.vx;
+                    l.y += l.vy;
+                    l.life--;
+
+                    ctx.save();
+                    ctx.shadowBlur = 12;
+                    ctx.shadowColor = '#25f4ee';
+                    ctx.strokeStyle = '#ffffff';
+                    ctx.lineWidth = 3;
+                    ctx.beginPath();
+                    ctx.moveTo(l.x, l.y);
+                    ctx.lineTo(l.x - l.vx * 0.8, l.y - l.vy * 0.8);
+                    ctx.stroke();
+                    ctx.restore();
+
+                    // Çarpışma kontrolü
+                    for (let j = obstacles.length - 1; j >= 0; j--) {
+                        const obs = obstacles[j];
+                        const dx = l.x - obs.x;
+                        const dy = l.y - obs.y;
+                        if (Math.sqrt(dx * dx + dy * dy) < obs.r + 6) {
+                            obs.hp--;
+                            lasers.splice(i, 1);
+
+                            // Patlama
+                            for (let p = 0; p < 8; p++) {
+                                particles.push({
+                                    x: obs.x, y: obs.y,
+                                    vx: (Math.random() - 0.5) * 7,
+                                    vy: (Math.random() - 0.5) * 7,
+                                    color: obs.color, r: 3, life: 20
+                                });
+                            }
+
+                            if (obs.hp <= 0) {
+                                obstacles.splice(j, 1);
+                                demoKills++;
+                                updateStatsUI(obstacles.length, '1.5x (Aktif)', demoKills);
+                                setTimeout(() => spawnCrowdObstacle(demoKills % 6 === 0), 900);
+                            }
+                            break;
+                        }
+                    }
+
+                    if (l && l.life <= 0) lasers.splice(i, 1);
+                }
+
+                // 4. Engeller / Boss'lar
+                if (obstacles.length < 6) spawnCrowdObstacle(Math.random() < 0.25);
+                obstacles.forEach(obs => {
+                    const dx = crowdPlayer.x - obs.x;
+                    const dy = crowdPlayer.y - obs.y;
+                    const angle = Math.atan2(dy, dx);
+                    obs.x += Math.cos(angle) * obs.speed;
+                    obs.y += Math.sin(angle) * obs.speed;
+
+                    ctx.save();
+                    ctx.shadowBlur = obs.isBoss ? 20 : 10;
+                    ctx.shadowColor = obs.color;
+                    ctx.beginPath();
+                    ctx.arc(obs.x, obs.y, obs.r, 0, Math.PI * 2);
+                    ctx.fillStyle = obs.color;
+                    ctx.fill();
+
+                    // Profil / Baş harf
+                    ctx.shadowBlur = 0;
+                    ctx.fillStyle = '#ffffff';
+                    ctx.font = (obs.isBoss ? '12px' : '9px') + ' Inter, sans-serif';
+                    ctx.textAlign = 'center';
+                    ctx.fillText(obs.name, obs.x, obs.y + obs.r + 12);
+
+                    // Boss Can Barı
+                    if (obs.isBoss) {
+                        ctx.fillStyle = 'rgba(0,0,0,0.5)';
+                        ctx.fillRect(obs.x - 18, obs.y - obs.r - 10, 36, 5);
+                        ctx.fillStyle = '#25f4ee';
+                        ctx.fillRect(obs.x - 18, obs.y - obs.r - 10, 36 * (obs.hp / obs.maxHp), 5);
+                    }
+                    ctx.restore();
+                });
+            } 
+            else if (currentDemo === 'vs') {
+                // İki Yarı Zemin
+                ctx.fillStyle = 'rgba(254, 44, 85, 0.08)';
+                ctx.fillRect(0, 0, width / 2, height);
+                ctx.fillStyle = 'rgba(37, 244, 238, 0.08)';
+                ctx.fillRect(width / 2, 0, width / 2, height);
+
+                // Üst Can / Skor Barı
+                const total = vsRed + vsBlue;
+                const redW = (vsRed / total) * width;
+                ctx.fillStyle = '#fe2c55';
+                ctx.fillRect(0, 0, redW, 14);
+                ctx.fillStyle = '#25f4ee';
+                ctx.fillRect(redW, 0, width - redW, 14);
+
+                // Orta Çizgi
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(width / 2, 14);
+                ctx.lineTo(width / 2, height);
+                ctx.stroke();
+
+                // Dövüşçüler
+                vsFighters.forEach(f => {
+                    f.x += f.vx;
+                    f.y += f.vy;
+                    if (f.y < 50 || f.y > height - 50) f.vy *= -1;
+                    if (f.side === 'red' && (f.x < 50 || f.x > width * 0.48)) f.vx *= -1;
+                    if (f.side === 'blue' && (f.x < width * 0.52 || f.x > width - 50)) f.vx *= -1;
+
+                    ctx.save();
+                    ctx.shadowBlur = 20;
+                    ctx.shadowColor = f.color;
+                    ctx.beginPath();
+                    ctx.arc(f.x, f.y, 28, 0, Math.PI * 2);
+                    ctx.fillStyle = f.color;
+                    ctx.fill();
+
+                    ctx.shadowBlur = 0;
+                    ctx.fillStyle = '#ffffff';
+                    ctx.font = 'bold 12px Inter, sans-serif';
+                    ctx.textAlign = 'center';
+                    ctx.fillText(f.name, f.x, f.y + 44);
+
+                    ctx.font = '22px sans-serif';
+                    ctx.fillText(f.side === 'red' ? '🥊' : '⚡', f.x, f.y + 8);
+                    ctx.restore();
+                });
+
+                // Efekt Metinleri (+15 Gül vs.)
+                for (let i = vsEffects.length - 1; i >= 0; i--) {
+                    const eff = vsEffects[i];
+                    eff.y -= 1.2;
+                    eff.life--;
+                    ctx.save();
+                    ctx.fillStyle = eff.color;
+                    ctx.font = 'bold 15px Inter, sans-serif';
+                    ctx.textAlign = 'center';
+                    ctx.shadowBlur = 8;
+                    ctx.shadowColor = eff.color;
+                    ctx.fillText(eff.text, eff.x, eff.y);
+                    ctx.restore();
+                    if (eff.life <= 0) vsEffects.splice(i, 1);
+                }
+            } 
+            else if (currentDemo === 'savas') {
+                // Savaş Alanı Zemini
+                ctx.fillStyle = '#101328';
+                ctx.fillRect(0, 0, width, height);
+
+                // İki Kale
+                // Mavi Kale
+                ctx.save();
+                ctx.shadowBlur = 20;
+                ctx.shadowColor = '#25f4ee';
+                ctx.fillStyle = '#1e2850';
+                ctx.strokeStyle = '#25f4ee';
+                ctx.lineWidth = 3;
+                ctx.fillRect(10, height * 0.4, 45, 90);
+                ctx.strokeRect(10, height * 0.4, 45, 90);
+                ctx.shadowBlur = 0;
+                ctx.fillStyle = '#ffffff';
+                ctx.font = '20px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText('🏰', 32, height * 0.4 + 40);
+                ctx.font = 'bold 10px Inter, sans-serif';
+                ctx.fillText('%' + Math.max(0, Math.round(castleBlue)), 32, height * 0.4 + 70);
+
+                // Kırmızı Kale
+                ctx.shadowBlur = 20;
+                ctx.shadowColor = '#fe2c55';
+                ctx.fillStyle = '#501e28';
+                ctx.strokeStyle = '#fe2c55';
+                ctx.fillRect(width - 55, height * 0.4, 45, 90);
+                ctx.strokeRect(width - 55, height * 0.4, 45, 90);
+                ctx.shadowBlur = 0;
+                ctx.fillStyle = '#ffffff';
+                ctx.font = '20px sans-serif';
+                ctx.fillText('🏰', width - 32, height * 0.4 + 40);
+                ctx.font = 'bold 10px Inter, sans-serif';
+                ctx.fillText('%' + Math.max(0, Math.round(castleRed)), width - 32, height * 0.4 + 70);
+                ctx.restore();
+
+                // Askerler
+                if (armyUnits.length < 6) {
+                    spawnArmyUnit('blue');
+                    spawnArmyUnit('red');
+                }
+
+                for (let i = armyUnits.length - 1; i >= 0; i--) {
+                    const u = armyUnits[i];
+                    u.x += u.speed;
+
+                    // Çatışma kontrolü
+                    for (let j = 0; j < armyUnits.length; j++) {
+                        const enemy = armyUnits[j];
+                        if (u.team !== enemy.team && Math.abs(u.x - enemy.x) < 22 && Math.abs(u.y - enemy.y) < 26) {
+                            u.x -= u.speed * 0.8;
+                            enemy.hp -= 0.3;
+                            u.hp -= 0.3;
+                        }
+                    }
+
+                    // Kaleye varış
+                    if (u.team === 'blue' && u.x >= width - 60) {
+                        castleRed -= 0.4;
+                        u.hp = 0;
+                    } else if (u.team === 'red' && u.x <= 60) {
+                        castleBlue -= 0.4;
+                        u.hp = 0;
+                    }
+
+                    ctx.save();
+                    ctx.font = (u.r * 1.6) + 'px sans-serif';
+                    ctx.textAlign = 'center';
+                    ctx.fillText(u.icon, u.x, u.y + 6);
+
+                    // Birlik can barı
+                    ctx.fillStyle = 'rgba(0,0,0,0.5)';
+                    ctx.fillRect(u.x - 12, u.y - 18, 24, 4);
+                    ctx.fillStyle = u.team === 'blue' ? '#25f4ee' : '#fe2c55';
+                    ctx.fillRect(u.x - 12, u.y - 18, 24 * Math.max(0, u.hp / u.maxHp), 4);
+                    ctx.restore();
+
+                    if (u.hp <= 0) armyUnits.splice(i, 1);
                 }
             }
 
-            // Hızı yavaşça normale döndür
-            if (globalSpeed > 1.0) {
-                globalSpeed -= 0.015;
-                if (globalSpeed < 1.0) globalSpeed = 1.0;
-                speedIndicatorEl.textContent = globalSpeed.toFixed(1) + 'x';
+            // Ortak Parçacıklar
+            for (let i = particles.length - 1; i >= 0; i--) {
+                const p = particles[i];
+                p.x += p.vx;
+                p.y += p.vy;
+                p.life--;
+                ctx.save();
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+                ctx.fillStyle = p.color;
+                ctx.fill();
+                ctx.restore();
+                if (p.life <= 0) particles.splice(i, 1);
             }
-
-            orbs.forEach(orb => {
-                orb.update(globalSpeed);
-                orb.draw();
-            });
 
             requestAnimationFrame(animate);
         }
