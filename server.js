@@ -266,13 +266,17 @@ function logEkle(lisansKod, cihazKimlik, islem, ip) {
 // =====================================================================
 // SÜRÜM BİLGİLERİ & İNDİRME LİNKLERİ
 // =====================================================================
-const EN_GUNCEL_SURUM = "3.5.1";
+const EN_GUNCEL_SURUM = "3.5.5";
 const EN_DUSUK_SURUM = "1.0.0";
 const SETUP_INDIRME_LINKI = "https://drive.usercontent.google.com/download?id=1g-dEVnq_8ksvCTuHq9q7Ur-MGiFBpzND&export=download&confirm=t";
 const SETUP_WEB_LINKI = "https://drive.google.com/file/d/1g-dEVnq_8ksvCTuHq9q7Ur-MGiFBpzND/view?usp=sharing";
 
 // Her güncellemede eklenen/değişen özellikler listesi
 const SURUM_NOTLARI = [
+    "v3.5.5 — Yeni Oyun Tanıtımı: Savaş Alanı strateji oyunu launcher ve web sitesine eklendi; izleyiciler hediyeleriyle asker birlikleri üretip canlı yayında savaşacak!",
+    "v3.5.5 — Kusursuz Yükleme & Oyna Akışı: YÜKLE butonu bağımsız dahili kurulum motoruyla güçlendirildi; %0-%100 kesintisiz indirme ve anında OYNA geçişi garanti altına alındı.",
+    "v3.5.5 — Özgün Kart Işıkları & Ateş Turuncusu Efekti: MNG Crowd Control kartına özel canlı ateş turuncusu hover ve neon parlama eklendi.",
+    "v3.5.5 — Web İnteraktif Oyun Demoları: Web sitesinde tüm oyunların bilgileri, dinamik demo alanları ve anlık simülasyonları eklendi.",
     "v3.5.1 — Modüler Oyun Kurulumu: MNG Crowd Control artık harici indirilebilir modüler paket olarak sunulur; kurulum dosyası hafifletildi ve 'KUR / YÜKLE' butonu ile tek tıkla yüklenir.",
     "v3.5.1 — Oyun Kapanış & Yeniden Giriş Onarımı: Oyundan çıkıldığında arka plan sunucusu ve bağlantılar anında temizlenir; butonlar serbest bırakılarak tekrar oyuna giriş pürüzsüz hale getirildi.",
     "v3.5.1 — Profil, İsim & Engel Boyut Ayarları: Ayarlar paneline 'Genel Engel Boyutu' ve 'Profil & İsim Boyutu' sürgüleri eklendi. Geniş ekranlarda bile profil resimleri ve kullanıcı adları devasa ve net ölçeklenebilir.",
