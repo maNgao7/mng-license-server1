@@ -266,13 +266,19 @@ function logEkle(lisansKod, cihazKimlik, islem, ip) {
 // =====================================================================
 // SÜRÜM BİLGİLERİ & İNDİRME LİNKLERİ
 // =====================================================================
-const EN_GUNCEL_SURUM = "3.5.5";
+const EN_GUNCEL_SURUM = "4.0.0";
 const EN_DUSUK_SURUM = "1.0.0";
 const SETUP_INDIRME_LINKI = "https://drive.usercontent.google.com/download?id=1g-dEVnq_8ksvCTuHq9q7Ur-MGiFBpzND&export=download&confirm=t";
 const SETUP_WEB_LINKI = "https://drive.google.com/file/d/1g-dEVnq_8ksvCTuHq9q7Ur-MGiFBpzND/view?usp=sharing";
 
 // Her güncellemede eklenen/değişen özellikler listesi
 const SURUM_NOTLARI = [
+    "v4.0.0 — MNG Orbit Kütle ve Büyüme Devrimi: Gönderilen coin değeriyle tam orantılı ve belirgin kütle artışı; 2x Hızlan Çay ve Herkesi Parçala Money Gun sabit izleyici kartları.",
+    "v4.0.0 — Süre Alanı Büyütmesi ve Kalıcı Reklam: @maNgao7tv reklamı ve genişletilmiş süre alanı.",
+    "v4.0.0 — Kendi Arka Planını Yükleme: Orbit, TikTok VS ve Crowd Control oyunlarına video ve resim yükleme özelliği.",
+    "v4.0.0 — OBS Widget Kusursuz Bağlantı: Profil resmi hatası giderildi, Launcher'a OBS Link Kopyala butonları eklendi.",
+    "v4.0.0 — MNG Crowd Control Gelişmiş Can ve Akıllı Saldırı: Engellere can havuzu, takipçi saldırı mekaniği ve canlı HUD eklendi.",
+    "v4.0.0 — TikTok VS Siyah-Beyaz ve Işık Efekti: CSS kuralları ve slot efektleri tamir edildi.",
     "v3.5.5 — Yeni Oyun Tanıtımı: Savaş Alanı strateji oyunu launcher ve web sitesine eklendi; izleyiciler hediyeleriyle asker birlikleri üretip canlı yayında savaşacak!",
     "v3.5.5 — Kusursuz Yükleme & Oyna Akışı: YÜKLE butonu bağımsız dahili kurulum motoruyla güçlendirildi; %0-%100 kesintisiz indirme ve anında OYNA geçişi garanti altına alındı.",
     "v3.5.5 — Özgün Kart Işıkları & Ateş Turuncusu Efekti: MNG Crowd Control kartına özel canlı ateş turuncusu hover ve neon parlama eklendi.",
