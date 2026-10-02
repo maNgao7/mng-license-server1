@@ -266,13 +266,19 @@ function logEkle(lisansKod, cihazKimlik, islem, ip) {
 // =====================================================================
 // SÜRÜM BİLGİLERİ & İNDİRME LİNKLERİ
 // =====================================================================
-const EN_GUNCEL_SURUM = "3.0.0";
+const EN_GUNCEL_SURUM = "3.5.0";
 const EN_DUSUK_SURUM = "1.0.0";
 const SETUP_INDIRME_LINKI = "https://drive.usercontent.google.com/download?id=1g-dEVnq_8ksvCTuHq9q7Ur-MGiFBpzND&export=download&confirm=t";
 const SETUP_WEB_LINKI = "https://drive.google.com/file/d/1g-dEVnq_8ksvCTuHq9q7Ur-MGiFBpzND/view?usp=sharing";
 
 // Her güncellemede eklenen/değişen özellikler listesi
 const SURUM_NOTLARI = [
+    "v3.5.0 — Yeni Oyunumuz: MNG Crowd Control İnteraktif Hayatta Kalma Oyunu yayına alındı!",
+    "v3.5.0 — 1v1 Arena Düellosu & Mega Boss: 50 hediye puanında veya Para Tabancası ile en çok hediye atan izleyici dev patron olarak sahaya iner, çevre temizlenir, ekran genişler ve yayıncının hasarı 1.5x katına çıkar!",
+    "v3.5.0 — Belirgin Kullanıcı Adları & Hediye Rozetleri: Engel ve bossların üzerinde gönderen kişinin net kullanıcı adı ve hediye puanı gösterilir.",
+    "v3.5.0 — Arka Plan Kararma Koruması: Video döngüsü, hata algılama ve görünürlük kurtarıcıları ile arka plan asla kaybolmaz.",
+    "v3.5.0 — TikTok VS Yeni Hediye Efektleri: Beyaz Parlama, Siyah-Beyaz ve Neon efektleri hem oyunda hem de OBS widget'larında çalışır.",
+    "v3.5.0 — Launcher 4'lü Yan Yana Kart Düzeni: Tüm oyun kartları tek satırda yan yana dizildi, pencere boyutu optimize edildi.",
     "v3.0.0 — MNG Orbit Profesyonel Ayarlar & Özel Kütle: Her hediyeye istenen kütle elle yazılabilir, önerilen kütle butonları eklendi (+150 Gül, +300 Kalp, +500 Buket, +1100 Çay, +1600 Şapka ve Bıyık).",
     "v3.0.0 — MNG Orbit Hediye & Görsel Donması Çözüldü: Buket, Çay, Şapka ve popüler tüm Türkçe hediyelerin PNG eşleşmesi düzeltildi; hediye seçimi asla dondurmaz.",
     "v3.0.0 — MNG Orbit Beğeni & Takip Giriş Kuralları: Takip giriş kütlesi, beğeni giriş barajı (ör. 100 beğeni) ve sonrasında sürekli beğendikçe kütle artışı eksiksiz ayarlanabilir.",
