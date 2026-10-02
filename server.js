@@ -266,13 +266,16 @@ function logEkle(lisansKod, cihazKimlik, islem, ip) {
 // =====================================================================
 // SÜRÜM BİLGİLERİ & İNDİRME LİNKLERİ
 // =====================================================================
-const EN_GUNCEL_SURUM = "4.0.2";
+const EN_GUNCEL_SURUM = "4.0.5";
 const EN_DUSUK_SURUM = "1.0.0";
 const SETUP_INDIRME_LINKI = "https://drive.usercontent.google.com/download?id=1g-dEVnq_8ksvCTuHq9q7Ur-MGiFBpzND&export=download&confirm=t";
 const SETUP_WEB_LINKI = "https://drive.google.com/file/d/1g-dEVnq_8ksvCTuHq9q7Ur-MGiFBpzND/view?usp=sharing";
 
 // Her güncellemede eklenen/değişen özellikler listesi
 const SURUM_NOTLARI = [
+    "v4.0.5 — MNG Orbit Tam Onarım: Bağlantı ve oyun alanı çizim döngüsü hatasız başlatıldı; 48 canlı video arka planı eksiksiz açıldı; özel video/resim yükleme garanti altına alındı.",
+    "v4.0.5 — MNG Orbit Devasa Özel Hediye Kartları: Ekranın sağ dikey ortasında dev Çay ve Money Gun kartları; 600+ hediye içerisinden istenen hediye ile değiştirilebilir dinamik eylem sistemi!",
+    "v4.0.5 — MNG Crowd Control Temiz UI: Alttaki hediye butonları kaldırıldı; ayarlar menüsünden tüm hediye eylemleri detaylı liste halinde yapılandırılabilir.",
     "v4.0.2 — Launcher Temizleme: OBS Widget Linki butonları launcher kartlarından kaldırıldı; widget linkleri artık oyun içinden kopyalanabilir.",
     "v4.0.2 — Widget'lar Herkese Özel: Her kullanıcı kendi bilgisayarında çalıştırdığında widget bağlantıları yalnızca o kullanıcıya özel olarak çalışır.",
     "v4.0.0 — MNG Orbit Kütle ve Büyüme Devrimi: Gönderilen coin değeriyle tam orantılı ve belirgin kütle artışı; 2x Hızlan Çay ve Herkesi Parçala Money Gun sabit izleyici kartları.",
