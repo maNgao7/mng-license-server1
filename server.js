@@ -266,13 +266,16 @@ function logEkle(lisansKod, cihazKimlik, islem, ip) {
 // =====================================================================
 // SÜRÜM BİLGİLERİ & İNDİRME LİNKLERİ
 // =====================================================================
-const EN_GUNCEL_SURUM = "5.0.0";
+const EN_GUNCEL_SURUM = "5.0.1";
 const EN_DUSUK_SURUM = "1.0.0";
 const SETUP_INDIRME_LINKI = "https://drive.usercontent.google.com/download?id=1g-dEVnq_8ksvCTuHq9q7Ur-MGiFBpzND&export=download&confirm=t";
 const SETUP_WEB_LINKI = "https://drive.google.com/file/d/1g-dEVnq_8ksvCTuHq9q7Ur-MGiFBpzND/view?usp=sharing";
 
 // Her güncellemede eklenen/değişen özellikler listesi
 const SURUM_NOTLARI = [
+    "v5.0.1 — MNG Orbit Açılış Onarımı: Orbit sunucusunun açılmasını engelleyen sözdizimi hatası giderildi; oyun ve hediye kataloğu yeniden sorunsuz başlar.",
+    "v5.0.1 — Hediye Tasarım Oluştur: Launcher içindeki PNG tasarım aracı tam hediye kataloğunu gösterir; yatay, soldan dikey ve sağdan dikey düzenler eklendi.",
+    "v5.0.1 — Şövalye Turnuvası: Tur galibiyetleri canlı listeye bağlandı ve OBS için ayrı Şövalye Galipleri widget bağlantısı eklendi.",
     "v5.0.0 — Şövalye Savaşı & PNG Hediye Tasarımcısı Dev Güncellemesi: Yeni 'Şövalye Savaşı' strateji oyunu entegre edildi; askerlerin üzerinde canlı profil avatarları; hediye-asker kuralları ve galip sayacı (+/-); Launcher'a 'Hediye Tasarımı (PNG)' motoru eklendi; Admin Paneli'ne Dakika/Saat/Gün/Ay/Yıl özel süre belirleme eklendi; TikTok VS filtre animasyonları tamir edildi; MNG Crowd Control hediye ve arama sistemi eksiksiz yenilendi.",
     "v4.0.6 — MNG Orbit Gelişmiş Tur & Hediye Güncellemesi: Türkiye'ye özel 630 hediyelik tam Türkçe hediye kataloğu entegre edildi; arama motoru güçlendirildi; Yörünge Liderleri bağlantıyı kesin altına hizalandı; Turu Bitir butonu ve patlama ses efektleri eklendi.",
     "v4.0.5 — MNG Orbit Tam Onarım: Bağlantı ve oyun alanı çizim döngüsü hatasız başlatıldı; 48 canlı video arka planı eksiksiz açıldı; özel video/resim yükleme garanti altına alındı.",
