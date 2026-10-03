@@ -266,13 +266,14 @@ function logEkle(lisansKod, cihazKimlik, islem, ip) {
 // =====================================================================
 // SÜRÜM BİLGİLERİ & İNDİRME LİNKLERİ
 // =====================================================================
-const EN_GUNCEL_SURUM = "4.0.6";
+const EN_GUNCEL_SURUM = "5.0.0";
 const EN_DUSUK_SURUM = "1.0.0";
 const SETUP_INDIRME_LINKI = "https://drive.usercontent.google.com/download?id=1g-dEVnq_8ksvCTuHq9q7Ur-MGiFBpzND&export=download&confirm=t";
 const SETUP_WEB_LINKI = "https://drive.google.com/file/d/1g-dEVnq_8ksvCTuHq9q7Ur-MGiFBpzND/view?usp=sharing";
 
 // Her güncellemede eklenen/değişen özellikler listesi
 const SURUM_NOTLARI = [
+    "v5.0.0 — Şövalye Savaşı & PNG Hediye Tasarımcısı Dev Güncellemesi: Yeni 'Şövalye Savaşı' strateji oyunu entegre edildi; askerlerin üzerinde canlı profil avatarları; hediye-asker kuralları ve galip sayacı (+/-); Launcher'a 'Hediye Tasarımı (PNG)' motoru eklendi; Admin Paneli'ne Dakika/Saat/Gün/Ay/Yıl özel süre belirleme eklendi; TikTok VS filtre animasyonları tamir edildi; MNG Crowd Control hediye ve arama sistemi eksiksiz yenilendi.",
     "v4.0.6 — MNG Orbit Gelişmiş Tur & Hediye Güncellemesi: Türkiye'ye özel 630 hediyelik tam Türkçe hediye kataloğu entegre edildi; arama motoru güçlendirildi; Yörünge Liderleri bağlantıyı kesin altına hizalandı; Turu Bitir butonu ve patlama ses efektleri eklendi.",
     "v4.0.5 — MNG Orbit Tam Onarım: Bağlantı ve oyun alanı çizim döngüsü hatasız başlatıldı; 48 canlı video arka planı eksiksiz açıldı; özel video/resim yükleme garanti altına alındı.",
     "v4.0.5 — MNG Orbit Devasa Özel Hediye Kartları: Ekranın sağ dikey ortasında dev Çay ve Money Gun kartları; 600+ hediye içerisinden istenen hediye ile değiştirilebilir dinamik eylem sistemi!",
@@ -692,6 +693,10 @@ app.get("/download/game/:gameZip", (req, res) => {
     const altYolu = path.join(DOWNLOADS_DIR, dosya);
     if (fs.existsSync(altYolu)) {
         return res.download(altYolu);
+    }
+    const rootZip = path.join(__dirname, dosya);
+    if (fs.existsSync(rootZip)) {
+        return res.download(rootZip);
     }
     res.status(404).json({ error: "Oyun paketi bulunamadı: " + dosya });
 });
