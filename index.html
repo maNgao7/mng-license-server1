@@ -3,1440 +3,938 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MNG TikTok Game — Canlı Yayın Oyunları & Yayıncı Portalı</title>
-    <meta name="description" content="TikTok canlı yayınları için tasarlanmış yüksek etkileşimli yerçekimi ve arena oyunları. Hediyeler, beğeniler ve takiplerle yayınlarınızı bir oyun dünyasına dönüştürün!">
-    
-    <!-- Google Fonts: Inter & Poppins (Discord ABC Ginto Nord & GG Sans alternatifi) -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@700;800;900&display=swap" rel="stylesheet">
-    
+    <title>MNG TikTok Game — Yönetici Paneli</title>
     <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        
         :root {
-            /* Refero Discord x TikTok Color System */
-            --color-blurple: #5865f2;
-            --color-dark-blurple: #3442d9;
-            --color-hover-blurple: #8891f2;
-            --color-tiktok-red: #fe2c55;
-            --color-tiktok-cyan: #25f4ee;
-            --color-spring-green: #57f287;
-            --color-fuchsia: #eb459e;
-            --color-vivid-cerulean: #00b0f4;
-            --color-ember-orange: #fda220;
-            --color-snow: #ffffff;
-            --color-void: #000000;
-            --color-fog: #babcd9;
-            --color-greyple: #99aab5;
-            --color-dim-grey: #50555f;
-
-            /* Surfaces */
-            --surface-cosmic-page: #090a18;
-            --surface-cosmic-deep: #05060f;
-            --surface-app-chrome: #161829;
-            --surface-app-surface: #1e2138;
-            --surface-feature-card: rgba(22, 24, 45, 0.75);
-            --surface-card-border: rgba(88, 101, 242, 0.22);
-            --surface-glow-cyan: rgba(37, 244, 238, 0.15);
-            --surface-glow-red: rgba(254, 44, 85, 0.15);
-
-            /* Typography */
-            --font-display: 'Poppins', system-ui, -apple-system, sans-serif;
-            --font-body: 'Inter', system-ui, -apple-system, sans-serif;
-
-            /* Border Radii */
-            --radius-btn: 12px;
-            --radius-btn-lg: 16px;
-            --radius-card: 24px;
-            --radius-pill: 104px;
-
-            --page-max-width: 1200px;
-        }
-
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-
-        html {
-            scroll-behavior: smooth;
+            --bg: #0d0d1a;
+            --surface: #1a1a2e;
+            --surface2: #16213e;
+            --accent: #fe2c55;
+            --accent2: #25f4ee;
+            --text: #eaeaea;
+            --text-dim: #8888aa;
+            --green: #00d4aa;
+            --yellow: #ffd700;
+            --red: #ff4444;
+            --border: #2a2a4a;
         }
 
         body {
-            font-family: var(--font-body);
-            background-color: var(--surface-cosmic-page);
-            color: var(--color-snow);
-            line-height: 1.5;
-            overflow-x: hidden;
-            position: relative;
-            background-image: 
-                radial-gradient(circle at 15% 15%, rgba(88, 101, 242, 0.18) 0%, transparent 45%),
-                radial-gradient(circle at 85% 25%, rgba(254, 44, 85, 0.14) 0%, transparent 40%),
-                radial-gradient(circle at 50% 65%, rgba(37, 244, 238, 0.12) 0%, transparent 50%),
-                radial-gradient(circle at 80% 85%, rgba(88, 101, 242, 0.15) 0%, transparent 45%);
-            background-attachment: fixed;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
         }
 
-        /* Ambient Stars / Dust Background */
-        .cosmic-mesh {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            pointer-events: none;
-            z-index: 0;
-            opacity: 0.6;
-            background-image: radial-gradient(rgba(255, 255, 255, 0.12) 1px, transparent 1px);
-            background-size: 32px 32px;
+        /* GİRİŞ EKRANI */
+        #loginPage {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            background: radial-gradient(ellipse at center, #1a1a3e 0%, #0d0d1a 70%);
         }
 
-        /* Container */
-        .container {
-            max-width: var(--page-max-width);
-            margin: 0 auto;
-            padding: 0 24px;
-            position: relative;
-            z-index: 2;
+        .login-box {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 40px;
+            width: 380px;
+            text-align: center;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
         }
 
-        /* Navigation Header */
-        header.nav-header {
-            position: fixed;
-            top: 0;
-            left: 0;
+        .login-logo { font-size: 42px; margin-bottom: 12px; }
+        .login-title { font-size: 22px; font-weight: 700; color: var(--accent); margin-bottom: 4px; }
+        .login-sub { font-size: 13px; color: var(--text-dim); margin-bottom: 24px; }
+
+        .login-input {
             width: 100%;
-            z-index: 100;
-            padding: 16px 0;
-            transition: all 0.3s ease;
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            background: rgba(9, 10, 24, 0.7);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-        }
-
-        .nav-wrapper {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-
-        .brand-logo {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            text-decoration: none;
-            color: var(--color-snow);
-        }
-
-        .brand-badge {
-            width: 44px;
-            height: 44px;
-            border-radius: 12px;
-            background: linear-gradient(135deg, var(--color-tiktok-red), var(--color-blurple), var(--color-tiktok-cyan));
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-family: var(--font-display);
-            font-weight: 900;
-            font-size: 20px;
-            box-shadow: 0 0 20px rgba(254, 44, 85, 0.4);
-            animation: pulseGlow 3s infinite alternate;
-        }
-
-        @keyframes pulseGlow {
-            0% { box-shadow: 0 0 15px rgba(254, 44, 85, 0.4); }
-            100% { box-shadow: 0 0 25px rgba(37, 244, 238, 0.6); }
-        }
-
-        .brand-title {
-            font-family: var(--font-display);
-            font-weight: 800;
-            font-size: 22px;
-            letter-spacing: -0.5px;
-            text-transform: uppercase;
-        }
-
-        .brand-title span {
-            color: var(--color-tiktok-cyan);
-            text-shadow: 0 0 10px rgba(37, 244, 238, 0.5);
-        }
-
-        .nav-links {
-            display: flex;
-            align-items: center;
-            gap: 28px;
-            list-style: none;
-        }
-
-        .nav-links a {
-            color: var(--color-fog);
-            text-decoration: none;
+            padding: 12px 16px;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text);
             font-size: 15px;
-            font-weight: 500;
-            transition: color 0.2s ease;
+            margin-bottom: 16px;
+            outline: none;
+            transition: border-color 0.2s;
         }
+        .login-input:focus { border-color: var(--accent); }
 
-        .nav-links a:hover {
-            color: var(--color-snow);
-        }
-
-        .nav-actions {
-            display: flex;
-            align-items: center;
-            gap: 14px;
-        }
-
-        /* Buttons */
-        .btn {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-            font-family: var(--font-body);
-            font-weight: 600;
-            font-size: 15px;
-            padding: 13px 24px;
-            border-radius: var(--radius-btn);
-            cursor: pointer;
-            text-decoration: none;
-            transition: all 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+        .btn-primary {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, var(--accent), #c0392b);
+            color: #fff;
             border: none;
-            outline: none;
-        }
-
-        .btn-sm {
-            padding: 9px 18px;
-            font-size: 14px;
-            border-radius: 10px;
-        }
-
-        .btn-blurple {
-            background-color: var(--color-blurple);
-            color: var(--color-snow);
-            box-shadow: 0 4px 18px rgba(88, 101, 242, 0.35);
-        }
-
-        .btn-blurple:hover {
-            background-color: var(--color-dark-blurple);
-            box-shadow: 0 6px 24px rgba(88, 101, 242, 0.55);
-            transform: translateY(-2px);
-        }
-
-        .btn-tiktok {
-            background: linear-gradient(135deg, var(--color-tiktok-red) 0%, #d41842 100%);
-            color: var(--color-snow);
-            box-shadow: 0 4px 20px rgba(254, 44, 85, 0.4);
-            font-weight: 700;
-        }
-
-        .btn-tiktok:hover {
-            box-shadow: 0 6px 28px rgba(254, 44, 85, 0.6);
-            transform: translateY(-2px);
-        }
-
-        .btn-white {
-            background-color: var(--color-snow);
-            color: var(--surface-cosmic-deep);
-            font-weight: 700;
-        }
-
-        .btn-white:hover {
-            background-color: #e5e5f0;
-            transform: translateY(-2px);
-        }
-
-        .btn-outline {
-            background: transparent;
-            color: var(--color-snow);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-        }
-
-        .btn-outline:hover {
-            border-color: var(--color-tiktok-cyan);
-            color: var(--color-tiktok-cyan);
-            background: rgba(37, 244, 238, 0.05);
-        }
-
-        /* Hero Section */
-        .hero {
-            padding: 170px 0 90px 0;
-            position: relative;
-        }
-
-        .hero-grid {
-            display: grid;
-            grid-template-columns: 1.15fr 0.85fr;
-            gap: 48px;
-            align-items: center;
-        }
-
-        .hero-badge-pill {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            background: rgba(88, 101, 242, 0.15);
-            border: 1px solid rgba(88, 101, 242, 0.4);
-            border-radius: var(--radius-pill);
-            padding: 6px 16px;
-            font-size: 13px;
-            font-weight: 600;
-            color: var(--color-tiktok-cyan);
-            margin-bottom: 24px;
-        }
-
-        .hero-badge-pill .dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background-color: var(--color-spring-green);
-            box-shadow: 0 0 10px var(--color-spring-green);
-            animation: blink 1.5s infinite;
-        }
-
-        @keyframes blink {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.3; }
-        }
-
-        /* Discord ABC Ginto Nord / Stamped Metal All-Caps Style */
-        .hero-title {
-            font-family: var(--font-display);
-            font-weight: 900;
-            font-size: 58px;
-            line-height: 1.05;
-            letter-spacing: -1.2px;
-            text-transform: uppercase;
-            margin-bottom: 20px;
-            color: var(--color-snow);
-        }
-
-        .hero-title .gradient-text {
-            background: linear-gradient(90deg, var(--color-tiktok-cyan), #ffffff, var(--color-tiktok-red));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-
-        .hero-desc {
-            font-size: 18px;
-            line-height: 1.6;
-            color: var(--color-fog);
-            max-width: 580px;
-            margin-bottom: 36px;
-        }
-
-        .hero-cta-group {
-            display: flex;
-            align-items: center;
-            gap: 16px;
-            flex-wrap: wrap;
-            margin-bottom: 32px;
-        }
-
-        .hero-version-tag {
-            display: flex;
-            align-items: center;
-            gap: 16px;
-            font-size: 13px;
-            color: var(--color-greyple);
-        }
-
-        .hero-version-tag span {
-            color: var(--color-spring-green);
-            font-weight: 600;
-        }
-
-        /* Interactive Canvas Simulator Card (Refero 3D / Playable Scene) */
-        .arena-interactive-card {
-            background: var(--surface-feature-card);
-            border: 1px solid var(--surface-card-border);
-            border-radius: var(--radius-card);
-            padding: 20px;
-            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5), inset 0 0 30px rgba(88, 101, 242, 0.1);
-            position: relative;
-            overflow: hidden;
-            backdrop-filter: blur(20px);
-        }
-
-        .arena-card-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 14px;
-            padding-bottom: 12px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-        }
-
-        .arena-title-wrapper {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .arena-dot-live {
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            background: var(--color-tiktok-red);
-            box-shadow: 0 0 12px var(--color-tiktok-red);
-            animation: pulseGlow 1s infinite alternate;
-        }
-
-        .arena-title {
-            font-family: var(--font-display);
+            border-radius: 8px;
             font-size: 15px;
             font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
+            cursor: pointer;
+            transition: opacity 0.2s;
         }
+        .btn-primary:hover { opacity: 0.9; }
 
-        .arena-instructions {
-            font-size: 12px;
-            color: var(--color-tiktok-cyan);
-            background: rgba(37, 244, 238, 0.1);
-            padding: 4px 10px;
-            border-radius: var(--radius-pill);
-            border: 1px solid rgba(37, 244, 238, 0.25);
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-
-        #heroCanvas {
-            width: 100%;
-            height: 380px;
-            display: block;
-            border-radius: 16px;
-            background: radial-gradient(circle at center, #12142d 0%, #080914 100%);
-            cursor: crosshair;
-        }
-
-        .canvas-footer-stats {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-top: 14px;
+        .login-error {
+            color: var(--red);
             font-size: 13px;
-            color: var(--color-fog);
-        }
-
-        .canvas-footer-stats strong {
-            color: var(--color-snow);
-        }
-
-        /* Section Global Settings */
-        section {
-            padding: 90px 0;
-            position: relative;
-        }
-
-        .section-header {
-            text-align: center;
-            max-width: 760px;
-            margin: 0 auto 56px auto;
-        }
-
-        .section-tag {
-            font-family: var(--font-display);
-            font-size: 13px;
-            font-weight: 800;
-            letter-spacing: 1.5px;
-            text-transform: uppercase;
-            color: var(--color-tiktok-red);
-            margin-bottom: 12px;
-            display: inline-block;
-        }
-
-        .section-title {
-            font-family: var(--font-display);
-            font-weight: 900;
-            font-size: 44px;
-            line-height: 1.1;
-            text-transform: uppercase;
-            letter-spacing: -0.8px;
-            margin-bottom: 18px;
-        }
-
-        .section-desc {
-            font-size: 17px;
-            color: var(--color-fog);
-            line-height: 1.6;
-        }
-
-        /* Feature Cards Grid (Discord 24px Radius) */
-        .games-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-            gap: 28px;
-            margin-bottom: 40px;
-        }
-
-        .game-card {
-            background: var(--surface-feature-card);
-            border: 1px solid var(--surface-card-border);
-            border-radius: var(--radius-card);
-            padding: 32px;
-            backdrop-filter: blur(16px);
-            transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
-            position: relative;
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-        }
-
-        .game-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 4px;
-            background: linear-gradient(90deg, var(--color-blurple), transparent);
-            opacity: 0;
-            transition: opacity 0.3s ease;
-        }
-
-        .game-card:hover {
-            transform: translateY(-6px);
-            border-color: rgba(88, 101, 242, 0.5);
-            box-shadow: 0 16px 40px rgba(0, 0, 0, 0.4), 0 0 30px rgba(88, 101, 242, 0.2);
-        }
-
-        .game-card:hover::before {
-            opacity: 1;
-        }
-
-        .game-card.highlight {
-            border-color: rgba(254, 44, 85, 0.4);
-            background: linear-gradient(180deg, rgba(254, 44, 85, 0.08) 0%, rgba(22, 24, 45, 0.85) 100%);
-        }
-
-        .game-card.highlight::before {
-            background: linear-gradient(90deg, var(--color-tiktok-red), var(--color-tiktok-cyan));
-            opacity: 1;
-        }
-
-        /* Kıvılcımlı Yeni Oyun Rozeti */
-        .sparkle-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 5px;
-            padding: 4px 12px;
-            border-radius: var(--radius-pill);
-            font-size: 11px;
-            font-weight: 800;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            background: linear-gradient(135deg, rgba(254, 44, 85, 0.35) 0%, rgba(37, 244, 238, 0.35) 100%);
-            border: 1px solid #25f4ee;
-            color: #ffffff;
-            box-shadow: 0 0 12px rgba(37, 244, 238, 0.5), inset 0 0 10px rgba(254, 44, 85, 0.4);
-            animation: sparkleGlowWeb 2s infinite alternate ease-in-out;
-            position: relative;
-            overflow: hidden;
-            width: fit-content;
-        }
-
-        @keyframes sparkleGlowWeb {
-            0% {
-                box-shadow: 0 0 10px rgba(37, 244, 238, 0.4), 0 0 20px rgba(254, 44, 85, 0.3);
-                border-color: #25f4ee;
-                transform: scale(1);
-            }
-            50% {
-                box-shadow: 0 0 18px rgba(254, 44, 85, 0.7), 0 0 28px rgba(37, 244, 238, 0.6);
-                border-color: #fe2c55;
-                transform: scale(1.04);
-            }
-            100% {
-                box-shadow: 0 0 10px rgba(37, 244, 238, 0.4), 0 0 20px rgba(254, 44, 85, 0.3);
-                border-color: #25f4ee;
-                transform: scale(1);
-            }
-        }
-
-        .game-card-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            padding: 4px 12px;
-            border-radius: var(--radius-pill);
-            font-size: 11px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin-bottom: 20px;
-            width: fit-content;
-        }
-
-        .badge-active {
-            background: rgba(87, 242, 135, 0.15);
-            color: var(--color-spring-green);
-            border: 1px solid rgba(87, 242, 135, 0.3);
-        }
-
-        .badge-new {
-            background: rgba(254, 44, 85, 0.15);
-            color: var(--color-tiktok-red);
-            border: 1px solid rgba(254, 44, 85, 0.3);
-        }
-
-        .badge-upcoming {
-            background: rgba(0, 176, 244, 0.15);
-            color: var(--color-vivid-cerulean);
-            border: 1px solid rgba(0, 176, 244, 0.3);
-        }
-
-        .game-card-icon {
-            width: 56px;
-            height: 56px;
-            border-radius: 16px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 28px;
-            margin-bottom: 18px;
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-        }
-
-        .game-card-title {
-            font-family: var(--font-display);
-            font-weight: 800;
-            font-size: 24px;
-            text-transform: uppercase;
-            margin-bottom: 12px;
-            letter-spacing: -0.4px;
-        }
-
-        .game-card-desc {
-            color: var(--color-fog);
-            font-size: 15px;
-            line-height: 1.6;
-            margin-bottom: 24px;
-        }
-
-        .game-card-features {
-            list-style: none;
-            margin-bottom: 24px;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            font-size: 14px;
-            color: var(--color-snow);
-        }
-
-        .game-card-features li {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .game-card-features li svg {
-            width: 16px;
-            height: 16px;
-            color: var(--color-tiktok-cyan);
-            flex-shrink: 0;
-        }
-
-        /* Ecosystem Roadmap Paragraph */
-        .ecosystem-banner {
-            background: linear-gradient(135deg, rgba(88, 101, 242, 0.2) 0%, rgba(254, 44, 85, 0.15) 100%);
-            border: 1px solid rgba(255, 255, 255, 0.12);
-            border-radius: var(--radius-card);
-            padding: 36px 44px;
-            display: flex;
-            align-items: center;
-            gap: 32px;
-            margin-top: 20px;
-        }
-
-        .ecosystem-icon {
-            font-size: 48px;
-            flex-shrink: 0;
-        }
-
-        .ecosystem-content h3 {
-            font-family: var(--font-display);
-            font-weight: 800;
-            font-size: 20px;
-            text-transform: uppercase;
-            margin-bottom: 8px;
-            color: var(--color-snow);
-        }
-
-        .ecosystem-content p {
-            font-size: 15px;
-            color: var(--color-fog);
-            line-height: 1.6;
-        }
-
-        /* Steps / How It Works */
-        .steps-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-            gap: 24px;
-        }
-
-        .step-box {
-            background: var(--surface-feature-card);
-            border: 1px solid var(--surface-card-border);
-            border-radius: var(--radius-card);
-            padding: 30px;
-            text-align: center;
-            position: relative;
-        }
-
-        .step-number {
-            width: 44px;
-            height: 44px;
-            border-radius: 50%;
-            background: var(--color-blurple);
-            color: var(--color-snow);
-            font-family: var(--font-display);
-            font-weight: 800;
-            font-size: 18px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 0 auto 18px auto;
-            box-shadow: 0 0 16px rgba(88, 101, 242, 0.5);
-        }
-
-        .step-title {
-            font-family: var(--font-display);
-            font-weight: 700;
-            font-size: 18px;
-            text-transform: uppercase;
-            margin-bottom: 10px;
-        }
-
-        .step-desc {
-            font-size: 14px;
-            color: var(--color-fog);
-            line-height: 1.5;
-        }
-
-        /* Feedback / Request Section */
-        .feedback-section {
-            background: linear-gradient(180deg, transparent 0%, rgba(14, 15, 45, 0.6) 100%);
-            padding-bottom: 120px;
-        }
-
-        .feedback-card {
-            background: var(--surface-feature-card);
-            border: 1px solid rgba(88, 101, 242, 0.3);
-            border-radius: var(--radius-card);
-            padding: 44px;
-            max-width: 800px;
-            margin: 0 auto;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
-            backdrop-filter: blur(20px);
-        }
-
-        .form-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
-            margin-bottom: 20px;
-        }
-
-        .form-group-full {
-            grid-column: 1 / -1;
-        }
-
-        .form-label {
-            display: block;
-            font-size: 13px;
-            font-weight: 600;
-            color: var(--color-fog);
-            margin-bottom: 8px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .form-input, .form-select, .form-textarea {
-            width: 100%;
-            background: rgba(10, 11, 24, 0.85);
-            border: 1px solid rgba(255, 255, 255, 0.12);
-            border-radius: 12px;
-            padding: 13px 16px;
-            color: var(--color-snow);
-            font-family: var(--font-body);
-            font-size: 15px;
-            outline: none;
-            transition: all 0.2s ease;
-        }
-
-        .form-input:focus, .form-select:focus, .form-textarea:focus {
-            border-color: var(--color-tiktok-cyan);
-            box-shadow: 0 0 14px rgba(37, 244, 238, 0.3);
-            background: rgba(14, 16, 35, 0.95);
-        }
-
-        .form-select option {
-            background: #161829;
-            color: #ffffff;
-        }
-
-        .form-textarea {
-            resize: vertical;
-            min-height: 110px;
-        }
-
-        .form-status {
-            margin-top: 16px;
-            padding: 12px 18px;
-            border-radius: 10px;
-            font-size: 14px;
-            font-weight: 500;
+            margin-top: 12px;
             display: none;
         }
 
-        .form-status.success {
-            display: block;
-            background: rgba(87, 242, 135, 0.15);
-            color: var(--color-spring-green);
-            border: 1px solid rgba(87, 242, 135, 0.4);
-        }
+        /* YÖNETİM PANELİ ANA ALANI */
+        #adminPanel { display: none; }
 
-        .form-status.error {
-            display: block;
-            background: rgba(254, 44, 85, 0.15);
-            color: var(--color-tiktok-red);
-            border: 1px solid rgba(254, 44, 85, 0.4);
-        }
-
-        /* Footer (Discord Fog / Void Style) */
-        footer.site-footer {
-            background-color: var(--surface-cosmic-deep);
-            border-top: 1px solid rgba(255, 255, 255, 0.08);
-            padding: 70px 0 30px 0;
-            color: var(--color-fog);
-            font-size: 14px;
-        }
-
-        .footer-grid {
-            display: grid;
-            grid-template-columns: 2fr 1fr 1fr 1fr;
-            gap: 48px;
-            margin-bottom: 50px;
-        }
-
-        .footer-col h4 {
-            font-family: var(--font-display);
-            font-weight: 800;
-            font-size: 15px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            color: var(--color-snow);
-            margin-bottom: 18px;
-        }
-
-        .footer-links {
-            list-style: none;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-
-        .footer-links a {
-            color: var(--color-fog);
-            text-decoration: none;
-            transition: color 0.2s ease;
-        }
-
-        .footer-links a:hover {
-            color: var(--color-tiktok-cyan);
-        }
-
-        .footer-bottom {
-            padding-top: 24px;
-            border-top: 1px solid rgba(255, 255, 255, 0.06);
+        .header {
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+            padding: 16px 32px;
             display: flex;
             align-items: center;
             justify-content: space-between;
+        }
+
+        .header-title {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 20px;
+            font-weight: 700;
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .badge-live {
+            background: rgba(0,212,170,0.15);
+            color: var(--green);
+            border: 1px solid var(--green);
+            font-size: 11px;
+            padding: 3px 8px;
+            border-radius: 20px;
+            font-weight: 600;
+        }
+
+        .btn-top {
+            padding: 8px 14px;
+            background: transparent;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--text-dim);
+            cursor: pointer;
             font-size: 13px;
-            color: var(--color-greyple);
+            text-decoration: none;
+            transition: all 0.2s;
+        }
+        .btn-top:hover { border-color: #fff; color: #fff; }
+        .btn-top.logout:hover { border-color: var(--red); color: var(--red); }
+
+        .main {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 28px 24px;
         }
 
-        /* Responsive */
-        @media (max-width: 992px) {
-            .hero-grid {
-                grid-template-columns: 1fr;
-                gap: 40px;
-            }
-            .hero-title {
-                font-size: 42px;
-            }
-            .footer-grid {
-                grid-template-columns: 1fr 1fr;
-            }
-            .nav-links {
-                display: none;
-            }
+        /* İSTATİSTİKLER */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+            gap: 16px;
+            margin-bottom: 28px;
         }
 
-        @media (max-width: 600px) {
-            .hero-title {
-                font-size: 34px;
-            }
-            .section-title {
-                font-size: 32px;
-            }
-            .form-grid {
-                grid-template-columns: 1fr;
-            }
-            .footer-grid {
-                grid-template-columns: 1fr;
-            }
-            .ecosystem-banner {
-                flex-direction: column;
-                text-align: center;
-                padding: 24px;
-            }
+        .stat-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 18px 20px;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 6px;
+        }
+
+        .stat-val {
+            font-size: 28px;
+            font-weight: 800;
+            color: var(--text);
+        }
+
+        .stat-val.aktif { color: var(--green); }
+        .stat-val.beklemede { color: var(--yellow); }
+        .stat-val.iptal { color: var(--red); }
+        .stat-val.talep { color: var(--accent2); }
+
+        /* LİSANS OLUŞTURMA ALANI */
+        .create-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 24px;
+            margin-bottom: 28px;
+        }
+
+        .section-title {
+            font-size: 16px;
+            font-weight: 700;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .duration-group-label {
+            font-size: 12px;
+            color: var(--text-dim);
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        .duration-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+
+        .dur-btn {
+            padding: 9px 14px;
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text);
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .dur-btn.quick {
+            border-color: rgba(37, 244, 238, 0.4);
+            color: var(--accent2);
+        }
+
+        .dur-btn:hover, .dur-btn.active {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: #fff;
+        }
+
+        .form-row {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .form-input {
+            flex: 1;
+            min-width: 240px;
+            padding: 10px 14px;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text);
+            font-size: 14px;
+            outline: none;
+        }
+        .form-input:focus { border-color: var(--accent); }
+
+        .btn-create {
+            padding: 10px 24px;
+            background: linear-gradient(135deg, var(--green), #00a87d);
+            border: none;
+            border-radius: 8px;
+            color: #0d0d1a;
+            font-weight: 700;
+            font-size: 14px;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+        .btn-create:hover { opacity: 0.9; }
+
+        .new-license-box {
+            display: none;
+            background: rgba(0,212,170,0.1);
+            border: 1px solid var(--green);
+            border-radius: 10px;
+            padding: 14px 18px;
+            margin-top: 16px;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .new-code {
+            font-family: monospace;
+            font-size: 18px;
+            font-weight: 800;
+            color: var(--green);
+            letter-spacing: 1px;
+        }
+
+        .btn-copy {
+            padding: 6px 14px;
+            background: var(--green);
+            border: none;
+            border-radius: 6px;
+            color: #0d0d1a;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        /* SEKMELER */
+        .tabs {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 16px;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 8px;
+        }
+
+        .tab-btn {
+            padding: 8px 18px;
+            background: transparent;
+            border: none;
+            border-bottom: 2px solid transparent;
+            color: var(--text-dim);
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 700;
+        }
+        .tab-btn.active {
+            color: var(--accent2);
+            border-bottom-color: var(--accent2);
+        }
+
+        /* TABLOLAR */
+        .list-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 24px;
+            overflow-x: auto;
+            margin-bottom: 24px;
+        }
+
+        .list-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .search-box {
+            padding: 8px 14px;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--text);
+            font-size: 13px;
+            width: 240px;
+            outline: none;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+            text-align: left;
+        }
+
+        th {
+            padding: 12px 14px;
+            color: var(--text-dim);
+            font-weight: 600;
+            border-bottom: 1px solid var(--border);
+            white-space: nowrap;
+        }
+
+        td {
+            padding: 14px;
+            border-bottom: 1px solid rgba(42,42,74,0.5);
+            vertical-align: middle;
+        }
+
+        tr:hover td { background: rgba(255,255,255,0.02); }
+
+        .code-pill {
+            font-family: monospace;
+            font-weight: 700;
+            background: var(--surface2);
+            padding: 4px 8px;
+            border-radius: 4px;
+            color: var(--text);
+            letter-spacing: 0.5px;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 700;
+        }
+        .status-badge.beklemede { background: rgba(255,215,0,0.15); color: var(--yellow); }
+        .status-badge.aktif { background: rgba(0,212,170,0.15); color: var(--green); }
+        .status-badge.iptal { background: rgba(255,68,68,0.15); color: var(--red); }
+        .status-badge.suresi_doldu { background: rgba(136,136,170,0.2); color: var(--text-dim); }
+
+        .action-btns {
+            display: flex;
+            gap: 6px;
+        }
+
+        .btn-action {
+            padding: 5px 10px;
+            border: 1px solid var(--border);
+            background: transparent;
+            border-radius: 6px;
+            color: var(--text);
+            cursor: pointer;
+            font-size: 11px;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+        .btn-action:hover { border-color: var(--text); }
+        .btn-action.btn-revoke:hover { border-color: var(--red); color: var(--red); }
+        .btn-action.btn-unrevoke:hover { border-color: var(--green); color: var(--green); }
+        .btn-action.btn-delete:hover { border-color: var(--red); color: var(--red); }
+
+        .empty-row {
+            text-align: center;
+            padding: 30px;
+            color: var(--text-dim);
         }
     </style>
 </head>
 <body>
 
-    <div class="cosmic-mesh"></div>
-
-    <!-- Navigation Bar (Discord Full-Width Frosted Strip) -->
-    <header class="nav-header">
-        <div class="container nav-wrapper">
-            <a href="#" class="brand-logo">
-                <div class="brand-badge">M</div>
-                <div class="brand-title">MNG <span>TIKTOK</span> GAME</div>
-            </a>
-
-            <ul class="nav-links">
-                <li><a href="#games">Oyunlarımız</a></li>
-                <li><a href="#sim">Canlı Simülatör</a></li>
-                <li><a href="#how">Nasıl Çalışır?</a></li>
-                <li><a href="#talep">Soru & Öneri</a></li>
-                <li><a href="/admin">Yönetim Paneli</a></li>
-            </ul>
-
-            <div class="nav-actions">
-                <a href="#download" class="btn btn-sm btn-tiktok">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
-                    Hemen İndir
-                </a>
-            </div>
+    <!-- GİRİŞ EKRANI -->
+    <div id="loginPage">
+        <div class="login-box">
+            <div class="login-logo">🔐</div>
+            <div class="login-title">Yönetici Girişi</div>
+            <div class="login-sub">MNG TikTok Game Yönetim Paneli</div>
+            
+            <input type="password" id="adminPassword" class="login-input" placeholder="Yönetici Şifreniz" onkeydown="if(event.key==='Enter') login()">
+            <button class="btn-primary" onclick="login()">Giriş Yap</button>
+            <div id="loginError" class="login-error">Hatalı şifre! Lütfen tekrar deneyin.</div>
         </div>
-    </header>
+    </div>
 
-    <!-- Hero Section (Deep Indigo Cosmic Space) -->
-    <section class="hero" id="home">
-        <div class="container hero-grid">
-            <div class="hero-content">
-                <div class="hero-badge-pill">
-                    <span class="dot"></span>
-                    YENİ SÜRÜM v2.0.1 HAZIR
+    <!-- YÖNETİM PANELİ -->
+    <div id="adminPanel">
+        <header class="header">
+            <div class="header-title">
+                <span>🎮 MNG TikTok Game</span>
+                <span class="badge-live">Yönetici Paneli</span>
+            </div>
+            <div class="header-actions">
+                <a href="/" target="_blank" class="btn-top">🌐 Web Sitesini Aç</a>
+                <button class="btn-top logout" onclick="logout()">Çıkış ✕</button>
+            </div>
+        </header>
+
+        <div class="main">
+            <!-- İSTATİSTİKLER -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-label">Toplam Lisans</div>
+                    <div class="stat-val" id="statToplam">0</div>
                 </div>
-
-                <h1 class="hero-title">
-                    CANLI YAYININI <br>
-                    <span class="gradient-text">ARENAYA ÇEVİR</span>
-                </h1>
-
-                <p class="hero-desc">
-                    TikTok canlı yayınlarında izleyicilerinizi pasif seyircilerden kurtarın. Hediyeler, beğeniler ve takiplerle anında ekranda canlanan interaktif oyunlar ile etkileşiminizi ve gelirinizi 10 katına çıkarın!
-                </p>
-
-                <div class="hero-cta-group">
-                    <button onclick="hemenIndir()" class="btn btn-tiktok" style="font-size: 16px; padding: 16px 30px;">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
-                        WINDOWS İÇİN İNDİR (v2.0.1)
-                    </button>
-                    
-                    <a href="#sim" class="btn btn-outline" style="font-size: 16px; padding: 16px 26px;">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
-                        Arenayı Test Et
-                    </a>
+                <div class="stat-card">
+                    <div class="stat-label">Aktif Kullanımda</div>
+                    <div class="stat-val aktif" id="statAktif">0</div>
                 </div>
-
-                <div class="hero-version-tag">
-                    <div><span>✓</span> Otomatik TikTok Bağlantısı</div>
-                    <div><span>✓</span> 0 ms Ses Gecikmesi</div>
-                    <div><span>✓</span> Tek Tık Kurulum</div>
+                <div class="stat-card">
+                    <div class="stat-label">Beklemede</div>
+                    <div class="stat-val beklemede" id="statBeklemede">0</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">İptal Edildi</div>
+                    <div class="stat-val iptal" id="statIptal">0</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Gelen Talep & Soru/Öneri</div>
+                    <div class="stat-val talep" id="statTalep">0</div>
                 </div>
             </div>
 
-            <!-- Interaktif Oynanabilir Görsel (Refero Style Canvas Arena) -->
-            <div class="arena-interactive-card" id="sim">
-                <div class="arena-card-header">
-                    <div class="arena-title-wrapper">
-                        <div class="arena-dot-live"></div>
-                        <div class="arena-title">CANLI ORBIT SİMÜLATÖRÜ</div>
-                    </div>
-                    <div class="arena-instructions">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
-                        Tıkla veya Kaydır: Hediye Fırlat!
-                    </div>
-                </div>
-
-                <canvas id="heroCanvas"></canvas>
-
-                <div class="canvas-footer-stats">
-                    <div>Arenadaki Küreler: <strong id="orbCount">18</strong></div>
-                    <div>Yörünge Hızı: <strong id="speedIndicator">1.0x (Kaydır)</strong></div>
-                    <div>Fırlatılan: <strong id="giftThrownCount" style="color:var(--color-tiktok-cyan)">0</strong></div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Oyunlarımız Bölümü (Discord 24px Feature Cards) -->
-    <section id="games">
-        <div class="container">
-            <div class="section-header">
-                <div class="section-tag">YAYINCILAR İÇİN ÖZEL OYUNLAR</div>
-                <h2 class="section-title">ETKİLEŞİM VE REKABET DOLU BİR DÜNYA</h2>
-                <p class="section-desc">
-                    Tüm oyunlarımız TikTok Canlı Yayın altyapısıyla doğrudan entegre çalışır. İzleyicinin gönderdiği tek bir gül veya beğeni bile oyundaki tüm dengeleri anında değiştirir.
-                </p>
-            </div>
-
-            <div class="games-grid">
-                <!-- Oyun 1: MNG Orbit -->
-                <div class="game-card highlight">
-                    <div>
-                        <div style="display:flex; align-items:center; gap:8px; margin-bottom:20px; flex-wrap:wrap;">
-                            <div class="sparkle-badge">✨ YENİ OYUNUMUZ</div>
-                            <div class="game-card-badge badge-active" style="margin-bottom:0;">● ŞU AN YAYINDA</div>
-                        </div>
-                        <div class="game-card-icon" style="background: rgba(254, 44, 85, 0.15); border-color: rgba(254, 44, 85, 0.3);">🪐</div>
-                        <h3 class="game-card-title">MNG TikTok Orbit</h3>
-                        <p class="game-card-desc">
-                            Yerçekimi arenasında geçen devasa rekabet! İzleyiciler profil fotoğraflarıyla yörüngede küreler oluşturur. Hediyeler geldikçe kütle büyür, küçük küreleri yutarak arenanın tek hakimi olmaya çalışırlar.
-                        </p>
-                        <ul class="game-card-features">
-                            <li><svg viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg> 0 ms Anında Yutma & Büyüme Sesleri</li>
-                            <li><svg viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg> Dev Profil Fotoğraflı Kazanan Ekranı</li>
-                            <li><svg viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg> Özelleştirilebilir Hediye & Kütle Ayarları</li>
-                        </ul>
-                    </div>
-                    <a href="#download" class="btn btn-tiktok btn-sm">Hemen Oyna</a>
-                </div>
-
-                <!-- Oyun 2: MNG Profil VS -->
-                <div class="game-card">
-                    <div>
-                        <div class="game-card-badge badge-active">● AKTİF WİDGET</div>
-                        <div class="game-card-icon" style="background: rgba(88, 101, 242, 0.15); border-color: rgba(88, 101, 242, 0.3);">⚔️</div>
-                        <h3 class="game-card-title">TikTok Profil VS</h3>
-                        <p class="game-card-desc">
-                            İki rakip veya iki izleyici grubu arasında kafes dövüşü! Hediyeler ve beğenilerle bar dolar, animasyonlu canlı düello ekranı OBS yayınına saniyeler içinde eklenir.
-                        </p>
-                        <ul class="game-card-features">
-                            <li><svg viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg> Canlı Geri Sayım & Tur Sistemi</li>
-                            <li><svg viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg> OBS Şeffaf Tarayıcı Kaynağı</li>
-                            <li><svg viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg> Otomatik Kazanan İlanı</li>
-                        </ul>
-                    </div>
-                    <a href="#download" class="btn btn-outline btn-sm">Widget'ı İncele</a>
-                </div>
-
-                <!-- Yeni Oyunlar Placeholder -->
-                <div class="game-card" style="opacity: 0.75; border: 2px dashed rgba(37,244,238,0.3); background: rgba(37,244,238,0.03);">
-                    <div style="text-align:center; padding: 20px 0;">
-                        <div class="game-card-icon" style="background: rgba(37,244,238,0.08); border-color: rgba(37,244,238,0.2); font-size: 36px; margin: 0 auto 16px;">🔜</div>
-                        <h3 class="game-card-title" style="color: #25f4ee;">Yeni Oyunlar İçin Beklemede Kalın</h3>
-                        <p class="game-card-desc" style="opacity: 0.7;">Yeni oyunlarımız hazırlanıyor. Duyurular için bizi takip etmeye devam edin!</p>
-                    </div>
-                    <span class="btn btn-outline btn-sm" style="opacity: 0.5; cursor: default; align-self:center;">Yakında</span>
-                </div>
-            </div>
-
-            <!-- Ekosistem Paragrafı -->
-            <div class="ecosystem-banner">
-                <div class="ecosystem-icon">🚀</div>
-                <div class="ecosystem-content">
-                    <h3>Yayıncılarımız İçin Sürekli Büyüyen Oyun Ekosistemi</h3>
-                    <p>
-                        MNG TikTok Game yalnızca tek bir oyun değil; canlı yayıncıların tüm ihtiyaçlarına cevap veren profesyonel bir interaktif oyun motorudur. En son eklediğimiz <strong>MNG Orbit Game</strong> ile izleyicileriniz birbirini yutan gezegenler olarak savaşıyor — hediyeler, takipler ve beğeniler oyunu canlı tutuyor. Yeni oyunlar geliştiriliyor; tek bir launcher ile tüm oyunlar tek tıkla indirilir, otomatik güncellenir ve yayına anında hazır hale gelir!
-                    </p>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Nasıl Çalışır? (3 Adım) -->
-    <section id="how">
-        <div class="container">
-            <div class="section-header">
-                <div class="section-tag">KOLAY ENTEGRASYON</div>
-                <h2 class="section-title">3 ADIMDA YAYINA BAŞLA</h2>
-                <p class="section-desc">Karmaşık ayarlara, saatlerce süren kodlamalara son. 2 dakikada her şey hazır.</p>
-            </div>
-
-            <div class="steps-grid">
-                <div class="step-box">
-                    <div class="step-number">1</div>
-                    <h3 class="step-title">Launcher'ı İndir</h3>
-                    <p class="step-desc">Windows kurulum dosyamızı indirin ve tek tıkla kurun. Masaüstü kısayolundan başlatın.</p>
-                </div>
-
-                <div class="step-box">
-                    <div class="step-number">2</div>
-                    <h3 class="step-title">Kullanıcı Adını Gir</h3>
-                    <p class="step-desc">TikTok kullanıcı adınızı yazın. Şifre gerekmez; sistem yayınınıza halka açık canlı soketle bağlanır.</p>
-                </div>
-
-                <div class="step-box">
-                    <div class="step-number">3</div>
-                    <h3 class="step-title">OBS'e Ekle & Başlat</h3>
-                    <p class="step-desc">Oyun penceresini OBS veya TikTok Live Studio'da ekran/pencere yakalama ile yayına verin!</p>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- İndirme Bölümü CTA -->
-    <section id="download" style="text-align: center;">
-        <div class="container">
-            <div style="background: linear-gradient(135deg, rgba(88, 101, 242, 0.25) 0%, rgba(254, 44, 85, 0.2) 100%); border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 32px; padding: 60px 30px; max-width: 900px; margin: 0 auto; box-shadow: 0 20px 60px rgba(0,0,0,0.5);">
-                <div class="section-tag" style="color: var(--color-tiktok-cyan);">HAZIR MISINIZ?</div>
-                <h2 class="section-title" style="font-size: 38px; margin-bottom: 16px;">YAYINLARINIZI BİR ÜST SEVİYEYE TAŞIYIN</h2>
-                <p class="section-desc" style="max-width: 620px; margin: 0 auto 36px auto;">
-                    MNG TikTok Game v2.0.1 sürümünü hemen ücretsiz indirin. Hediye listesi donma düzeltmesi, web sitesi doğrudan indirme ve MNG Orbit iyileştirmeleriyle deneyin.
-                </p>
-
-                <div style="display: flex; justify-content: center; gap: 18px; flex-wrap: wrap;">
-                    <button onclick="hemenIndir()" class="btn btn-tiktok" style="font-size: 17px; padding: 18px 36px; cursor: pointer;">
-                        <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
-                        MNG TikTok Game Setup 2.0.1 İndir
-                    </button>
-                    <button onclick="hemenIndir()" class="btn btn-outline" style="font-size: 16px; padding: 18px 30px; cursor: pointer;">
-                        Doğrudan İndir (.exe)
-                    </button>
-                </div>
-                <div style="margin-top: 18px; font-size: 13px; color: var(--color-greyple);">
-                    Windows 10 / 11 Desteklenir • Boyut: ~110 MB • Virüssüz & Güvenli
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Soru, Öneri & Lisans Talep Bölümü -->
-    <section class="feedback-section" id="talep">
-        <div class="container">
-            <div class="section-header">
-                <div class="section-tag">BİZE ULAŞIN</div>
-                <h2 class="section-title">SORU, ÖNERİ VE LİSANS TALEBİ</h2>
-                <p class="section-desc">Yeni oyun fikirleriniz, karşılaştığınız sorunlar veya lisans aktivasyon talepleriniz doğrudan ekibimize ve admin panelimize iletilir.</p>
-            </div>
-
-            <div class="feedback-card">
-                <form id="talepForm">
-                    <div class="form-grid">
-                        <div>
-                            <label class="form-label" for="ad">Adınız / Yayıncı Adınız *</label>
-                            <input class="form-input" type="text" id="ad" name="ad" placeholder="Örn: Mehmet veya @mng_streamer" required>
-                        </div>
-                        <div>
-                            <label class="form-label" for="iletisim">E-Posta veya Telefon / Discord *</label>
-                            <input class="form-input" type="text" id="iletisim" name="iletisim" placeholder="Örn: yayinci@gmail.com veya Discord Tag" required>
-                        </div>
-                        <div>
-                            <label class="form-label" for="tur">Talep / İleti Türü *</label>
-                            <select class="form-select" id="tur" name="tur">
-                                <option value="öneri">💡 Yeni Oyun / Özellik Önerisi</option>
-                                <option value="soru">❓ Soru / Yardım Talebi</option>
-                                <option value="lisans">🔑 Lisans Satın Alma / Aktivasyon</option>
-                                <option value="hata">🐛 Hata Bildirimi</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="form-label" for="konu">Konu Başlığı</label>
-                            <input class="form-input" type="text" id="konu" name="konu" placeholder="Örn: Yeni bir kule savunma modu önerisi">
-                        </div>
-                        <div class="form-group-full">
-                            <label class="form-label" for="mesaj">Mesajınız / Detaylar *</label>
-                            <textarea class="form-textarea" id="mesaj" name="mesaj" placeholder="Önerinizi, sorunuzu veya lisans talebinizin ayrıntılarını buraya yazın..." required></textarea>
-                        </div>
-                    </div>
-
-                    <div style="display: flex; justify-content: flex-end;">
-                        <button type="submit" class="btn btn-blurple" id="talepSubmitBtn" style="padding: 15px 36px; font-size: 16px;">
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
-                            Talebi Gönder
-                        </button>
-                    </div>
-
-                    <div class="form-status" id="talepStatus"></div>
-                </form>
-            </div>
-        </div>
-    </section>
-
-    <!-- Footer -->
-    <footer class="site-footer">
-        <div class="container">
-            <div class="footer-grid">
-                <div class="footer-col">
-                    <div class="brand-logo" style="margin-bottom: 16px;">
-                        <div class="brand-badge" style="width: 36px; height: 36px; font-size: 16px;">M</div>
-                        <div class="brand-title" style="font-size: 18px;">MNG <span>TIKTOK</span> GAME</div>
-                    </div>
-                    <p style="line-height: 1.6; max-width: 340px; margin-bottom: 16px;">
-                        TikTok canlı yayıncılarının yayınlarını unutulmaz bir oyun şölenine dönüştüren yeni nesil interaktif eğlence platformu.
-                    </p>
-                    <div style="display: flex; gap: 12px;">
-                        <span style="display: inline-block; padding: 4px 10px; background: rgba(255,255,255,0.06); border-radius: 8px; font-size: 12px;">v2.0.1</span>
-                        <span style="display: inline-block; padding: 4px 10px; background: rgba(87,242,135,0.1); color: var(--color-spring-green); border-radius: 8px; font-size: 12px;">Tüm Sistemler Aktif</span>
-                    </div>
-                </div>
-
-                <div class="footer-col">
-                    <h4>Oyunlar</h4>
-                    <ul class="footer-links">
-                        <li><a href="#games">MNG Orbit (Canlı)</a></li>
-                        <li><a href="#games">Profil VS (Aktif)</a></li>
-                        <li><a href="#games">Yeni Oyunlar Yakında 🔜</a></li>
-                    </ul>
-                </div>
-
-                <div class="footer-col">
-                    <h4>Hızlı Bağlantılar</h4>
-                    <ul class="footer-links">
-                        <li><a href="#sim">Canlı Simülatör</a></li>
-                        <li><a href="#download">İndir (Setup)</a></li>
-                        <li><a href="#talep">Öneri & Soru</a></li>
-                        <li><a href="/admin">Yönetici Girişi</a></li>
-                    </ul>
-                </div>
-
-                <div class="footer-col">
-                    <h4>Yayıncı Desteği</h4>
-                    <ul class="footer-links">
-                        <li><a href="#talep">Canlı Destek Talebi</a></li>
-                        <li><a href="#how">OBS Entegrasyon Rehberi</a></li>
-                        <li><a href="#talep">Lisans Aktivasyonu</a></li>
-                    </ul>
-                </div>
-            </div>
-
-            <div class="footer-bottom">
-                <div>© 2026 MNG TikTok Game Ecosystem. Tüm Hakları Saklıdır.</div>
-                <div>Geliştirici & Tasarım: MNG Studio</div>
-            </div>
-        </div>
-    </footer>
-
-    <!-- Interactive Canvas & Form JavaScript -->
-    <script>
-        // =====================================================================
-        // OYNANABİLİR ETKİLEŞİMLİ CANVAS ARENA (Mouse Kaydırma ve Tıklama)
-        // =====================================================================
-        const canvas = document.getElementById('heroCanvas');
-        const ctx = canvas.getContext('2d');
-        const orbCountEl = document.getElementById('orbCount');
-        const speedIndicatorEl = document.getElementById('speedIndicator');
-        const giftCountEl = document.getElementById('giftThrownCount');
-
-        let width, height;
-        let giftCount = 0;
-        let globalSpeed = 1.0;
-        let lastScrollY = window.scrollY;
-
-        function resize() {
-            width = canvas.parentElement.clientWidth - 40;
-            height = 380;
-            canvas.width = width * window.devicePixelRatio;
-            canvas.height = height * window.devicePixelRatio;
-            ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
-            canvas.style.width = width + 'px';
-            canvas.style.height = height + 'px';
-        }
-        window.addEventListener('resize', resize);
-        resize();
-
-        // Parçacıklar / Küreler (TikTok & Discord Paleti)
-        const colors = ['#fe2c55', '#25f4ee', '#5865f2', '#57f287', '#fda220', '#ffffff'];
-        const usernames = ['@yayinci', '@tiktok_star', '@mehmet99', '@berke_can', '@ayse_vip', '@hakan_pro', '@queen_live'];
-
-        class Orb {
-            constructor(x, y, r, color, name) {
-                this.x = x || Math.random() * (width - 80) + 40;
-                this.y = y || Math.random() * (height - 80) + 40;
-                this.r = r || Math.random() * 14 + 10;
-                this.color = color || colors[Math.floor(Math.random() * colors.length)];
-                this.name = name || usernames[Math.floor(Math.random() * usernames.length)];
-                this.vx = (Math.random() - 0.5) * 2;
-                this.vy = (Math.random() - 0.5) * 2;
-                this.pulse = Math.random() * Math.PI;
-            }
-
-            update(speed) {
-                this.pulse += 0.05;
-                this.x += this.vx * speed;
-                this.y += this.vy * speed;
-
-                if (this.x - this.r < 0) { this.x = this.r; this.vx *= -1; }
-                if (this.x + this.r > width) { this.x = width - this.r; this.vx *= -1; }
-                if (this.y - this.r < 0) { this.y = this.r; this.vy *= -1; }
-                if (this.y + this.r > height) { this.y = height - this.r; this.vy *= -1; }
-            }
-
-            draw() {
-                ctx.save();
+            <!-- YENİ LİSANS OLUŞTUR -->
+            <div class="create-card">
+                <div class="section-title">🔑 Yeni Lisans Kodu Oluştur</div>
                 
-                // Glow efekti
-                ctx.shadowBlur = 15;
-                ctx.shadowColor = this.color;
+                <div class="duration-group-label">⚡ HIZLI DENEME SÜRELERİ (DAKİKA BAZLI):</div>
+                <div class="duration-buttons">
+                    <button class="dur-btn quick" onclick="selectDuration('dakika', 1, this)">⚡ 1 Dakika (Test)</button>
+                    <button class="dur-btn quick" onclick="selectDuration('dakika', 10, this)">⚡ 10 Dakika</button>
+                    <button class="dur-btn quick" onclick="selectDuration('dakika', 20, this)">⚡ 20 Dakika</button>
+                </div>
 
-                // Dış Halka / Küre
-                ctx.beginPath();
-                const displayR = this.r + Math.sin(this.pulse) * 1.5;
-                ctx.arc(this.x, this.y, displayR, 0, Math.PI * 2);
-                ctx.fillStyle = this.color;
-                ctx.fill();
+                <div class="duration-group-label">📅 STANDART & SINIRSIZ PAKETLER (GÜN BAZLI):</div>
+                <div class="duration-buttons">
+                    <button class="dur-btn" onclick="selectDuration('gun', 1, this)">1 Günlük</button>
+                    <button class="dur-btn" onclick="selectDuration('gun', 3, this)">3 Günlük</button>
+                    <button class="dur-btn active" onclick="selectDuration('gun', 7, this)">7 Günlük (Standart)</button>
+                    <button class="dur-btn" onclick="selectDuration('gun', 30, this)">30 Günlük (Aylık)</button>
+                    <button class="dur-btn" onclick="selectDuration('sinirsiz', -1, this)">♾️ Sınırsız Lisans</button>
+                </div>
 
-                // İç parlama
-                ctx.beginPath();
-                ctx.arc(this.x - displayR * 0.3, this.y - displayR * 0.3, displayR * 0.35, 0, Math.PI * 2);
-                ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
-                ctx.fill();
+                <div class="duration-group-label" style="margin-top:8px;">✏️ ÖZEL SÜRE BELİRLE:</div>
+                <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:12px;">
+                    <input type="number" id="customDurVal" min="1" max="9999" placeholder="Miktar" style="width:90px;padding:8px 10px;background:var(--card-bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;">
+                    <select id="customDurUnit" style="padding:8px 10px;background:var(--card-bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;">
+                        <option value="dakika">Dakika</option>
+                        <option value="saat">Saat</option>
+                        <option value="gun" selected>Gün</option>
+                        <option value="ay">Ay (30 gün)</option>
+                        <option value="yil">Yıl (365 gün)</option>
+                    </select>
+                    <button class="dur-btn" onclick="applyCustomDuration()" style="background:rgba(37,244,238,0.15);border-color:rgba(37,244,238,0.4);color:#25f4ee;">✓ Uygula</button>
+                    <span id="customDurDisplay" style="font-size:12px;color:var(--text-dim);"></span>
+                </div>
 
-                // İsim etiketi
-                ctx.shadowBlur = 0;
-                ctx.fillStyle = '#ffffff';
-                ctx.font = '10px Inter, sans-serif';
-                ctx.textAlign = 'center';
-                ctx.fillText(this.name, this.x, this.y + displayR + 13);
+                <div class="form-row">
+                    <input type="text" id="licenseNote" class="form-input" placeholder="Müşteri Adı / Not Açıklaması (Örn: Mehmet - TikTok Canlı)">
+                    <button class="btn-create" onclick="createLicense()">+ Lisansı Oluştur</button>
+                </div>
 
-                ctx.restore();
+                <div class="new-license-box" id="newLicenseBox">
+                    <div>
+                        <div style="font-size:12px; color:var(--text-dim); margin-bottom:4px;">YENİ OLUŞTURULAN LİSANS KODU:</div>
+                        <div class="new-code" id="newLicenseCode"></div>
+                        <div style="font-size:11px; color:var(--text-dim); margin-top:2px;" id="newLicenseDesc"></div>
+                    </div>
+                    <button class="btn-copy" onclick="copyNewCode()">Kopyala 📋</button>
+                </div>
+            </div>
+
+            <!-- SEKMELER -->
+            <div class="tabs">
+                <button class="tab-btn active" id="tabBtnLicenses" onclick="switchTab('licenses')">📋 Lisanslar Listesi</button>
+                <button class="tab-btn" id="tabBtnRequests" onclick="switchTab('requests')">📬 Gelen Talepler, Sorular & Öneriler (<span id="reqCountBadge">0</span>)</button>
+            </div>
+
+            <!-- LİSANS TABLOSU -->
+            <div class="list-card" id="tabLicenses">
+                <div class="list-header">
+                    <div class="section-title" style="margin-bottom:0;">Mevcut Lisanslar</div>
+                    <input type="text" id="searchInput" class="search-box" placeholder="Kod veya not ile filtrele..." oninput="renderTable()">
+                </div>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Lisans Kodu</th>
+                            <th>Paket Süresi</th>
+                            <th>Durum</th>
+                            <th>Kalan Süre</th>
+                            <th>Cihaz</th>
+                            <th>Müşteri / Not</th>
+                            <th>İşlemler</th>
+                        </tr>
+                    </thead>
+                    <tbody id="licensesTableBody">
+                        <tr><td colspan="7" class="empty-row">Yükleniyor...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- TALEPLER, SORULAR & ÖNERİLER TABLOSU -->
+            <div class="list-card" id="tabRequests" style="display:none;">
+                <div class="list-header">
+                    <div class="section-title" style="margin-bottom:0;">Web Sitesinden Gelen Talepler, Sorular ve Öneriler</div>
+                </div>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Tarih</th>
+                            <th>Tür</th>
+                            <th>Ad Soyad</th>
+                            <th>İletişim (Tel/WP)</th>
+                            <th>TikTok Kullanıcı</th>
+                            <th>Mesaj / Soru / Öneri</th>
+                            <th>İşlem</th>
+                        </tr>
+                    </thead>
+                    <tbody id="requestsTableBody">
+                        <tr><td colspan="7" class="empty-row">Henüz gelen talep, soru veya öneri yok.</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        let adminToken = localStorage.getItem("mng_admin_token");
+        let selectedBirim = "gun";
+        let selectedMiktar = 7;
+        let allLicenses = [];
+        let allRequests = [];
+
+        window.onload = () => {
+            if (adminToken) {
+                checkAuthAndLoad();
+            } else {
+                showLogin();
             }
+        };
+
+        function showLogin() {
+            document.getElementById("loginPage").style.display = "flex";
+            document.getElementById("adminPanel").style.display = "none";
         }
 
-        const orbs = [];
-        for (let i = 0; i < 18; i++) {
-            orbs.push(new Orb());
+        function showPanel() {
+            document.getElementById("loginPage").style.display = "none";
+            document.getElementById("adminPanel").style.display = "block";
+            loadData();
         }
 
-        // Mouse Tekerleğiyle Hızlandırma & Scroll Tepkisi
-        window.addEventListener('wheel', (e) => {
-            const rect = canvas.getBoundingClientRect();
-            // Sayfa kaydırıldıkça veya canvas üzerindeyken hızlandır
-            globalSpeed = Math.min(4.5, globalSpeed + Math.abs(e.deltaY) * 0.003);
-            speedIndicatorEl.textContent = globalSpeed.toFixed(1) + 'x';
-        }, { passive: true });
+        async function login() {
+            const pw = document.getElementById("adminPassword").value.trim();
+            const err = document.getElementById("loginError");
+            err.style.display = "none";
 
-        // Tıklayınca Hediye & Yeni Küre Fırlatma
-        canvas.addEventListener('click', (e) => {
-            const rect = canvas.getBoundingClientRect();
-            const mouseX = e.clientX - rect.left;
-            const mouseY = e.clientY - rect.top;
-
-            // Hediye patlaması: 3 yeni parça
-            for (let i = 0; i < 2; i++) {
-                const newOrb = new Orb(mouseX, mouseY, 16, '#fe2c55', '🎁 HEDİYE');
-                newOrb.vx = (Math.random() - 0.5) * 6;
-                newOrb.vy = (Math.random() - 0.5) * 6;
-                orbs.push(newOrb);
-            }
-
-            giftCount++;
-            giftCountEl.textContent = giftCount;
-            orbCountEl.textContent = orbs.length;
-
-            if (orbs.length > 40) orbs.shift(); // Hafıza kontrolü
-        });
-
-        // Çizim Döngüsü
-        function animate() {
-            ctx.clearRect(0, 0, width, height);
-
-            // Bağlantı çizgileri
-            for (let i = 0; i < orbs.length; i++) {
-                for (let j = i + 1; j < orbs.length; j++) {
-                    const dx = orbs[i].x - orbs[j].x;
-                    const dy = orbs[i].y - orbs[j].y;
-                    const dist = Math.sqrt(dx * dx + dy * dy);
-                    if (dist < 110) {
-                        ctx.beginPath();
-                        ctx.moveTo(orbs[i].x, orbs[i].y);
-                        ctx.lineTo(orbs[j].x, orbs[j].y);
-                        ctx.strokeStyle = `rgba(88, 101, 242, ${0.35 * (1 - dist / 110)})`;
-                        ctx.lineWidth = 1;
-                        ctx.stroke();
-                    }
-                }
-            }
-
-            // Hızı yavaşça normale döndür
-            if (globalSpeed > 1.0) {
-                globalSpeed -= 0.015;
-                if (globalSpeed < 1.0) globalSpeed = 1.0;
-                speedIndicatorEl.textContent = globalSpeed.toFixed(1) + 'x';
-            }
-
-            orbs.forEach(orb => {
-                orb.update(globalSpeed);
-                orb.draw();
-            });
-
-            requestAnimationFrame(animate);
-        }
-        animate();
-
-        // =====================================================================
-        // SORU & ÖNERİ TALEP FORMU GÖNDERİMİ (Backend API)
-        // =====================================================================
-        const talepForm = document.getElementById('talepForm');
-        const talepStatus = document.getElementById('talepStatus');
-        const submitBtn = document.getElementById('talepSubmitBtn');
-
-        talepForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            submitBtn.disabled = true;
-            submitBtn.textContent = 'İletiliyor...';
-            talepStatus.className = 'form-status';
-            talepStatus.style.display = 'none';
-
-            const payload = {
-                ad: document.getElementById('ad').value.trim(),
-                iletisim: document.getElementById('iletisim').value.trim(),
-                tur: document.getElementById('tur').value,
-                konu: document.getElementById('konu').value.trim(),
-                mesaj: document.getElementById('mesaj').value.trim()
-            };
+            if (!pw) return;
 
             try {
-                const res = await fetch('/api/talep', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
+                const res = await fetch("/api/admin/giris", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ sifre: pw })
+                });
+
+                const data = await res.json();
+                if (data.token) {
+                    adminToken = data.token;
+                    localStorage.setItem("mng_admin_token", adminToken);
+                    showPanel();
+                } else {
+                    err.style.display = "block";
+                }
+            } catch (e) {
+                err.textContent = "Sunucuya bağlanılamadı!";
+                err.style.display = "block";
+            }
+        }
+
+        function logout() {
+            localStorage.removeItem("mng_admin_token");
+            adminToken = null;
+            showLogin();
+        }
+
+        async function checkAuthAndLoad() {
+            try {
+                const res = await fetch("/api/admin/istatistikler", {
+                    headers: { "X-Admin-Token": adminToken }
+                });
+                if (res.status === 200) {
+                    showPanel();
+                } else {
+                    logout();
+                }
+            } catch {
+                showPanel();
+            }
+        }
+
+        function selectDuration(birim, miktar, btn) {
+            selectedBirim = birim;
+            selectedMiktar = miktar;
+            document.querySelectorAll(".dur-btn").forEach(b => b.classList.remove("active"));
+            btn.classList.add("active");
+            const disp = document.getElementById("customDurDisplay");
+            if (disp) disp.textContent = '';
+        }
+
+        function applyCustomDuration() {
+            const val = parseInt(document.getElementById("customDurVal").value) || 0;
+            const unit = document.getElementById("customDurUnit").value;
+            if (val < 1) { alert("Lütfen geçerli bir miktar girin."); return; }
+            const unitMap = { dakika: "dakika", saat: "saat", gun: "gun", ay: "ay", yil: "yil" };
+            const labelMap = { dakika: `${val} Dakika`, saat: `${val} Saat`, gun: `${val} Gün`, ay: `${val} Ay`, yil: `${val} Yıl` };
+            // Convert to minutes for dakika birim
+            let finalBirim = unit;
+            let finalMiktar = val;
+            // ay -> gun conversion
+            if (unit === "ay") { finalBirim = "gun"; finalMiktar = val * 30; }
+            if (unit === "yil") { finalBirim = "gun"; finalMiktar = val * 365; }
+            if (unit === "saat") { finalBirim = "dakika"; finalMiktar = val * 60; }
+            selectedBirim = finalBirim;
+            selectedMiktar = finalMiktar;
+            document.querySelectorAll(".dur-btn").forEach(b => b.classList.remove("active"));
+            const disp = document.getElementById("customDurDisplay");
+            if (disp) disp.textContent = `✓ Özel: ${labelMap[unit]} seçildi`;
+        }
+
+        function switchTab(tab) {
+            document.getElementById("tabBtnLicenses").classList.toggle("active", tab === 'licenses');
+            document.getElementById("tabBtnRequests").classList.toggle("active", tab === 'requests');
+            document.getElementById("tabLicenses").style.display = tab === 'licenses' ? 'block' : 'none';
+            document.getElementById("tabRequests").style.display = tab === 'requests' ? 'block' : 'none';
+        }
+
+        async function loadData() {
+            loadStats();
+            loadLicenses();
+            loadRequests();
+        }
+
+        async function loadStats() {
+            try {
+                const res = await fetch("/api/admin/istatistikler", {
+                    headers: { "X-Admin-Token": adminToken }
                 });
                 const data = await res.json();
-
-                if (res.ok && data.success) {
-                    talepStatus.textContent = '✓ Harika! Talebiniz başarıyla alındı ve yönetim panelimize iletildi. En kısa sürede dönüş yapacağız.';
-                    talepStatus.className = 'form-status success';
-                    talepForm.reset();
-                } else {
-                    talepStatus.textContent = '✕ Hata: ' + (data.message || 'Talep gönderilemedi. Lütfen tekrar deneyin.');
-                    talepStatus.className = 'form-status error';
-                }
-            } catch (err) {
-                talepStatus.textContent = '✕ Sunucuya bağlanırken bir sorun oluştu. Lütfen internetinizi kontrol edin.';
-                talepStatus.className = 'form-status error';
-            } finally {
-                submitBtn.disabled = false;
-                submitBtn.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg> Talebi Gönder';
-            }
-        });
-
-        // =====================================================================
-        // İNDİRME FONKSİYONU — Google Drive sayfasını yeni sekmede açar
-        // =====================================================================
-        function hemenIndir() {
-            window.open('https://drive.google.com/file/d/1g-dEVnq_8ksvCTuHq9q7Ur-MGiFBpzND/view?usp=sharing', '_blank');
+                document.getElementById("statToplam").textContent = data.toplam || 0;
+                document.getElementById("statAktif").textContent = data.aktif || 0;
+                document.getElementById("statBeklemede").textContent = data.beklemede || 0;
+                document.getElementById("statIptal").textContent = data.iptal || 0;
+                document.getElementById("statTalep").textContent = data.bekleyenTalep || 0;
+                document.getElementById("reqCountBadge").textContent = data.bekleyenTalep || 0;
+            } catch {}
         }
+
+        async function loadLicenses() {
+            try {
+                const res = await fetch("/api/admin/lisanslar", {
+                    headers: { "X-Admin-Token": adminToken }
+                });
+                allLicenses = await res.json();
+                renderTable();
+            } catch {}
+        }
+
+        async function loadRequests() {
+            try {
+                const res = await fetch("/api/admin/talepler", {
+                    headers: { "X-Admin-Token": adminToken }
+                });
+                allRequests = await res.json();
+                renderRequestsTable();
+            } catch {}
+        }
+
+        async function createLicense() {
+            const notlar = document.getElementById("licenseNote").value.trim();
+            try {
+                const res = await fetch("/api/admin/lisans-olustur", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "X-Admin-Token": adminToken
+                    },
+                    body: JSON.stringify({
+                        sure_birim: selectedBirim,
+                        sure_miktar: selectedMiktar,
+                        notlar: notlar
+                    })
+                });
+                const data = await res.json();
+                if (data.kod) {
+                    const box = document.getElementById("newLicenseBox");
+                    document.getElementById("newLicenseCode").textContent = data.kod;
+                    document.getElementById("newLicenseDesc").textContent = `(${data.sure_etiketi} - Süre müşteri ilk açtığında başlar)`;
+                    box.style.display = "flex";
+                    document.getElementById("licenseNote").value = "";
+                    loadData();
+                }
+            } catch (e) {
+                alert("Lisans oluşturulamadı: " + e.message);
+            }
+        }
+
+        function copyNewCode() {
+            const code = document.getElementById("newLicenseCode").textContent;
+            navigator.clipboard.writeText(code);
+            alert("Lisans kodu kopyalandı: " + code);
+        }
+
+        async function revokeLicense(kod) {
+            if (!confirm(`'${kod}' lisansını iptal etmek istediğinize emin misiniz?`)) return;
+            try {
+                await fetch(`/api/admin/lisans/${kod}/iptal`, {
+                    method: "POST",
+                    headers: { "X-Admin-Token": adminToken }
+                });
+                loadData();
+            } catch (e) { alert("Hata: " + e.message); }
+        }
+
+        async function unrevokeLicense(kod) {
+            if (!confirm(`'${kod}' lisansını tekrar AKTİF etmek istiyor musunuz?`)) return;
+            try {
+                await fetch(`/api/admin/lisans/${kod}/aktif-et`, {
+                    method: "POST",
+                    headers: { "X-Admin-Token": adminToken }
+                });
+                loadData();
+            } catch (e) { alert("Hata: " + e.message); }
+        }
+
+        async function deleteLicense(kod) {
+            if (!confirm(`'${kod}' lisansını KALICI OLARAK silmek istediğinize emin misiniz?`)) return;
+            try {
+                await fetch(`/api/admin/lisans/${kod}`, {
+                    method: "DELETE",
+                    headers: { "X-Admin-Token": adminToken }
+                });
+                loadData();
+            } catch (e) { alert("Hata: " + e.message); }
+        }
+
+        async function deleteRequest(id) {
+            if (!confirm("Bu talebi silmek istediğinize emin misiniz?")) return;
+            try {
+                await fetch(`/api/admin/talep/${id}`, {
+                    method: "DELETE",
+                    headers: { "X-Admin-Token": adminToken }
+                });
+                loadData();
+            } catch (e) { alert("Hata: " + e.message); }
+        }
+
+        function createForRequest(ad, iletisim) {
+            document.getElementById("licenseNote").value = `${ad} (${iletisim})`;
+            window.scrollTo({ top: 200, behavior: 'smooth' });
+        }
+
+        function renderTable() {
+            const q = (document.getElementById("searchInput").value || "").toLowerCase();
+            const tbody = document.getElementById("licensesTableBody");
+            
+            const filtered = allLicenses.filter(l => 
+                l.kod.toLowerCase().includes(q) || 
+                (l.notlar && l.notlar.toLowerCase().includes(q))
+            );
+
+            if (filtered.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" class="empty-row">Kayıtlı lisans bulunamadı.</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = filtered.map(l => {
+                let sureLabel = "";
+                if (l.sure_birim === "sinirsiz") sureLabel = "♾️ Sınırsız";
+                else if (l.sure_birim === "dakika") sureLabel = `⚡ ${l.sure_miktar} Dk`;
+                else sureLabel = `📅 ${l.sure_miktar} Gün`;
+
+                let durumClass = l.durum;
+                let durumText = (l.durum === "aktif" && !l.cihaz_kimlik) ? "Aktif (Hazır)" :
+                                (l.durum === "aktif" ? "Aktif" :
+                                (l.durum === "beklemede" ? "Beklemede (Hazır)" :
+                                (l.durum === "iptal" ? "İptal Edildi" : "Süresi Doldu")));
+
+                // If supposedly active but time has passed, mark as expired
+                if (l.durum === "aktif" && l.sure_birim !== "sinirsiz" && l.bitis_zamani && l.bitis_zamani < Date.now()) {
+                    durumClass = "suresi-doldu";
+                    durumText = "Süresi Doldu";
+                }
+
+                let kalanMetin = "-";
+                if (l.sure_birim === "sinirsiz") {
+                    kalanMetin = "♾️ Sınırsız";
+                } else if (l.durum === "aktif" && l.bitis_zamani) {
+                    const kalanMs = l.bitis_zamani - Date.now();
+                    if (kalanMs <= 0) {
+                        kalanMetin = "Süre doldu";
+                    } else {
+                        const saniyeToplam = Math.floor(kalanMs / 1000);
+                        const gun = Math.floor(saniyeToplam / 86400);
+                        const saat = Math.floor((saniyeToplam % 86400) / 3600);
+                        const dakika = Math.floor((saniyeToplam % 3600) / 60);
+                        const saniye = saniyeToplam % 60;
+
+                        if (gun > 0) kalanMetin = `${gun}g ${saat}s kaldı`;
+                        else if (saat > 0) kalanMetin = `${saat}s ${dakika}dk kaldı`;
+                        else kalanMetin = `${dakika}dk ${saniye}sn kaldı`;
+                    }
+                } else if (l.durum === "beklemede") {
+                    kalanMetin = `Hazır (${sureLabel})`;
+                }
+
+                let cihazMetin = l.cihaz_kimlik ? l.cihaz_kimlik.substring(0, 10) + "..." : '<span style="color:#f59e0b;font-weight:600;">Giriş Bekleniyor</span>';
+
+                return `
+                    <tr>
+                        <td><span class="code-pill">${l.kod}</span></td>
+                        <td><strong>${sureLabel}</strong></td>
+                        <td><span class="status-badge ${durumClass}">${durumText}</span></td>
+                        <td><strong>${kalanMetin}</strong></td>
+                        <td title="${l.cihaz_kimlik || ''}">${cihazMetin}</td>
+                        <td>${l.notlar || '-'}</td>
+                        <td>
+                            <div class="action-btns">
+                                <button class="btn-action" onclick="navigator.clipboard.writeText('${l.kod}'); alert('Kopyalandı: ${l.kod}')">📋</button>
+                                ${l.durum === 'iptal' 
+                                    ? `<button class="btn-action btn-unrevoke" onclick="unrevokeLicense('${l.kod}')">Aktif Et</button>`
+                                    : `<button class="btn-action btn-revoke" onclick="revokeLicense('${l.kod}')">İptal Et</button>`
+                                }
+                                <button class="btn-action btn-delete" onclick="deleteLicense('${l.kod}')">Sil</button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            }).join("");
+        }
+
+        function renderRequestsTable() {
+            const tbody = document.getElementById("requestsTableBody");
+            if (allRequests.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" class="empty-row">Henüz gelen talep, soru veya öneri yok.</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = allRequests.map(r => {
+                const tarih = new Date(r.tarih).toLocaleString('tr-TR');
+                const turBadge = r.tur === "oneri"
+                    ? `<span style="background:rgba(142,212,98,0.18); color:#8ed462; border:1px solid #8ed462; padding:3px 8px; border-radius:12px; font-size:11px; font-weight:700;">💡 Öneri</span>`
+                    : r.tur === "soru"
+                    ? `<span style="background:rgba(43,160,255,0.18); color:#2ba0ff; border:1px solid #2ba0ff; padding:3px 8px; border-radius:12px; font-size:11px; font-weight:700;">❓ Soru</span>`
+                    : `<span style="background:rgba(254,44,85,0.18); color:#fe2c55; border:1px solid #fe2c55; padding:3px 8px; border-radius:12px; font-size:11px; font-weight:700;">🔑 Lisans</span>`;
+
+                return `
+                    <tr>
+                        <td>${tarih}</td>
+                        <td>${turBadge}</td>
+                        <td><strong>${r.ad}</strong></td>
+                        <td><span style="color:var(--green); font-weight:700;">${r.iletisim}</span></td>
+                        <td>${r.tiktok_kullanici ? '@' + r.tiktok_kullanici.replace(/^@/, '') : '-'}</td>
+                        <td>${r.mesaj || '-'}</td>
+                        <td>
+                            <div class="action-btns">
+                                <button class="btn-action" style="color:var(--accent2); border-color:var(--accent2)" onclick="createForRequest('${r.ad}', '${r.iletisim}')">+ Kod Üret</button>
+                                <button class="btn-action btn-delete" onclick="deleteRequest('${r.id}')">Sil</button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            }).join("");
+        }
+
+        // Kalan süreleri canlı güncelle
+        setInterval(() => {
+            if (document.getElementById("adminPanel").style.display === "block") {
+                renderTable();
+            }
+        }, 1000);
     </script>
 </body>
 </html>
