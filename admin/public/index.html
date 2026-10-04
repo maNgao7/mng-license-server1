@@ -837,9 +837,10 @@
                 else sureLabel = `📅 ${l.sure_miktar} Gün`;
 
                 let durumClass = l.durum;
-                let durumText = l.durum === "aktif" ? "Aktif" :
-                                l.durum === "beklemede" ? "Beklemede" :
-                                l.durum === "iptal" ? "İptal Edildi" : "Süresi Doldu";
+                let durumText = (l.durum === "aktif" && !l.cihaz_kimlik) ? "Aktif (Hazır)" :
+                                (l.durum === "aktif" ? "Aktif" :
+                                (l.durum === "beklemede" ? "Beklemede (Hazır)" :
+                                (l.durum === "iptal" ? "İptal Edildi" : "Süresi Doldu")));
 
                 // If supposedly active but time has passed, mark as expired
                 if (l.durum === "aktif" && l.sure_birim !== "sinirsiz" && l.bitis_zamani && l.bitis_zamani < Date.now()) {
@@ -866,10 +867,10 @@
                         else kalanMetin = `${dakika}dk ${saniye}sn kaldı`;
                     }
                 } else if (l.durum === "beklemede") {
-                    kalanMetin = "(İlk açılışta başlayacak)";
+                    kalanMetin = `Hazır (${sureLabel})`;
                 }
 
-                let cihazMetin = l.cihaz_kimlik ? l.cihaz_kimlik.substring(0, 10) + "..." : "Henüz Yok";
+                let cihazMetin = l.cihaz_kimlik ? l.cihaz_kimlik.substring(0, 10) + "..." : '<span style="color:#f59e0b;font-weight:600;">Giriş Bekleniyor</span>';
 
                 return `
                     <tr>

@@ -266,13 +266,17 @@ function logEkle(lisansKod, cihazKimlik, islem, ip) {
 // =====================================================================
 // SÜRÜM BİLGİLERİ & İNDİRME LİNKLERİ
 // =====================================================================
-const EN_GUNCEL_SURUM = "5.0.0";
+const EN_GUNCEL_SURUM = "5.0.2";
 const EN_DUSUK_SURUM = "1.0.0";
 const SETUP_INDIRME_LINKI = "https://drive.usercontent.google.com/download?id=1g-dEVnq_8ksvCTuHq9q7Ur-MGiFBpzND&export=download&confirm=t";
 const SETUP_WEB_LINKI = "https://drive.google.com/file/d/1g-dEVnq_8ksvCTuHq9q7Ur-MGiFBpzND/view?usp=sharing";
 
 // Her güncellemede eklenen/değişen özellikler listesi
 const SURUM_NOTLARI = [
+    "v5.0.2 — MNG Orbit Alan Büyüklüğü & Koruma Kalkanı: Orbit ayarlarından oyun alanı boyutu ayarlanabilir; yeni katılan oyunculara kalkan ve sekme mekaniği eklendi; P tuşuyla profil silme bilgilendirmesi eklendi. PNG Hediye Tasarımcısı görsel yükleme hatası düzeltildi. Şövalye Savaşı başlangıçta temiz harita ile başlar; Yeni Oyun rozeti Şövalye Savaşı'na devredildi. Yönetici panelinde lisans listesi ve kalan süreler eksiksiz görülebilir.",
+    "v5.0.1 — MNG Orbit Açılış Onarımı: Orbit sunucusunun açılmasını engelleyen sözdizimi hatası giderildi; oyun ve hediye kataloğu yeniden sorunsuz başlar.",
+    "v5.0.1 — Hediye Tasarım Oluştur: Launcher içindeki PNG tasarım aracı tam hediye kataloğunu gösterir; yatay, soldan dikey ve sağdan dikey düzenler eklendi.",
+    "v5.0.1 — Şövalye Turnuvası: Tur galibiyetleri canlı listeye bağlandı ve OBS için ayrı Şövalye Galipleri widget bağlantısı eklendi.",
     "v5.0.0 — Şövalye Savaşı & PNG Hediye Tasarımcısı Dev Güncellemesi: Yeni 'Şövalye Savaşı' strateji oyunu entegre edildi; askerlerin üzerinde canlı profil avatarları; hediye-asker kuralları ve galip sayacı (+/-); Launcher'a 'Hediye Tasarımı (PNG)' motoru eklendi; Admin Paneli'ne Dakika/Saat/Gün/Ay/Yıl özel süre belirleme eklendi; TikTok VS filtre animasyonları tamir edildi; MNG Crowd Control hediye ve arama sistemi eksiksiz yenilendi.",
     "v4.0.6 — MNG Orbit Gelişmiş Tur & Hediye Güncellemesi: Türkiye'ye özel 630 hediyelik tam Türkçe hediye kataloğu entegre edildi; arama motoru güçlendirildi; Yörünge Liderleri bağlantıyı kesin altına hizalandı; Turu Bitir butonu ve patlama ses efektleri eklendi.",
     "v4.0.5 — MNG Orbit Tam Onarım: Bağlantı ve oyun alanı çizim döngüsü hatasız başlatıldı; 48 canlı video arka planı eksiksiz açıldı; özel video/resim yükleme garanti altına alındı.",
@@ -492,7 +496,12 @@ app.post("/api/license/verify", (req, res) => {
 
     // 2. DAHA ÖNCE AKTİF EDİLMİÅ LİSANS
     if (lisans.durum === "aktif") {
-        if (lisans.cihaz_kimlik && lisans.cihaz_kimlik !== deviceId) {
+        if (!lisans.cihaz_kimlik) {
+            lisans.cihaz_kimlik = deviceId;
+            lisans.activation_token = aktivasyonTokenUret(temizKod, deviceId, lisans.bitis_zamani);
+            dbKaydet();
+            logEkle(temizKod, deviceId, "cihaz_baglandi", ip);
+        } else if (lisans.cihaz_kimlik !== deviceId) {
             logEkle(temizKod, deviceId, "red_cihaz_uyusmazligi", ip);
             return res.json({
                 valid: false,
@@ -738,15 +747,19 @@ app.post("/api/admin/lisans-olustur", adminKontrol, (req, res) => {
         deneme++;
     }
 
+    const simdi = Date.now();
+    const sureMs = sureMsHesapla(sureObj);
+    const bitisZamani = sureMs === -1 ? null : simdi + sureMs;
+
     const yeniLisans = {
         id: Date.now() + "_" + Math.random().toString(36).substr(2, 6),
         kod: kod,
         sure_birim: birim,
         sure_miktar: miktar,
-        durum: "beklemede",
-        olusturma_zamani: Date.now(),
-        aktivasyon_zamani: null,
-        bitis_zamani: null,
+        durum: "aktif",
+        olusturma_zamani: simdi,
+        aktivasyon_zamani: simdi,
+        bitis_zamani: bitisZamani,
         cihaz_kimlik: null,
         notlar: notlar || ""
     };
