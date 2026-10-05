@@ -31,11 +31,29 @@ const ADMIN_SIFRE = adminSifreBul();
 // =====================================================================
 // KALICI VERİTABANI (JSON Dosya Tabanlı)
 // =====================================================================
-const DB_DOSYASI = path.join(__dirname, "lisanslar.json");
-const LOG_DOSYASI = path.join(__dirname, "aktivasyon_log.json");
-const TALEPLER_DOSYASI = path.join(__dirname, "talepler.json");
-const KARA_LISTE_DOSYASI = path.join(__dirname, "kara_liste.json");
-const DOWNLOADS_DIR = path.join(__dirname, "downloads");
+// Render'da MNG_DATA_DIR=/var/data kullanıldığında tüm kayıtlar kalıcı diskte kalır.
+// Yerelde çevre değişkeni yoksa mevcut klasör davranışı aynen korunur.
+const DATA_DIR = path.resolve(process.env.MNG_DATA_DIR || __dirname);
+const DB_DOSYASI = path.join(DATA_DIR, "lisanslar.json");
+const LOG_DOSYASI = path.join(DATA_DIR, "aktivasyon_log.json");
+const TALEPLER_DOSYASI = path.join(DATA_DIR, "talepler.json");
+const KARA_LISTE_DOSYASI = path.join(DATA_DIR, "kara_liste.json");
+const DOWNLOADS_DIR = path.join(DATA_DIR, "downloads");
+
+function kaliciVeriyiHazirla() {
+    try {
+        fs.mkdirSync(DATA_DIR, { recursive: true });
+        // İlk kalıcı disk kurulumunda mevcut lisans geçmişini bir kez diske aktarır.
+        for (const dosya of ["lisanslar.json", "aktivasyon_log.json", "talepler.json", "kara_liste.json"]) {
+            const hedef = path.join(DATA_DIR, dosya);
+            const kaynak = path.join(__dirname, dosya);
+            if (DATA_DIR !== __dirname && !fs.existsSync(hedef) && fs.existsSync(kaynak)) fs.copyFileSync(kaynak, hedef);
+        }
+    } catch (e) {
+        console.warn("Kalıcı veri klasörü hazırlanamadı:", e.message);
+    }
+}
+kaliciVeriyiHazirla();
 
 let lisanslarVeritabani = [];
 let aktivasyonLogVeritabani = [];
@@ -266,13 +284,16 @@ function logEkle(lisansKod, cihazKimlik, islem, ip) {
 // =====================================================================
 // SÜRÜM BİLGİLERİ & İNDİRME LİNKLERİ
 // =====================================================================
-const EN_GUNCEL_SURUM = "5.0.2";
+const EN_GUNCEL_SURUM = "5.0.5";
 const EN_DUSUK_SURUM = "1.0.0";
 const SETUP_INDIRME_LINKI = "https://drive.usercontent.google.com/download?id=1g-dEVnq_8ksvCTuHq9q7Ur-MGiFBpzND&export=download&confirm=t";
 const SETUP_WEB_LINKI = "https://drive.google.com/file/d/1g-dEVnq_8ksvCTuHq9q7Ur-MGiFBpzND/view?usp=sharing";
 
 // Her güncellemede eklenen/değişen özellikler listesi
 const SURUM_NOTLARI = [
+    "v5.0.5 — Coin → Kütle Ayarları: Orbit'te 1 coin başına kütle ve 1/50/100/500/1000 coin çarpanları kalıcı ayarlara taşındı. Büyük coinli tek hediyeler, aynı coin toplamındaki küçük hediyelerden daha güçlü büyür.",
+    "v5.0.5 — Kalıcı Lisans Geçmişi: Lisanslar, aktivasyonlar ve talepler Render kalıcı diskte saklanır; süresi dolan kodlar silinmez, listede geçmişiyle kalır.",
+    "v5.0.5 — Şövalye Savaşı Tur Kontrolü: Süre, başlat/duraklat/yeniden başlat, seçilebilir haritalar, savaş sesleri ve En Çok Asker Sahibi OBS widget'ı eklendi.",
     "v5.0.2 — MNG Orbit Alan Büyüklüğü & Koruma Kalkanı: Orbit ayarlarından oyun alanı boyutu ayarlanabilir; yeni katılan oyunculara kalkan ve sekme mekaniği eklendi; P tuşuyla profil silme bilgilendirmesi eklendi. PNG Hediye Tasarımcısı görsel yükleme hatası düzeltildi. Şövalye Savaşı başlangıçta temiz harita ile başlar; Yeni Oyun rozeti Şövalye Savaşı'na devredildi. Yönetici panelinde lisans listesi ve kalan süreler eksiksiz görülebilir.",
     "v5.0.1 — MNG Orbit Açılış Onarımı: Orbit sunucusunun açılmasını engelleyen sözdizimi hatası giderildi; oyun ve hediye kataloğu yeniden sorunsuz başlar.",
     "v5.0.1 — Hediye Tasarım Oluştur: Launcher içindeki PNG tasarım aracı tam hediye kataloğunu gösterir; yatay, soldan dikey ve sağdan dikey düzenler eklendi.",
