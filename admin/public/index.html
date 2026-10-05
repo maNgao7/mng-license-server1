@@ -493,6 +493,20 @@
                     <button class="dur-btn" onclick="selectDuration('sinirsiz', -1, this)">♾️ Sınırsız Lisans</button>
                 </div>
 
+                <div class="duration-group-label" style="margin-top:8px;">✏️ ÖZEL SÜRE BELİRLE:</div>
+                <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:12px;">
+                    <input type="number" id="customDurVal" min="1" max="9999" placeholder="Miktar" style="width:90px;padding:8px 10px;background:var(--card-bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;">
+                    <select id="customDurUnit" style="padding:8px 10px;background:var(--card-bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;">
+                        <option value="dakika">Dakika</option>
+                        <option value="saat">Saat</option>
+                        <option value="gun" selected>Gün</option>
+                        <option value="ay">Ay (30 gün)</option>
+                        <option value="yil">Yıl (365 gün)</option>
+                    </select>
+                    <button class="dur-btn" onclick="applyCustomDuration()" style="background:rgba(37,244,238,0.15);border-color:rgba(37,244,238,0.4);color:#25f4ee;">✓ Uygula</button>
+                    <span id="customDurDisplay" style="font-size:12px;color:var(--text-dim);"></span>
+                </div>
+
                 <div class="form-row">
                     <input type="text" id="licenseNote" class="form-input" placeholder="Müşteri Adı / Not Açıklaması (Örn: Mehmet - TikTok Canlı)">
                     <button class="btn-create" onclick="createLicense()">+ Lisansı Oluştur</button>
@@ -646,6 +660,28 @@
             selectedMiktar = miktar;
             document.querySelectorAll(".dur-btn").forEach(b => b.classList.remove("active"));
             btn.classList.add("active");
+            const disp = document.getElementById("customDurDisplay");
+            if (disp) disp.textContent = '';
+        }
+
+        function applyCustomDuration() {
+            const val = parseInt(document.getElementById("customDurVal").value) || 0;
+            const unit = document.getElementById("customDurUnit").value;
+            if (val < 1) { alert("Lütfen geçerli bir miktar girin."); return; }
+            const unitMap = { dakika: "dakika", saat: "saat", gun: "gun", ay: "ay", yil: "yil" };
+            const labelMap = { dakika: `${val} Dakika`, saat: `${val} Saat`, gun: `${val} Gün`, ay: `${val} Ay`, yil: `${val} Yıl` };
+            // Convert to minutes for dakika birim
+            let finalBirim = unit;
+            let finalMiktar = val;
+            // ay -> gun conversion
+            if (unit === "ay") { finalBirim = "gun"; finalMiktar = val * 30; }
+            if (unit === "yil") { finalBirim = "gun"; finalMiktar = val * 365; }
+            if (unit === "saat") { finalBirim = "dakika"; finalMiktar = val * 60; }
+            selectedBirim = finalBirim;
+            selectedMiktar = finalMiktar;
+            document.querySelectorAll(".dur-btn").forEach(b => b.classList.remove("active"));
+            const disp = document.getElementById("customDurDisplay");
+            if (disp) disp.textContent = `✓ Özel: ${labelMap[unit]} seçildi`;
         }
 
         function switchTab(tab) {
@@ -801,9 +837,16 @@
                 else sureLabel = `📅 ${l.sure_miktar} Gün`;
 
                 let durumClass = l.durum;
-                let durumText = l.durum === "aktif" ? "Aktif" :
-                                l.durum === "beklemede" ? "Beklemede" :
-                                l.durum === "iptal" ? "İptal Edildi" : "Süresi Doldu";
+                let durumText = (l.durum === "aktif" && !l.cihaz_kimlik) ? "Aktif (Hazır)" :
+                                (l.durum === "aktif" ? "Aktif" :
+                                (l.durum === "beklemede" ? "Beklemede (Hazır)" :
+                                (l.durum === "iptal" ? "İptal Edildi" : "Süresi Doldu")));
+
+                // If supposedly active but time has passed, mark as expired
+                if (l.durum === "aktif" && l.sure_birim !== "sinirsiz" && l.bitis_zamani && l.bitis_zamani < Date.now()) {
+                    durumClass = "suresi-doldu";
+                    durumText = "Süresi Doldu";
+                }
 
                 let kalanMetin = "-";
                 if (l.sure_birim === "sinirsiz") {
@@ -824,10 +867,10 @@
                         else kalanMetin = `${dakika}dk ${saniye}sn kaldı`;
                     }
                 } else if (l.durum === "beklemede") {
-                    kalanMetin = "(İlk açılışta başlayacak)";
+                    kalanMetin = `Hazır (${sureLabel})`;
                 }
 
-                let cihazMetin = l.cihaz_kimlik ? l.cihaz_kimlik.substring(0, 10) + "..." : "Henüz Yok";
+                let cihazMetin = l.cihaz_kimlik ? l.cihaz_kimlik.substring(0, 10) + "..." : '<span style="color:#f59e0b;font-weight:600;">Giriş Bekleniyor</span>';
 
                 return `
                     <tr>
