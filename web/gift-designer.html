@@ -7,6 +7,7 @@
   <meta name="description" content="TikTok canlı yayınları için gerçek hediye görselleriyle ücretsiz PNG hediye panoları oluşturun.">
   <link rel="canonical" href="https://mng-license-server1.onrender.com/hediye-tasarimi">
   <link rel="stylesheet" href="/gift-designer.css">
+  <link rel="stylesheet" href="/gift-designer-v2.css?v=601">
 </head>
 <body>
   <main class="designer-shell">
@@ -63,6 +64,17 @@
           <label class="row-toggle"><span>Hediye adını göster</span><input id="showName" type="checkbox" checked><i></i></label>
           <label class="row-toggle"><span>Coin değerini göster</span><input id="showCoins" type="checkbox" checked><i></i></label>
           <label class="row-toggle"><span>Parlama efekti</span><input id="showGlow" type="checkbox" checked><i></i></label>
+        </section>
+        <section class="setting-group selected-editor" id="selectedEditor">
+          <h2>Seçili Hediye İçeriği</h2>
+          <label>Alt yazı<input id="customCaption" class="text-input" type="text" maxlength="42" placeholder="Örn: Bu hediyede 3 canavar gelir"></label>
+          <div class="editor-grid">
+            <label>Yazı tipi<select id="captionFont"><option value="Segoe UI">Modern</option><option value="Arial Black">Kalın</option><option value="Georgia">Klasik</option><option value="Trebuchet MS">Yumuşak</option><option value="Consolas">Dijital</option></select></label>
+            <label>Yazı rengi<div class="color-row"><input id="captionColor" type="color" value="#ffffff"><span id="captionHex">#FFFFFF</span></div></label>
+          </div>
+          <label>Yazı boyutu<input id="captionSize" type="range" min="18" max="54" value="28"><output id="captionSizeValue">28</output></label>
+          <label class="upload-label">Alt küçük görsel<input id="badgeUpload" type="file" accept="image/png,image/jpeg,image/webp"><span>Görsel Seç</span></label>
+          <div class="badge-preview" id="badgePreview"><span>Henüz küçük görsel eklenmedi</span><img alt=""><button id="removeBadge" type="button">Kaldır</button></div>
         </section>
         <section class="summary"><span>Seçilen hediyeler</span><strong id="selectedCount">0</strong><small>Tasarım tarayıcınızda yerel olarak hazırlanır.</small></section>
       </aside>
