@@ -60,7 +60,111 @@ let aktivasyonLogVeritabani = [];
 let taleplerVeritabani = [];
 let karaListeVeritabani = [];
 
-function dbYukle() {
+// =====================================================================
+// ÜCRETSİZ GITHUB YEDEĞİ
+// =====================================================================
+// Render Free yeniden başlatıldığında yerel dosyaları siler. Ayrı bir
+// özel GitHub deposuna AES-GCM şifreli tek bir durum dosyası yazmak bu
+// sınırlamayı ücretsiz olarak aşar. Ana uygulama deposuna yazılmadığı için
+// lisans kaydında otomatik Render deploy'u da tetiklenmez.
+const GITHUB_BACKUP_TOKEN = String(process.env.GITHUB_LICENSE_TOKEN || "").trim();
+const GITHUB_BACKUP_REPO = String(process.env.GITHUB_LICENSE_REPO || "").trim();
+const GITHUB_BACKUP_PATH = String(process.env.GITHUB_LICENSE_PATH || "mng-license-backup.enc").trim();
+const githubBackupEnabled = Boolean(GITHUB_BACKUP_TOKEN && GITHUB_BACKUP_REPO);
+let githubBackupSha = null;
+let githubBackupReady = false;
+let githubBackupTimer = null;
+let githubBackupQueue = Promise.resolve();
+
+function githubBackupKey() {
+    return crypto.createHash("sha256").update(`${ADMIN_SIFRE}:mng-license-backup:v1`).digest();
+}
+
+function githubBackupEncrypt(value) {
+    const iv = crypto.randomBytes(12);
+    const cipher = crypto.createCipheriv("aes-256-gcm", githubBackupKey(), iv);
+    const encrypted = Buffer.concat([cipher.update(JSON.stringify(value), "utf8"), cipher.final()]);
+    return JSON.stringify({ v: 1, iv: iv.toString("base64"), tag: cipher.getAuthTag().toString("base64"), data: encrypted.toString("base64") });
+}
+
+function githubBackupDecrypt(value) {
+    const payload = JSON.parse(value);
+    if (payload.v !== 1 || !payload.iv || !payload.tag || !payload.data) throw new Error("Geçersiz GitHub yedek biçimi");
+    const decipher = crypto.createDecipheriv("aes-256-gcm", githubBackupKey(), Buffer.from(payload.iv, "base64"));
+    decipher.setAuthTag(Buffer.from(payload.tag, "base64"));
+    return JSON.parse(Buffer.concat([decipher.update(Buffer.from(payload.data, "base64")), decipher.final()]).toString("utf8"));
+}
+
+async function githubBackupRequest(method, body) {
+    const response = await fetch(`https://api.github.com/repos/${GITHUB_BACKUP_REPO}/contents/${encodeURIComponent(GITHUB_BACKUP_PATH).replace(/%2F/g, "/")}`, {
+        method,
+        headers: {
+            "Accept": "application/vnd.github+json",
+            "Authorization": `Bearer ${GITHUB_BACKUP_TOKEN}`,
+            "X-GitHub-Api-Version": "2022-11-28",
+            "User-Agent": "mng-tiktok-game-license-server"
+        },
+        body: body ? JSON.stringify(body) : undefined
+    });
+    if (response.status === 404 && method === "GET") return null;
+    if (!response.ok) throw new Error(`GitHub yedek hatası (${response.status})`);
+    return response.json();
+}
+
+function githubBackupSnapshot() {
+    return {
+        version: 1,
+        savedAt: Date.now(),
+        licenses: lisanslarVeritabani,
+        activationLogs: aktivasyonLogVeritabani.slice(-1000),
+        requests: taleplerVeritabani,
+        blacklist: karaListeVeritabani
+    };
+}
+
+async function githubBackupLoad() {
+    if (!githubBackupEnabled) return false;
+    const remote = await githubBackupRequest("GET");
+    if (!remote?.content) return false;
+    const state = githubBackupDecrypt(Buffer.from(String(remote.content).replace(/\n/g, ""), "base64").toString("utf8"));
+    if (!Array.isArray(state.licenses) || !Array.isArray(state.activationLogs) || !Array.isArray(state.requests) || !Array.isArray(state.blacklist)) throw new Error("GitHub yedeği eksik veri içeriyor");
+    lisanslarVeritabani = state.licenses;
+    aktivasyonLogVeritabani = state.activationLogs;
+    taleplerVeritabani = state.requests;
+    karaListeVeritabani = state.blacklist;
+    githubBackupSha = remote.sha || null;
+    return true;
+}
+
+async function githubBackupSave() {
+    if (!githubBackupEnabled || !githubBackupReady) return;
+    const content = Buffer.from(githubBackupEncrypt(githubBackupSnapshot()), "utf8").toString("base64");
+    const body = { message: "MNG lisans verisi yedegi", content };
+    if (githubBackupSha) body.sha = githubBackupSha;
+    try {
+        const result = await githubBackupRequest("PUT", body);
+        githubBackupSha = result?.content?.sha || githubBackupSha;
+        console.log("GitHub lisans yedeği güncellendi.");
+    } catch (error) {
+        // Eşzamanlı nadir bir kayıt varsa son SHA ile bir kez daha dene.
+        if (String(error.message).includes("409")) {
+            const current = await githubBackupRequest("GET");
+            githubBackupSha = current?.sha || null;
+            return githubBackupSave();
+        }
+        console.warn("GitHub lisans yedeği güncellenemedi:", error.message);
+    }
+}
+
+function githubBackupSchedule() {
+    if (!githubBackupEnabled || !githubBackupReady) return;
+    clearTimeout(githubBackupTimer);
+    githubBackupTimer = setTimeout(() => {
+        githubBackupQueue = githubBackupQueue.then(githubBackupSave).catch(error => console.warn("GitHub yedek kuyruğu hatası:", error.message));
+    }, 900);
+}
+
+async function dbYukle() {
     try {
         if (fs.existsSync(DB_DOSYASI)) {
             lisanslarVeritabani = JSON.parse(fs.readFileSync(DB_DOSYASI, "utf-8"));
@@ -104,6 +208,22 @@ function dbYukle() {
     } catch (e) {
         karaListeVeritabani = [];
     }
+    try {
+        const restored = await githubBackupLoad();
+        if (restored) {
+            dbKaydet();
+            logKaydet();
+            talepKaydet();
+            karaListeKaydet();
+            console.log("GitHub lisans yedeği başarıyla yüklendi.");
+        } else if (githubBackupEnabled) {
+            console.log("GitHub lisans yedeği henüz bulunamadı; ilk kayıtla oluşturulacak.");
+        }
+    } catch (error) {
+        console.warn("GitHub lisans yedeği yüklenemedi, yerel veriler kullanılacak:", error.message);
+    }
+    githubBackupReady = true;
+    if (githubBackupEnabled) githubBackupSchedule();
 }
 
 function dbKaydet() {
@@ -112,6 +232,7 @@ function dbKaydet() {
         fs.writeFileSync(tmp, JSON.stringify(lisanslarVeritabani, null, 2), "utf-8");
         fs.renameSync(tmp, DB_DOSYASI);
     } catch (e) {}
+    githubBackupSchedule();
 }
 
 function logKaydet() {
@@ -120,6 +241,7 @@ function logKaydet() {
         fs.writeFileSync(tmp, JSON.stringify(aktivasyonLogVeritabani.slice(-1000), null, 2), "utf-8");
         fs.renameSync(tmp, LOG_DOSYASI);
     } catch (e) {}
+    githubBackupSchedule();
 }
 
 function talepKaydet() {
@@ -128,6 +250,7 @@ function talepKaydet() {
         fs.writeFileSync(tmp, JSON.stringify(taleplerVeritabani, null, 2), "utf-8");
         fs.renameSync(tmp, TALEPLER_DOSYASI);
     } catch (e) {}
+    githubBackupSchedule();
 }
 
 function karaListeKaydet() {
@@ -136,9 +259,10 @@ function karaListeKaydet() {
         fs.writeFileSync(tmp, JSON.stringify(karaListeVeritabani, null, 2), "utf-8");
         fs.renameSync(tmp, KARA_LISTE_DOSYASI);
     } catch (e) {}
+    githubBackupSchedule();
 }
 
-dbYukle();
+await dbYukle();
 
 // =====================================================================
 // MIDDLEWARE & STATİK DOSYALAR
@@ -167,6 +291,22 @@ app.get("/", (req, res) => {
     if (fs.existsSync(webPath)) return res.sendFile(webPath);
     if (fs.existsSync(rootPath)) return res.sendFile(rootPath);
     res.send("MNG TikTok Game Web Portal");
+});
+
+app.get("/hediye-tasarimi", (req, res) => {
+    res.sendFile(path.join(__dirname, "web", "gift-designer.html"));
+});
+
+app.get("/robots.txt", (req, res) => {
+    res.type("text/plain").send("User-agent: *\nAllow: /\nDisallow: /admin\nSitemap: https://mng-license-server1.onrender.com/sitemap.xml\n");
+});
+
+app.get("/sitemap.xml", (req, res) => {
+    res.type("application/xml").send(`<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url><loc>https://mng-license-server1.onrender.com/</loc><changefreq>weekly</changefreq><priority>1.0</priority></url>
+  <url><loc>https://mng-license-server1.onrender.com/hediye-tasarimi</loc><changefreq>monthly</changefreq><priority>0.9</priority></url>
+</urlset>`);
 });
 
 app.use(express.static(path.join(__dirname, "web")));
@@ -284,13 +424,17 @@ function logEkle(lisansKod, cihazKimlik, islem, ip) {
 // =====================================================================
 // SÜRÜM BİLGİLERİ & İNDİRME LİNKLERİ
 // =====================================================================
-const EN_GUNCEL_SURUM = "5.0.5";
+const EN_GUNCEL_SURUM = "6.0.0";
 const EN_DUSUK_SURUM = "1.0.0";
 const SETUP_INDIRME_LINKI = "https://drive.usercontent.google.com/download?id=1g-dEVnq_8ksvCTuHq9q7Ur-MGiFBpzND&export=download&confirm=t";
 const SETUP_WEB_LINKI = "https://drive.google.com/file/d/1g-dEVnq_8ksvCTuHq9q7Ur-MGiFBpzND/view?usp=sharing";
 
 // Her güncellemede eklenen/değişen özellikler listesi
 const SURUM_NOTLARI = [
+    "v6.0.0 — Gelene Geçene: Unturned tabanlı yeni hayatta kalma oyunu launcher'a eklendi. Steam kurulumu denetlenir, mod KUR düğmesiyle otomatik yerleştirilir ve OYNA ile başlatılır.",
+    "v6.0.0 — Canlı Etkileşim Güvenilirliği: Değiştirilen hediyelerin kimlik eşleşmesi, Türkçe ad eşleşmesi ve kişi bazlı beğeni sayaçları düzeltildi; 100'ü aşan beğeniler artık kaybolmaz.",
+    "v6.0.0 — Ortak Yayıncı Hesabı ve Widget Havuzu: Launcher'da hesap ekleme/değiştirme, kalıcı En İyi Hediye widget'ı ve TikTok Live Studio bağlantısı eklendi.",
+    "v6.0.0 — 67 Sessiz Video Arka Planı: 19 yeni video sessiz, döngüye uygun biçimde eklendi; MNG Orbit seçicisinde hareketli ön izlemeler gösterilir.",
     "v5.0.5 — Coin → Kütle Ayarları: Orbit'te 1 coin başına kütle ve 1/50/100/500/1000 coin çarpanları kalıcı ayarlara taşındı. Büyük coinli tek hediyeler, aynı coin toplamındaki küçük hediyelerden daha güçlü büyür.",
     "v5.0.5 — Kalıcı Lisans Geçmişi: Lisanslar, aktivasyonlar ve talepler Render kalıcı diskte saklanır; süresi dolan kodlar silinmez, listede geçmişiyle kalır.",
     "v5.0.5 — Şövalye Savaşı Tur Kontrolü: Süre, başlat/duraklat/yeniden başlat, seçilebilir haritalar, savaş sesleri ve En Çok Asker Sahibi OBS widget'ı eklendi.",
