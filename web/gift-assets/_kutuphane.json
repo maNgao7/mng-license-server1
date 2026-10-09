@@ -1,0 +1,5042 @@
+[
+  {
+    "name": "TikTok",
+    "file": "TikTok.png",
+    "source": "Ekran görüntüsü 2026-09-21 172107.png",
+    "row": 1,
+    "column": 1,
+    "duplicate_image": false
+  },
+  {
+    "name": "Ice Cream Cone",
+    "file": "Ice_Cream_Cone.png",
+    "source": "Ekran görüntüsü 2026-09-21 172107.png",
+    "row": 1,
+    "column": 2,
+    "duplicate_image": false
+  },
+  {
+    "name": "Rose",
+    "file": "Rose.png",
+    "source": "Ekran görüntüsü 2026-09-21 172107.png",
+    "row": 1,
+    "column": 3,
+    "duplicate_image": false
+  },
+  {
+    "name": "GG",
+    "file": "GG.png",
+    "source": "Ekran görüntüsü 2026-09-21 172107.png",
+    "row": 1,
+    "column": 4,
+    "duplicate_image": false
+  },
+  {
+    "name": "Cake Slice",
+    "file": "Cake_Slice.png",
+    "source": "Ekran görüntüsü 2026-09-21 172107.png",
+    "row": 1,
+    "column": 5,
+    "duplicate_image": false
+  },
+  {
+    "name": "Love you so mu...",
+    "file": "Love_you_so_mu.png",
+    "source": "Ekran görüntüsü 2026-09-21 172107.png",
+    "row": 1,
+    "column": 6,
+    "duplicate_image": false
+  },
+  {
+    "name": "Wink wink",
+    "file": "Wink_wink.png",
+    "source": "Ekran görüntüsü 2026-09-21 172107.png",
+    "row": 2,
+    "column": 1,
+    "duplicate_image": false
+  },
+  {
+    "name": "Glow Stick",
+    "file": "Glow_Stick.png",
+    "source": "Ekran görüntüsü 2026-09-21 172107.png",
+    "row": 2,
+    "column": 2,
+    "duplicate_image": false
+  },
+  {
+    "name": "Good Job",
+    "file": "Good_Job.png",
+    "source": "Ekran görüntüsü 2026-09-21 172107.png",
+    "row": 2,
+    "column": 3,
+    "duplicate_image": false
+  },
+  {
+    "name": "Clap Clap",
+    "file": "Clap_Clap.png",
+    "source": "Ekran görüntüsü 2026-09-21 172107.png",
+    "row": 2,
+    "column": 4,
+    "duplicate_image": false
+  },
+  {
+    "name": "Pop",
+    "file": "Pop.png",
+    "source": "Ekran görüntüsü 2026-09-21 172107.png",
+    "row": 2,
+    "column": 5,
+    "duplicate_image": false
+  },
+  {
+    "name": "Freestyle",
+    "file": "Freestyle.png",
+    "source": "Ekran görüntüsü 2026-09-21 172107.png",
+    "row": 2,
+    "column": 6,
+    "duplicate_image": false
+  },
+  {
+    "name": "A Shard of Hope",
+    "file": "A_Shard_of_Hope.png",
+    "source": "Ekran görüntüsü 2026-09-21 172107.png",
+    "row": 3,
+    "column": 1,
+    "duplicate_image": false
+  },
+  {
+    "name": "Oldies",
+    "file": "Oldies.png",
+    "source": "Ekran görüntüsü 2026-09-21 172107.png",
+    "row": 3,
+    "column": 2,
+    "duplicate_image": false
+  },
+  {
+    "name": "My First Rose",
+    "file": "My_First_Rose.png",
+    "source": "Ekran görüntüsü 2026-09-21 172107.png",
+    "row": 3,
+    "column": 3,
+    "duplicate_image": false
+  },
+  {
+    "name": "Heart Me",
+    "file": "Heart_Me.png",
+    "source": "Ekran görüntüsü 2026-09-21 172107.png",
+    "row": 3,
+    "column": 4,
+    "duplicate_image": false
+  },
+  {
+    "name": "umbrella",
+    "file": "umbrella.png",
+    "source": "Ekran görüntüsü 2026-09-21 172107.png",
+    "row": 3,
+    "column": 5,
+    "duplicate_image": false
+  },
+  {
+    "name": "So Cute",
+    "file": "So_Cute.png",
+    "source": "Ekran görüntüsü 2026-09-21 172107.png",
+    "row": 3,
+    "column": 6,
+    "duplicate_image": false
+  },
+  {
+    "name": "Football",
+    "file": "Football.png",
+    "source": "Ekran görüntüsü 2026-09-21 172107.png",
+    "row": 4,
+    "column": 1,
+    "duplicate_image": false
+  },
+  {
+    "name": "Spidey Pin",
+    "file": "Spidey_Pin.png",
+    "source": "Ekran görüntüsü 2026-09-21 172107.png",
+    "row": 4,
+    "column": 2,
+    "duplicate_image": false
+  },
+  {
+    "name": "Community Heart",
+    "file": "Community_Heart.png",
+    "source": "Ekran görüntüsü 2026-09-21 172107.png",
+    "row": 4,
+    "column": 3,
+    "duplicate_image": false
+  },
+  {
+    "name": "It's Match Time",
+    "file": "It's_Match_Time.png",
+    "source": "Ekran görüntüsü 2026-09-21 172107.png",
+    "row": 4,
+    "column": 4,
+    "duplicate_image": false
+  },
+  {
+    "name": "Congratulations",
+    "file": "Congratulations.png",
+    "source": "Ekran görüntüsü 2026-09-21 172107.png",
+    "row": 4,
+    "column": 5,
+    "duplicate_image": false
+  },
+  {
+    "name": "Blow a kiss",
+    "file": "Blow_a_kiss.png",
+    "source": "Ekran görüntüsü 2026-09-21 172107.png",
+    "row": 4,
+    "column": 6,
+    "duplicate_image": false
+  },
+  {
+    "name": "Creeper",
+    "file": "Creeper.png",
+    "source": "Ekran görüntüsü 2026-09-21 172107.png",
+    "row": 5,
+    "column": 1,
+    "duplicate_image": false
+  },
+  {
+    "name": "Windvane",
+    "file": "Windvane.png",
+    "source": "Ekran görüntüsü 2026-09-21 172107.png",
+    "row": 5,
+    "column": 2,
+    "duplicate_image": false
+  },
+  {
+    "name": "Thumbs Up",
+    "file": "Thumbs_Up.png",
+    "source": "Ekran görüntüsü 2026-09-21 172107.png",
+    "row": 5,
+    "column": 3,
+    "duplicate_image": false
+  },
+  {
+    "name": "Heart",
+    "file": "Heart.png",
+    "source": "Ekran görüntüsü 2026-09-21 172107.png",
+    "row": 5,
+    "column": 4,
+    "duplicate_image": false
+  },
+  {
+    "name": "Love you",
+    "file": "Love_you.png",
+    "source": "Ekran görüntüsü 2026-09-21 172107.png",
+    "row": 5,
+    "column": 5,
+    "duplicate_image": false
+  },
+  {
+    "name": "Tulip",
+    "file": "Tulip.png",
+    "source": "Ekran görüntüsü 2026-09-21 172107.png",
+    "row": 5,
+    "column": 6,
+    "duplicate_image": false
+  },
+  {
+    "name": "Music Album",
+    "file": "Music_Album.png",
+    "source": "Ekran görüntüsü 2026-09-21 172107.png",
+    "row": 6,
+    "column": 1,
+    "duplicate_image": false
+  },
+  {
+    "name": "Parliyorsun!",
+    "file": "Parliyorsun!.png",
+    "source": "Ekran görüntüsü 2026-09-21 172107.png",
+    "row": 6,
+    "column": 2,
+    "duplicate_image": false
+  },
+  {
+    "name": "coldy",
+    "file": "coldy.png",
+    "source": "Ekran görüntüsü 2026-09-21 172107.png",
+    "row": 6,
+    "column": 3,
+    "duplicate_image": false
+  },
+  {
+    "name": "Red Lightning",
+    "file": "Red_Lightning.png",
+    "source": "Ekran görüntüsü 2026-09-21 172107.png",
+    "row": 6,
+    "column": 4,
+    "duplicate_image": false
+  },
+  {
+    "name": "Blue Lightning",
+    "file": "Blue_Lightning.png",
+    "source": "Ekran görüntüsü 2026-09-21 172107.png",
+    "row": 6,
+    "column": 5,
+    "duplicate_image": false
+  },
+  {
+    "name": "Yellow Lightning",
+    "file": "Yellow_Lightning.png",
+    "source": "Ekran görüntüsü 2026-09-21 172107.png",
+    "row": 6,
+    "column": 6,
+    "duplicate_image": false
+  },
+  {
+    "name": "Cherry",
+    "file": "Cherry.png",
+    "source": "Ekran görüntüsü 2026-09-21 172107.png",
+    "row": 7,
+    "column": 1,
+    "duplicate_image": false
+  },
+  {
+    "name": "Treasure Clover",
+    "file": "Treasure_Clover.png",
+    "source": "Ekran görüntüsü 2026-09-21 172107.png",
+    "row": 7,
+    "column": 2,
+    "duplicate_image": false
+  },
+  {
+    "name": "Match Star",
+    "file": "Match_Star.png",
+    "source": "Ekran görüntüsü 2026-09-21 172107.png",
+    "row": 7,
+    "column": 3,
+    "duplicate_image": false
+  },
+  {
+    "name": "Go Popular",
+    "file": "Go_Popular.png",
+    "source": "Ekran görüntüsü 2026-09-21 172107.png",
+    "row": 7,
+    "column": 4,
+    "duplicate_image": false
+  },
+  {
+    "name": "Community Gift",
+    "file": "Community_Gift.png",
+    "source": "Ekran görüntüsü 2026-09-21 172107.png",
+    "row": 7,
+    "column": 5,
+    "duplicate_image": false
+  },
+  {
+    "name": "Club Cheers",
+    "file": "Club_Cheers.png",
+    "source": "Ekran görüntüsü 2026-09-21 172107.png",
+    "row": 7,
+    "column": 6,
+    "duplicate_image": false
+  },
+  {
+    "name": "Club Cheers",
+    "file": "Club_Cheers_2.png",
+    "source": "Ekran görüntüsü 2026-09-21 172107.png",
+    "row": 8,
+    "column": 1,
+    "duplicate_image": false
+  },
+  {
+    "name": "Wink Charm",
+    "file": "Wink_Charm.png",
+    "source": "Ekran görüntüsü 2026-09-21 172107.png",
+    "row": 8,
+    "column": 2,
+    "duplicate_image": false
+  },
+  {
+    "name": "Team Bracelet",
+    "file": "Team_Bracelet.png",
+    "source": "Ekran görüntüsü 2026-09-21 172107.png",
+    "row": 8,
+    "column": 3,
+    "duplicate_image": false
+  },
+  {
+    "name": "Finger Heart",
+    "file": "Finger_Heart.png",
+    "source": "Ekran görüntüsü 2026-09-21 172107.png",
+    "row": 8,
+    "column": 4,
+    "duplicate_image": false
+  },
+  {
+    "name": "Spinning Soccer",
+    "file": "Spinning_Soccer.png",
+    "source": "Ekran görüntüsü 2026-09-21 172107.png",
+    "row": 8,
+    "column": 5,
+    "duplicate_image": false
+  },
+  {
+    "name": "Name shoutout",
+    "file": "Name_shoutout.png",
+    "source": "Ekran görüntüsü 2026-09-21 172107.png",
+    "row": 8,
+    "column": 6,
+    "duplicate_image": false
+  },
+  {
+    "name": "Overreact",
+    "file": "Overreact.png",
+    "source": "Ekran görüntüsü 2026-09-21 172107.png",
+    "row": 9,
+    "column": 1,
+    "duplicate_image": false
+  },
+  {
+    "name": "Duit Raya",
+    "file": "Duit_Raya.png",
+    "source": "Ekran görüntüsü 2026-09-21 172107.png",
+    "row": 9,
+    "column": 2,
+    "duplicate_image": false
+  },
+  {
+    "name": "Blue Bead",
+    "file": "Blue_Bead.png",
+    "source": "Ekran görüntüsü 2026-09-21 172107.png",
+    "row": 9,
+    "column": 3,
+    "duplicate_image": false
+  },
+  {
+    "name": "Turkish coffee",
+    "file": "Turkish_coffee.png",
+    "source": "Ekran görüntüsü 2026-09-21 172107.png",
+    "row": 9,
+    "column": 4,
+    "duplicate_image": false
+  },
+  {
+    "name": "Turkish kebab",
+    "file": "Turkish_kebab.png",
+    "source": "Ekran görüntüsü 2026-09-21 172107.png",
+    "row": 9,
+    "column": 5,
+    "duplicate_image": false
+  },
+  {
+    "name": "Divine Fingers",
+    "file": "Divine_Fingers.png",
+    "source": "Ekran görüntüsü 2026-09-21 172107.png",
+    "row": 9,
+    "column": 6,
+    "duplicate_image": false
+  },
+  {
+    "name": "Super Popular",
+    "file": "Super_Popular.png",
+    "source": "Ekran görüntüsü 2026-09-21 172116.png",
+    "row": 1,
+    "column": 1,
+    "duplicate_image": false
+  },
+  {
+    "name": "Cheer You Up",
+    "file": "Cheer_You_Up.png",
+    "source": "Ekran görüntüsü 2026-09-21 172116.png",
+    "row": 1,
+    "column": 2,
+    "duplicate_image": false
+  },
+  {
+    "name": "Club Power",
+    "file": "Club_Power.png",
+    "source": "Ekran görüntüsü 2026-09-21 172116.png",
+    "row": 1,
+    "column": 3,
+    "duplicate_image": false
+  },
+  {
+    "name": "Club Power",
+    "file": "Club_Power_2.png",
+    "source": "Ekran görüntüsü 2026-09-21 172116.png",
+    "row": 1,
+    "column": 4,
+    "duplicate_image": false
+  },
+  {
+    "name": "Rosa",
+    "file": "Rosa.png",
+    "source": "Ekran görüntüsü 2026-09-21 172116.png",
+    "row": 1,
+    "column": 5,
+    "duplicate_image": false
+  },
+  {
+    "name": "Friendship Necklace",
+    "file": "Friendship_Necklace.png",
+    "source": "Ekran görüntüsü 2026-09-21 172116.png",
+    "row": 1,
+    "column": 6,
+    "duplicate_image": false
+  },
+  {
+    "name": "Journey Pass",
+    "file": "Journey_Pass.png",
+    "source": "Ekran görüntüsü 2026-09-21 172116.png",
+    "row": 2,
+    "column": 1,
+    "duplicate_image": false
+  },
+  {
+    "name": "Slow motion",
+    "file": "Slow_motion.png",
+    "source": "Ekran görüntüsü 2026-09-21 172116.png",
+    "row": 2,
+    "column": 2,
+    "duplicate_image": false
+  },
+  {
+    "name": "I Like What I See",
+    "file": "I_Like_What_I_See.png",
+    "source": "Ekran görüntüsü 2026-09-21 172116.png",
+    "row": 2,
+    "column": 3,
+    "duplicate_image": false
+  },
+  {
+    "name": "Intimacy",
+    "file": "Intimacy.png",
+    "source": "Ekran görüntüsü 2026-09-21 172116.png",
+    "row": 2,
+    "column": 4,
+    "duplicate_image": false
+  },
+  {
+    "name": "Mind Blown",
+    "file": "Mind_Blown.png",
+    "source": "Ekran görüntüsü 2026-09-21 172116.png",
+    "row": 2,
+    "column": 5,
+    "duplicate_image": false
+  },
+  {
+    "name": "Lucky Pony",
+    "file": "Lucky_Pony.png",
+    "source": "Ekran görüntüsü 2026-09-21 172116.png",
+    "row": 2,
+    "column": 6,
+    "duplicate_image": false
+  },
+  {
+    "name": "Sing Together",
+    "file": "Sing_Together.png",
+    "source": "Ekran görüntüsü 2026-09-21 172116.png",
+    "row": 3,
+    "column": 1,
+    "duplicate_image": false
+  },
+  {
+    "name": "LIVE Ranking Title",
+    "file": "LIVE_Ranking_Title.png",
+    "source": "Ekran görüntüsü 2026-09-21 172116.png",
+    "row": 3,
+    "column": 2,
+    "duplicate_image": false
+  },
+  {
+    "name": "LIVE Ranking Title",
+    "file": "LIVE_Ranking_Title_2.png",
+    "source": "Ekran görüntüsü 2026-09-21 172116.png",
+    "row": 3,
+    "column": 3,
+    "duplicate_image": false
+  },
+  {
+    "name": "FANDOM Fan",
+    "file": "FANDOM_Fan.png",
+    "source": "Ekran görüntüsü 2026-09-21 172116.png",
+    "row": 3,
+    "column": 4,
+    "duplicate_image": false
+  },
+  {
+    "name": "Chocolate",
+    "file": "Chocolate.png",
+    "source": "Ekran görüntüsü 2026-09-21 172116.png",
+    "row": 3,
+    "column": 5,
+    "duplicate_image": false
+  },
+  {
+    "name": "Music Cloud",
+    "file": "Music_Cloud.png",
+    "source": "Ekran görüntüsü 2026-09-21 172116.png",
+    "row": 3,
+    "column": 6,
+    "duplicate_image": false
+  },
+  {
+    "name": "League Ball",
+    "file": "League_Ball.png",
+    "source": "Ekran görüntüsü 2026-09-21 172116.png",
+    "row": 4,
+    "column": 1,
+    "duplicate_image": false
+  },
+  {
+    "name": "Heart",
+    "file": "Heart_2.png",
+    "source": "Ekran görüntüsü 2026-09-21 172116.png",
+    "row": 4,
+    "column": 2,
+    "duplicate_image": false
+  },
+  {
+    "name": "Style Me Up",
+    "file": "Style_Me_Up.png",
+    "source": "Ekran görüntüsü 2026-09-21 172116.png",
+    "row": 4,
+    "column": 3,
+    "duplicate_image": false
+  },
+  {
+    "name": "Banana Peel",
+    "file": "Banana_Peel.png",
+    "source": "Ekran görüntüsü 2026-09-21 172116.png",
+    "row": 4,
+    "column": 4,
+    "duplicate_image": false
+  },
+  {
+    "name": "Songs of LIVE",
+    "file": "Songs_of_LIVE.png",
+    "source": "Ekran görüntüsü 2026-09-21 172116.png",
+    "row": 4,
+    "column": 5,
+    "duplicate_image": false
+  },
+  {
+    "name": "Treasure's Key",
+    "file": "Treasure's_Key.png",
+    "source": "Ekran görüntüsü 2026-09-21 172116.png",
+    "row": 4,
+    "column": 6,
+    "duplicate_image": false
+  },
+  {
+    "name": "Heart Gaze",
+    "file": "Heart_Gaze.png",
+    "source": "Ekran görüntüsü 2026-09-21 172116.png",
+    "row": 5,
+    "column": 1,
+    "duplicate_image": false
+  },
+  {
+    "name": "Bravo!",
+    "file": "Bravo!.png",
+    "source": "Ekran görüntüsü 2026-09-21 172116.png",
+    "row": 5,
+    "column": 2,
+    "duplicate_image": false
+  },
+  {
+    "name": "Kudos for My Style",
+    "file": "Kudos_for_My_Style.png",
+    "source": "Ekran görüntüsü 2026-09-21 172116.png",
+    "row": 5,
+    "column": 3,
+    "duplicate_image": false
+  },
+  {
+    "name": "Perfume",
+    "file": "Perfume.png",
+    "source": "Ekran görüntüsü 2026-09-21 172116.png",
+    "row": 5,
+    "column": 4,
+    "duplicate_image": false
+  },
+  {
+    "name": "G.O.A.T. Busker",
+    "file": "G.O.A.T._Busker.png",
+    "source": "Ekran görüntüsü 2026-09-21 172116.png",
+    "row": 5,
+    "column": 5,
+    "duplicate_image": false
+  },
+  {
+    "name": "Bouquet",
+    "file": "Bouquet.png",
+    "source": "Ekran görüntüsü 2026-09-21 172116.png",
+    "row": 5,
+    "column": 6,
+    "duplicate_image": false
+  },
+  {
+    "name": "Traffic Cone",
+    "file": "Traffic_Cone.png",
+    "source": "Ekran görüntüsü 2026-09-21 172116.png",
+    "row": 6,
+    "column": 1,
+    "duplicate_image": false
+  },
+  {
+    "name": "Doughnut",
+    "file": "Doughnut.png",
+    "source": "Ekran görüntüsü 2026-09-21 172116.png",
+    "row": 6,
+    "column": 2,
+    "duplicate_image": false
+  },
+  {
+    "name": "Energy Capsule",
+    "file": "Energy_Capsule.png",
+    "source": "Ekran görüntüsü 2026-09-21 172116.png",
+    "row": 6,
+    "column": 3,
+    "duplicate_image": false
+  },
+  {
+    "name": "Tea",
+    "file": "Tea.png",
+    "source": "Ekran görüntüsü 2026-09-21 172116.png",
+    "row": 6,
+    "column": 4,
+    "duplicate_image": false
+  },
+  {
+    "name": "Single Strike",
+    "file": "Single_Strike.png",
+    "source": "Ekran görüntüsü 2026-09-21 172116.png",
+    "row": 6,
+    "column": 5,
+    "duplicate_image": false
+  },
+  {
+    "name": "Butterfly",
+    "file": "Butterfly.png",
+    "source": "Ekran görüntüsü 2026-09-21 172116.png",
+    "row": 6,
+    "column": 6,
+    "duplicate_image": false
+  },
+  {
+    "name": "Harika",
+    "file": "Harika.png",
+    "source": "Ekran görüntüsü 2026-09-21 172116.png",
+    "row": 7,
+    "column": 1,
+    "duplicate_image": false
+  },
+  {
+    "name": "Family",
+    "file": "Family.png",
+    "source": "Ekran görüntüsü 2026-09-21 172116.png",
+    "row": 7,
+    "column": 2,
+    "duplicate_image": false
+  },
+  {
+    "name": "Community Style",
+    "file": "Community_Style.png",
+    "source": "Ekran görüntüsü 2026-09-21 172116.png",
+    "row": 7,
+    "column": 3,
+    "duplicate_image": false
+  },
+  {
+    "name": "Paper Crane",
+    "file": "Paper_Crane.png",
+    "source": "Ekran görüntüsü 2026-09-21 172116.png",
+    "row": 7,
+    "column": 4,
+    "duplicate_image": false
+  },
+  {
+    "name": "Little Crown",
+    "file": "Little_Crown.png",
+    "source": "Ekran görüntüsü 2026-09-21 172116.png",
+    "row": 7,
+    "column": 5,
+    "duplicate_image": false
+  },
+  {
+    "name": "Cap",
+    "file": "Cap.png",
+    "source": "Ekran görüntüsü 2026-09-21 172116.png",
+    "row": 7,
+    "column": 6,
+    "duplicate_image": false
+  },
+  {
+    "name": "Hat and Mustache",
+    "file": "Hat_and_Mustache.png",
+    "source": "Ekran görüntüsü 2026-09-21 172116.png",
+    "row": 8,
+    "column": 1,
+    "duplicate_image": false
+  },
+  {
+    "name": "Like-Pop",
+    "file": "Like-Pop.png",
+    "source": "Ekran görüntüsü 2026-09-21 172116.png",
+    "row": 8,
+    "column": 2,
+    "duplicate_image": false
+  },
+  {
+    "name": "Love Painting",
+    "file": "Love_Painting.png",
+    "source": "Ekran görüntüsü 2026-09-21 172116.png",
+    "row": 8,
+    "column": 3,
+    "duplicate_image": false
+  },
+  {
+    "name": "Bubble Gum",
+    "file": "Bubble_Gum.png",
+    "source": "Ekran görüntüsü 2026-09-21 172116.png",
+    "row": 8,
+    "column": 4,
+    "duplicate_image": false
+  },
+  {
+    "name": "Cupid's Bow",
+    "file": "Cupid's_Bow.png",
+    "source": "Ekran görüntüsü 2026-09-21 172116.png",
+    "row": 8,
+    "column": 5,
+    "duplicate_image": false
+  },
+  {
+    "name": "Mark of love",
+    "file": "Mark_of_love.png",
+    "source": "Ekran görüntüsü 2026-09-21 172116.png",
+    "row": 8,
+    "column": 6,
+    "duplicate_image": false
+  },
+  {
+    "name": "Breakthrough Star",
+    "file": "Breakthrough_Star.png",
+    "source": "Ekran görüntüsü 2026-09-21 172116.png",
+    "row": 9,
+    "column": 1,
+    "duplicate_image": false
+  },
+  {
+    "name": "Little Wing",
+    "file": "Little_Wing.png",
+    "source": "Ekran görüntüsü 2026-09-21 172116.png",
+    "row": 9,
+    "column": 2,
+    "duplicate_image": false
+  },
+  {
+    "name": "Sundae Bowl",
+    "file": "Sundae_Bowl.png",
+    "source": "Ekran görüntüsü 2026-09-21 172116.png",
+    "row": 9,
+    "column": 3,
+    "duplicate_image": false
+  },
+  {
+    "name": "Charmer Bow",
+    "file": "Charmer_Bow.png",
+    "source": "Ekran görüntüsü 2026-09-21 172116.png",
+    "row": 9,
+    "column": 4,
+    "duplicate_image": false
+  },
+  {
+    "name": "Cursed Kick",
+    "file": "Cursed_Kick.png",
+    "source": "Ekran görüntüsü 2026-09-21 172116.png",
+    "row": 9,
+    "column": 5,
+    "duplicate_image": false
+  },
+  {
+    "name": "Wobbler",
+    "file": "Wobbler.png",
+    "source": "Ekran görüntüsü 2026-09-21 172116.png",
+    "row": 9,
+    "column": 6,
+    "duplicate_image": false
+  },
+  {
+    "name": "Stabilizer",
+    "file": "Stabilizer.png",
+    "source": "Ekran görüntüsü 2026-09-21 172127.png",
+    "row": 1,
+    "column": 1,
+    "duplicate_image": false
+  },
+  {
+    "name": "Singing Mushroom",
+    "file": "Singing_Mushroom.png",
+    "source": "Ekran görüntüsü 2026-09-21 172127.png",
+    "row": 1,
+    "column": 2,
+    "duplicate_image": false
+  },
+  {
+    "name": "Bloom Melody",
+    "file": "Bloom_Melody.png",
+    "source": "Ekran görüntüsü 2026-09-21 172127.png",
+    "row": 1,
+    "column": 3,
+    "duplicate_image": false
+  },
+  {
+    "name": "Groove Guitar",
+    "file": "Groove_Guitar.png",
+    "source": "Ekran görüntüsü 2026-09-21 172127.png",
+    "row": 1,
+    "column": 4,
+    "duplicate_image": false
+  },
+  {
+    "name": "Pearl Chime",
+    "file": "Pearl_Chime.png",
+    "source": "Ekran görüntüsü 2026-09-21 172127.png",
+    "row": 1,
+    "column": 5,
+    "duplicate_image": false
+  },
+  {
+    "name": "Fiesta Accordion",
+    "file": "Fiesta_Accordion.png",
+    "source": "Ekran görüntüsü 2026-09-21 172127.png",
+    "row": 1,
+    "column": 6,
+    "duplicate_image": false
+  },
+  {
+    "name": "Club Victory",
+    "file": "Club_Victory.png",
+    "source": "Ekran görüntüsü 2026-09-21 172127.png",
+    "row": 2,
+    "column": 1,
+    "duplicate_image": false
+  },
+  {
+    "name": "Level-up Sparks",
+    "file": "Level-up_Sparks.png",
+    "source": "Ekran görüntüsü 2026-09-21 172127.png",
+    "row": 2,
+    "column": 2,
+    "duplicate_image": false
+  },
+  {
+    "name": "Greeting Heart",
+    "file": "Greeting_Heart.png",
+    "source": "Ekran görüntüsü 2026-09-21 172127.png",
+    "row": 2,
+    "column": 3,
+    "duplicate_image": false
+  },
+  {
+    "name": "Club Victory",
+    "file": "Club_Victory_2.png",
+    "source": "Ekran görüntüsü 2026-09-21 172127.png",
+    "row": 2,
+    "column": 4,
+    "duplicate_image": false
+  },
+  {
+    "name": "Mishka Bear",
+    "file": "Mishka_Bear.png",
+    "source": "Ekran görüntüsü 2026-09-21 172127.png",
+    "row": 2,
+    "column": 5,
+    "duplicate_image": false
+  },
+  {
+    "name": "Rainbow Slide",
+    "file": "Rainbow_Slide.png",
+    "source": "Ekran görüntüsü 2026-09-21 172127.png",
+    "row": 2,
+    "column": 6,
+    "duplicate_image": false
+  },
+  {
+    "name": "FANDOM Stamp",
+    "file": "FANDOM_Stamp.png",
+    "source": "Ekran görüntüsü 2026-09-21 172127.png",
+    "row": 3,
+    "column": 1,
+    "duplicate_image": false
+  },
+  {
+    "name": "Mishka Bear",
+    "file": "Mishka_Bear_2.png",
+    "source": "Ekran görüntüsü 2026-09-21 172127.png",
+    "row": 3,
+    "column": 2,
+    "duplicate_image": false
+  },
+  {
+    "name": "Confetti",
+    "file": "Confetti.png",
+    "source": "Ekran görüntüsü 2026-09-21 172127.png",
+    "row": 3,
+    "column": 3,
+    "duplicate_image": false
+  },
+  {
+    "name": "Hand Heart",
+    "file": "Hand_Heart.png",
+    "source": "Ekran görüntüsü 2026-09-21 172127.png",
+    "row": 3,
+    "column": 4,
+    "duplicate_image": false
+  },
+  {
+    "name": "Hand Heart",
+    "file": "Hand_Heart_2.png",
+    "source": "Ekran görüntüsü 2026-09-21 172127.png",
+    "row": 3,
+    "column": 5,
+    "duplicate_image": false
+  },
+  {
+    "name": "Game Controller",
+    "file": "Game_Controller.png",
+    "source": "Ekran görüntüsü 2026-09-21 172127.png",
+    "row": 3,
+    "column": 6,
+    "duplicate_image": false
+  },
+  {
+    "name": "Balloon Gift Box",
+    "file": "Balloon_Gift_Box.png",
+    "source": "Ekran görüntüsü 2026-09-21 172127.png",
+    "row": 4,
+    "column": 1,
+    "duplicate_image": false
+  },
+  {
+    "name": "Bouquet",
+    "file": "Bouquet_2.png",
+    "source": "Ekran görüntüsü 2026-09-21 172127.png",
+    "row": 4,
+    "column": 2,
+    "duplicate_image": false
+  },
+  {
+    "name": "Shell Energy",
+    "file": "Shell_Energy.png",
+    "source": "Ekran görüntüsü 2026-09-21 172127.png",
+    "row": 4,
+    "column": 3,
+    "duplicate_image": false
+  },
+  {
+    "name": "Compact",
+    "file": "Compact.png",
+    "source": "Ekran görüntüsü 2026-09-21 172127.png",
+    "row": 4,
+    "column": 4,
+    "duplicate_image": false
+  },
+  {
+    "name": "Power Chip",
+    "file": "Power_Chip.png",
+    "source": "Ekran görüntüsü 2026-09-21 172127.png",
+    "row": 4,
+    "column": 5,
+    "duplicate_image": false
+  },
+  {
+    "name": "Heart My Earthling",
+    "file": "Heart_My_Earthling.png",
+    "source": "Ekran görüntüsü 2026-09-21 172127.png",
+    "row": 4,
+    "column": 6,
+    "duplicate_image": false
+  },
+  {
+    "name": "Gate to Treasure",
+    "file": "Gate_to_Treasure.png",
+    "source": "Ekran görüntüsü 2026-09-21 172127.png",
+    "row": 5,
+    "column": 1,
+    "duplicate_image": false
+  },
+  {
+    "name": "Marvelous Confetti",
+    "file": "Marvelous_Confetti.png",
+    "source": "Ekran görüntüsü 2026-09-21 172127.png",
+    "row": 5,
+    "column": 2,
+    "duplicate_image": false
+  },
+  {
+    "name": "Singing Magic",
+    "file": "Singing_Magic.png",
+    "source": "Ekran görüntüsü 2026-09-21 172127.png",
+    "row": 5,
+    "column": 3,
+    "duplicate_image": false
+  },
+  {
+    "name": "Crossette Fireworks",
+    "file": "Crossette_Fireworks.png",
+    "source": "Ekran görüntüsü 2026-09-21 172127.png",
+    "row": 5,
+    "column": 4,
+    "duplicate_image": false
+  },
+  {
+    "name": "Bowknot",
+    "file": "Bowknot.png",
+    "source": "Ekran görüntüsü 2026-09-21 172127.png",
+    "row": 5,
+    "column": 5,
+    "duplicate_image": false
+  },
+  {
+    "name": "Big Shout Out",
+    "file": "Big_Shout_Out.png",
+    "source": "Ekran görüntüsü 2026-09-21 172127.png",
+    "row": 5,
+    "column": 6,
+    "duplicate_image": false
+  },
+  {
+    "name": "Chatting Popcorn",
+    "file": "Chatting_Popcorn.png",
+    "source": "Ekran görüntüsü 2026-09-21 172127.png",
+    "row": 6,
+    "column": 1,
+    "duplicate_image": false
+  },
+  {
+    "name": "Masquerade",
+    "file": "Masquerade.png",
+    "source": "Ekran görüntüsü 2026-09-21 172127.png",
+    "row": 6,
+    "column": 2,
+    "duplicate_image": false
+  },
+  {
+    "name": "Balloon Crown",
+    "file": "Balloon_Crown.png",
+    "source": "Ekran görüntüsü 2026-09-21 172127.png",
+    "row": 6,
+    "column": 3,
+    "duplicate_image": false
+  },
+  {
+    "name": "Feather Tiara",
+    "file": "Feather_Tiara.png",
+    "source": "Ekran görüntüsü 2026-09-21 172127.png",
+    "row": 6,
+    "column": 4,
+    "duplicate_image": false
+  },
+  {
+    "name": "Caterpillar Chaos",
+    "file": "Caterpillar_Chaos.png",
+    "source": "Ekran görüntüsü 2026-09-21 172127.png",
+    "row": 6,
+    "column": 5,
+    "duplicate_image": false
+  },
+  {
+    "name": "Catrina",
+    "file": "Catrina.png",
+    "source": "Ekran görüntüsü 2026-09-21 172127.png",
+    "row": 6,
+    "column": 6,
+    "duplicate_image": false
+  },
+  {
+    "name": "Raving Snail",
+    "file": "Raving_Snail.png",
+    "source": "Ekran görüntüsü 2026-09-21 172127.png",
+    "row": 7,
+    "column": 1,
+    "duplicate_image": false
+  },
+  {
+    "name": "Love Glasses",
+    "file": "Love_Glasses.png",
+    "source": "Ekran görüntüsü 2026-09-21 172127.png",
+    "row": 7,
+    "column": 2,
+    "duplicate_image": false
+  },
+  {
+    "name": "Fairy Hide",
+    "file": "Fairy_Hide.png",
+    "source": "Ekran görüntüsü 2026-09-21 172127.png",
+    "row": 7,
+    "column": 3,
+    "duplicate_image": false
+  },
+  {
+    "name": "Frog Conductor",
+    "file": "Frog_Conductor.png",
+    "source": "Ekran görüntüsü 2026-09-21 172127.png",
+    "row": 7,
+    "column": 4,
+    "duplicate_image": false
+  },
+  {
+    "name": "Tempo Flute",
+    "file": "Tempo_Flute.png",
+    "source": "Ekran görüntüsü 2026-09-21 172127.png",
+    "row": 7,
+    "column": 5,
+    "duplicate_image": false
+  },
+  {
+    "name": "Groove Clarinet",
+    "file": "Groove_Clarinet.png",
+    "source": "Ekran görüntüsü 2026-09-21 172127.png",
+    "row": 7,
+    "column": 6,
+    "duplicate_image": false
+  },
+  {
+    "name": "Kiss",
+    "file": "Kiss.png",
+    "source": "Ekran görüntüsü 2026-09-21 172127.png",
+    "row": 8,
+    "column": 1,
+    "duplicate_image": false
+  },
+  {
+    "name": "Sceptre",
+    "file": "Sceptre.png",
+    "source": "Ekran görüntüsü 2026-09-21 172127.png",
+    "row": 8,
+    "column": 2,
+    "duplicate_image": false
+  },
+  {
+    "name": "Song of Harvest",
+    "file": "Song_of_Harvest.png",
+    "source": "Ekran görüntüsü 2026-09-21 172127.png",
+    "row": 8,
+    "column": 3,
+    "duplicate_image": false
+  },
+  {
+    "name": "Bruiser",
+    "file": "Bruiser.png",
+    "source": "Ekran görüntüsü 2026-09-21 172127.png",
+    "row": 8,
+    "column": 4,
+    "duplicate_image": false
+  },
+  {
+    "name": "League Countdown",
+    "file": "League_Countdown.png",
+    "source": "Ekran görüntüsü 2026-09-21 172127.png",
+    "row": 8,
+    "column": 5,
+    "duplicate_image": false
+  },
+  {
+    "name": "Side by Side",
+    "file": "Side_by_Side.png",
+    "source": "Ekran görüntüsü 2026-09-21 172127.png",
+    "row": 8,
+    "column": 6,
+    "duplicate_image": false
+  },
+  {
+    "name": "Side by Side",
+    "file": "Side_by_Side_2.png",
+    "source": "Ekran görüntüsü 2026-09-21 172127.png",
+    "row": 9,
+    "column": 1,
+    "duplicate_image": false
+  },
+  {
+    "name": "Suitcase",
+    "file": "Suitcase.png",
+    "source": "Ekran görüntüsü 2026-09-21 172127.png",
+    "row": 9,
+    "column": 2,
+    "duplicate_image": false
+  },
+  {
+    "name": "Crown",
+    "file": "Crown.png",
+    "source": "Ekran görüntüsü 2026-09-21 172127.png",
+    "row": 9,
+    "column": 3,
+    "duplicate_image": false
+  },
+  {
+    "name": "Sunglasses",
+    "file": "Sunglasses.png",
+    "source": "Ekran görüntüsü 2026-09-21 172127.png",
+    "row": 9,
+    "column": 4,
+    "duplicate_image": false
+  },
+  {
+    "name": "Hearts",
+    "file": "Hearts.png",
+    "source": "Ekran görüntüsü 2026-09-21 172127.png",
+    "row": 9,
+    "column": 5,
+    "duplicate_image": false
+  },
+  {
+    "name": "Garland Headpiece",
+    "file": "Garland_Headpiece.png",
+    "source": "Ekran görüntüsü 2026-09-21 172127.png",
+    "row": 9,
+    "column": 6,
+    "duplicate_image": false
+  },
+  {
+    "name": "Suitcase",
+    "file": "Suitcase_2.png",
+    "source": "Ekran görüntüsü 2026-09-21 172137.png",
+    "row": 1,
+    "column": 1,
+    "duplicate_image": false
+  },
+  {
+    "name": "Love You",
+    "file": "Love_You.png",
+    "source": "Ekran görüntüsü 2026-09-21 172137.png",
+    "row": 1,
+    "column": 2,
+    "duplicate_image": false
+  },
+  {
+    "name": "Cheer For You",
+    "file": "Cheer_For_You.png",
+    "source": "Ekran görüntüsü 2026-09-21 172137.png",
+    "row": 1,
+    "column": 3,
+    "duplicate_image": false
+  },
+  {
+    "name": "Coffee Magic",
+    "file": "Coffee_Magic.png",
+    "source": "Ekran görüntüsü 2026-09-21 172137.png",
+    "row": 1,
+    "column": 4,
+    "duplicate_image": false
+  },
+  {
+    "name": "Dancing Hands",
+    "file": "Dancing_Hands.png",
+    "source": "Ekran görüntüsü 2026-09-21 172137.png",
+    "row": 1,
+    "column": 5,
+    "duplicate_image": false
+  },
+  {
+    "name": "Meerkat",
+    "file": "Meerkat.png",
+    "source": "Ekran görüntüsü 2026-09-21 172137.png",
+    "row": 1,
+    "column": 6,
+    "duplicate_image": false
+  },
+  {
+    "name": "Cheering Crab",
+    "file": "Cheering_Crab.png",
+    "source": "Ekran görüntüsü 2026-09-21 172137.png",
+    "row": 2,
+    "column": 1,
+    "duplicate_image": false
+  },
+  {
+    "name": "Wooly Hat",
+    "file": "Wooly_Hat.png",
+    "source": "Ekran görüntüsü 2026-09-21 172137.png",
+    "row": 2,
+    "column": 2,
+    "duplicate_image": false
+  },
+  {
+    "name": "Night Star",
+    "file": "Night_Star.png",
+    "source": "Ekran görüntüsü 2026-09-21 172137.png",
+    "row": 2,
+    "column": 3,
+    "duplicate_image": false
+  },
+  {
+    "name": "Blow Bubbles",
+    "file": "Blow_Bubbles.png",
+    "source": "Ekran görüntüsü 2026-09-21 172137.png",
+    "row": 2,
+    "column": 4,
+    "duplicate_image": false
+  },
+  {
+    "name": "Floating Octopus",
+    "file": "Floating_Octopus.png",
+    "source": "Ekran görüntüsü 2026-09-21 172137.png",
+    "row": 2,
+    "column": 5,
+    "duplicate_image": false
+  },
+  {
+    "name": "Flower Headband",
+    "file": "Flower_Headband.png",
+    "source": "Ekran görüntüsü 2026-09-21 172137.png",
+    "row": 2,
+    "column": 6,
+    "duplicate_image": false
+  },
+  {
+    "name": "Goalkeeper Save",
+    "file": "Goalkeeper_Save.png",
+    "source": "Ekran görüntüsü 2026-09-21 172137.png",
+    "row": 3,
+    "column": 1,
+    "duplicate_image": false
+  },
+  {
+    "name": "Sour Buddy",
+    "file": "Sour_Buddy.png",
+    "source": "Ekran görüntüsü 2026-09-21 172137.png",
+    "row": 3,
+    "column": 2,
+    "duplicate_image": false
+  },
+  {
+    "name": "Panda Climb",
+    "file": "Panda_Climb.png",
+    "source": "Ekran görüntüsü 2026-09-21 172137.png",
+    "row": 3,
+    "column": 3,
+    "duplicate_image": false
+  },
+  {
+    "name": "Star Glasses",
+    "file": "Star_Glasses.png",
+    "source": "Ekran görüntüsü 2026-09-21 172137.png",
+    "row": 3,
+    "column": 4,
+    "duplicate_image": false
+  },
+  {
+    "name": "Rose Hand",
+    "file": "Rose_Hand.png",
+    "source": "Ekran görüntüsü 2026-09-21 172137.png",
+    "row": 3,
+    "column": 5,
+    "duplicate_image": false
+  },
+  {
+    "name": "Rose Hand",
+    "file": "Rose_Hand_2.png",
+    "source": "Ekran görüntüsü 2026-09-21 172137.png",
+    "row": 3,
+    "column": 6,
+    "duplicate_image": false
+  },
+  {
+    "name": "Melon Juice",
+    "file": "Melon_Juice.png",
+    "source": "Ekran görüntüsü 2026-09-21 172137.png",
+    "row": 4,
+    "column": 1,
+    "duplicate_image": false
+  },
+  {
+    "name": "Coconut Juice",
+    "file": "Coconut_Juice.png",
+    "source": "Ekran görüntüsü 2026-09-21 172137.png",
+    "row": 4,
+    "column": 2,
+    "duplicate_image": false
+  },
+  {
+    "name": "Chirpy Kisses",
+    "file": "Chirpy_Kisses.png",
+    "source": "Ekran görüntüsü 2026-09-21 172137.png",
+    "row": 4,
+    "column": 3,
+    "duplicate_image": false
+  },
+  {
+    "name": "Juicy Smile",
+    "file": "Juicy_Smile.png",
+    "source": "Ekran görüntüsü 2026-09-21 172137.png",
+    "row": 4,
+    "column": 4,
+    "duplicate_image": false
+  },
+  {
+    "name": "Joker Ball",
+    "file": "Joker_Ball.png",
+    "source": "Ekran görüntüsü 2026-09-21 172137.png",
+    "row": 4,
+    "column": 5,
+    "duplicate_image": false
+  },
+  {
+    "name": "Heart Hood",
+    "file": "Heart_Hood.png",
+    "source": "Ekran görüntüsü 2026-09-21 172137.png",
+    "row": 4,
+    "column": 6,
+    "duplicate_image": false
+  },
+  {
+    "name": "Smile Latte",
+    "file": "Smile_Latte.png",
+    "source": "Ekran görüntüsü 2026-09-21 172137.png",
+    "row": 5,
+    "column": 1,
+    "duplicate_image": false
+  },
+  {
+    "name": "Party Pony",
+    "file": "Party_Pony.png",
+    "source": "Ekran görüntüsü 2026-09-21 172137.png",
+    "row": 5,
+    "column": 2,
+    "duplicate_image": false
+  },
+  {
+    "name": "Fan Cat",
+    "file": "Fan_Cat.png",
+    "source": "Ekran görüntüsü 2026-09-21 172137.png",
+    "row": 5,
+    "column": 3,
+    "duplicate_image": false
+  },
+  {
+    "name": "Bloom Brass",
+    "file": "Bloom_Brass.png",
+    "source": "Ekran görüntüsü 2026-09-21 172137.png",
+    "row": 5,
+    "column": 4,
+    "duplicate_image": false
+  },
+  {
+    "name": "Rhythm Bot",
+    "file": "Rhythm_Bot.png",
+    "source": "Ekran görüntüsü 2026-09-21 172137.png",
+    "row": 5,
+    "column": 5,
+    "duplicate_image": false
+  },
+  {
+    "name": "Potato in Paris",
+    "file": "Potato_in_Paris.png",
+    "source": "Ekran görüntüsü 2026-09-21 172137.png",
+    "row": 5,
+    "column": 6,
+    "duplicate_image": false
+  },
+  {
+    "name": "Magic Genie",
+    "file": "Magic_Genie.png",
+    "source": "Ekran görüntüsü 2026-09-21 172137.png",
+    "row": 6,
+    "column": 1,
+    "duplicate_image": false
+  },
+  {
+    "name": "Magic Genie",
+    "file": "Magic_Genie_2.png",
+    "source": "Ekran görüntüsü 2026-09-21 172137.png",
+    "row": 6,
+    "column": 2,
+    "duplicate_image": false
+  },
+  {
+    "name": "Semsemia",
+    "file": "Semsemia.png",
+    "source": "Ekran görüntüsü 2026-09-21 172137.png",
+    "row": 6,
+    "column": 3,
+    "duplicate_image": false
+  },
+  {
+    "name": "Baglama",
+    "file": "Baglama.png",
+    "source": "Ekran görüntüsü 2026-09-21 172137.png",
+    "row": 6,
+    "column": 4,
+    "duplicate_image": false
+  },
+  {
+    "name": "Rose Bear",
+    "file": "Rose_Bear.png",
+    "source": "Ekran görüntüsü 2026-09-21 172137.png",
+    "row": 6,
+    "column": 5,
+    "duplicate_image": false
+  },
+  {
+    "name": "Rose Bear",
+    "file": "Rose_Bear_2.png",
+    "source": "Ekran görüntüsü 2026-09-21 172137.png",
+    "row": 6,
+    "column": 6,
+    "duplicate_image": false
+  },
+  {
+    "name": "Cat",
+    "file": "Cat.png",
+    "source": "Ekran görüntüsü 2026-09-21 172137.png",
+    "row": 7,
+    "column": 1,
+    "duplicate_image": false
+  },
+  {
+    "name": "Pinch Face",
+    "file": "Pinch_Face.png",
+    "source": "Ekran görüntüsü 2026-09-21 172137.png",
+    "row": 7,
+    "column": 2,
+    "duplicate_image": false
+  },
+  {
+    "name": "Candy Bouquet",
+    "file": "Candy_Bouquet.png",
+    "source": "Ekran görüntüsü 2026-09-21 172137.png",
+    "row": 7,
+    "column": 3,
+    "duplicate_image": false
+  },
+  {
+    "name": "Ice Cream Mic",
+    "file": "Ice_Cream_Mic.png",
+    "source": "Ekran görüntüsü 2026-09-21 172137.png",
+    "row": 7,
+    "column": 4,
+    "duplicate_image": false
+  },
+  {
+    "name": "Star Goggles",
+    "file": "Star_Goggles.png",
+    "source": "Ekran görüntüsü 2026-09-21 172137.png",
+    "row": 7,
+    "column": 5,
+    "duplicate_image": false
+  },
+  {
+    "name": "Cheer Mic",
+    "file": "Cheer_Mic.png",
+    "source": "Ekran görüntüsü 2026-09-21 172137.png",
+    "row": 7,
+    "column": 6,
+    "duplicate_image": false
+  },
+  {
+    "name": "Music Bubbles",
+    "file": "Music_Bubbles.png",
+    "source": "Ekran görüntüsü 2026-09-21 172137.png",
+    "row": 8,
+    "column": 1,
+    "duplicate_image": false
+  },
+  {
+    "name": "Palm Breeze",
+    "file": "Palm_Breeze.png",
+    "source": "Ekran görüntüsü 2026-09-21 172137.png",
+    "row": 8,
+    "column": 2,
+    "duplicate_image": false
+  },
+  {
+    "name": "Forest Elf",
+    "file": "Forest_Elf.png",
+    "source": "Ekran görüntüsü 2026-09-21 172137.png",
+    "row": 8,
+    "column": 3,
+    "duplicate_image": false
+  },
+  {
+    "name": "Face-pulling",
+    "file": "Face-pulling.png",
+    "source": "Ekran görüntüsü 2026-09-21 172137.png",
+    "row": 8,
+    "column": 4,
+    "duplicate_image": false
+  },
+  {
+    "name": "Treasured Voice",
+    "file": "Treasured_Voice.png",
+    "source": "Ekran görüntüsü 2026-09-21 172137.png",
+    "row": 8,
+    "column": 5,
+    "duplicate_image": false
+  },
+  {
+    "name": "Melodic birds",
+    "file": "Melodic_birds.png",
+    "source": "Ekran görüntüsü 2026-09-21 172137.png",
+    "row": 8,
+    "column": 6,
+    "duplicate_image": false
+  },
+  {
+    "name": "Darbuka Drum",
+    "file": "Darbuka_Drum.png",
+    "source": "Ekran görüntüsü 2026-09-21 172148.png",
+    "row": 1,
+    "column": 1,
+    "duplicate_image": false
+  },
+  {
+    "name": "Oud",
+    "file": "Oud.png",
+    "source": "Ekran görüntüsü 2026-09-21 172148.png",
+    "row": 1,
+    "column": 2,
+    "duplicate_image": false
+  },
+  {
+    "name": "Poetry Score",
+    "file": "Poetry_Score.png",
+    "source": "Ekran görüntüsü 2026-09-21 172148.png",
+    "row": 1,
+    "column": 3,
+    "duplicate_image": false
+  },
+  {
+    "name": "Singing Frog",
+    "file": "Singing_Frog.png",
+    "source": "Ekran görüntüsü 2026-09-21 172148.png",
+    "row": 1,
+    "column": 4,
+    "duplicate_image": false
+  },
+  {
+    "name": "Blast Drum",
+    "file": "Blast_Drum.png",
+    "source": "Ekran görüntüsü 2026-09-21 172148.png",
+    "row": 1,
+    "column": 5,
+    "duplicate_image": false
+  },
+  {
+    "name": "Triple Thunder",
+    "file": "Triple_Thunder.png",
+    "source": "Ekran görüntüsü 2026-09-21 172148.png",
+    "row": 1,
+    "column": 6,
+    "duplicate_image": false
+  },
+  {
+    "name": "Hero Landing",
+    "file": "Hero_Landing.png",
+    "source": "Ekran görüntüsü 2026-09-21 172148.png",
+    "row": 2,
+    "column": 1,
+    "duplicate_image": false
+  },
+  {
+    "name": "EID Gift Box",
+    "file": "EID_Gift_Box.png",
+    "source": "Ekran görüntüsü 2026-09-21 172148.png",
+    "row": 2,
+    "column": 2,
+    "duplicate_image": false
+  },
+  {
+    "name": "LIVE Ranking H...",
+    "file": "LIVE_Ranking_H.png",
+    "source": "Ekran görüntüsü 2026-09-21 172148.png",
+    "row": 2,
+    "column": 3,
+    "duplicate_image": false
+  },
+  {
+    "name": "LIVE Ranking Crown",
+    "file": "LIVE_Ranking_Crown.png",
+    "source": "Ekran görüntüsü 2026-09-21 172148.png",
+    "row": 2,
+    "column": 4,
+    "duplicate_image": false
+  },
+  {
+    "name": "Rain Doll",
+    "file": "Rain_Doll.png",
+    "source": "Ekran görüntüsü 2026-09-21 172148.png",
+    "row": 2,
+    "column": 5,
+    "duplicate_image": false
+  },
+  {
+    "name": "Boxing Gloves",
+    "file": "Boxing_Gloves.png",
+    "source": "Ekran görüntüsü 2026-09-21 172148.png",
+    "row": 2,
+    "column": 6,
+    "duplicate_image": false
+  },
+  {
+    "name": "Corgi",
+    "file": "Corgi.png",
+    "source": "Ekran görüntüsü 2026-09-21 172148.png",
+    "row": 3,
+    "column": 1,
+    "duplicate_image": false
+  },
+  {
+    "name": "Fruit Friends",
+    "file": "Fruit_Friends.png",
+    "source": "Ekran görüntüsü 2026-09-21 172148.png",
+    "row": 3,
+    "column": 2,
+    "duplicate_image": false
+  },
+  {
+    "name": "Naughty Chicken",
+    "file": "Naughty_Chicken.png",
+    "source": "Ekran görüntüsü 2026-09-21 172148.png",
+    "row": 3,
+    "column": 3,
+    "duplicate_image": false
+  },
+  {
+    "name": "Play for You",
+    "file": "Play_for_You.png",
+    "source": "Ekran görüntüsü 2026-09-21 172148.png",
+    "row": 3,
+    "column": 4,
+    "duplicate_image": false
+  },
+  {
+    "name": "Rock Star",
+    "file": "Rock_Star.png",
+    "source": "Ekran görüntüsü 2026-09-21 172148.png",
+    "row": 3,
+    "column": 5,
+    "duplicate_image": false
+  },
+  {
+    "name": "Butterfly for You",
+    "file": "Butterfly_for_You.png",
+    "source": "Ekran görüntüsü 2026-09-21 172148.png",
+    "row": 3,
+    "column": 6,
+    "duplicate_image": false
+  },
+  {
+    "name": "Starlight Companion",
+    "file": "Starlight_Companion.png",
+    "source": "Ekran görüntüsü 2026-09-21 172148.png",
+    "row": 4,
+    "column": 1,
+    "duplicate_image": false
+  },
+  {
+    "name": "Puppy Kisses",
+    "file": "Puppy_Kisses.png",
+    "source": "Ekran görüntüsü 2026-09-21 172148.png",
+    "row": 4,
+    "column": 2,
+    "duplicate_image": false
+  },
+  {
+    "name": "United Heart",
+    "file": "United_Heart.png",
+    "source": "Ekran görüntüsü 2026-09-21 172148.png",
+    "row": 4,
+    "column": 3,
+    "duplicate_image": false
+  },
+  {
+    "name": "LIVE Ranking Crown",
+    "file": "LIVE_Ranking_Crown_2.png",
+    "source": "Ekran görüntüsü 2026-09-21 172148.png",
+    "row": 4,
+    "column": 4,
+    "duplicate_image": false
+  },
+  {
+    "name": "Kicker Challenge",
+    "file": "Kicker_Challenge.png",
+    "source": "Ekran görüntüsü 2026-09-21 172148.png",
+    "row": 4,
+    "column": 5,
+    "duplicate_image": false
+  },
+  {
+    "name": "Hi! Rosie!",
+    "file": "Hi!_Rosie!.png",
+    "source": "Ekran görüntüsü 2026-09-21 172148.png",
+    "row": 4,
+    "column": 6,
+    "duplicate_image": false
+  },
+  {
+    "name": "Pawfect",
+    "file": "Pawfect.png",
+    "source": "Ekran görüntüsü 2026-09-21 172148.png",
+    "row": 5,
+    "column": 1,
+    "duplicate_image": false
+  },
+  {
+    "name": "Heart Love Plate",
+    "file": "Heart_Love_Plate.png",
+    "source": "Ekran görüntüsü 2026-09-21 172148.png",
+    "row": 5,
+    "column": 2,
+    "duplicate_image": false
+  },
+  {
+    "name": "Go Hamster",
+    "file": "Go_Hamster.png",
+    "source": "Ekran görüntüsü 2026-09-21 172148.png",
+    "row": 5,
+    "column": 3,
+    "duplicate_image": false
+  },
+  {
+    "name": "Bat Headwear",
+    "file": "Bat_Headwear.png",
+    "source": "Ekran görüntüsü 2026-09-21 172148.png",
+    "row": 5,
+    "column": 4,
+    "duplicate_image": false
+  },
+  {
+    "name": "Melody Glasses",
+    "file": "Melody_Glasses.png",
+    "source": "Ekran görüntüsü 2026-09-21 172148.png",
+    "row": 5,
+    "column": 5,
+    "duplicate_image": false
+  },
+  {
+    "name": "Penguin Snowpal",
+    "file": "Penguin_Snowpal.png",
+    "source": "Ekran görüntüsü 2026-09-21 172148.png",
+    "row": 5,
+    "column": 6,
+    "duplicate_image": false
+  },
+  {
+    "name": "Music Mate",
+    "file": "Music_Mate.png",
+    "source": "Ekran görüntüsü 2026-09-21 172148.png",
+    "row": 6,
+    "column": 1,
+    "duplicate_image": false
+  },
+  {
+    "name": "Love Call",
+    "file": "Love_Call.png",
+    "source": "Ekran görüntüsü 2026-09-21 172148.png",
+    "row": 6,
+    "column": 2,
+    "duplicate_image": false
+  },
+  {
+    "name": "Pony Lantern",
+    "file": "Pony_Lantern.png",
+    "source": "Ekran görüntüsü 2026-09-21 172148.png",
+    "row": 6,
+    "column": 3,
+    "duplicate_image": false
+  },
+  {
+    "name": "Spring Sprout",
+    "file": "Spring_Sprout.png",
+    "source": "Ekran görüntüsü 2026-09-21 172148.png",
+    "row": 6,
+    "column": 4,
+    "duplicate_image": false
+  },
+  {
+    "name": "Wakey Mallow",
+    "file": "Wakey_Mallow.png",
+    "source": "Ekran görüntüsü 2026-09-21 172148.png",
+    "row": 6,
+    "column": 5,
+    "duplicate_image": false
+  },
+  {
+    "name": "Sax Groove",
+    "file": "Sax_Groove.png",
+    "source": "Ekran görüntüsü 2026-09-21 172148.png",
+    "row": 6,
+    "column": 6,
+    "duplicate_image": false
+  },
+  {
+    "name": "Scroll",
+    "file": "Scroll.png",
+    "source": "Ekran görüntüsü 2026-09-21 172148.png",
+    "row": 7,
+    "column": 1,
+    "duplicate_image": false
+  },
+  {
+    "name": "Labor Power",
+    "file": "Labor_Power.png",
+    "source": "Ekran görüntüsü 2026-09-21 172148.png",
+    "row": 7,
+    "column": 2,
+    "duplicate_image": false
+  },
+  {
+    "name": "Cello Romance",
+    "file": "Cello_Romance.png",
+    "source": "Ekran görüntüsü 2026-09-21 172148.png",
+    "row": 7,
+    "column": 3,
+    "duplicate_image": false
+  },
+  {
+    "name": "Come On!",
+    "file": "Come_On!.png",
+    "source": "Ekran görüntüsü 2026-09-21 172148.png",
+    "row": 7,
+    "column": 4,
+    "duplicate_image": false
+  },
+  {
+    "name": "Cheering Towel",
+    "file": "Cheering_Towel.png",
+    "source": "Ekran görüntüsü 2026-09-21 172148.png",
+    "row": 7,
+    "column": 5,
+    "duplicate_image": false
+  },
+  {
+    "name": "Swing Cello",
+    "file": "Swing_Cello.png",
+    "source": "Ekran görüntüsü 2026-09-21 172148.png",
+    "row": 7,
+    "column": 6,
+    "duplicate_image": false
+  },
+  {
+    "name": "Budding Heart",
+    "file": "Budding_Heart.png",
+    "source": "Ekran görüntüsü 2026-09-21 172148.png",
+    "row": 8,
+    "column": 1,
+    "duplicate_image": false
+  },
+  {
+    "name": "Diamond ring of love",
+    "file": "Diamond_ring_of_love.png",
+    "source": "Ekran görüntüsü 2026-09-21 172148.png",
+    "row": 8,
+    "column": 2,
+    "duplicate_image": false
+  },
+  {
+    "name": "Feather Mask",
+    "file": "Feather_Mask.png",
+    "source": "Ekran görüntüsü 2026-09-21 172148.png",
+    "row": 8,
+    "column": 3,
+    "duplicate_image": false
+  },
+  {
+    "name": "Air Dancer",
+    "file": "Air_Dancer.png",
+    "source": "Ekran görüntüsü 2026-09-21 172148.png",
+    "row": 8,
+    "column": 4,
+    "duplicate_image": false
+  },
+  {
+    "name": "Galaxy's Bestest",
+    "file": "Galaxy's_Bestest.png",
+    "source": "Ekran görüntüsü 2026-09-21 172148.png",
+    "row": 8,
+    "column": 5,
+    "duplicate_image": false
+  },
+  {
+    "name": "Festival Bracelet",
+    "file": "Festival_Bracelet.png",
+    "source": "Ekran görüntüsü 2026-09-21 172148.png",
+    "row": 8,
+    "column": 6,
+    "duplicate_image": false
+  },
+  {
+    "name": "Backing Monkey",
+    "file": "Backing_Monkey.png",
+    "source": "Ekran görüntüsü 2026-09-21 172148.png",
+    "row": 9,
+    "column": 1,
+    "duplicate_image": false
+  },
+  {
+    "name": "Become Kitten",
+    "file": "Become_Kitten.png",
+    "source": "Ekran görüntüsü 2026-09-21 172148.png",
+    "row": 9,
+    "column": 2,
+    "duplicate_image": false
+  },
+  {
+    "name": "Marked with Love",
+    "file": "Marked_with_Love.png",
+    "source": "Ekran görüntüsü 2026-09-21 172148.png",
+    "row": 9,
+    "column": 3,
+    "duplicate_image": false
+  },
+  {
+    "name": "Vinyl Flip",
+    "file": "Vinyl_Flip.png",
+    "source": "Ekran görüntüsü 2026-09-21 172148.png",
+    "row": 9,
+    "column": 4,
+    "duplicate_image": false
+  },
+  {
+    "name": "Juicy Cap",
+    "file": "Juicy_Cap.png",
+    "source": "Ekran görüntüsü 2026-09-21 172148.png",
+    "row": 9,
+    "column": 5,
+    "duplicate_image": false
+  },
+  {
+    "name": "Batwing Hat",
+    "file": "Batwing_Hat.png",
+    "source": "Ekran görüntüsü 2026-09-21 172148.png",
+    "row": 9,
+    "column": 6,
+    "duplicate_image": false
+  },
+  {
+    "name": "Beach Maracas",
+    "file": "Beach_Maracas.png",
+    "source": "Ekran görüntüsü 2026-09-21 172157.png",
+    "row": 1,
+    "column": 1,
+    "duplicate_image": false
+  },
+  {
+    "name": "Vintage flight",
+    "file": "Vintage_flight.png",
+    "source": "Ekran görüntüsü 2026-09-21 172157.png",
+    "row": 1,
+    "column": 2,
+    "duplicate_image": false
+  },
+  {
+    "name": "Gingerbread Man",
+    "file": "Gingerbread_Man.png",
+    "source": "Ekran görüntüsü 2026-09-21 172157.png",
+    "row": 1,
+    "column": 3,
+    "duplicate_image": false
+  },
+  {
+    "name": "Candy Bouquet",
+    "file": "Candy_Bouquet_2.png",
+    "source": "Ekran görüntüsü 2026-09-21 172157.png",
+    "row": 1,
+    "column": 4,
+    "duplicate_image": false
+  },
+  {
+    "name": "Rocking Shroom",
+    "file": "Rocking_Shroom.png",
+    "source": "Ekran görüntüsü 2026-09-21 172157.png",
+    "row": 1,
+    "column": 5,
+    "duplicate_image": false
+  },
+  {
+    "name": "Sparkle Pony",
+    "file": "Sparkle_Pony.png",
+    "source": "Ekran görüntüsü 2026-09-21 172157.png",
+    "row": 1,
+    "column": 6,
+    "duplicate_image": false
+  },
+  {
+    "name": "Spring Bouquet",
+    "file": "Spring_Bouquet.png",
+    "source": "Ekran görüntüsü 2026-09-21 172157.png",
+    "row": 2,
+    "column": 1,
+    "duplicate_image": false
+  },
+  {
+    "name": "Craft Dreamer",
+    "file": "Craft_Dreamer.png",
+    "source": "Ekran görüntüsü 2026-09-21 172157.png",
+    "row": 2,
+    "column": 2,
+    "duplicate_image": false
+  },
+  {
+    "name": "Mom's Bonnet",
+    "file": "Mom's_Bonnet.png",
+    "source": "Ekran görüntüsü 2026-09-21 172157.png",
+    "row": 2,
+    "column": 3,
+    "duplicate_image": false
+  },
+  {
+    "name": "Retro Melody",
+    "file": "Retro_Melody.png",
+    "source": "Ekran görüntüsü 2026-09-21 172157.png",
+    "row": 2,
+    "column": 4,
+    "duplicate_image": false
+  },
+  {
+    "name": "Ukulele Player",
+    "file": "Ukulele_Player.png",
+    "source": "Ekran görüntüsü 2026-09-21 172157.png",
+    "row": 2,
+    "column": 5,
+    "duplicate_image": false
+  },
+  {
+    "name": "Chopin in the Rain",
+    "file": "Chopin_in_the_Rain.png",
+    "source": "Ekran görüntüsü 2026-09-21 172157.png",
+    "row": 2,
+    "column": 6,
+    "duplicate_image": false
+  },
+  {
+    "name": "Electro Vibes",
+    "file": "Electro_Vibes.png",
+    "source": "Ekran görüntüsü 2026-09-21 172157.png",
+    "row": 3,
+    "column": 1,
+    "duplicate_image": false
+  },
+  {
+    "name": "Retro Headset",
+    "file": "Retro_Headset.png",
+    "source": "Ekran görüntüsü 2026-09-21 172157.png",
+    "row": 3,
+    "column": 2,
+    "duplicate_image": false
+  },
+  {
+    "name": "Butterfly Vibe",
+    "file": "Butterfly_Vibe.png",
+    "source": "Ekran görüntüsü 2026-09-21 172157.png",
+    "row": 3,
+    "column": 3,
+    "duplicate_image": false
+  },
+  {
+    "name": "Jollie's Community",
+    "file": "Jollie's_Community.png",
+    "source": "Ekran görüntüsü 2026-09-21 172157.png",
+    "row": 3,
+    "column": 4,
+    "duplicate_image": false
+  },
+  {
+    "name": "Forever Rosa",
+    "file": "Forever_Rosa.png",
+    "source": "Ekran görüntüsü 2026-09-21 172157.png",
+    "row": 3,
+    "column": 5,
+    "duplicate_image": false
+  },
+  {
+    "name": "Magic Rhythm",
+    "file": "Magic_Rhythm.png",
+    "source": "Ekran görüntüsü 2026-09-21 172157.png",
+    "row": 3,
+    "column": 6,
+    "duplicate_image": false
+  },
+  {
+    "name": "Relaxed Goose",
+    "file": "Relaxed_Goose.png",
+    "source": "Ekran görüntüsü 2026-09-21 172157.png",
+    "row": 4,
+    "column": 1,
+    "duplicate_image": false
+  },
+  {
+    "name": "Tom's Hug",
+    "file": "Tom's_Hug.png",
+    "source": "Ekran görüntüsü 2026-09-21 172157.png",
+    "row": 4,
+    "column": 2,
+    "duplicate_image": false
+  },
+  {
+    "name": "Rosie the Rose",
+    "file": "Rosie_the_Rose.png",
+    "source": "Ekran görüntüsü 2026-09-21 172157.png",
+    "row": 4,
+    "column": 3,
+    "duplicate_image": false
+  },
+  {
+    "name": "Jollie the Joy",
+    "file": "Jollie_the_Joy.png",
+    "source": "Ekran görüntüsü 2026-09-21 172157.png",
+    "row": 4,
+    "column": 4,
+    "duplicate_image": false
+  },
+  {
+    "name": "Rocky the Rock",
+    "file": "Rocky_the_Rock.png",
+    "source": "Ekran görüntüsü 2026-09-21 172157.png",
+    "row": 4,
+    "column": 5,
+    "duplicate_image": false
+  },
+  {
+    "name": "Sage the Smart",
+    "file": "Sage_the_Smart.png",
+    "source": "Ekran görüntüsü 2026-09-21 172157.png",
+    "row": 4,
+    "column": 6,
+    "duplicate_image": false
+  },
+  {
+    "name": "Sage's Slash",
+    "file": "Sage's_Slash.png",
+    "source": "Ekran görüntüsü 2026-09-21 172157.png",
+    "row": 5,
+    "column": 1,
+    "duplicate_image": false
+  },
+  {
+    "name": "Let butterfly dance",
+    "file": "Let_butterfly_dance.png",
+    "source": "Ekran görüntüsü 2026-09-21 172157.png",
+    "row": 5,
+    "column": 2,
+    "duplicate_image": false
+  },
+  {
+    "name": "Kitten Kneading",
+    "file": "Kitten_Kneading.png",
+    "source": "Ekran görüntüsü 2026-09-21 172157.png",
+    "row": 5,
+    "column": 3,
+    "duplicate_image": false
+  },
+  {
+    "name": "Shoot the Apple",
+    "file": "Shoot_the_Apple.png",
+    "source": "Ekran görüntüsü 2026-09-21 172157.png",
+    "row": 5,
+    "column": 4,
+    "duplicate_image": false
+  },
+  {
+    "name": "Alien Buddy",
+    "file": "Alien_Buddy.png",
+    "source": "Ekran görüntüsü 2026-09-21 172157.png",
+    "row": 5,
+    "column": 5,
+    "duplicate_image": false
+  },
+  {
+    "name": "You Are Loved",
+    "file": "You_Are_Loved.png",
+    "source": "Ekran görüntüsü 2026-09-21 172157.png",
+    "row": 5,
+    "column": 6,
+    "duplicate_image": false
+  },
+  {
+    "name": "Rosie's Concert",
+    "file": "Rosie's_Concert.png",
+    "source": "Ekran görüntüsü 2026-09-21 172157.png",
+    "row": 6,
+    "column": 1,
+    "duplicate_image": false
+  },
+  {
+    "name": "Tiger Lift",
+    "file": "Tiger_Lift.png",
+    "source": "Ekran görüntüsü 2026-09-21 172157.png",
+    "row": 6,
+    "column": 2,
+    "duplicate_image": false
+  },
+  {
+    "name": "Santa Owl Surprise",
+    "file": "Santa_Owl_Surprise.png",
+    "source": "Ekran görüntüsü 2026-09-21 172157.png",
+    "row": 6,
+    "column": 3,
+    "duplicate_image": false
+  },
+  {
+    "name": "Confetti Bear",
+    "file": "Confetti_Bear.png",
+    "source": "Ekran görüntüsü 2026-09-21 172157.png",
+    "row": 6,
+    "column": 4,
+    "duplicate_image": false
+  },
+  {
+    "name": "Singing Sax",
+    "file": "Singing_Sax.png",
+    "source": "Ekran görüntüsü 2026-09-21 172157.png",
+    "row": 6,
+    "column": 5,
+    "duplicate_image": false
+  },
+  {
+    "name": "Fairy Locket",
+    "file": "Fairy_Locket.png",
+    "source": "Ekran görüntüsü 2026-09-21 172157.png",
+    "row": 6,
+    "column": 6,
+    "duplicate_image": false
+  },
+  {
+    "name": "Panda Snap",
+    "file": "Panda_Snap.png",
+    "source": "Ekran görüntüsü 2026-09-21 172157.png",
+    "row": 7,
+    "column": 1,
+    "duplicate_image": false
+  },
+  {
+    "name": "Blossom Fairy",
+    "file": "Blossom_Fairy.png",
+    "source": "Ekran görüntüsü 2026-09-21 172157.png",
+    "row": 7,
+    "column": 2,
+    "duplicate_image": false
+  },
+  {
+    "name": "Dreamy Hat",
+    "file": "Dreamy_Hat.png",
+    "source": "Ekran görüntüsü 2026-09-21 172157.png",
+    "row": 7,
+    "column": 3,
+    "duplicate_image": false
+  },
+  {
+    "name": "Vocal Bear",
+    "file": "Vocal_Bear.png",
+    "source": "Ekran görüntüsü 2026-09-21 172157.png",
+    "row": 7,
+    "column": 4,
+    "duplicate_image": false
+  },
+  {
+    "name": "Cactus Shuffle",
+    "file": "Cactus_Shuffle.png",
+    "source": "Ekran görüntüsü 2026-09-21 172157.png",
+    "row": 7,
+    "column": 5,
+    "duplicate_image": false
+  },
+  {
+    "name": "Health Potion",
+    "file": "Health_Potion.png",
+    "source": "Ekran görüntüsü 2026-09-21 172157.png",
+    "row": 7,
+    "column": 6,
+    "duplicate_image": false
+  },
+  {
+    "name": "Echo Mom",
+    "file": "Echo_Mom.png",
+    "source": "Ekran görüntüsü 2026-09-21 172157.png",
+    "row": 8,
+    "column": 1,
+    "duplicate_image": false
+  },
+  {
+    "name": "DJ Set",
+    "file": "DJ_Set.png",
+    "source": "Ekran görüntüsü 2026-09-21 172157.png",
+    "row": 8,
+    "column": 2,
+    "duplicate_image": false
+  },
+  {
+    "name": "Beat Wings",
+    "file": "Beat_Wings.png",
+    "source": "Ekran görüntüsü 2026-09-21 172157.png",
+    "row": 8,
+    "column": 3,
+    "duplicate_image": false
+  },
+  {
+    "name": "Melody Headset",
+    "file": "Melody_Headset.png",
+    "source": "Ekran görüntüsü 2026-09-21 172157.png",
+    "row": 8,
+    "column": 4,
+    "duplicate_image": false
+  },
+  {
+    "name": "Papa Capybara",
+    "file": "Papa_Capybara.png",
+    "source": "Ekran görüntüsü 2026-09-21 172157.png",
+    "row": 8,
+    "column": 5,
+    "duplicate_image": false
+  },
+  {
+    "name": "Aurora Groove",
+    "file": "Aurora_Groove.png",
+    "source": "Ekran görüntüsü 2026-09-21 172157.png",
+    "row": 8,
+    "column": 6,
+    "duplicate_image": false
+  },
+  {
+    "name": "FANDOM Fever",
+    "file": "FANDOM_Fever.png",
+    "source": "Ekran görüntüsü 2026-09-21 172157.png",
+    "row": 9,
+    "column": 1,
+    "duplicate_image": false
+  },
+  {
+    "name": "Crystal Dreams",
+    "file": "Crystal_Dreams.png",
+    "source": "Ekran görüntüsü 2026-09-21 172157.png",
+    "row": 9,
+    "column": 2,
+    "duplicate_image": false
+  },
+  {
+    "name": "Wishing Cake",
+    "file": "Wishing_Cake.png",
+    "source": "Ekran görüntüsü 2026-09-21 172157.png",
+    "row": 9,
+    "column": 3,
+    "duplicate_image": false
+  },
+  {
+    "name": "Mic Champ",
+    "file": "Mic_Champ.png",
+    "source": "Ekran görüntüsü 2026-09-21 172157.png",
+    "row": 9,
+    "column": 4,
+    "duplicate_image": false
+  },
+  {
+    "name": "Bounce Speakers",
+    "file": "Bounce_Speakers.png",
+    "source": "Ekran görüntüsü 2026-09-21 172157.png",
+    "row": 9,
+    "column": 5,
+    "duplicate_image": false
+  },
+  {
+    "name": "Reindeer Milk",
+    "file": "Reindeer_Milk.png",
+    "source": "Ekran görüntüsü 2026-09-21 172157.png",
+    "row": 9,
+    "column": 6,
+    "duplicate_image": false
+  },
+  {
+    "name": "Cheeky Pup",
+    "file": "Cheeky_Pup.png",
+    "source": "Ekran görüntüsü 2026-09-21 172207.png",
+    "row": 1,
+    "column": 1,
+    "duplicate_image": false
+  },
+  {
+    "name": "DJ Wave",
+    "file": "DJ_Wave.png",
+    "source": "Ekran görüntüsü 2026-09-21 172207.png",
+    "row": 1,
+    "column": 2,
+    "duplicate_image": false
+  },
+  {
+    "name": "Punch Cuddle",
+    "file": "Punch_Cuddle.png",
+    "source": "Ekran görüntüsü 2026-09-21 172207.png",
+    "row": 1,
+    "column": 3,
+    "duplicate_image": false
+  },
+  {
+    "name": "Glorious Chef",
+    "file": "Glorious_Chef.png",
+    "source": "Ekran görüntüsü 2026-09-21 172207.png",
+    "row": 1,
+    "column": 4,
+    "duplicate_image": false
+  },
+  {
+    "name": "Rock Cats",
+    "file": "Rock_Cats.png",
+    "source": "Ekran görüntüsü 2026-09-21 172207.png",
+    "row": 1,
+    "column": 5,
+    "duplicate_image": false
+  },
+  {
+    "name": "Magic Accordion",
+    "file": "Magic_Accordion.png",
+    "source": "Ekran görüntüsü 2026-09-21 172207.png",
+    "row": 1,
+    "column": 6,
+    "duplicate_image": false
+  },
+  {
+    "name": "Super Dad",
+    "file": "Super_Dad.png",
+    "source": "Ekran görüntüsü 2026-09-21 172207.png",
+    "row": 2,
+    "column": 1,
+    "duplicate_image": false
+  },
+  {
+    "name": "Pop Parrot",
+    "file": "Pop_Parrot.png",
+    "source": "Ekran görüntüsü 2026-09-21 172207.png",
+    "row": 2,
+    "column": 2,
+    "duplicate_image": false
+  },
+  {
+    "name": "Rock Idol",
+    "file": "Rock_Idol.png",
+    "source": "Ekran görüntüsü 2026-09-21 172207.png",
+    "row": 2,
+    "column": 3,
+    "duplicate_image": false
+  },
+  {
+    "name": "Beating Heart",
+    "file": "Beating_Heart.png",
+    "source": "Ekran görüntüsü 2026-09-21 172207.png",
+    "row": 2,
+    "column": 4,
+    "duplicate_image": false
+  },
+  {
+    "name": "Encore Clap",
+    "file": "Encore_Clap.png",
+    "source": "Ekran görüntüsü 2026-09-21 172207.png",
+    "row": 2,
+    "column": 5,
+    "duplicate_image": false
+  },
+  {
+    "name": "Pirate's Treasure",
+    "file": "Pirate's_Treasure.png",
+    "source": "Ekran görüntüsü 2026-09-21 172207.png",
+    "row": 2,
+    "column": 6,
+    "duplicate_image": false
+  },
+  {
+    "name": "Candy Loot",
+    "file": "Candy_Loot.png",
+    "source": "Ekran görüntüsü 2026-09-21 172207.png",
+    "row": 3,
+    "column": 1,
+    "duplicate_image": false
+  },
+  {
+    "name": "Captured Vocals",
+    "file": "Captured_Vocals.png",
+    "source": "Ekran görüntüsü 2026-09-21 172207.png",
+    "row": 3,
+    "column": 2,
+    "duplicate_image": false
+  },
+  {
+    "name": "Batting Cutie",
+    "file": "Batting_Cutie.png",
+    "source": "Ekran görüntüsü 2026-09-21 172207.png",
+    "row": 3,
+    "column": 3,
+    "duplicate_image": false
+  },
+  {
+    "name": "Space Love",
+    "file": "Space_Love.png",
+    "source": "Ekran görüntüsü 2026-09-21 172207.png",
+    "row": 3,
+    "column": 4,
+    "duplicate_image": false
+  },
+  {
+    "name": "Xmas Tree Hat",
+    "file": "Xmas_Tree_Hat.png",
+    "source": "Ekran görüntüsü 2026-09-21 172207.png",
+    "row": 3,
+    "column": 5,
+    "duplicate_image": false
+  },
+  {
+    "name": "Clown Boogie",
+    "file": "Clown_Boogie.png",
+    "source": "Ekran görüntüsü 2026-09-21 172207.png",
+    "row": 3,
+    "column": 6,
+    "duplicate_image": false
+  },
+  {
+    "name": "Electronic Love",
+    "file": "Electronic_Love.png",
+    "source": "Ekran görüntüsü 2026-09-21 172207.png",
+    "row": 4,
+    "column": 1,
+    "duplicate_image": false
+  },
+  {
+    "name": "Rock and Roll",
+    "file": "Rock_and_Roll.png",
+    "source": "Ekran görüntüsü 2026-09-21 172207.png",
+    "row": 4,
+    "column": 2,
+    "duplicate_image": false
+  },
+  {
+    "name": "Over the Cloud",
+    "file": "Over_the_Cloud.png",
+    "source": "Ekran görüntüsü 2026-09-21 172207.png",
+    "row": 4,
+    "column": 3,
+    "duplicate_image": false
+  },
+  {
+    "name": "Powerful Mind",
+    "file": "Powerful_Mind.png",
+    "source": "Ekran görüntüsü 2026-09-21 172207.png",
+    "row": 4,
+    "column": 4,
+    "duplicate_image": false
+  },
+  {
+    "name": "Hat of Joy",
+    "file": "Hat_of_Joy.png",
+    "source": "Ekran görüntüsü 2026-09-21 172207.png",
+    "row": 4,
+    "column": 5,
+    "duplicate_image": false
+  },
+  {
+    "name": "Halloween Fun",
+    "file": "Halloween_Fun.png",
+    "source": "Ekran görüntüsü 2026-09-21 172207.png",
+    "row": 4,
+    "column": 6,
+    "duplicate_image": false
+  },
+  {
+    "name": "Music Conductor",
+    "file": "Music_Conductor.png",
+    "source": "Ekran görüntüsü 2026-09-21 172207.png",
+    "row": 5,
+    "column": 1,
+    "duplicate_image": false
+  },
+  {
+    "name": "Celebration Hat",
+    "file": "Celebration_Hat.png",
+    "source": "Ekran görüntüsü 2026-09-21 172207.png",
+    "row": 5,
+    "column": 2,
+    "duplicate_image": false
+  },
+  {
+    "name": "City Pop",
+    "file": "City_Pop.png",
+    "source": "Ekran görüntüsü 2026-09-21 172207.png",
+    "row": 5,
+    "column": 3,
+    "duplicate_image": false
+  },
+  {
+    "name": "Cupid Koala",
+    "file": "Cupid_Koala.png",
+    "source": "Ekran görüntüsü 2026-09-21 172207.png",
+    "row": 5,
+    "column": 4,
+    "duplicate_image": false
+  },
+  {
+    "name": "Paw Call",
+    "file": "Paw_Call.png",
+    "source": "Ekran görüntüsü 2026-09-21 172207.png",
+    "row": 5,
+    "column": 5,
+    "duplicate_image": false
+  },
+  {
+    "name": "Superwoman",
+    "file": "Superwoman.png",
+    "source": "Ekran görüntüsü 2026-09-21 172207.png",
+    "row": 5,
+    "column": 6,
+    "duplicate_image": false
+  },
+  {
+    "name": "Clover Hat",
+    "file": "Clover_Hat.png",
+    "source": "Ekran görüntüsü 2026-09-21 172207.png",
+    "row": 6,
+    "column": 1,
+    "duplicate_image": false
+  },
+  {
+    "name": "Sloth Peek",
+    "file": "Sloth_Peek.png",
+    "source": "Ekran görüntüsü 2026-09-21 172207.png",
+    "row": 6,
+    "column": 2,
+    "duplicate_image": false
+  },
+  {
+    "name": "Pink Cowboy",
+    "file": "Pink_Cowboy.png",
+    "source": "Ekran görüntüsü 2026-09-21 172207.png",
+    "row": 6,
+    "column": 3,
+    "duplicate_image": false
+  },
+  {
+    "name": "Office Penguin",
+    "file": "Office_Penguin.png",
+    "source": "Ekran görüntüsü 2026-09-21 172207.png",
+    "row": 6,
+    "column": 4,
+    "duplicate_image": false
+  },
+  {
+    "name": "Steady on the Ball",
+    "file": "Steady_on_the_Ball.png",
+    "source": "Ekran görüntüsü 2026-09-21 172207.png",
+    "row": 6,
+    "column": 5,
+    "duplicate_image": false
+  },
+  {
+    "name": "Coral",
+    "file": "Coral.png",
+    "source": "Ekran görüntüsü 2026-09-21 172207.png",
+    "row": 6,
+    "column": 6,
+    "duplicate_image": false
+  },
+  {
+    "name": "Lollipop Gift Box",
+    "file": "Lollipop_Gift_Box.png",
+    "source": "Ekran görüntüsü 2026-09-21 172207.png",
+    "row": 7,
+    "column": 1,
+    "duplicate_image": false
+  },
+  {
+    "name": "Rose Soundwave",
+    "file": "Rose_Soundwave.png",
+    "source": "Ekran görüntüsü 2026-09-21 172207.png",
+    "row": 7,
+    "column": 2,
+    "duplicate_image": false
+  },
+  {
+    "name": "Key Master",
+    "file": "Key_Master.png",
+    "source": "Ekran görüntüsü 2026-09-21 172207.png",
+    "row": 7,
+    "column": 3,
+    "duplicate_image": false
+  },
+  {
+    "name": "Eye on the Ball",
+    "file": "Eye_on_the_Ball.png",
+    "source": "Ekran görüntüsü 2026-09-21 172207.png",
+    "row": 7,
+    "column": 4,
+    "duplicate_image": false
+  },
+  {
+    "name": "Hands Up",
+    "file": "Hands_Up.png",
+    "source": "Ekran görüntüsü 2026-09-21 172207.png",
+    "row": 7,
+    "column": 5,
+    "duplicate_image": false
+  },
+  {
+    "name": "Baby Chicks",
+    "file": "Baby_Chicks.png",
+    "source": "Ekran görüntüsü 2026-09-21 172207.png",
+    "row": 7,
+    "column": 6,
+    "duplicate_image": false
+  },
+  {
+    "name": "Manifesting",
+    "file": "Manifesting.png",
+    "source": "Ekran görüntüsü 2026-09-21 172207.png",
+    "row": 8,
+    "column": 1,
+    "duplicate_image": false
+  },
+  {
+    "name": "Make it rain",
+    "file": "Make_it_rain.png",
+    "source": "Ekran görüntüsü 2026-09-21 172207.png",
+    "row": 8,
+    "column": 2,
+    "duplicate_image": false
+  },
+  {
+    "name": "Money Gun",
+    "file": "Money_Gun.png",
+    "source": "Ekran görüntüsü 2026-09-21 172207.png",
+    "row": 8,
+    "column": 3,
+    "duplicate_image": false
+  },
+  {
+    "name": "You're Amazing",
+    "file": "You're_Amazing.png",
+    "source": "Ekran görüntüsü 2026-09-21 172207.png",
+    "row": 8,
+    "column": 4,
+    "duplicate_image": false
+  },
+  {
+    "name": "VR Goggles",
+    "file": "VR_Goggles.png",
+    "source": "Ekran görüntüsü 2026-09-21 172207.png",
+    "row": 8,
+    "column": 5,
+    "duplicate_image": false
+  },
+  {
+    "name": "DJ Glasses",
+    "file": "DJ_Glasses.png",
+    "source": "Ekran görüntüsü 2026-09-21 172207.png",
+    "row": 8,
+    "column": 6,
+    "duplicate_image": false
+  },
+  {
+    "name": "Lion's Mane",
+    "file": "Lion's_Mane.png",
+    "source": "Ekran görüntüsü 2026-09-21 172215.png",
+    "row": 1,
+    "column": 1,
+    "duplicate_image": false
+  },
+  {
+    "name": "Dragon Crown",
+    "file": "Dragon_Crown.png",
+    "source": "Ekran görüntüsü 2026-09-21 172215.png",
+    "row": 1,
+    "column": 2,
+    "duplicate_image": false
+  },
+  {
+    "name": "Racing Helmet",
+    "file": "Racing_Helmet.png",
+    "source": "Ekran görüntüsü 2026-09-21 172215.png",
+    "row": 1,
+    "column": 3,
+    "duplicate_image": false
+  },
+  {
+    "name": "Bunny Crown",
+    "file": "Bunny_Crown.png",
+    "source": "Ekran görüntüsü 2026-09-21 172215.png",
+    "row": 1,
+    "column": 4,
+    "duplicate_image": false
+  },
+  {
+    "name": "Prince",
+    "file": "Prince.png",
+    "source": "Ekran görüntüsü 2026-09-21 172215.png",
+    "row": 1,
+    "column": 5,
+    "duplicate_image": false
+  },
+  {
+    "name": "Magic Prop",
+    "file": "Magic_Prop.png",
+    "source": "Ekran görüntüsü 2026-09-21 172215.png",
+    "row": 1,
+    "column": 6,
+    "duplicate_image": false
+  },
+  {
+    "name": "Roses",
+    "file": "Roses.png",
+    "source": "Ekran görüntüsü 2026-09-21 172215.png",
+    "row": 2,
+    "column": 1,
+    "duplicate_image": false
+  },
+  {
+    "name": "Cozy Xmas Set",
+    "file": "Cozy_Xmas_Set.png",
+    "source": "Ekran görüntüsü 2026-09-21 172215.png",
+    "row": 2,
+    "column": 2,
+    "duplicate_image": false
+  },
+  {
+    "name": "Mystery Box",
+    "file": "Mystery_Box.png",
+    "source": "Ekran görüntüsü 2026-09-21 172215.png",
+    "row": 2,
+    "column": 3,
+    "duplicate_image": false
+  },
+  {
+    "name": "Heart Guitar",
+    "file": "Heart_Guitar.png",
+    "source": "Ekran görüntüsü 2026-09-21 172215.png",
+    "row": 2,
+    "column": 4,
+    "duplicate_image": false
+  },
+  {
+    "name": "Prairie Diny",
+    "file": "Prairie_Diny.png",
+    "source": "Ekran görüntüsü 2026-09-21 172215.png",
+    "row": 2,
+    "column": 5,
+    "duplicate_image": false
+  },
+  {
+    "name": "Prairie Tom",
+    "file": "Prairie_Tom.png",
+    "source": "Ekran görüntüsü 2026-09-21 172215.png",
+    "row": 2,
+    "column": 6,
+    "duplicate_image": false
+  },
+  {
+    "name": "Prairie Blitzy",
+    "file": "Prairie_Blitzy.png",
+    "source": "Ekran görüntüsü 2026-09-21 172215.png",
+    "row": 3,
+    "column": 1,
+    "duplicate_image": false
+  },
+  {
+    "name": "Prairie Cooper",
+    "file": "Prairie_Cooper.png",
+    "source": "Ekran görüntüsü 2026-09-21 172215.png",
+    "row": 3,
+    "column": 2,
+    "duplicate_image": false
+  },
+  {
+    "name": "Jungle Diny",
+    "file": "Jungle_Diny.png",
+    "source": "Ekran görüntüsü 2026-09-21 172215.png",
+    "row": 3,
+    "column": 3,
+    "duplicate_image": false
+  },
+  {
+    "name": "Jungle Tom",
+    "file": "Jungle_Tom.png",
+    "source": "Ekran görüntüsü 2026-09-21 172215.png",
+    "row": 3,
+    "column": 4,
+    "duplicate_image": false
+  },
+  {
+    "name": "Jungle Blitzy",
+    "file": "Jungle_Blitzy.png",
+    "source": "Ekran görüntüsü 2026-09-21 172215.png",
+    "row": 3,
+    "column": 5,
+    "duplicate_image": false
+  },
+  {
+    "name": "Jungle Cooper",
+    "file": "Jungle_Cooper.png",
+    "source": "Ekran görüntüsü 2026-09-21 172215.png",
+    "row": 3,
+    "column": 6,
+    "duplicate_image": false
+  },
+  {
+    "name": "Starry Fluff",
+    "file": "Starry_Fluff.png",
+    "source": "Ekran görüntüsü 2026-09-21 172215.png",
+    "row": 4,
+    "column": 1,
+    "duplicate_image": false
+  },
+  {
+    "name": "Mystery Box",
+    "file": "Mystery_Box_2.png",
+    "source": "Ekran görüntüsü 2026-09-21 172215.png",
+    "row": 4,
+    "column": 2,
+    "duplicate_image": false
+  },
+  {
+    "name": "Shell of a Warrior",
+    "file": "Shell_of_a_Warrior.png",
+    "source": "Ekran görüntüsü 2026-09-21 172215.png",
+    "row": 4,
+    "column": 3,
+    "duplicate_image": false
+  },
+  {
+    "name": "Roo Mother",
+    "file": "Roo_Mother.png",
+    "source": "Ekran görüntüsü 2026-09-21 172215.png",
+    "row": 4,
+    "column": 4,
+    "duplicate_image": false
+  },
+  {
+    "name": "Lost in Your Music",
+    "file": "Lost_in_Your_Music.png",
+    "source": "Ekran görüntüsü 2026-09-21 172215.png",
+    "row": 4,
+    "column": 5,
+    "duplicate_image": false
+  },
+  {
+    "name": "Match Master",
+    "file": "Match_Master.png",
+    "source": "Ekran görüntüsü 2026-09-21 172215.png",
+    "row": 4,
+    "column": 6,
+    "duplicate_image": false
+  },
+  {
+    "name": "Drum Pop",
+    "file": "Drum_Pop.png",
+    "source": "Ekran görüntüsü 2026-09-21 172215.png",
+    "row": 5,
+    "column": 1,
+    "duplicate_image": false
+  },
+  {
+    "name": "Sound Spell",
+    "file": "Sound_Spell.png",
+    "source": "Ekran görüntüsü 2026-09-21 172215.png",
+    "row": 5,
+    "column": 2,
+    "duplicate_image": false
+  },
+  {
+    "name": "Drum Genius",
+    "file": "Drum_Genius.png",
+    "source": "Ekran görüntüsü 2026-09-21 172215.png",
+    "row": 5,
+    "column": 3,
+    "duplicate_image": false
+  },
+  {
+    "name": "Out Pops Jollie!",
+    "file": "Out_Pops_Jollie!.png",
+    "source": "Ekran görüntüsü 2026-09-21 172215.png",
+    "row": 5,
+    "column": 4,
+    "duplicate_image": false
+  },
+  {
+    "name": "Gem Gun",
+    "file": "Gem_Gun.png",
+    "source": "Ekran görüntüsü 2026-09-21 172215.png",
+    "row": 5,
+    "column": 5,
+    "duplicate_image": false
+  },
+  {
+    "name": "Bubbly Kiss",
+    "file": "Bubbly_Kiss.png",
+    "source": "Ekran görüntüsü 2026-09-21 172215.png",
+    "row": 5,
+    "column": 6,
+    "duplicate_image": false
+  },
+  {
+    "name": "Hive Escape",
+    "file": "Hive_Escape.png",
+    "source": "Ekran görüntüsü 2026-09-21 172215.png",
+    "row": 6,
+    "column": 1,
+    "duplicate_image": false
+  },
+  {
+    "name": "Drum Hamster",
+    "file": "Drum_Hamster.png",
+    "source": "Ekran görüntüsü 2026-09-21 172215.png",
+    "row": 6,
+    "column": 2,
+    "duplicate_image": false
+  },
+  {
+    "name": "Fully Bloomed Surprise",
+    "file": "Fully_Bloomed_Surprise.png",
+    "source": "Ekran görüntüsü 2026-09-21 172215.png",
+    "row": 6,
+    "column": 3,
+    "duplicate_image": false
+  },
+  {
+    "name": "League Trophy",
+    "file": "League_Trophy.png",
+    "source": "Ekran görüntüsü 2026-09-21 172215.png",
+    "row": 6,
+    "column": 4,
+    "duplicate_image": false
+  },
+  {
+    "name": "Soccer Holo",
+    "file": "Soccer_Holo.png",
+    "source": "Ekran görüntüsü 2026-09-21 172215.png",
+    "row": 6,
+    "column": 5,
+    "duplicate_image": false
+  },
+  {
+    "name": "Join Butterflies",
+    "file": "Join_Butterflies.png",
+    "source": "Ekran görüntüsü 2026-09-21 172215.png",
+    "row": 6,
+    "column": 6,
+    "duplicate_image": false
+  },
+  {
+    "name": "Sakura-style DJ",
+    "file": "Sakura-style_DJ.png",
+    "source": "Ekran görüntüsü 2026-09-21 172215.png",
+    "row": 7,
+    "column": 1,
+    "duplicate_image": false
+  },
+  {
+    "name": "Seahorse Pop",
+    "file": "Seahorse_Pop.png",
+    "source": "Ekran görüntüsü 2026-09-21 172215.png",
+    "row": 7,
+    "column": 2,
+    "duplicate_image": false
+  },
+  {
+    "name": "Swan",
+    "file": "Swan.png",
+    "source": "Ekran görüntüsü 2026-09-21 172215.png",
+    "row": 7,
+    "column": 3,
+    "duplicate_image": false
+  },
+  {
+    "name": "Colorful Wings",
+    "file": "Colorful_Wings.png",
+    "source": "Ekran görüntüsü 2026-09-21 172215.png",
+    "row": 7,
+    "column": 4,
+    "duplicate_image": false
+  },
+  {
+    "name": "Sax Appeal",
+    "file": "Sax_Appeal.png",
+    "source": "Ekran görüntüsü 2026-09-21 172215.png",
+    "row": 7,
+    "column": 5,
+    "duplicate_image": false
+  },
+  {
+    "name": "The Van Cat",
+    "file": "The_Van_Cat.png",
+    "source": "Ekran görüntüsü 2026-09-21 172215.png",
+    "row": 7,
+    "column": 6,
+    "duplicate_image": false
+  },
+  {
+    "name": "Love Flight",
+    "file": "Love_Flight.png",
+    "source": "Ekran görüntüsü 2026-09-21 172215.png",
+    "row": 8,
+    "column": 1,
+    "duplicate_image": false
+  },
+  {
+    "name": "Epic Pianist",
+    "file": "Epic_Pianist.png",
+    "source": "Ekran görüntüsü 2026-09-21 172215.png",
+    "row": 8,
+    "column": 2,
+    "duplicate_image": false
+  },
+  {
+    "name": "Train",
+    "file": "Train.png",
+    "source": "Ekran görüntüsü 2026-09-21 172215.png",
+    "row": 8,
+    "column": 3,
+    "duplicate_image": false
+  },
+  {
+    "name": "Music Burst",
+    "file": "Music_Burst.png",
+    "source": "Ekran görüntüsü 2026-09-21 172215.png",
+    "row": 8,
+    "column": 4,
+    "duplicate_image": false
+  },
+  {
+    "name": "Flamingo Floaty",
+    "file": "Flamingo_Floaty.png",
+    "source": "Ekran görüntüsü 2026-09-21 172215.png",
+    "row": 8,
+    "column": 5,
+    "duplicate_image": false
+  },
+  {
+    "name": "Flamingo Floaty",
+    "file": "Flamingo_Floaty_2.png",
+    "source": "Ekran görüntüsü 2026-09-21 172215.png",
+    "row": 8,
+    "column": 6,
+    "duplicate_image": false
+  },
+  {
+    "name": "Hot Air Balloon",
+    "file": "Hot_Air_Balloon.png",
+    "source": "Ekran görüntüsü 2026-09-21 172215.png",
+    "row": 9,
+    "column": 1,
+    "duplicate_image": false
+  },
+  {
+    "name": "Travel with You",
+    "file": "Travel_with_You.png",
+    "source": "Ekran görüntüsü 2026-09-21 172215.png",
+    "row": 9,
+    "column": 2,
+    "duplicate_image": false
+  },
+  {
+    "name": "Lucky Airdrop Box",
+    "file": "Lucky_Airdrop_Box.png",
+    "source": "Ekran görüntüsü 2026-09-21 172215.png",
+    "row": 9,
+    "column": 3,
+    "duplicate_image": false
+  },
+  {
+    "name": "Grand show",
+    "file": "Grand_show.png",
+    "source": "Ekran görüntüsü 2026-09-21 172215.png",
+    "row": 9,
+    "column": 4,
+    "duplicate_image": false
+  },
+  {
+    "name": "Trending Figure",
+    "file": "Trending_Figure.png",
+    "source": "Ekran görüntüsü 2026-09-21 172215.png",
+    "row": 9,
+    "column": 5,
+    "duplicate_image": false
+  },
+  {
+    "name": "Matchtacular!",
+    "file": "Matchtacular!.png",
+    "source": "Ekran görüntüsü 2026-09-21 172215.png",
+    "row": 9,
+    "column": 6,
+    "duplicate_image": false
+  },
+  {
+    "name": "Blooming Ribbon",
+    "file": "Blooming_Ribbon.png",
+    "source": "Ekran görüntüsü 2026-09-21 172225.png",
+    "row": 1,
+    "column": 1,
+    "duplicate_image": false
+  },
+  {
+    "name": "Galaxy",
+    "file": "Galaxy.png",
+    "source": "Ekran görüntüsü 2026-09-21 172225.png",
+    "row": 1,
+    "column": 2,
+    "duplicate_image": false
+  },
+  {
+    "name": "Giraffe",
+    "file": "Giraffe.png",
+    "source": "Ekran görüntüsü 2026-09-21 172225.png",
+    "row": 1,
+    "column": 3,
+    "duplicate_image": false
+  },
+  {
+    "name": "Glowing Jellyfish",
+    "file": "Glowing_Jellyfish.png",
+    "source": "Ekran görüntüsü 2026-09-21 172225.png",
+    "row": 1,
+    "column": 4,
+    "duplicate_image": false
+  },
+  {
+    "name": "Fairy Wings",
+    "file": "Fairy_Wings.png",
+    "source": "Ekran görüntüsü 2026-09-21 172225.png",
+    "row": 1,
+    "column": 5,
+    "duplicate_image": false
+  },
+  {
+    "name": "Flamingo Groove",
+    "file": "Flamingo_Groove.png",
+    "source": "Ekran görüntüsü 2026-09-21 172225.png",
+    "row": 1,
+    "column": 6,
+    "duplicate_image": false
+  },
+  {
+    "name": "Firepit Diny",
+    "file": "Firepit_Diny.png",
+    "source": "Ekran görüntüsü 2026-09-21 172225.png",
+    "row": 2,
+    "column": 1,
+    "duplicate_image": false
+  },
+  {
+    "name": "Firepit Tom",
+    "file": "Firepit_Tom.png",
+    "source": "Ekran görüntüsü 2026-09-21 172225.png",
+    "row": 2,
+    "column": 2,
+    "duplicate_image": false
+  },
+  {
+    "name": "Firepit Blitzy",
+    "file": "Firepit_Blitzy.png",
+    "source": "Ekran görüntüsü 2026-09-21 172225.png",
+    "row": 2,
+    "column": 3,
+    "duplicate_image": false
+  },
+  {
+    "name": "Firepit Cooper",
+    "file": "Firepit_Cooper.png",
+    "source": "Ekran görüntüsü 2026-09-21 172225.png",
+    "row": 2,
+    "column": 4,
+    "duplicate_image": false
+  },
+  {
+    "name": "Desert Diny",
+    "file": "Desert_Diny.png",
+    "source": "Ekran görüntüsü 2026-09-21 172225.png",
+    "row": 2,
+    "column": 5,
+    "duplicate_image": false
+  },
+  {
+    "name": "Desert Tom",
+    "file": "Desert_Tom.png",
+    "source": "Ekran görüntüsü 2026-09-21 172225.png",
+    "row": 2,
+    "column": 6,
+    "duplicate_image": false
+  },
+  {
+    "name": "Desert Blitzy",
+    "file": "Desert_Blitzy.png",
+    "source": "Ekran görüntüsü 2026-09-21 172225.png",
+    "row": 3,
+    "column": 1,
+    "duplicate_image": false
+  },
+  {
+    "name": "Desert Cooper",
+    "file": "Desert_Cooper.png",
+    "source": "Ekran görüntüsü 2026-09-21 172225.png",
+    "row": 3,
+    "column": 2,
+    "duplicate_image": false
+  },
+  {
+    "name": "Tundra Diny",
+    "file": "Tundra_Diny.png",
+    "source": "Ekran görüntüsü 2026-09-21 172225.png",
+    "row": 3,
+    "column": 3,
+    "duplicate_image": false
+  },
+  {
+    "name": "Tundra Tom",
+    "file": "Tundra_Tom.png",
+    "source": "Ekran görüntüsü 2026-09-21 172225.png",
+    "row": 3,
+    "column": 4,
+    "duplicate_image": false
+  },
+  {
+    "name": "Tundra Blitzy",
+    "file": "Tundra_Blitzy.png",
+    "source": "Ekran görüntüsü 2026-09-21 172225.png",
+    "row": 3,
+    "column": 5,
+    "duplicate_image": false
+  },
+  {
+    "name": "Tundra Cooper",
+    "file": "Tundra_Cooper.png",
+    "source": "Ekran görüntüsü 2026-09-21 172225.png",
+    "row": 3,
+    "column": 6,
+    "duplicate_image": false
+  },
+  {
+    "name": "Magic Potion",
+    "file": "Magic_Potion.png",
+    "source": "Ekran görüntüsü 2026-09-21 172225.png",
+    "row": 4,
+    "column": 1,
+    "duplicate_image": false
+  },
+  {
+    "name": "Watermelon Party",
+    "file": "Watermelon_Party.png",
+    "source": "Ekran görüntüsü 2026-09-21 172225.png",
+    "row": 4,
+    "column": 2,
+    "duplicate_image": false
+  },
+  {
+    "name": "Shiny Air Balloon",
+    "file": "Shiny_Air_Balloon.png",
+    "source": "Ekran görüntüsü 2026-09-21 172225.png",
+    "row": 4,
+    "column": 3,
+    "duplicate_image": false
+  },
+  {
+    "name": "Sparkle Dance",
+    "file": "Sparkle_Dance.png",
+    "source": "Ekran görüntüsü 2026-09-21 172225.png",
+    "row": 4,
+    "column": 4,
+    "duplicate_image": false
+  },
+  {
+    "name": "Joy Floats",
+    "file": "Joy_Floats.png",
+    "source": "Ekran görüntüsü 2026-09-21 172225.png",
+    "row": 4,
+    "column": 5,
+    "duplicate_image": false
+  },
+  {
+    "name": "Candy Puffs",
+    "file": "Candy_Puffs.png",
+    "source": "Ekran görüntüsü 2026-09-21 172225.png",
+    "row": 4,
+    "column": 6,
+    "duplicate_image": false
+  },
+  {
+    "name": "Fireworks",
+    "file": "Fireworks.png",
+    "source": "Ekran görüntüsü 2026-09-21 172225.png",
+    "row": 5,
+    "column": 1,
+    "duplicate_image": false
+  },
+  {
+    "name": "Golden Stars",
+    "file": "Golden_Stars.png",
+    "source": "Ekran görüntüsü 2026-09-21 172225.png",
+    "row": 5,
+    "column": 2,
+    "duplicate_image": false
+  },
+  {
+    "name": "Umbrella of Love",
+    "file": "Umbrella_of_Love.png",
+    "source": "Ekran görüntüsü 2026-09-21 172225.png",
+    "row": 5,
+    "column": 3,
+    "duplicate_image": false
+  },
+  {
+    "name": "Bunny DJ",
+    "file": "Bunny_DJ.png",
+    "source": "Ekran görüntüsü 2026-09-21 172225.png",
+    "row": 5,
+    "column": 4,
+    "duplicate_image": false
+  },
+  {
+    "name": "Hydrangea Sea",
+    "file": "Hydrangea_Sea.png",
+    "source": "Ekran görüntüsü 2026-09-21 172225.png",
+    "row": 5,
+    "column": 5,
+    "duplicate_image": false
+  },
+  {
+    "name": "Spider Web",
+    "file": "Spider_Web.png",
+    "source": "Ekran görüntüsü 2026-09-21 172225.png",
+    "row": 5,
+    "column": 6,
+    "duplicate_image": false
+  },
+  {
+    "name": "Spider Web 2.0",
+    "file": "Spider_Web_2.0.png",
+    "source": "Ekran görüntüsü 2026-09-21 172225.png",
+    "row": 6,
+    "column": 1,
+    "duplicate_image": false
+  },
+  {
+    "name": "Party Laser",
+    "file": "Party_Laser.png",
+    "source": "Ekran görüntüsü 2026-09-21 172225.png",
+    "row": 6,
+    "column": 2,
+    "duplicate_image": false
+  },
+  {
+    "name": "Vibrant Stage",
+    "file": "Vibrant_Stage.png",
+    "source": "Ekran görüntüsü 2026-09-21 172225.png",
+    "row": 6,
+    "column": 3,
+    "duplicate_image": false
+  },
+  {
+    "name": "Level Ship",
+    "file": "Level_Ship.png",
+    "source": "Ekran görüntüsü 2026-09-21 172225.png",
+    "row": 6,
+    "column": 4,
+    "duplicate_image": false
+  },
+  {
+    "name": "Raya Gift Card",
+    "file": "Raya_Gift_Card.png",
+    "source": "Ekran görüntüsü 2026-09-21 172225.png",
+    "row": 6,
+    "column": 5,
+    "duplicate_image": false
+  },
+  {
+    "name": "Viking Hammer",
+    "file": "Viking_Hammer.png",
+    "source": "Ekran görüntüsü 2026-09-21 172225.png",
+    "row": 6,
+    "column": 6,
+    "duplicate_image": false
+  },
+  {
+    "name": "Chasing the Dream",
+    "file": "Chasing_the_Dream.png",
+    "source": "Ekran görüntüsü 2026-09-21 172225.png",
+    "row": 7,
+    "column": 1,
+    "duplicate_image": false
+  },
+  {
+    "name": "Lover's Lock",
+    "file": "Lover's_Lock.png",
+    "source": "Ekran görüntüsü 2026-09-21 172225.png",
+    "row": 7,
+    "column": 2,
+    "duplicate_image": false
+  },
+  {
+    "name": "Greeting Card",
+    "file": "Greeting_Card.png",
+    "source": "Ekran görüntüsü 2026-09-21 172225.png",
+    "row": 7,
+    "column": 3,
+    "duplicate_image": false
+  },
+  {
+    "name": "Future Encounter",
+    "file": "Future_Encounter.png",
+    "source": "Ekran görüntüsü 2026-09-21 172225.png",
+    "row": 7,
+    "column": 4,
+    "duplicate_image": false
+  },
+  {
+    "name": "Under Control",
+    "file": "Under_Control.png",
+    "source": "Ekran görüntüsü 2026-09-21 172225.png",
+    "row": 7,
+    "column": 5,
+    "duplicate_image": false
+  },
+  {
+    "name": "Racing Debut",
+    "file": "Racing_Debut.png",
+    "source": "Ekran görüntüsü 2026-09-21 172225.png",
+    "row": 7,
+    "column": 6,
+    "duplicate_image": false
+  },
+  {
+    "name": "You're So Fly",
+    "file": "You're_So_Fly.png",
+    "source": "Ekran görüntüsü 2026-09-21 172225.png",
+    "row": 8,
+    "column": 1,
+    "duplicate_image": false
+  },
+  {
+    "name": "Astrobear",
+    "file": "Astrobear.png",
+    "source": "Ekran görüntüsü 2026-09-21 172225.png",
+    "row": 8,
+    "column": 2,
+    "duplicate_image": false
+  },
+  {
+    "name": "Wild Mic",
+    "file": "Wild_Mic.png",
+    "source": "Ekran görüntüsü 2026-09-21 172225.png",
+    "row": 8,
+    "column": 3,
+    "duplicate_image": false
+  },
+  {
+    "name": "Ignition Check",
+    "file": "Ignition_Check.png",
+    "source": "Ekran görüntüsü 2026-09-21 172225.png",
+    "row": 8,
+    "column": 4,
+    "duplicate_image": false
+  },
+  {
+    "name": "Penlight",
+    "file": "Penlight.png",
+    "source": "Ekran görüntüsü 2026-09-21 172225.png",
+    "row": 8,
+    "column": 5,
+    "duplicate_image": false
+  },
+  {
+    "name": "Blooming Heart",
+    "file": "Blooming_Heart.png",
+    "source": "Ekran görüntüsü 2026-09-21 172225.png",
+    "row": 8,
+    "column": 6,
+    "duplicate_image": false
+  },
+  {
+    "name": "Hug It Better",
+    "file": "Hug_It_Better.png",
+    "source": "Ekran görüntüsü 2026-09-21 172232.png",
+    "row": 1,
+    "column": 1,
+    "duplicate_image": false
+  },
+  {
+    "name": "Here We Go",
+    "file": "Here_We_Go.png",
+    "source": "Ekran görüntüsü 2026-09-21 172232.png",
+    "row": 1,
+    "column": 2,
+    "duplicate_image": false
+  },
+  {
+    "name": "Love Drop",
+    "file": "Love_Drop.png",
+    "source": "Ekran görüntüsü 2026-09-21 172232.png",
+    "row": 1,
+    "column": 3,
+    "duplicate_image": false
+  },
+  {
+    "name": "Fox Legend",
+    "file": "Fox_Legend.png",
+    "source": "Ekran görüntüsü 2026-09-21 172232.png",
+    "row": 1,
+    "column": 4,
+    "duplicate_image": false
+  },
+  {
+    "name": "Freestyle",
+    "file": "Freestyle_2.png",
+    "source": "Ekran görüntüsü 2026-09-21 172232.png",
+    "row": 1,
+    "column": 5,
+    "duplicate_image": false
+  },
+  {
+    "name": "New Year Table",
+    "file": "New_Year_Table.png",
+    "source": "Ekran görüntüsü 2026-09-21 172232.png",
+    "row": 1,
+    "column": 6,
+    "duplicate_image": false
+  },
+  {
+    "name": "Doll New Year",
+    "file": "Doll_New_Year.png",
+    "source": "Ekran görüntüsü 2026-09-21 172232.png",
+    "row": 2,
+    "column": 1,
+    "duplicate_image": false
+  },
+  {
+    "name": "Star of Red Carpet",
+    "file": "Star_of_Red_Carpet.png",
+    "source": "Ekran görüntüsü 2026-09-21 172232.png",
+    "row": 2,
+    "column": 2,
+    "duplicate_image": false
+  },
+  {
+    "name": "Cooper Flies Home",
+    "file": "Cooper_Flies_Home.png",
+    "source": "Ekran görüntüsü 2026-09-21 172232.png",
+    "row": 2,
+    "column": 3,
+    "duplicate_image": false
+  },
+  {
+    "name": "Mystery Firework",
+    "file": "Mystery_Firework.png",
+    "source": "Ekran görüntüsü 2026-09-21 172232.png",
+    "row": 2,
+    "column": 4,
+    "duplicate_image": false
+  },
+  {
+    "name": "Boxing Gloves",
+    "file": "Boxing_Gloves_2.png",
+    "source": "Ekran görüntüsü 2026-09-21 172232.png",
+    "row": 2,
+    "column": 5,
+    "duplicate_image": false
+  },
+  {
+    "name": "Club Music",
+    "file": "Club_Music.png",
+    "source": "Ekran görüntüsü 2026-09-21 172232.png",
+    "row": 2,
+    "column": 6,
+    "duplicate_image": false
+  },
+  {
+    "name": "Crystal Crown",
+    "file": "Crystal_Crown.png",
+    "source": "Ekran görüntüsü 2026-09-21 172232.png",
+    "row": 3,
+    "column": 1,
+    "duplicate_image": false
+  },
+  {
+    "name": "Sky Drift",
+    "file": "Sky_Drift.png",
+    "source": "Ekran görüntüsü 2026-09-21 172232.png",
+    "row": 3,
+    "column": 2,
+    "duplicate_image": false
+  },
+  {
+    "name": "Whale Diving",
+    "file": "Whale_Diving.png",
+    "source": "Ekran görüntüsü 2026-09-21 172232.png",
+    "row": 3,
+    "column": 3,
+    "duplicate_image": false
+  },
+  {
+    "name": "Blow Rosie Kisses",
+    "file": "Blow_Rosie_Kisses.png",
+    "source": "Ekran görüntüsü 2026-09-21 172232.png",
+    "row": 3,
+    "column": 4,
+    "duplicate_image": false
+  },
+  {
+    "name": "Jollie's Heartland",
+    "file": "Jollie's_Heartland.png",
+    "source": "Ekran görüntüsü 2026-09-21 172232.png",
+    "row": 3,
+    "column": 5,
+    "duplicate_image": false
+  },
+  {
+    "name": "Rocky's Punch",
+    "file": "Rocky's_Punch.png",
+    "source": "Ekran görüntüsü 2026-09-21 172232.png",
+    "row": 3,
+    "column": 6,
+    "duplicate_image": false
+  },
+  {
+    "name": "Sage's Coinbot",
+    "file": "Sage's_Coinbot.png",
+    "source": "Ekran görüntüsü 2026-09-21 172232.png",
+    "row": 4,
+    "column": 1,
+    "duplicate_image": false
+  },
+  {
+    "name": "Wave Lights",
+    "file": "Wave_Lights.png",
+    "source": "Ekran görüntüsü 2026-09-21 172232.png",
+    "row": 4,
+    "column": 2,
+    "duplicate_image": false
+  },
+  {
+    "name": "Stars Honor",
+    "file": "Stars_Honor.png",
+    "source": "Ekran görüntüsü 2026-09-21 172232.png",
+    "row": 4,
+    "column": 3,
+    "duplicate_image": false
+  },
+  {
+    "name": "By the Glaziers",
+    "file": "By_the_Glaziers.png",
+    "source": "Ekran görüntüsü 2026-09-21 172232.png",
+    "row": 4,
+    "column": 4,
+    "duplicate_image": false
+  },
+  {
+    "name": "Tom Thunderfoot",
+    "file": "Tom_Thunderfoot.png",
+    "source": "Ekran görüntüsü 2026-09-21 172232.png",
+    "row": 4,
+    "column": 5,
+    "duplicate_image": false
+  },
+  {
+    "name": "FANDOM Cheer",
+    "file": "FANDOM_Cheer.png",
+    "source": "Ekran görüntüsü 2026-09-21 172232.png",
+    "row": 4,
+    "column": 6,
+    "duplicate_image": false
+  },
+  {
+    "name": "Animal Band",
+    "file": "Animal_Band.png",
+    "source": "Ekran görüntüsü 2026-09-21 172232.png",
+    "row": 5,
+    "column": 1,
+    "duplicate_image": false
+  },
+  {
+    "name": "Celebration Tape",
+    "file": "Celebration_Tape.png",
+    "source": "Ekran görüntüsü 2026-09-21 172232.png",
+    "row": 5,
+    "column": 2,
+    "duplicate_image": false
+  },
+  {
+    "name": "Samfaring Tom",
+    "file": "Samfaring_Tom.png",
+    "source": "Ekran görüntüsü 2026-09-21 172232.png",
+    "row": 5,
+    "column": 3,
+    "duplicate_image": false
+  },
+  {
+    "name": "Pink Dream",
+    "file": "Pink_Dream.png",
+    "source": "Ekran görüntüsü 2026-09-21 172232.png",
+    "row": 5,
+    "column": 4,
+    "duplicate_image": false
+  },
+  {
+    "name": "Motorcycle",
+    "file": "Motorcycle.png",
+    "source": "Ekran görüntüsü 2026-09-21 172232.png",
+    "row": 5,
+    "column": 5,
+    "duplicate_image": false
+  },
+  {
+    "name": "Surprise Baby",
+    "file": "Surprise_Baby.png",
+    "source": "Ekran görüntüsü 2026-09-21 172232.png",
+    "row": 5,
+    "column": 6,
+    "duplicate_image": false
+  },
+  {
+    "name": "Ring Of Honor",
+    "file": "Ring_Of_Honor.png",
+    "source": "Ekran görüntüsü 2026-09-21 172232.png",
+    "row": 6,
+    "column": 1,
+    "duplicate_image": false
+  },
+  {
+    "name": "Surprise Baby",
+    "file": "Surprise_Baby_2.png",
+    "source": "Ekran görüntüsü 2026-09-21 172232.png",
+    "row": 6,
+    "column": 2,
+    "duplicate_image": false
+  },
+  {
+    "name": "Community Rally",
+    "file": "Community_Rally.png",
+    "source": "Ekran görüntüsü 2026-09-21 172232.png",
+    "row": 6,
+    "column": 3,
+    "duplicate_image": false
+  },
+  {
+    "name": "Rhythmic Bear",
+    "file": "Rhythmic_Bear.png",
+    "source": "Ekran görüntüsü 2026-09-21 172232.png",
+    "row": 6,
+    "column": 4,
+    "duplicate_image": false
+  },
+  {
+    "name": "Heart Balloon",
+    "file": "Heart_Balloon.png",
+    "source": "Ekran görüntüsü 2026-09-21 172232.png",
+    "row": 6,
+    "column": 5,
+    "duplicate_image": false
+  },
+  {
+    "name": "Party Bus",
+    "file": "Party_Bus.png",
+    "source": "Ekran görüntüsü 2026-09-21 172232.png",
+    "row": 6,
+    "column": 6,
+    "duplicate_image": false
+  },
+  {
+    "name": "Match Maniac",
+    "file": "Match_Maniac.png",
+    "source": "Ekran görüntüsü 2026-09-21 172232.png",
+    "row": 7,
+    "column": 1,
+    "duplicate_image": false
+  },
+  {
+    "name": "Level-up Spotlight",
+    "file": "Level-up_Spotlight.png",
+    "source": "Ekran görüntüsü 2026-09-21 172232.png",
+    "row": 7,
+    "column": 2,
+    "duplicate_image": false
+  },
+  {
+    "name": "Meteor Shower",
+    "file": "Meteor_Shower.png",
+    "source": "Ekran görüntüsü 2026-09-21 172232.png",
+    "row": 7,
+    "column": 3,
+    "duplicate_image": false
+  },
+  {
+    "name": "Summoning Horn",
+    "file": "Summoning_Horn.png",
+    "source": "Ekran görüntüsü 2026-09-21 172232.png",
+    "row": 7,
+    "column": 4,
+    "duplicate_image": false
+  },
+  {
+    "name": "Sea Diny",
+    "file": "Sea_Diny.png",
+    "source": "Ekran görüntüsü 2026-09-21 172232.png",
+    "row": 7,
+    "column": 5,
+    "duplicate_image": false
+  },
+  {
+    "name": "Sea Tom",
+    "file": "Sea_Tom.png",
+    "source": "Ekran görüntüsü 2026-09-21 172232.png",
+    "row": 7,
+    "column": 6,
+    "duplicate_image": false
+  },
+  {
+    "name": "Sea Blitzy",
+    "file": "Sea_Blitzy.png",
+    "source": "Ekran görüntüsü 2026-09-21 172232.png",
+    "row": 8,
+    "column": 1,
+    "duplicate_image": false
+  },
+  {
+    "name": "Sea Cooper",
+    "file": "Sea_Cooper.png",
+    "source": "Ekran görüntüsü 2026-09-21 172232.png",
+    "row": 8,
+    "column": 2,
+    "duplicate_image": false
+  },
+  {
+    "name": "Hip-Hop Hen",
+    "file": "Hip-Hop_Hen.png",
+    "source": "Ekran görüntüsü 2026-09-21 172232.png",
+    "row": 8,
+    "column": 3,
+    "duplicate_image": false
+  },
+  {
+    "name": "Look Up",
+    "file": "Look_Up.png",
+    "source": "Ekran görüntüsü 2026-09-21 172232.png",
+    "row": 8,
+    "column": 4,
+    "duplicate_image": false
+  },
+  {
+    "name": "Dream Big",
+    "file": "Dream_Big.png",
+    "source": "Ekran görüntüsü 2026-09-21 172232.png",
+    "row": 8,
+    "column": 5,
+    "duplicate_image": false
+  },
+  {
+    "name": "Go Home",
+    "file": "Go_Home.png",
+    "source": "Ekran görüntüsü 2026-09-21 172232.png",
+    "row": 8,
+    "column": 6,
+    "duplicate_image": false
+  },
+  {
+    "name": "LIVE Ranking Party",
+    "file": "LIVE_Ranking_Party.png",
+    "source": "Ekran görüntüsü 2026-09-21 172241.png",
+    "row": 1,
+    "column": 1,
+    "duplicate_image": false
+  },
+  {
+    "name": "LIVE Ranking Party",
+    "file": "LIVE_Ranking_Party_2.png",
+    "source": "Ekran görüntüsü 2026-09-21 172241.png",
+    "row": 1,
+    "column": 2,
+    "duplicate_image": false
+  },
+  {
+    "name": "Soaring Spirit",
+    "file": "Soaring_Spirit.png",
+    "source": "Ekran görüntüsü 2026-09-21 172241.png",
+    "row": 1,
+    "column": 3,
+    "duplicate_image": false
+  },
+  {
+    "name": "Cloud DJ",
+    "file": "Cloud_DJ.png",
+    "source": "Ekran görüntüsü 2026-09-21 172241.png",
+    "row": 1,
+    "column": 4,
+    "duplicate_image": false
+  },
+  {
+    "name": "Shine Bright",
+    "file": "Shine_Bright.png",
+    "source": "Ekran görüntüsü 2026-09-21 172241.png",
+    "row": 1,
+    "column": 5,
+    "duplicate_image": false
+  },
+  {
+    "name": "Magic World",
+    "file": "Magic_World.png",
+    "source": "Ekran görüntüsü 2026-09-21 172241.png",
+    "row": 1,
+    "column": 6,
+    "duplicate_image": false
+  },
+  {
+    "name": "Your Concert",
+    "file": "Your_Concert.png",
+    "source": "Ekran görüntüsü 2026-09-21 172241.png",
+    "row": 2,
+    "column": 1,
+    "duplicate_image": false
+  },
+  {
+    "name": "Dynamic Music",
+    "file": "Dynamic_Music.png",
+    "source": "Ekran görüntüsü 2026-09-21 172241.png",
+    "row": 2,
+    "column": 2,
+    "duplicate_image": false
+  },
+  {
+    "name": "Private Jet",
+    "file": "Private_Jet.png",
+    "source": "Ekran görüntüsü 2026-09-21 172241.png",
+    "row": 2,
+    "column": 3,
+    "duplicate_image": false
+  },
+  {
+    "name": "Leon the Kitten",
+    "file": "Leon_the_Kitten.png",
+    "source": "Ekran görüntüsü 2026-09-21 172241.png",
+    "row": 2,
+    "column": 4,
+    "duplicate_image": false
+  },
+  {
+    "name": "Fiery Dragon",
+    "file": "Fiery_Dragon.png",
+    "source": "Ekran görüntüsü 2026-09-21 172241.png",
+    "row": 2,
+    "column": 5,
+    "duplicate_image": false
+  },
+  {
+    "name": "Signature Jet",
+    "file": "Signature_Jet.png",
+    "source": "Ekran görüntüsü 2026-09-21 172241.png",
+    "row": 2,
+    "column": 6,
+    "duplicate_image": false
+  },
+  {
+    "name": "Sugar Whiskers",
+    "file": "Sugar_Whiskers.png",
+    "source": "Ekran görüntüsü 2026-09-21 172241.png",
+    "row": 3,
+    "column": 1,
+    "duplicate_image": false
+  },
+  {
+    "name": "Guardian's Pledge",
+    "file": "Guardian's_Pledge.png",
+    "source": "Ekran görüntüsü 2026-09-21 172241.png",
+    "row": 3,
+    "column": 2,
+    "duplicate_image": false
+  },
+  {
+    "name": "Stage of ring",
+    "file": "Stage_of_ring.png",
+    "source": "Ekran görüntüsü 2026-09-21 172241.png",
+    "row": 3,
+    "column": 3,
+    "duplicate_image": false
+  },
+  {
+    "name": "Stage of Spider",
+    "file": "Stage_of_Spider.png",
+    "source": "Ekran görüntüsü 2026-09-21 172241.png",
+    "row": 3,
+    "column": 4,
+    "duplicate_image": false
+  },
+  {
+    "name": "Sage's Venture",
+    "file": "Sage's_Venture.png",
+    "source": "Ekran görüntüsü 2026-09-21 172241.png",
+    "row": 3,
+    "column": 5,
+    "duplicate_image": false
+  },
+  {
+    "name": "Crowd Cheering",
+    "file": "Crowd_Cheering.png",
+    "source": "Ekran görüntüsü 2026-09-21 172241.png",
+    "row": 3,
+    "column": 6,
+    "duplicate_image": false
+  },
+  {
+    "name": "League Fandom",
+    "file": "League_Fandom.png",
+    "source": "Ekran görüntüsü 2026-09-21 172241.png",
+    "row": 4,
+    "column": 1,
+    "duplicate_image": false
+  },
+  {
+    "name": "Diamond Gun",
+    "file": "Diamond_Gun.png",
+    "source": "Ekran görüntüsü 2026-09-21 172241.png",
+    "row": 4,
+    "column": 2,
+    "duplicate_image": false
+  },
+  {
+    "name": "Unicorn Fantasy",
+    "file": "Unicorn_Fantasy.png",
+    "source": "Ekran görüntüsü 2026-09-21 172241.png",
+    "row": 4,
+    "column": 3,
+    "duplicate_image": false
+  },
+  {
+    "name": "Flying Jets",
+    "file": "Flying_Jets.png",
+    "source": "Ekran görüntüsü 2026-09-21 172241.png",
+    "row": 4,
+    "column": 4,
+    "duplicate_image": false
+  },
+  {
+    "name": "Leon's Sigil Cape",
+    "file": "Leon's_Sigil_Cape.png",
+    "source": "Ekran görüntüsü 2026-09-21 172241.png",
+    "row": 4,
+    "column": 5,
+    "duplicate_image": false
+  },
+  {
+    "name": "Crown",
+    "file": "Crown_2.png",
+    "source": "Ekran görüntüsü 2026-09-21 172241.png",
+    "row": 4,
+    "column": 6,
+    "duplicate_image": false
+  },
+  {
+    "name": "Fluffy Buddies",
+    "file": "Fluffy_Buddies.png",
+    "source": "Ekran görüntüsü 2026-09-21 172241.png",
+    "row": 5,
+    "column": 1,
+    "duplicate_image": false
+  },
+  {
+    "name": "Wolf",
+    "file": "Wolf.png",
+    "source": "Ekran görüntüsü 2026-09-21 172241.png",
+    "row": 5,
+    "column": 2,
+    "duplicate_image": false
+  },
+  {
+    "name": "Wolf",
+    "file": "Wolf_2.png",
+    "source": "Ekran görüntüsü 2026-09-21 172241.png",
+    "row": 5,
+    "column": 3,
+    "duplicate_image": false
+  },
+  {
+    "name": "Cub on Clouds",
+    "file": "Cub_on_Clouds.png",
+    "source": "Ekran görüntüsü 2026-09-21 172241.png",
+    "row": 5,
+    "column": 4,
+    "duplicate_image": false
+  },
+  {
+    "name": "Valiant Odyssey",
+    "file": "Valiant_Odyssey.png",
+    "source": "Ekran görüntüsü 2026-09-21 172241.png",
+    "row": 5,
+    "column": 5,
+    "duplicate_image": false
+  },
+  {
+    "name": "Devoted Heart",
+    "file": "Devoted_Heart.png",
+    "source": "Ekran görüntüsü 2026-09-21 172241.png",
+    "row": 5,
+    "column": 6,
+    "duplicate_image": false
+  },
+  {
+    "name": "Chick Stampede",
+    "file": "Chick_Stampede.png",
+    "source": "Ekran görüntüsü 2026-09-21 172241.png",
+    "row": 6,
+    "column": 1,
+    "duplicate_image": false
+  },
+  {
+    "name": "Goal Highlight-US",
+    "file": "Goal_Highlight-US.png",
+    "source": "Ekran görüntüsü 2026-09-21 172241.png",
+    "row": 6,
+    "column": 2,
+    "duplicate_image": false
+  },
+  {
+    "name": "Future City",
+    "file": "Future_City.png",
+    "source": "Ekran görüntüsü 2026-09-21 172241.png",
+    "row": 6,
+    "column": 3,
+    "duplicate_image": false
+  },
+  {
+    "name": "Sam in New City",
+    "file": "Sam_in_New_City.png",
+    "source": "Ekran görüntüsü 2026-09-21 172241.png",
+    "row": 6,
+    "column": 4,
+    "duplicate_image": false
+  },
+  {
+    "name": "Work Hard Play",
+    "file": "Work_Hard_Play.png",
+    "source": "Ekran görüntüsü 2026-09-21 172241.png",
+    "row": 6,
+    "column": 5,
+    "duplicate_image": false
+  },
+  {
+    "name": "Strong Finish",
+    "file": "Strong_Finish.png",
+    "source": "Ekran görüntüsü 2026-09-21 172241.png",
+    "row": 6,
+    "column": 6,
+    "duplicate_image": false
+  },
+  {
+    "name": "Kite Riding",
+    "file": "Kite_Riding.png",
+    "source": "Ekran görüntüsü 2026-09-21 172241.png",
+    "row": 7,
+    "column": 1,
+    "duplicate_image": false
+  },
+  {
+    "name": "Rust Reforged",
+    "file": "Rust_Reforged.png",
+    "source": "Ekran görüntüsü 2026-09-21 172241.png",
+    "row": 7,
+    "column": 2,
+    "duplicate_image": false
+  },
+  {
+    "name": "Lili the Leopard",
+    "file": "Lili_the_Leopard.png",
+    "source": "Ekran görüntüsü 2026-09-21 172241.png",
+    "row": 7,
+    "column": 3,
+    "duplicate_image": false
+  },
+  {
+    "name": "Celebration Time",
+    "file": "Celebration_Time.png",
+    "source": "Ekran görüntüsü 2026-09-21 172241.png",
+    "row": 7,
+    "column": 4,
+    "duplicate_image": false
+  },
+  {
+    "name": "Happy Party",
+    "file": "Happy_Party.png",
+    "source": "Ekran görüntüsü 2026-09-21 172241.png",
+    "row": 7,
+    "column": 5,
+    "duplicate_image": false
+  },
+  {
+    "name": "Sports Car",
+    "file": "Sports_Car.png",
+    "source": "Ekran görüntüsü 2026-09-21 172241.png",
+    "row": 7,
+    "column": 6,
+    "duplicate_image": false
+  },
+  {
+    "name": "Majestic Hearts",
+    "file": "Majestic_Hearts.png",
+    "source": "Ekran görüntüsü 2026-09-21 172241.png",
+    "row": 8,
+    "column": 1,
+    "duplicate_image": false
+  },
+  {
+    "name": "Diamond Shield",
+    "file": "Diamond_Shield.png",
+    "source": "Ekran görüntüsü 2026-09-21 172241.png",
+    "row": 8,
+    "column": 2,
+    "duplicate_image": false
+  },
+  {
+    "name": "Star Throne",
+    "file": "Star_Throne.png",
+    "source": "Ekran görüntüsü 2026-09-21 172241.png",
+    "row": 8,
+    "column": 3,
+    "duplicate_image": false
+  },
+  {
+    "name": "Star Throne",
+    "file": "Star_Throne_2.png",
+    "source": "Ekran görüntüsü 2026-09-21 172241.png",
+    "row": 8,
+    "column": 4,
+    "duplicate_image": false
+  },
+  {
+    "name": "Ultimate FANDOM",
+    "file": "Ultimate_FANDOM.png",
+    "source": "Ekran görüntüsü 2026-09-21 172241.png",
+    "row": 8,
+    "column": 5,
+    "duplicate_image": false
+  },
+  {
+    "name": "Leon and Lili",
+    "file": "Leon_and_Lili.png",
+    "source": "Ekran görüntüsü 2026-09-21 172241.png",
+    "row": 8,
+    "column": 6,
+    "duplicate_image": false
+  },
+  {
+    "name": "Interstellar",
+    "file": "Interstellar.png",
+    "source": "Ekran görüntüsü 2026-09-21 172241.png",
+    "row": 9,
+    "column": 1,
+    "duplicate_image": false
+  },
+  {
+    "name": "Sunset Speedway",
+    "file": "Sunset_Speedway.png",
+    "source": "Ekran görüntüsü 2026-09-21 172241.png",
+    "row": 9,
+    "column": 2,
+    "duplicate_image": false
+  },
+  {
+    "name": "Falcon",
+    "file": "Falcon.png",
+    "source": "Ekran görüntüsü 2026-09-21 172241.png",
+    "row": 9,
+    "column": 3,
+    "duplicate_image": false
+  },
+  {
+    "name": "Falcon",
+    "file": "Falcon_2.png",
+    "source": "Ekran görüntüsü 2026-09-21 172241.png",
+    "row": 9,
+    "column": 4,
+    "duplicate_image": false
+  },
+  {
+    "name": "Red Lightning",
+    "file": "Red_Lightning_2.png",
+    "source": "Ekran görüntüsü 2026-09-21 172241.png",
+    "row": 9,
+    "column": 5,
+    "duplicate_image": false
+  },
+  {
+    "name": "Superstar",
+    "file": "Superstar.png",
+    "source": "Ekran görüntüsü 2026-09-21 172241.png",
+    "row": 9,
+    "column": 6,
+    "duplicate_image": false
+  },
+  {
+    "name": "Interstellar",
+    "file": "Interstellar_2.png",
+    "source": "Ekran görüntüsü 2026-09-21 172252.png",
+    "row": 1,
+    "column": 1,
+    "duplicate_image": false
+  },
+  {
+    "name": "Sunset Speedway",
+    "file": "Sunset_Speedway_2.png",
+    "source": "Ekran görüntüsü 2026-09-21 172252.png",
+    "row": 1,
+    "column": 2,
+    "duplicate_image": false
+  },
+  {
+    "name": "Falcon",
+    "file": "Falcon_3.png",
+    "source": "Ekran görüntüsü 2026-09-21 172252.png",
+    "row": 1,
+    "column": 3,
+    "duplicate_image": false
+  },
+  {
+    "name": "Falcon",
+    "file": "Falcon_4.png",
+    "source": "Ekran görüntüsü 2026-09-21 172252.png",
+    "row": 1,
+    "column": 4,
+    "duplicate_image": false
+  },
+  {
+    "name": "Red Lightning",
+    "file": "Red_Lightning_3.png",
+    "source": "Ekran görüntüsü 2026-09-21 172252.png",
+    "row": 1,
+    "column": 5,
+    "duplicate_image": false
+  },
+  {
+    "name": "Superstar",
+    "file": "Superstar_2.png",
+    "source": "Ekran görüntüsü 2026-09-21 172252.png",
+    "row": 1,
+    "column": 6,
+    "duplicate_image": false
+  },
+  {
+    "name": "Level-up Spectacle",
+    "file": "Level-up_Spectacle.png",
+    "source": "Ekran görüntüsü 2026-09-21 172252.png",
+    "row": 2,
+    "column": 1,
+    "duplicate_image": false
+  },
+  {
+    "name": "Tidecaller Trident",
+    "file": "Tidecaller_Trident.png",
+    "source": "Ekran görüntüsü 2026-09-21 172252.png",
+    "row": 2,
+    "column": 2,
+    "duplicate_image": false
+  },
+  {
+    "name": "Lucky Crown",
+    "file": "Lucky_Crown.png",
+    "source": "Ekran görüntüsü 2026-09-21 172252.png",
+    "row": 2,
+    "column": 3,
+    "duplicate_image": false
+  },
+  {
+    "name": "Invincible Hammer",
+    "file": "Invincible_Hammer.png",
+    "source": "Ekran görüntüsü 2026-09-21 172252.png",
+    "row": 2,
+    "column": 4,
+    "duplicate_image": false
+  },
+  {
+    "name": "Chrono Rewinder",
+    "file": "Chrono_Rewinder.png",
+    "source": "Ekran görüntüsü 2026-09-21 172252.png",
+    "row": 2,
+    "column": 5,
+    "duplicate_image": false
+  },
+  {
+    "name": "Storm Blade",
+    "file": "Storm_Blade.png",
+    "source": "Ekran görüntüsü 2026-09-21 172252.png",
+    "row": 2,
+    "column": 6,
+    "duplicate_image": false
+  },
+  {
+    "name": "Crystal Heart",
+    "file": "Crystal_Heart.png",
+    "source": "Ekran görüntüsü 2026-09-21 172252.png",
+    "row": 3,
+    "column": 1,
+    "duplicate_image": false
+  },
+  {
+    "name": "Battle Champion",
+    "file": "Battle_Champion.png",
+    "source": "Ekran görüntüsü 2026-09-21 172252.png",
+    "row": 3,
+    "column": 2,
+    "duplicate_image": false
+  },
+  {
+    "name": "Dream Ride",
+    "file": "Dream_Ride.png",
+    "source": "Ekran görüntüsü 2026-09-21 172252.png",
+    "row": 3,
+    "column": 3,
+    "duplicate_image": false
+  },
+  {
+    "name": "Crocodile",
+    "file": "Crocodile.png",
+    "source": "Ekran görüntüsü 2026-09-21 172252.png",
+    "row": 3,
+    "column": 4,
+    "duplicate_image": false
+  },
+  {
+    "name": "Leopard",
+    "file": "Leopard.png",
+    "source": "Ekran görüntüsü 2026-09-21 172252.png",
+    "row": 3,
+    "column": 5,
+    "duplicate_image": false
+  },
+  {
+    "name": "Maro Spider Man",
+    "file": "Maro_Spider_Man.png",
+    "source": "Ekran görüntüsü 2026-09-21 172252.png",
+    "row": 3,
+    "column": 6,
+    "duplicate_image": false
+  },
+  {
+    "name": "Paris",
+    "file": "Paris.png",
+    "source": "Ekran görüntüsü 2026-09-21 172252.png",
+    "row": 4,
+    "column": 1,
+    "duplicate_image": false
+  },
+  {
+    "name": "Sneaky Jockey",
+    "file": "Sneaky_Jockey.png",
+    "source": "Ekran görüntüsü 2026-09-21 172252.png",
+    "row": 4,
+    "column": 2,
+    "duplicate_image": false
+  },
+  {
+    "name": "Golden Gallop",
+    "file": "Golden_Gallop.png",
+    "source": "Ekran görüntüsü 2026-09-21 172252.png",
+    "row": 4,
+    "column": 3,
+    "duplicate_image": false
+  },
+  {
+    "name": "Rosa Nebula",
+    "file": "Rosa_Nebula.png",
+    "source": "Ekran görüntüsü 2026-09-21 172252.png",
+    "row": 4,
+    "column": 4,
+    "duplicate_image": false
+  },
+  {
+    "name": "Pyramids",
+    "file": "Pyramids.png",
+    "source": "Ekran görüntüsü 2026-09-21 172252.png",
+    "row": 4,
+    "column": 5,
+    "duplicate_image": false
+  },
+  {
+    "name": "Future Journey",
+    "file": "Future_Journey.png",
+    "source": "Ekran görüntüsü 2026-09-21 172252.png",
+    "row": 4,
+    "column": 6,
+    "duplicate_image": false
+  },
+  {
+    "name": "Party On&On",
+    "file": "Party_On&On.png",
+    "source": "Ekran görüntüsü 2026-09-21 172252.png",
+    "row": 5,
+    "column": 1,
+    "duplicate_image": false
+  },
+  {
+    "name": "White Tiger",
+    "file": "White_Tiger.png",
+    "source": "Ekran görüntüsü 2026-09-21 172252.png",
+    "row": 5,
+    "column": 2,
+    "duplicate_image": false
+  },
+  {
+    "name": "Stadium",
+    "file": "Stadium.png",
+    "source": "Ekran görüntüsü 2026-09-21 172252.png",
+    "row": 5,
+    "column": 3,
+    "duplicate_image": false
+  },
+  {
+    "name": "Amusement Park",
+    "file": "Amusement_Park.png",
+    "source": "Ekran görüntüsü 2026-09-21 172252.png",
+    "row": 5,
+    "column": 4,
+    "duplicate_image": false
+  },
+  {
+    "name": "Diamond Flight",
+    "file": "Diamond_Flight.png",
+    "source": "Ekran görüntüsü 2026-09-21 172252.png",
+    "row": 5,
+    "column": 5,
+    "duplicate_image": false
+  },
+  {
+    "name": "Rust vs World",
+    "file": "Rust_vs_World.png",
+    "source": "Ekran görüntüsü 2026-09-21 172252.png",
+    "row": 5,
+    "column": 6,
+    "duplicate_image": false
+  },
+  {
+    "name": "Fly Love",
+    "file": "Fly_Love.png",
+    "source": "Ekran görüntüsü 2026-09-21 172252.png",
+    "row": 6,
+    "column": 1,
+    "duplicate_image": false
+  },
+  {
+    "name": "Corgi's Drone Show",
+    "file": "Corgi's_Drone_Show.png",
+    "source": "Ekran görüntüsü 2026-09-21 172252.png",
+    "row": 6,
+    "column": 2,
+    "duplicate_image": false
+  },
+  {
+    "name": "Castle Fantasy",
+    "file": "Castle_Fantasy.png",
+    "source": "Ekran görüntüsü 2026-09-21 172252.png",
+    "row": 6,
+    "column": 3,
+    "duplicate_image": false
+  },
+  {
+    "name": "Red Devil Corgi",
+    "file": "Red_Devil_Corgi.png",
+    "source": "Ekran görüntüsü 2026-09-21 172252.png",
+    "row": 6,
+    "column": 4,
+    "duplicate_image": false
+  },
+  {
+    "name": "TikTok Shuttle",
+    "file": "TikTok_Shuttle.png",
+    "source": "Ekran görüntüsü 2026-09-21 172252.png",
+    "row": 6,
+    "column": 5,
+    "duplicate_image": false
+  },
+  {
+    "name": "Premium Shuttle",
+    "file": "Premium_Shuttle.png",
+    "source": "Ekran görüntüsü 2026-09-21 172252.png",
+    "row": 6,
+    "column": 6,
+    "duplicate_image": false
+  },
+  {
+    "name": "Level Ship",
+    "file": "Level_Ship_2.png",
+    "source": "Ekran görüntüsü 2026-09-21 172252.png",
+    "row": 7,
+    "column": 1,
+    "duplicate_image": false
+  },
+  {
+    "name": "Infinite Heart",
+    "file": "Infinite_Heart.png",
+    "source": "Ekran görüntüsü 2026-09-21 172252.png",
+    "row": 7,
+    "column": 2,
+    "duplicate_image": false
+  },
+  {
+    "name": "Undersea Kingdom",
+    "file": "Undersea_Kingdom.png",
+    "source": "Ekran görüntüsü 2026-09-21 172252.png",
+    "row": 7,
+    "column": 3,
+    "duplicate_image": false
+  },
+  {
+    "name": "Cyber Roar",
+    "file": "Cyber_Roar.png",
+    "source": "Ekran görüntüsü 2026-09-21 172252.png",
+    "row": 7,
+    "column": 4,
+    "duplicate_image": false
+  },
+  {
+    "name": "Light Castle",
+    "file": "Light_Castle.png",
+    "source": "Ekran görüntüsü 2026-09-21 172252.png",
+    "row": 7,
+    "column": 5,
+    "duplicate_image": false
+  },
+  {
+    "name": "Skyforge Citadel",
+    "file": "Skyforge_Citadel.png",
+    "source": "Ekran görüntüsü 2026-09-21 172252.png",
+    "row": 7,
+    "column": 6,
+    "duplicate_image": false
+  },
+  {
+    "name": "Phoenix",
+    "file": "Phoenix.png",
+    "source": "Ekran görüntüsü 2026-09-21 172252.png",
+    "row": 8,
+    "column": 1,
+    "duplicate_image": false
+  },
+  {
+    "name": "Adam's Dream",
+    "file": "Adam's_Dream.png",
+    "source": "Ekran görüntüsü 2026-09-21 172252.png",
+    "row": 8,
+    "column": 2,
+    "duplicate_image": false
+  },
+  {
+    "name": "Dragon Flame",
+    "file": "Dragon_Flame.png",
+    "source": "Ekran görüntüsü 2026-09-21 172252.png",
+    "row": 8,
+    "column": 3,
+    "duplicate_image": false
+  },
+  {
+    "name": "Lion",
+    "file": "Lion.png",
+    "source": "Ekran görüntüsü 2026-09-21 172252.png",
+    "row": 8,
+    "column": 4,
+    "duplicate_image": false
+  },
+  {
+    "name": "Gorilla",
+    "file": "Gorilla.png",
+    "source": "Ekran görüntüsü 2026-09-21 172252.png",
+    "row": 8,
+    "column": 5,
+    "duplicate_image": false
+  },
+  {
+    "name": "Zeus",
+    "file": "Zeus.png",
+    "source": "Ekran görüntüsü 2026-09-21 172252.png",
+    "row": 8,
+    "column": 6,
+    "duplicate_image": false
+  },
+  {
+    "name": "Leon and Lion",
+    "file": "Leon_and_Lion.png",
+    "source": "Ekran görüntüsü 2026-09-21 172252.png",
+    "row": 9,
+    "column": 1,
+    "duplicate_image": false
+  },
+  {
+    "name": "TikTok Universe+",
+    "file": "TikTok_Universe+.png",
+    "source": "Ekran görüntüsü 2026-09-21 172252.png",
+    "row": 9,
+    "column": 2,
+    "duplicate_image": false
+  },
+  {
+    "name": "TikTok Stars",
+    "file": "TikTok_Stars.png",
+    "source": "Ekran görüntüsü 2026-09-21 172252.png",
+    "row": 9,
+    "column": 3,
+    "duplicate_image": false
+  },
+  {
+    "name": "Thunder Falcon",
+    "file": "Thunder_Falcon.png",
+    "source": "Ekran görüntüsü 2026-09-21 172252.png",
+    "row": 9,
+    "column": 4,
+    "duplicate_image": false
+  },
+  {
+    "name": "Fire Phoenix",
+    "file": "Fire_Phoenix.png",
+    "source": "Ekran görüntüsü 2026-09-21 172252.png",
+    "row": 9,
+    "column": 5,
+    "duplicate_image": false
+  },
+  {
+    "name": "King Leonardo",
+    "file": "King_Leonardo.png",
+    "source": "Ekran görüntüsü 2026-09-21 172252.png",
+    "row": 9,
+    "column": 6,
+    "duplicate_image": false
+  },
+  {
+    "name": "Legend Marcellus",
+    "file": "Legend_Marcellus.png",
+    "source": "Ekran görüntüsü 2026-09-21 172259.png",
+    "row": 1,
+    "column": 1,
+    "duplicate_image": false
+  },
+  {
+    "name": "Pegasus",
+    "file": "Pegasus.png",
+    "source": "Ekran görüntüsü 2026-09-21 172259.png",
+    "row": 1,
+    "column": 2,
+    "duplicate_image": false
+  },
+  {
+    "name": "Julius the Champion",
+    "file": "Julius_the_Champion.png",
+    "source": "Ekran görüntüsü 2026-09-21 172259.png",
+    "row": 1,
+    "column": 3,
+    "duplicate_image": false
+  },
+  {
+    "name": "Valerian's Oath",
+    "file": "Valerian's_Oath.png",
+    "source": "Ekran görüntüsü 2026-09-21 172259.png",
+    "row": 1,
+    "column": 4,
+    "duplicate_image": false
+  },
+  {
+    "name": "TikTok Universe",
+    "file": "TikTok_Universe.png",
+    "source": "Ekran görüntüsü 2026-09-21 172259.png",
+    "row": 1,
+    "column": 5,
+    "duplicate_image": false
+  },
+  {
+    "name": "TikTok Universe",
+    "file": "TikTok_Universe_2.png",
+    "source": "Ekran görüntüsü 2026-09-21 172259.png",
+    "row": 1,
+    "column": 6,
+    "duplicate_image": false
+  }
+]

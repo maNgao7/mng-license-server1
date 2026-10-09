@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>TikTok Hediye Tasarımcısı | MNG TikTok Game</title>
+  <meta name="description" content="TikTok canlı yayınları için gerçek hediye görselleriyle ücretsiz PNG hediye panoları oluşturun.">
+  <link rel="canonical" href="https://mng-license-server1.onrender.com/hediye-tasarimi">
+  <link rel="stylesheet" href="/gift-designer.css">
+</head>
+<body>
+  <main class="designer-shell">
+    <header class="topbar">
+      <a class="brand" href="/"><span>MNG</span> TIKTOK GAME</a>
+      <div class="heading"><strong>Hediye Tasarımcısı</strong><small>Canlı yayın panonu birkaç dakikada hazırla</small></div>
+      <div class="top-actions">
+        <button class="ghost" id="clearBtn">Temizle</button>
+        <button class="primary" id="downloadBtn">PNG İndir</button>
+        <button class="close-btn" id="closeDesigner" title="Kapat" aria-label="Kapat">×</button>
+      </div>
+    </header>
+
+    <section class="workspace">
+      <aside class="catalog-panel">
+        <div class="panel-title"><div><strong>Hediye Kataloğu</strong><small id="catalogCount">Yükleniyor...</small></div></div>
+        <label class="search"><span>⌕</span><input id="giftSearch" type="search" placeholder="Hediye adı veya coin ara"></label>
+        <div class="filters" id="coinFilters">
+          <button class="active" data-range="all">Tümü</button><button data-range="1-99">1-99</button><button data-range="100-999">100-999</button><button data-range="1000+">1000+</button>
+        </div>
+        <div class="gift-grid" id="giftGrid"></div>
+      </aside>
+
+      <section class="stage-panel">
+        <div class="stage-toolbar">
+          <div><strong>Canlı Önizleme</strong><small>Hediyeleri ekle, tuval üzerinde sürükle</small></div>
+          <div class="zoom-controls"><button id="zoomOut">−</button><span id="zoomValue">52%</span><button id="zoomIn">+</button></div>
+        </div>
+        <div class="stage-wrap" id="stageWrap"><canvas id="designCanvas" width="1920" height="1080"></canvas></div>
+        <div class="selection-bar" id="selectionBar">
+          <span id="selectedName">Bir hediye seçin</span>
+          <button id="duplicateBtn">Çoğalt</button><button class="danger" id="removeBtn">Sil</button>
+        </div>
+      </section>
+
+      <aside class="settings-panel">
+        <section class="setting-group">
+          <h2>Tuval</h2>
+          <label>Boyut<select id="canvasPreset"><option value="1920x1080">Yatay 1920×1080</option><option value="1080x1920">Dikey 1080×1920</option><option value="1080x1080">Kare 1080×1080</option><option value="1920x360">Yayın Şeridi 1920×360</option></select></label>
+          <label class="row-toggle"><span>Şeffaf arka plan</span><input id="transparentBg" type="checkbox"><i></i></label>
+          <label>Arka plan rengi<div class="color-row"><input id="backgroundColor" type="color" value="#07111f"><span id="bgHex">#07111F</span></div></label>
+        </section>
+        <section class="setting-group">
+          <h2>Yerleşim</h2>
+          <label>Sütun sayısı<input id="columns" type="range" min="1" max="8" value="4"><output id="columnsValue">4</output></label>
+          <label>Hediye boyutu<input id="giftSize" type="range" min="100" max="360" value="210"><output id="giftSizeValue">210</output></label>
+          <label>Boşluk<input id="giftGap" type="range" min="10" max="120" value="38"><output id="giftGapValue">38</output></label>
+          <button class="wide" id="autoLayoutBtn">Otomatik Hizala</button>
+        </section>
+        <section class="setting-group">
+          <h2>Görünüm</h2>
+          <label>Kart stili<select id="cardStyle"><option value="glass">Cam panel</option><option value="dark">Koyu panel</option><option value="none">Panelsiz</option></select></label>
+          <label>Metin rengi<div class="color-row"><input id="textColor" type="color" value="#ffffff"><span id="textHex">#FFFFFF</span></div></label>
+          <label class="row-toggle"><span>Hediye adını göster</span><input id="showName" type="checkbox" checked><i></i></label>
+          <label class="row-toggle"><span>Coin değerini göster</span><input id="showCoins" type="checkbox" checked><i></i></label>
+          <label class="row-toggle"><span>Parlama efekti</span><input id="showGlow" type="checkbox" checked><i></i></label>
+        </section>
+        <section class="summary"><span>Seçilen hediyeler</span><strong id="selectedCount">0</strong><small>Tasarım tarayıcınızda yerel olarak hazırlanır.</small></section>
+      </aside>
+    </section>
+  </main>
+  <script src="/gift-designer.js"></script>
+</body>
+</html>

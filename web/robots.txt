@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+Disallow: /admin
+Sitemap: https://mng-license-server1.onrender.com/sitemap.xml

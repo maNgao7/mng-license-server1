@@ -151,6 +151,22 @@ app.get("/", (req, res) => {
     res.send("MNG TikTok Game Web Portal");
 });
 
+app.get("/hediye-tasarimi", (req, res) => {
+    res.sendFile(path.join(__dirname, "web", "gift-designer.html"));
+});
+
+app.get("/robots.txt", (req, res) => {
+    res.type("text/plain").send("User-agent: *\nAllow: /\nDisallow: /admin\nSitemap: https://mng-license-server1.onrender.com/sitemap.xml\n");
+});
+
+app.get("/sitemap.xml", (req, res) => {
+    res.type("application/xml").send(`<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url><loc>https://mng-license-server1.onrender.com/</loc><changefreq>weekly</changefreq><priority>1.0</priority></url>
+  <url><loc>https://mng-license-server1.onrender.com/hediye-tasarimi</loc><changefreq>monthly</changefreq><priority>0.9</priority></url>
+</urlset>`);
+});
+
 app.use(express.static(path.join(__dirname, "web")));
 app.use(express.static(__dirname));
 // Admin Paneli
