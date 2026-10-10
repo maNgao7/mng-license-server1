@@ -1,44 +1,237 @@
 (() => {
   const $ = id => document.getElementById(id);
-  const state = {catalog:[],filtered:[],items:[],selected:-1,range:'all',zoom:.52,drag:null,images:new Map()};
-  const canvas=$('designCanvas'),ctx=canvas.getContext('2d');
-  const controls=['canvasPreset','transparentBg','backgroundColor','columns','giftSize','giftGap','cardStyle','textColor','showName','showCoins','showGlow'];
-  const escapeHtml=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-  function imageUrl(g){return `gift-assets/${encodeURIComponent(g.file||'')}`}
-  async function loadCatalog(){
-    try{const raw=await fetch('gift-assets/katalog_tam.json').then(r=>r.json());state.catalog=raw.filter(g=>g.file).map(g=>({id:String(g.id),name:g.trName||g.name||'Hediye',coins:Number(g.coins)||0,file:g.file}));state.filtered=state.catalog;$('catalogCount').textContent=`${state.catalog.length} hediye`;filterGifts()}catch(e){$('catalogCount').textContent='Katalog yüklenemedi'}
+  const state = { catalog: [], filtered: [], items: [], selectedId: "", addRegion: "top", range: "all", images: new Map() };
+  const canvas = $("designCanvas");
+  const ctx = canvas.getContext("2d");
+  const designControls = ["layoutType","fontFamily","giftSize","giftGap","textGap","textSize","textColor","strokeColor","strokeWidth","shadowBlur"];
+  const safe = value => String(value ?? "").replace(/[&<>"']/g, char => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[char]));
+  const imageUrl = gift => `gift-assets/${encodeURIComponent(gift.file || "")}`;
+  const selected = () => state.items.find(item => item.uid === state.selectedId);
+  const makeId = () => `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+
+  async function loadCatalog() {
+    try {
+      const raw = await fetch("gift-assets/katalog_tam.json", { cache: "no-store" }).then(response => {
+        if (!response.ok) throw new Error("Katalog bulunamadı");
+        return response.json();
+      });
+      state.catalog = raw.filter(gift => gift.file).map(gift => ({
+        id: String(gift.id || ""), name: String(gift.trName || gift.name || "Hediye"),
+        originalName: String(gift.name || ""), coins: Math.max(0, Number(gift.coins) || 0), file: gift.file
+      }));
+      state.filtered = state.catalog;
+      filterCatalog();
+    } catch {
+      $("catalogCount").textContent = "Katalog yüklenemedi";
+    }
   }
-  function inRange(g){if(state.range==='1-99')return g.coins<100;if(state.range==='100-999')return g.coins>=100&&g.coins<1000;if(state.range==='1000+')return g.coins>=1000;return true}
-  function filterGifts(){const q=$('giftSearch').value.trim().toLocaleLowerCase('tr');state.filtered=state.catalog.filter(g=>inRange(g)&&(!q||g.name.toLocaleLowerCase('tr').includes(q)||String(g.coins).includes(q)));renderGrid()}
-  function renderGrid(){const grid=$('giftGrid');grid.innerHTML='';const frag=document.createDocumentFragment();state.filtered.forEach(g=>{const b=document.createElement('button');b.className='gift-card';b.innerHTML=`<span class="add">+</span><img loading="lazy" src="${imageUrl(g)}" alt=""><strong>${escapeHtml(g.name)}</strong><small>${g.coins} coin</small>`;b.onclick=()=>addGift(g);frag.appendChild(b)});grid.appendChild(frag)}
-  function addGift(g){const size=+$('giftSize').value;const n=state.items.length;state.items.push({gift:g,x:canvas.width/2+(n%3-1)*size*1.15,y:canvas.height/2+Math.floor(n/3)*size*.32,size,caption:'',captionColor:'#ffffff',captionFont:'Segoe UI',captionSize:28,badgeData:'',badgeImage:null});state.selected=state.items.length-1;render();updateSelection()}
-  function fitCanvas(){const wrap=$('stageWrap'),maxW=Math.max(260,wrap.clientWidth-54),maxH=Math.max(220,wrap.clientHeight-54);const fit=Math.min(maxW/canvas.width,maxH/canvas.height,1);state.zoom=Math.max(.12,Math.min(1.2,fit));applyZoom()}
-  function applyZoom(){canvas.style.width=`${canvas.width*state.zoom}px`;canvas.style.height=`${canvas.height*state.zoom}px`;$('zoomValue').textContent=`${Math.round(state.zoom*100)}%`}
-  function changePreset(){const [w,h]=$('canvasPreset').value.split('x').map(Number);canvas.width=w;canvas.height=h;autoLayout();fitCanvas()}
-  function roundedRect(x,y,w,h,r){const rr=Math.min(r,w/2,h/2);ctx.beginPath();ctx.moveTo(x+rr,y);ctx.arcTo(x+w,y,x+w,y+h,rr);ctx.arcTo(x+w,y+h,x,y+h,rr);ctx.arcTo(x,y+h,x,y,rr);ctx.arcTo(x,y,x+w,y,rr);ctx.closePath()}
-  function getImage(g){const key=g.file;if(state.images.has(key))return state.images.get(key);const img=new Image();img.onload=render;img.src=imageUrl(g);state.images.set(key,img);return img}
-  function render(){
-    ctx.clearRect(0,0,canvas.width,canvas.height);if(!$('transparentBg').checked){ctx.fillStyle=$('backgroundColor').value;ctx.fillRect(0,0,canvas.width,canvas.height)}
-    const text=$('textColor').value,style=$('cardStyle').value,showName=$('showName').checked,showCoins=$('showCoins').checked,glow=$('showGlow').checked;
-    state.items.forEach((item,i)=>{const s=item.size,hasExtra=Boolean(item.caption||item.badgeData),x=item.x-s*.62,y=item.y-s*.58,w=s*1.24,h=s*(hasExtra?1.88:1.52);
-      ctx.save();if(glow){ctx.shadowColor='rgba(22,217,255,.42)';ctx.shadowBlur=s*.12}if(style!=='none'){ctx.fillStyle=style==='dark'?'rgba(3,8,16,.9)':'rgba(10,30,48,.72)';roundedRect(x,y,w,h,s*.08);ctx.fill();ctx.strokeStyle=i===state.selected?'#16d9ff':'rgba(91,156,196,.38)';ctx.lineWidth=i===state.selected?5:2;ctx.stroke()}ctx.shadowBlur=0;
-      const img=getImage(item.gift);if(img.complete&&img.naturalWidth)ctx.drawImage(img,item.x-s*.5,item.y-s*.5,s,s);
-      const badgeSize=s*.27,badgeY=item.y+s*.58;if(item.badgeImage&&item.badgeImage.complete){ctx.save();ctx.beginPath();ctx.arc(item.x-s*.39,badgeY,badgeSize*.55,0,Math.PI*2);ctx.clip();ctx.drawImage(item.badgeImage,item.x-s*.39-badgeSize*.55,badgeY-badgeSize*.55,badgeSize*1.1,badgeSize*1.1);ctx.restore();ctx.strokeStyle='rgba(255,255,255,.7)';ctx.lineWidth=2;ctx.beginPath();ctx.arc(item.x-s*.39,badgeY,badgeSize*.55,0,Math.PI*2);ctx.stroke()}
-      ctx.textAlign='center';ctx.fillStyle=text;ctx.font=`700 ${Math.max(24,s*.13)}px Segoe UI`;if(showName)ctx.fillText(item.gift.name,item.x,item.y+s*.68,w-20);ctx.fillStyle='#ffd400';ctx.font=`800 ${Math.max(20,s*.105)}px Segoe UI`;if(showCoins)ctx.fillText(`${item.gift.coins} coin`,item.x,item.y+s*.86,w-20);if(item.caption){ctx.fillStyle=item.captionColor||'#ffffff';ctx.font=`800 ${Math.max(18,item.captionSize||28)}px ${item.captionFont||'Segoe UI'}`;ctx.fillText(item.caption,item.x,item.y+s*1.08,w-24)}ctx.restore()})
+
+  function inRange(gift) {
+    if (state.range === "1-99") return gift.coins >= 1 && gift.coins <= 99;
+    if (state.range === "100-999") return gift.coins >= 100 && gift.coins <= 999;
+    if (state.range === "1000+") return gift.coins >= 1000;
+    return true;
   }
-  function autoLayout(){const cols=Math.max(1,+$('columns').value),gap=+$('giftGap').value,size=+$('giftSize').value;const rows=Math.ceil(state.items.length/cols),totalW=Math.min(canvas.width-80,cols*(size*1.24)+(cols-1)*gap),cell=totalW/cols;state.items.forEach((it,i)=>{const row=Math.floor(i/cols),col=i%cols;const used=Math.min(cols,state.items.length-row*cols);it.size=size;it.x=canvas.width/2+(col-(used-1)/2)*cell;it.y=canvas.height/2+(row-(rows-1)/2)*(size*1.9+gap)});render()}
-  function hit(px,py){for(let i=state.items.length-1;i>=0;i--){const a=state.items[i],s=a.size,lower=(a.caption||a.badgeData)?1.3:.94;if(px>a.x-s*.62&&px<a.x+s*.62&&py>a.y-s*.58&&py<a.y+s*lower)return i}return-1}
-  function point(e){const r=canvas.getBoundingClientRect();return{x:(e.clientX-r.left)*canvas.width/r.width,y:(e.clientY-r.top)*canvas.height/r.height}}
-  function updateSelection(){const it=state.items[state.selected];$('selectedName').textContent=it?`${it.gift.name} · ${it.gift.coins} coin`:'Bir hediye seçin';$('selectedCount').textContent=state.items.length;$('duplicateBtn').disabled=!it;$('removeBtn').disabled=!it;$('selectedEditor').classList.toggle('is-disabled',!it);$('customCaption').value=it?.caption||'';$('captionFont').value=it?.captionFont||'Segoe UI';$('captionColor').value=it?.captionColor||'#ffffff';$('captionHex').textContent=(it?.captionColor||'#ffffff').toUpperCase();$('captionSize').value=it?.captionSize||28;$('captionSizeValue').textContent=it?.captionSize||28;const preview=$('badgePreview');preview.classList.toggle('has-image',Boolean(it?.badgeData));preview.querySelector('img').src=it?.badgeData||''}
-  canvas.addEventListener('pointerdown',e=>{const p=point(e),i=hit(p.x,p.y);state.selected=i;state.drag=i<0?null:{i,dx:p.x-state.items[i].x,dy:p.y-state.items[i].y};canvas.setPointerCapture(e.pointerId);updateSelection();render()});
-  canvas.addEventListener('pointermove',e=>{if(!state.drag)return;const p=point(e),it=state.items[state.drag.i];it.x=Math.max(0,Math.min(canvas.width,p.x-state.drag.dx));it.y=Math.max(0,Math.min(canvas.height,p.y-state.drag.dy));render()});canvas.addEventListener('pointerup',()=>state.drag=null);
-  $('giftSearch').oninput=filterGifts;$('coinFilters').onclick=e=>{const b=e.target.closest('button');if(!b)return;state.range=b.dataset.range;[...$('coinFilters').children].forEach(x=>x.classList.toggle('active',x===b));filterGifts()};
-  controls.forEach(id=>$(id).addEventListener(id==='giftSize'||id==='giftGap'||id==='columns'?'input':'change',()=>{if(id==='backgroundColor')$('bgHex').textContent=$(id).value.toUpperCase();if(id==='textColor')$('textHex').textContent=$(id).value.toUpperCase();if(id==='columns')$('columnsValue').textContent=$(id).value;if(id==='giftSize')$('giftSizeValue').textContent=$(id).value;if(id==='giftGap')$('giftGapValue').textContent=$(id).value;if(id==='canvasPreset')changePreset();else if(['columns','giftSize','giftGap'].includes(id))autoLayout();else render()}));
-  $('autoLayoutBtn').onclick=autoLayout;$('zoomIn').onclick=()=>{state.zoom=Math.min(1.2,state.zoom+.08);applyZoom()};$('zoomOut').onclick=()=>{state.zoom=Math.max(.12,state.zoom-.08);applyZoom()};
-  $('customCaption').oninput=e=>{const it=state.items[state.selected];if(!it)return;it.caption=e.target.value;render()};$('captionFont').onchange=e=>{const it=state.items[state.selected];if(!it)return;it.captionFont=e.target.value;render()};$('captionColor').oninput=e=>{const it=state.items[state.selected];if(!it)return;it.captionColor=e.target.value;$('captionHex').textContent=e.target.value.toUpperCase();render()};$('captionSize').oninput=e=>{const it=state.items[state.selected];if(!it)return;it.captionSize=+e.target.value;$('captionSizeValue').textContent=e.target.value;render()};
-  $('badgeUpload').onchange=e=>{const file=e.target.files?.[0],it=state.items[state.selected];if(!file||!it)return;const reader=new FileReader();reader.onload=()=>{const img=new Image();img.onload=()=>{it.badgeData=reader.result;it.badgeImage=img;updateSelection();render()};img.src=reader.result};reader.readAsDataURL(file);e.target.value=''};$('removeBadge').onclick=()=>{const it=state.items[state.selected];if(!it)return;it.badgeData='';it.badgeImage=null;updateSelection();render()};
-  $('removeBtn').onclick=()=>{if(state.selected<0)return;state.items.splice(state.selected,1);state.selected=-1;updateSelection();render()};$('duplicateBtn').onclick=()=>{const a=state.items[state.selected];if(!a)return;state.items.push({...a,x:a.x+40,y:a.y+40});state.selected=state.items.length-1;updateSelection();render()};
-  $('clearBtn').onclick=()=>{state.items=[];state.selected=-1;updateSelection();render()};$('downloadBtn').onclick=()=>{render();const a=document.createElement('a');a.download=`mng-tiktok-hediye-tasarimi-${Date.now()}.png`;a.href=canvas.toDataURL('image/png');a.click()};
-  $('closeDesigner').onclick=()=>{if(window.parent!==window)window.parent.postMessage({type:'mng-close-gift-designer'},'*');else location.href='/'};
-  window.addEventListener('resize',fitCanvas);loadCatalog();changePreset();updateSelection();
+
+  function filterCatalog() {
+    const query = $("giftSearch").value.trim().toLocaleLowerCase("tr-TR");
+    state.filtered = state.catalog.filter(gift => inRange(gift) && (!query || [gift.name, gift.originalName, gift.coins].some(value => String(value).toLocaleLowerCase("tr-TR").includes(query))));
+    $("catalogCount").textContent = `${state.filtered.length} / ${state.catalog.length}`;
+    const fragment = document.createDocumentFragment();
+    state.filtered.forEach(gift => {
+      const button = document.createElement("button");
+      button.className = "gift-card";
+      button.innerHTML = `<img loading="lazy" src="${imageUrl(gift)}" alt=""><strong>${safe(gift.name)}</strong><small>${gift.coins.toLocaleString("tr-TR")} coin</small>`;
+      button.onclick = () => addGift(gift);
+      fragment.appendChild(button);
+    });
+    $("giftGrid").replaceChildren(fragment);
+  }
+
+  function openCatalog(region) {
+    state.addRegion = region;
+    $("catalogModal").hidden = false;
+    $("giftSearch").focus();
+  }
+
+  function addGift(gift) {
+    const item = { uid: makeId(), region: state.addRegion, gift, caption: "", captionColor: "#ffffff", badgeData: "", badgeImage: null };
+    state.items.push(item);
+    state.selectedId = item.uid;
+    $("catalogModal").hidden = true;
+    renderAll();
+  }
+
+  function renderZones() {
+    ["top","left","right"].forEach(region => {
+      const list = $(`${region}List`);
+      list.innerHTML = "";
+      state.items.filter(item => item.region === region).forEach(item => {
+        const row = document.createElement("div");
+        row.className = `zone-item${item.uid === state.selectedId ? " active" : ""}`;
+        row.innerHTML = `<img src="${imageUrl(item.gift)}" alt=""><div><b>${safe(item.gift.name)}</b><small>${item.gift.coins.toLocaleString("tr-TR")} coin</small></div><button title="Sil" aria-label="Sil">×</button>`;
+        row.onclick = event => {
+          if (event.target.closest("button")) removeItem(item.uid);
+          else { state.selectedId = item.uid; renderAll(); }
+        };
+        list.appendChild(row);
+      });
+    });
+    $("selectedCount").textContent = `${state.items.length} hediye`;
+  }
+
+  function getImage(source) {
+    if (!source) return null;
+    if (state.images.has(source)) return state.images.get(source);
+    const image = new Image();
+    image.onload = draw;
+    image.src = source;
+    state.images.set(source, image);
+    return image;
+  }
+
+  function drawText(text, x, y, maxWidth, color, fontSize) {
+    ctx.textAlign = "center";
+    ctx.textBaseline = "top";
+    ctx.font = `900 ${fontSize}px "${$("fontFamily").value}", sans-serif`;
+    ctx.lineWidth = Number($("strokeWidth").value);
+    ctx.strokeStyle = $("strokeColor").value;
+    ctx.fillStyle = color;
+    ctx.shadowColor = "rgba(0,0,0,.88)";
+    ctx.shadowBlur = Number($("shadowBlur").value);
+    if (ctx.lineWidth) ctx.strokeText(text, x, y, maxWidth);
+    ctx.fillText(text, x, y, maxWidth);
+  }
+
+  function drawItem(item, x, y) {
+    const size = Number($("giftSize").value);
+    const textGap = Number($("textGap").value);
+    const textSize = Number($("textSize").value);
+    const image = getImage(imageUrl(item.gift));
+    ctx.save();
+    if (image?.complete && image.naturalWidth) ctx.drawImage(image, x - size / 2, y - size / 2, size, size);
+    drawText(item.gift.name, x, y + size / 2 + textGap, size * 1.65, $("textColor").value, textSize);
+    drawText(`${item.gift.coins.toLocaleString("tr-TR")} coin`, x, y + size / 2 + textGap + textSize * 1.18, size * 1.5, "#ffd84d", Math.max(16, textSize * .72));
+    if (item.badgeData) {
+      const badge = item.badgeImage || getImage(item.badgeData);
+      if (badge?.complete && badge.naturalWidth) {
+        const badgeSize = size * .34;
+        ctx.drawImage(badge, x - size * .62, y + size * .42, badgeSize, badgeSize);
+      }
+    }
+    if (item.caption) drawText(item.caption, x, y + size / 2 + textGap + textSize * 2.12, size * 2, item.captionColor || "#fff", Math.max(16, textSize * .78));
+    ctx.restore();
+  }
+
+  function positions(region, items) {
+    const size = Number($("giftSize").value);
+    const gap = Number($("giftGap").value);
+    if (region === "top") {
+      const width = size + gap;
+      return items.map((_, index) => ({ x: 960 + (index - (items.length - 1) / 2) * width, y: 150 }));
+    }
+    const height = size + gap + Number($("textSize").value) * 2.8;
+    const x = region === "left" ? 190 : 1730;
+    return items.map((_, index) => ({ x, y: 430 + (index - (items.length - 1) / 2) * height }));
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    const layout = $("layoutType").value;
+    const activeRegions = layout === "top" ? ["top"] : layout === "sides" ? ["left","right"] : ["top","left","right"];
+    activeRegions.forEach(region => {
+      const items = state.items.filter(item => item.region === region);
+      positions(region, items).forEach((position, index) => drawItem(items[index], position.x, position.y));
+    });
+    $("emptyPreview").hidden = state.items.length > 0;
+  }
+
+  function updateSelectedTools() {
+    const item = selected();
+    $("selectedTools").hidden = !item;
+    if (!item) return;
+    $("selectedName").textContent = `${item.gift.name} · ${item.gift.coins} coin`;
+    $("customCaption").value = item.caption || "";
+    $("captionColor").value = item.captionColor || "#ffffff";
+  }
+
+  function renderAll() { renderZones(); updateSelectedTools(); draw(); }
+  function removeItem(uid) {
+    state.items = state.items.filter(item => item.uid !== uid);
+    if (state.selectedId === uid) state.selectedId = "";
+    renderAll();
+  }
+
+  function serializeDesign() {
+    return {
+      id: makeId(), name: $("designName").value.trim() || "Adsız Tasarım", updatedAt: Date.now(),
+      settings: Object.fromEntries(designControls.map(id => [id, $(id).value])),
+      items: state.items.map(item => ({ ...item, badgeImage: null }))
+    };
+  }
+
+  function saveDesign() {
+    const designs = JSON.parse(localStorage.getItem("mng-gift-designs-v605") || "[]");
+    const design = serializeDesign();
+    designs.unshift(design);
+    localStorage.setItem("mng-gift-designs-v605", JSON.stringify(designs.slice(0, 30)));
+    $("saveBtn").textContent = "Kaydedildi";
+    setTimeout(() => $("saveBtn").textContent = "Tasarıma Kaydet", 1200);
+  }
+
+  function renderSaved() {
+    const designs = JSON.parse(localStorage.getItem("mng-gift-designs-v605") || "[]");
+    $("savedList").innerHTML = designs.length ? designs.map(design => `<article class="saved-item"><div><b>${safe(design.name)}</b><small>${new Date(design.updatedAt).toLocaleString("tr-TR")} · ${design.items.length} hediye</small></div><button class="btn quiet" data-load="${design.id}">Aç</button><button class="btn danger" data-delete="${design.id}">Sil</button></article>`).join("") : '<div class="saved-empty">Henüz kayıtlı tasarım yok.</div>';
+    $("savedList").onclick = event => {
+      const loadId = event.target.dataset.load;
+      const deleteId = event.target.dataset.delete;
+      if (loadId) {
+        const design = designs.find(entry => entry.id === loadId);
+        if (!design) return;
+        $("designName").value = design.name;
+        Object.entries(design.settings || {}).forEach(([id, value]) => { if ($(id)) $(id).value = value; });
+        state.items = (design.items || []).map(item => ({ ...item, uid: makeId(), badgeImage: item.badgeData ? getImage(item.badgeData) : null }));
+        state.selectedId = "";
+        $("designsModal").hidden = true;
+        renderAll();
+      }
+      if (deleteId) {
+        localStorage.setItem("mng-gift-designs-v605", JSON.stringify(designs.filter(entry => entry.id !== deleteId)));
+        renderSaved();
+      }
+    };
+  }
+
+  document.querySelectorAll("[data-add]").forEach(button => button.onclick = () => openCatalog(button.dataset.add));
+  $("closeCatalog").onclick = () => $("catalogModal").hidden = true;
+  $("catalogModal").onclick = event => { if (event.target === $("catalogModal")) $("catalogModal").hidden = true; };
+  $("giftSearch").oninput = filterCatalog;
+  $("coinFilters").onclick = event => {
+    const button = event.target.closest("button");
+    if (!button) return;
+    state.range = button.dataset.range;
+    [...$("coinFilters").children].forEach(item => item.classList.toggle("active", item === button));
+    filterCatalog();
+  };
+  designControls.forEach(id => $(id).addEventListener("input", draw));
+  $("customCaption").oninput = event => { const item = selected(); if (item) { item.caption = event.target.value; draw(); } };
+  $("captionColor").oninput = event => { const item = selected(); if (item) { item.captionColor = event.target.value; draw(); } };
+  $("badgeUpload").onchange = event => {
+    const file = event.target.files?.[0], item = selected();
+    if (!file || !item) return;
+    const reader = new FileReader();
+    reader.onload = () => { item.badgeData = reader.result; item.badgeImage = getImage(reader.result); draw(); };
+    reader.readAsDataURL(file);
+    event.target.value = "";
+  };
+  $("removeBadge").onclick = () => { const item = selected(); if (item) { item.badgeData = ""; item.badgeImage = null; draw(); } };
+  $("removeGift").onclick = () => { if (state.selectedId) removeItem(state.selectedId); };
+  $("clearBtn").onclick = () => { state.items = []; state.selectedId = ""; $("designName").value = "Yeni Hediye Tasarımım"; renderAll(); };
+  $("saveBtn").onclick = saveDesign;
+  $("designsBtn").onclick = () => { renderSaved(); $("designsModal").hidden = false; };
+  $("closeDesigns").onclick = () => $("designsModal").hidden = true;
+  $("downloadBtn").onclick = () => { draw(); const link = document.createElement("a"); link.download = `${$("designName").value.trim() || "mng-hediye-tasarimi"}.png`; link.href = canvas.toDataURL("image/png"); link.click(); };
+  $("closeDesigner").onclick = () => { if (window.parent !== window) window.parent.postMessage({ type: "mng-close-gift-designer" }, "*"); else location.href = "/"; };
+  loadCatalog();
+  renderAll();
 })();
