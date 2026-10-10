@@ -424,13 +424,17 @@ function logEkle(lisansKod, cihazKimlik, islem, ip) {
 // =====================================================================
 // SÜRÜM BİLGİLERİ & İNDİRME LİNKLERİ
 // =====================================================================
-const EN_GUNCEL_SURUM = "6.0.2";
+const EN_GUNCEL_SURUM = "6.0.5";
 const EN_DUSUK_SURUM = "1.0.0";
 const SETUP_INDIRME_LINKI = "https://drive.usercontent.google.com/download?id=1g-dEVnq_8ksvCTuHq9q7Ur-MGiFBpzND&export=download&confirm=t";
 const SETUP_WEB_LINKI = "https://drive.google.com/file/d/1g-dEVnq_8ksvCTuHq9q7Ur-MGiFBpzND/view?usp=sharing";
 
 // Her güncellemede eklenen/değişen özellikler listesi
 const SURUM_NOTLARI = [
+    "v6.0.5 — Gelene Geçene Kesin Bağlantı Kontrolü: TikTok köprüsü cevap vermeden oyun açılmaz; temiz kurulumlarda doğru bağımlılık klasörü kullanılır ve ayrıntılı bağlantı günlüğü tutulur.",
+    "v6.0.5 — Anlık Canlı Etkileşim: Hediye, beğeni ve takip olaylarının oyuna ulaşmasını engelleyen eski paket algılama sorunu giderildi; yayıncı ayarları güncellemede korunur.",
+    "v6.0.5 — Yeni Hediye Tasarımcısı: Üst, sol ve sağ hediye alanları; tam ekran 630 hediyelik katalog; özel alt yazı, renk ve küçük görsel desteği web ve launcher'a birlikte eklendi.",
+    "v6.0.5 — Canlı Yayın Widgetları: Gelen Hediye artık tek olayın en yüksek coin rekorunu profil ve hediye görseliyle gösterir; beğeni kürsüsü büyütüldü ve sıkılaştırıldı.",
     "v6.0.2 — Gelene Geçene Canlı Olay Düzeltmesi: Eski mod DLL'lerinin olay kuyruğunu tüketmesi engellendi; hediye, beğeni ve takip olayları güvenli biçimde işleniyor.",
     "v6.0.2 — Ortak 630 Hediyelik Katalog: Gerçek görseller, adlar ve coin değerleri bütün oyunlarda tek kaynaktan sunuluyor.",
     "v6.0.2 — Tasarım ve Widgetlar: Hediye alt yazısı/küçük görsel düzenleme, widget önizleme düzeltmesi ve localhost bağlantıları eklendi.",
