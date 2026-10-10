@@ -524,6 +524,48 @@
                 </div>
             </div>
 
+            <!-- AJANS LİSANSI OLUŞTUR (ÇOKLU YAYINCI) -->
+            <div class="create-card" style="margin-top:20px;border-color:rgba(142,212,98,0.35);background:linear-gradient(135deg,rgba(142,212,98,0.06),rgba(37,244,238,0.04));">
+                <div class="section-title" style="color:#8ed462;">🏢 Ajans Lisansı Oluştur (Çoklu Yayıncı Ortak Lisans)</div>
+                <p style="font-size:12px;color:var(--text-dim);margin-bottom:14px;">
+                    Tek bir lisans anahtarı belirlediğiniz kişi sayısı kadar yayıncı tarafından kullanılabilir. Süre ilk yayıncı aktif ettiğinde ortak başlar ve tüm yayıncılar için aynı anda işler.
+                </p>
+                <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px;">
+                    <div style="flex:1;min-width:200px;">
+                        <label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:4px;">AJANS ADI</label>
+                        <input type="text" id="agencyName" class="form-input" style="width:100%;" placeholder="Örn: Trend Ajans / TikTok Takımı">
+                    </div>
+                    <div style="width:180px;">
+                        <label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:4px;">YAYINCI SAYISI (KAPASİTE)</label>
+                        <input type="number" id="agencyMaxUsers" class="form-input" style="width:100%;" min="1" max="1000" value="40" placeholder="Kişi Sayısı">
+                    </div>
+                </div>
+
+                <div class="duration-group-label">⏱️ AJANS ORTAK SÜRESİ:</div>
+                <div class="duration-buttons">
+                    <button class="dur-btn agency-dur" onclick="selectAgencyDuration('gun', 1, this)">1 Günlük</button>
+                    <button class="dur-btn agency-dur" onclick="selectAgencyDuration('gun', 7, this)">7 Günlük</button>
+                    <button class="dur-btn agency-dur active" onclick="selectAgencyDuration('gun', 30, this)">30 Günlük (Aylık)</button>
+                    <button class="dur-btn agency-dur" onclick="selectAgencyDuration('gun', 60, this)">60 Günlük (2 Ay)</button>
+                    <button class="dur-btn agency-dur" onclick="selectAgencyDuration('gun', 90, this)">90 Günlük (3 Ay)</button>
+                    <button class="dur-btn agency-dur" onclick="selectAgencyDuration('sinirsiz', -1, this)">♾️ Sınırsız</button>
+                </div>
+
+                <div class="form-row" style="margin-top:12px;">
+                    <input type="text" id="agencyNote" class="form-input" placeholder="Ajans Yetkilisi / Not (Örn: Ahmet Bey - 40 Yayıncı)">
+                    <button class="btn-create" style="background:linear-gradient(135deg, #10b981, #059669);" onclick="createAgencyLicense()">🏢 Ajans Lisansını Üret</button>
+                </div>
+
+                <div class="new-license-box" id="newAgencyLicenseBox" style="display:none;border-color:#10b981;background:rgba(16,185,129,0.12);">
+                    <div>
+                        <div style="font-size:12px; color:var(--text-dim); margin-bottom:4px;">YENİ AJANS LİSANS KODU:</div>
+                        <div class="new-code" id="newAgencyLicenseCode" style="color:#8ed462;"></div>
+                        <div style="font-size:11px; color:var(--text-dim); margin-top:2px;" id="newAgencyLicenseDesc"></div>
+                    </div>
+                    <button class="btn-copy" onclick="copyNewAgencyCode()">Kopyala 📋</button>
+                </div>
+            </div>
+
             <!-- SEKMELER -->
             <div class="tabs">
                 <button class="tab-btn active" id="tabBtnLicenses" onclick="switchTab('licenses')">📋 Lisanslar Listesi</button>
@@ -532,8 +574,15 @@
 
             <!-- LİSANS TABLOSU -->
             <div class="list-card" id="tabLicenses">
-                <div class="list-header">
+                <div class="list-header" style="flex-wrap:wrap;gap:10px;">
                     <div class="section-title" style="margin-bottom:0;">Mevcut Lisanslar</div>
+                    <div style="display:flex;gap:8px;align-items:center;margin-left:auto;flex-wrap:wrap;">
+                        <input type="text" id="searchInput" class="search-box" placeholder="Kod veya not ile filtrele..." oninput="renderTable()">
+                        <button class="dur-btn" style="background:rgba(37,244,238,0.15);border-color:rgba(37,244,238,0.4);color:#25f4ee;padding:7px 12px;font-size:12px;" onclick="downloadLicensesJson()" title="Tüm lisansları bilgisayara indir">📥 JSON İndir</button>
+                        <button class="dur-btn" style="background:rgba(254,44,85,0.15);border-color:rgba(254,44,85,0.4);color:#fe2c55;padding:7px 12px;font-size:12px;" onclick="uploadLicensesJson()" title="Yedekten lisansları geri yükle">📤 Yedekten Yükle</button>
+                        <input type="file" id="restoreFileInput" accept=".json" style="display:none;" onchange="handleRestoreFile(event)">
+                    </div>
+                </div>
                     <input type="text" id="searchInput" class="search-box" placeholder="Kod veya not ile filtrele..." oninput="renderTable()">
                 </div>
 
@@ -587,6 +636,118 @@
         let selectedBirim = "gun";
         let selectedMiktar = 7;
         let allLicenses = [];
+        let selectedAgencyBirim = 'gun';
+        let selectedAgencyMiktar = 30;
+
+        function selectAgencyDuration(birim, miktar, btn) {
+            selectedAgencyBirim = birim;
+            selectedAgencyMiktar = miktar;
+            document.querySelectorAll('.agency-dur').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+        }
+
+        async function createAgencyLicense() {
+            const ajansAdi = document.getElementById('agencyName').value.trim();
+            const maxUsers = parseInt(document.getElementById('agencyMaxUsers').value) || 40;
+            const notlar = document.getElementById('agencyNote').value.trim();
+
+            if (!ajansAdi) {
+                alert('Lütfen bir Ajans Adı girin.');
+                return;
+            }
+
+            try {
+                const res = await fetch('/api/admin/ajans-lisansi-olustur', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Admin-Token': adminToken
+                    },
+                    body: JSON.stringify({
+                        ajans_adi: ajansAdi,
+                        max_yayinci: maxUsers,
+                        sure_birim: selectedAgencyBirim,
+                        sure_miktar: selectedAgencyMiktar,
+                        notlar: notlar
+                    })
+                });
+                const data = await res.json();
+                if (data.kod) {
+                    const box = document.getElementById('newAgencyLicenseBox');
+                    document.getElementById('newAgencyLicenseCode').textContent = data.kod;
+                    document.getElementById('newAgencyLicenseDesc').textContent = `(${data.ajans_adi} - ${data.max_yayinci} Yayıncı Kapasiteli - ${data.sure_etiketi})`;
+                    box.style.display = 'flex';
+                    document.getElementById('agencyName').value = '';
+                    document.getElementById('agencyNote').value = '';
+                    loadData();
+                } else if (data.error) {
+                    alert('Hata: ' + data.error);
+                }
+            } catch (e) {
+                alert('Ajans lisansı oluşturulamadı: ' + e.message);
+            }
+        }
+
+        function copyNewAgencyCode() {
+            const code = document.getElementById('newAgencyLicenseCode').textContent;
+            navigator.clipboard.writeText(code);
+            alert('Ajans lisans kodu kopyalandı: ' + code);
+        }
+
+        async function syncLicensesToServer(list) {
+            if (!Array.isArray(list) || list.length === 0) return;
+            try {
+                await fetch('/api/admin/lisanslar-senkronize', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Admin-Token': adminToken
+                    },
+                    body: JSON.stringify({ lisanslar: list })
+                });
+            } catch {}
+        }
+
+        function downloadLicensesJson() {
+            if (!allLicenses || allLicenses.length === 0) {
+                alert('İndirilecek lisans bulunamadı.');
+                return;
+            }
+            const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(allLicenses, null, 2));
+            const dl = document.createElement('a');
+            dl.setAttribute('href', dataStr);
+            dl.setAttribute('download', 'mng-lisanslar-yedek-' + new Date().toISOString().slice(0, 10) + '.json');
+            dl.click();
+            dl.remove();
+        }
+
+        function uploadLicensesJson() {
+            document.getElementById('restoreFileInput').click();
+        }
+
+        async function handleRestoreFile(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = async (evt) => {
+                try {
+                    const parsed = JSON.parse(evt.target.result);
+                    if (Array.isArray(parsed) && parsed.length > 0) {
+                        if (confirm(`Yedek dosyasında ${parsed.length} adet lisans bulundu. Sunucuya aktarılsın mı?`)) {
+                            await syncLicensesToServer(parsed);
+                            alert('Lisanslar başarıyla senkronize edildi!');
+                            loadData();
+                        }
+                    } else {
+                        alert('Geçersiz yedek dosyası: İçerisinde lisans dizisi bulunamadı.');
+                    }
+                } catch (err) {
+                    alert('Dosya okunamadı: ' + err.message);
+                }
+            };
+            reader.readAsText(file);
+        }
+
         let allRequests = [];
 
         window.onload = () => {
@@ -719,7 +880,32 @@
                 const res = await fetch("/api/admin/lisanslar", {
                     headers: { "X-Admin-Token": adminToken }
                 });
-                allLicenses = await res.json();
+                const serverLicenses = await res.json();
+
+                const localBackupRaw = localStorage.getItem("mng_admin_lisans_yedek");
+                let localBackup = [];
+                try { if (localBackupRaw) localBackup = JSON.parse(localBackupRaw); } catch {}
+
+                if ((!serverLicenses || serverLicenses.length === 0) && localBackup.length > 0) {
+                    await syncLicensesToServer(localBackup);
+                    allLicenses = localBackup;
+                } else {
+                    allLicenses = Array.isArray(serverLicenses) ? serverLicenses : [];
+                    if (localBackup.length > 0) {
+                        let hasNew = false;
+                        for (const b of localBackup) {
+                            if (!allLicenses.some(l => l.kod === b.kod)) {
+                                allLicenses.push(b);
+                                hasNew = true;
+                            }
+                        }
+                        if (hasNew) {
+                            syncLicensesToServer(allLicenses);
+                        }
+                    }
+                    localStorage.setItem("mng_admin_lisans_yedek", JSON.stringify(allLicenses));
+                }
+
                 renderTable();
             } catch {}
         }
@@ -872,12 +1058,15 @@
                     kalanMetin = `Hazır (${sureLabel})`;
                 }
 
-                let cihazMetin = l.cihaz_kimlik ? l.cihaz_kimlik.substring(0, 10) + "..." : '<span style="color:#f59e0b;font-weight:600;">Giriş Bekleniyor</span>';
+                const isAjans = l.tip === "ajans";
+                let cihazMetin = isAjans 
+                    ? `<span style="color:#10b981;font-weight:700;">${(l.cihazlar ? l.cihazlar.length : 0)} / ${l.max_cihaz || 1} Yayıncı</span>`
+                    : (l.cihaz_kimlik ? l.cihaz_kimlik.substring(0, 10) + "..." : '<span style="color:#f59e0b;font-weight:600;">Giriş Bekleniyor</span>');
 
                 return `
                     <tr>
                         <td><span class="code-pill">${l.kod}</span></td>
-                        <td><strong>${sureLabel}</strong></td>
+                        <td><strong>${sureLabel}</strong>${l.tip === 'ajans' ? ` <span style="background:rgba(16,185,129,0.2);color:#10b981;border:1px solid #10b981;padding:2px 6px;border-radius:6px;font-size:10px;font-weight:700;">🏢 ${l.ajans_adi || 'Ajans'}</span>` : ''}</td>
                         <td><span class="status-badge ${durumClass}">${durumText}</span></td>
                         <td><strong>${kalanMetin}</strong></td>
                         <td title="${l.cihaz_kimlik || ''}">${cihazMetin}</td>

@@ -168,6 +168,9 @@ async function dbYukle() {
     try {
         if (fs.existsSync(DB_DOSYASI)) {
             lisanslarVeritabani = JSON.parse(fs.readFileSync(DB_DOSYASI, "utf-8"));
+            if ((!Array.isArray(lisanslarVeritabani) || lisanslarVeritabani.length === 0) && fs.existsSync(path.join(DATA_DIR, "lisanslar_backup.json"))) {
+                try { lisanslarVeritabani = JSON.parse(fs.readFileSync(path.join(DATA_DIR, "lisanslar_backup.json"), "utf-8")); } catch {}
+            }
         } else {
             lisanslarVeritabani = [];
             dbKaydet();
@@ -231,6 +234,7 @@ function dbKaydet() {
         const tmp = DB_DOSYASI + ".tmp";
         fs.writeFileSync(tmp, JSON.stringify(lisanslarVeritabani, null, 2), "utf-8");
         fs.renameSync(tmp, DB_DOSYASI);
+        try { fs.writeFileSync(path.join(DATA_DIR, "lisanslar_backup.json"), JSON.stringify(lisanslarVeritabani, null, 2), "utf-8"); } catch {}
     } catch (e) {}
     githubBackupSchedule();
 }
@@ -381,6 +385,14 @@ function kodKriptoKontrol(kod) {
     if (matchDay) {
         return { birim: "gun", miktar: parseInt(matchDay[1], 10) };
     }
+    const matchAjans = prefix.match(/^MNGAJANS(\d+)(M\d+|D\d+|INF)$/);
+    if (matchAjans) {
+        const maxCihaz = parseInt(matchAjans[1], 10);
+        const tail = matchAjans[2];
+        if (tail === "INF") return { tip: "ajans", max_cihaz: maxCihaz, birim: "sinirsiz", miktar: -1 };
+        if (tail.startsWith("M")) return { tip: "ajans", max_cihaz: maxCihaz, birim: "dakika", miktar: parseInt(tail.slice(1), 10) };
+        if (tail.startsWith("D")) return { tip: "ajans", max_cihaz: maxCihaz, birim: "gun", miktar: parseInt(tail.slice(1), 10) };
+    }
     return null;
 }
 
@@ -424,13 +436,14 @@ function logEkle(lisansKod, cihazKimlik, islem, ip) {
 // =====================================================================
 // SÜRÜM BİLGİLERİ & İNDİRME LİNKLERİ
 // =====================================================================
-const EN_GUNCEL_SURUM = "6.0.7";
+const EN_GUNCEL_SURUM = "6.0.8";
 const EN_DUSUK_SURUM = "1.0.0";
 const SETUP_INDIRME_LINKI = "https://drive.usercontent.google.com/download?id=1g-dEVnq_8ksvCTuHq9q7Ur-MGiFBpzND&export=download&confirm=t";
 const SETUP_WEB_LINKI = "https://drive.google.com/file/d/1g-dEVnq_8ksvCTuHq9q7Ur-MGiFBpzND/view?usp=sharing";
 
 // Her güncellemede eklenen/değişen özellikler listesi
 const SURUM_NOTLARI = [
+    "v6.0.8 — Kalkan 500 HP & Mavi Aura, Flash Körlük Süre Ayarı, Kurtuluş Terminali P Tuşu Güçlendirmesi, Balon Uçuşu Yumuşak Kararma (Fade to Black), Çoklu Yayıncı Ajans Lisansları, WhatsApp İletişim Hattı, Kalıcı Lisans Koruma ve Senkronizasyon Sistemi.",
     "v6.0.7 — Gelene Geçene HD Profil & Gösterişli Zafer Ekranları: Profil avatarları 128x128 anti-aliased HD kesim ve dinamik renklere kavuşturuldu; yayıncı elendiğinde altın taçlı ve neon çerçeveli Katil Ekranı; balon görevi tamamlandığında dev renkli YAYINCI KAZANDI (WINNER) zafer şeridi; TikTok Live Studio için 0.0.0.0/127.0.0.1 uyumlu ve tekrarlı adetli (örn: 2x TikTok) canlı hediye widgetları eklendi; Launcher kart hover efektleri ayrıştırıldı ve manifesto başlığı altın kontürlü şeffaf stile güncellendi.",
     "v6.0.6 — Gelene Geçene Canlı Yayın Etkileşim Onarımı: Yayına bağlandıktan sonra hediye, beğeni ve takip ile canavarların spawn olmasını engelleyen motor zombi döngüsü (ZombieManager) ve JSON deserialization/regex eşleme hatası giderildi; unmapped hediyeler için otomatik canavar yönlendirmesi ve havuzlu beğeni sayacı eklendi.",
     "v6.0.5 — Gelene Geçene Kesin Bağlantı Kontrolü: TikTok köprüsü cevap vermeden oyun açılmaz; temiz kurulumlarda doğru bağımlılık klasörü kullanılır ve ayrıntılı bağlantı günlüğü tutulur.",
@@ -594,6 +607,10 @@ app.post("/api/license/verify", (req, res) => {
             lisans = {
                 id: Date.now() + "_" + Math.random().toString(36).substr(2, 6),
                 kod: temizKod,
+                tip: kriptoBilgi.tip || "tekil",
+                ajans_adi: kriptoBilgi.tip === "ajans" ? "Otomatik Kurtarılan Ajans" : null,
+                max_cihaz: kriptoBilgi.max_cihaz || 1,
+                cihazlar: [],
                 sure_birim: kriptoBilgi.birim,
                 sure_miktar: kriptoBilgi.miktar,
                 durum: "beklemede",
@@ -652,7 +669,12 @@ app.post("/api/license/verify", (req, res) => {
         lisans.durum = "aktif";
         lisans.aktivasyon_zamani = simdi;
         lisans.bitis_zamani = bitisZamani;
-        lisans.cihaz_kimlik = deviceId;
+        if (lisans.tip === "ajans") {
+            lisans.cihazlar = [deviceId];
+            lisans.cihaz_kimlik = `Ajans (1/${lisans.max_cihaz || 1})`;
+        } else {
+            lisans.cihaz_kimlik = deviceId;
+        }
         lisans.activation_token = token;
 
         dbKaydet();
@@ -674,20 +696,37 @@ app.post("/api/license/verify", (req, res) => {
 
     // 2. DAHA ÖNCE AKTİF EDİLMİÅ LİSANS
     if (lisans.durum === "aktif") {
-        if (!lisans.cihaz_kimlik) {
-            lisans.cihaz_kimlik = deviceId;
-            lisans.activation_token = aktivasyonTokenUret(temizKod, deviceId, lisans.bitis_zamani);
-            dbKaydet();
-            logEkle(temizKod, deviceId, "cihaz_baglandi", ip);
-        } else if (lisans.cihaz_kimlik !== deviceId) {
-            logEkle(temizKod, deviceId, "red_cihaz_uyusmazligi", ip);
-            return res.json({
-                valid: false,
-                reason: "device_mismatch",
-                message: "Bu lisans başka bir bilgisayara kayıtlı."
-            });
+        if (lisans.tip === "ajans") {
+            if (!Array.isArray(lisans.cihazlar)) lisans.cihazlar = [];
+            if (!lisans.cihazlar.includes(deviceId)) {
+                if (lisans.cihazlar.length >= (lisans.max_cihaz || 1)) {
+                    logEkle(temizKod, deviceId, "red_ajans_kapasite_dolu", ip);
+                    return res.json({
+                        valid: false,
+                        reason: "agency_limit_reached",
+                        message: "Bu ajans lisansının maksimum yayıncı kapasitesi (" + lisans.max_cihaz + ") dolmuştur."
+                    });
+                }
+                lisans.cihazlar.push(deviceId);
+                lisans.cihaz_kimlik = "Ajans (" + lisans.cihazlar.length + "/" + lisans.max_cihaz + ")";
+                dbKaydet();
+                logEkle(temizKod, deviceId, "ajans_yeni_cihaz_baglandi", ip);
+            }
+        } else {
+            if (!lisans.cihaz_kimlik) {
+                lisans.cihaz_kimlik = deviceId;
+                lisans.activation_token = aktivasyonTokenUret(temizKod, deviceId, lisans.bitis_zamani);
+                dbKaydet();
+                logEkle(temizKod, deviceId, "cihaz_baglandi", ip);
+            } else if (lisans.cihaz_kimlik !== deviceId) {
+                logEkle(temizKod, deviceId, "red_cihaz_uyusmazligi", ip);
+                return res.json({
+                    valid: false,
+                    reason: "device_mismatch",
+                    message: "Bu lisans başka bir bilgisayara kayıtlı."
+                });
+            }
         }
-
         const simdi = Date.now();
         let remainingSeconds = -1;
 
@@ -934,10 +973,10 @@ app.post("/api/admin/lisans-olustur", adminKontrol, (req, res) => {
         kod: kod,
         sure_birim: birim,
         sure_miktar: miktar,
-        durum: "aktif",
+        durum: "beklemede",
         olusturma_zamani: simdi,
-        aktivasyon_zamani: simdi,
-        bitis_zamani: bitisZamani,
+        aktivasyon_zamani: null,
+        bitis_zamani: null,
         cihaz_kimlik: null,
         notlar: notlar || ""
     };
@@ -956,6 +995,88 @@ app.post("/api/admin/lisans-olustur", adminKontrol, (req, res) => {
         sure_etiketi: sureEtiketi,
         mesaj: `${sureEtiketi} lisans oluşturuldu: ${kod}`
     });
+});
+
+// Ajans Lisansı Oluştur (Çoklu Yayıncı)
+app.post("/api/admin/ajans-lisansi-olustur", adminKontrol, (req, res) => {
+    const { ajans_adi, max_yayinci, sure_birim, sure_miktar, notlar } = req.body;
+    const birim = sure_birim || "gun";
+    const miktar = Number(sure_miktar);
+    const maxYayinci = Math.max(1, parseInt(max_yayinci, 10) || 1);
+
+    if (isNaN(miktar) && birim !== "sinirsiz") {
+        return res.status(400).json({ error: "Geçersiz süre miktarı!" });
+    }
+
+    const sureObj = { birim, miktar: birim === "sinirsiz" ? -1 : miktar };
+    let prefix = "MNGAJANS" + maxYayinci;
+    if (sureObj.birim === "sinirsiz") prefix += "INF";
+    else if (sureObj.birim === "dakika") prefix += "M" + sureObj.miktar;
+    else prefix += "D" + sureObj.miktar;
+
+    const rand = crypto.randomBytes(3).toString("hex").toUpperCase();
+    const sig = crypto.createHmac("sha256", ADMIN_SIFRE)
+                      .update(prefix + "-" + rand)
+                      .digest("hex")
+                      .substring(0, 6)
+                      .toUpperCase();
+    const kod = prefix + "-" + rand + "-" + sig;
+    const simdi = Date.now();
+
+    const yeniLisans = {
+        id: Date.now() + "_" + Math.random().toString(36).substr(2, 6),
+        kod: kod,
+        tip: "ajans",
+        ajans_adi: String(ajans_adi || "Özel Ajans").trim(),
+        max_cihaz: maxYayinci,
+        cihazlar: [],
+        sure_birim: birim,
+        sure_miktar: miktar,
+        durum: "beklemede",
+        olusturma_zamani: simdi,
+        aktivasyon_zamani: null,
+        bitis_zamani: null,
+        cihaz_kimlik: null,
+        notlar: (notlar ? notlar + " | " : "") + "Ajans: " + (ajans_adi || "Özel") + " (Kapasite: " + maxYayinci + " Yayıncı)"
+    };
+
+    lisanslarVeritabani.unshift(yeniLisans);
+    dbKaydet();
+
+    let sureEtiketi = "";
+    if (birim === "sinirsiz") sureEtiketi = "Sınırsız";
+    else if (birim === "dakika") sureEtiketi = miktar + " Dakikalık";
+    else sureEtiketi = miktar + " Günlük";
+
+    res.json({
+        kod,
+        durum: "beklemede",
+        sure_etiketi: sureEtiketi,
+        max_yayinci: maxYayinci,
+        ajans_adi: yeniLisans.ajans_adi,
+        mesaj: (ajans_adi || "Ajans") + " için " + maxYayinci + " kişilik " + sureEtiketi + " ajans lisansı oluşturuldu: " + kod
+    });
+});
+
+// Lisansları Senkronize Et / Yedekten Geri Yükle
+app.post("/api/admin/lisanslar-senkronize", adminKontrol, (req, res) => {
+    const { lisanslar } = req.body;
+    if (!Array.isArray(lisanslar)) return res.status(400).json({ error: "Geçersiz lisans verisi!" });
+    let eklenen = 0;
+    for (const gelen of lisanslar) {
+        if (!gelen || !gelen.kod) continue;
+        const mevcutIndex = lisanslarVeritabani.findIndex(l => l.kod === gelen.kod);
+        if (mevcutIndex === -1) {
+            lisanslarVeritabani.push(gelen);
+            eklenen++;
+        } else {
+            if (gelen.notlar && !lisanslarVeritabani[mevcutIndex].notlar) {
+                lisanslarVeritabani[mevcutIndex].notlar = gelen.notlar;
+            }
+        }
+    }
+    dbKaydet();
+    res.json({ basarili: true, eklenen, toplam: lisanslarVeritabani.length });
 });
 
 app.get("/api/admin/lisanslar", adminKontrol, (req, res) => {

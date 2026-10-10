@@ -7,7 +7,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   const observer=new IntersectionObserver(entries=>entries.forEach(entry=>{if(entry.isIntersecting){entry.target.classList.add('is-visible');observer.unobserve(entry.target)}}),{threshold:.12});
   targets.forEach(el=>observer.observe(el));
 
-  if(matchMedia('(pointer:fine)').matches&&!matchMedia('(prefers-reduced-motion:reduce)').matches){
+  if(!matchMedia('(prefers-reduced-motion:reduce)').matches){
     const gifts=['Rose.png','Ice_Cream_Cone.png','Finger_Heart.png','Doughnut.png','Little_Crown.png','Confetti.png','Balloon_Gift_Box.png','Breakthrough_Star.png','Greeting_Heart.png'];
     const canvas=document.createElement('canvas');canvas.className='gift-trail-canvas';document.body.appendChild(canvas);
     const ctx=canvas.getContext('2d');let width=0,height=0,dpr=1,points=[],lastGift=0,lastX=-100,lastY=-100,giftX=-100,giftY=-100,hue=190;
@@ -19,8 +19,35 @@ document.addEventListener('DOMContentLoaded',()=>{
   }
 
   const directDownload='https://drive.usercontent.google.com/download?id=1g-dEVnq_8ksvCTuHq9q7Ur-MGiFBpzND&export=download&confirm=t';
-  const stage=document.createElement('div');stage.className='download-stage';stage.hidden=true;stage.innerHTML=`<div class="download-panel" role="dialog" aria-modal="true" aria-labelledby="downloadTitle"><button class="download-close" type="button" aria-label="Kapat">×</button><div class="download-visual"><div class="download-kicker">MNG TIKTOK GAME · SÜRÜM 6.0.7</div><h2 id="downloadTitle">YAYININI OYUNA DÖNÜŞTÜR.</h2><p>Launcher, oyunlar, widgetlar ve canlı yayın araçları tek kurulum paketinde.</p></div><div class="download-body"><div class="download-meta"><div><small>PLATFORM</small><strong>Windows 10 / 11</strong></div><div><small>PAKET</small><strong>Güvenli kurulum</strong></div><div><small>SÜRÜM</small><strong>6.0.7 · Güncel</strong></div></div><div class="download-actions"><button class="download-now" type="button">İNDİRMEYİ BAŞLAT</button><button class="download-cancel" type="button">ŞİMDİ DEĞİL</button></div></div></div>`;document.body.appendChild(stage);
+  const stage=document.createElement('div');stage.className='download-stage';stage.hidden=true;stage.innerHTML=`<div class="download-panel" role="dialog" aria-modal="true" aria-labelledby="downloadTitle"><button class="download-close" type="button" aria-label="Kapat">×</button><div class="download-visual"><div class="download-kicker">MNG TIKTOK GAME · SÜRÜM 6.0.8</div><h2 id="downloadTitle">YAYININI OYUNA DÖNÜŞTÜR.</h2><p>Launcher, oyunlar, widgetlar ve canlı yayın araçları tek kurulum paketinde.</p></div><div class="download-body"><div class="download-meta"><div><small>PLATFORM</small><strong>Windows 10 / 11</strong></div><div><small>PAKET</small><strong>Güvenli kurulum</strong></div><div><small>SÜRÜM</small><strong>6.0.8 · Güncel</strong></div></div><div class="download-actions"><button class="download-now" type="button">İNDİRMEYİ BAŞLAT</button><button class="download-cancel" type="button">ŞİMDİ DEĞİL</button></div></div></div>`;document.body.appendChild(stage);
   const closeDownload=()=>{stage.hidden=true;document.body.style.overflow=''};stage.querySelector('.download-close').addEventListener('click',closeDownload);stage.querySelector('.download-cancel').addEventListener('click',closeDownload);stage.addEventListener('click',event=>{if(event.target===stage)closeDownload()});
   stage.querySelector('.download-now').addEventListener('click',()=>{const link=document.createElement('a');link.href=directDownload;link.rel='noopener';document.body.appendChild(link);link.click();link.remove();closeDownload()});
-  window.hemenIndir=()=>{stage.hidden=false;document.body.style.overflow='hidden';stage.querySelector('.download-now').focus()};
+  
+  // SOL TARAFTAN SÜZÜLEN HEDİYE BALONCUKLARI
+  const leftStreamEl = document.getElementById('heroLeftStream');
+  if (leftStreamEl) {
+    const leftGifts = ['Rose.png', 'Finger_Heart.png', 'Doughnut.png', 'Little_Crown.png', 'Balloon_Gift_Box.png', 'Confetti.png', 'Ice_Cream_Cone.png'];
+    const spawnStreamBubble = () => {
+      const bubble = document.createElement('div');
+      bubble.className = 'left-stream-bubble';
+      const randomGift = leftGifts[Math.floor(Math.random() * leftGifts.length)];
+      bubble.innerHTML = '<img src="/gift-assets/' + encodeURIComponent(randomGift) + '" alt="">';
+      bubble.style.left = Math.floor(Math.random() * 120 + 10) + 'px';
+      bubble.style.animationDuration = (Math.random() * 2 + 3.8) + 's';
+      leftStreamEl.appendChild(bubble);
+      setTimeout(() => bubble.remove(), 6000);
+    };
+    setInterval(spawnStreamBubble, 1400);
+    // Mouse hareketi de sol baloncukları besler
+    let lastLeftSpawn = 0;
+    window.addEventListener('pointermove', () => {
+      const n = performance.now();
+      if (n - lastLeftSpawn > 900) {
+        lastLeftSpawn = n;
+        spawnStreamBubble();
+      }
+    }, { passive: true });
+  }
+
+  window.hemenIndir={stage.hidden=false;document.body.style.overflow='hidden';stage.querySelector('.download-now').focus()};
 });
