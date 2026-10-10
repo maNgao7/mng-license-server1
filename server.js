@@ -436,13 +436,14 @@ function logEkle(lisansKod, cihazKimlik, islem, ip) {
 // =====================================================================
 // SÜRÜM BİLGİLERİ & İNDİRME LİNKLERİ
 // =====================================================================
-const EN_GUNCEL_SURUM = "6.1.1";
+const EN_GUNCEL_SURUM = "6.1.2";
 const EN_DUSUK_SURUM = "1.0.0";
 const SETUP_INDIRME_LINKI = "https://drive.usercontent.google.com/download?id=1g-dEVnq_8ksvCTuHq9q7Ur-MGiFBpzND&export=download&confirm=t";
 const SETUP_WEB_LINKI = "https://drive.google.com/file/d/1g-dEVnq_8ksvCTuHq9q7Ur-MGiFBpzND/view?usp=sharing";
 
 // Her güncellemede eklenen/değişen özellikler listesi
 const SURUM_NOTLARI = [
+    "v6.1.2 — Oyun Başlatma Kolaylığı: Canlı yayında olma zorunluluğu kaldırıldı (test ve internetsiz modda dahi doğrudan başlatma), Widget önizleme animasyonları ve iframe bağlantıları güvenceye alındı, UTF-8 BOM otomatik temizleme ve kalıcı hafızalı sıralama sistemi.",
     "v6.1.1 — Canlı Yayın Köprü ve Mod Düzeltmesi (ES Module Hatası Giderildi), TikTok VS Profil Uyumlu 3000 Portlu Kalıcı Widget Sistemi, İlk 3 Kürsülü En Çok Coin Atanlar Liderlik Widget'ı, Yönetici Paneli Gerçek İptal/Silme ve Kaydırmasız Tam Tablo Görünümü.",
     "v6.0.9 — Gelene Geçene Canlı Yayın Köprü ve Başlatma Onarımı: TikTok canlı yayın köprüsü başlatma kontrolü ve port yönetimi güçlendirildi; Unturned mod içi köprü önceliği sağlandı; dinamik köprü sürüm uyumluluğu ve yönetici paneli ses/canlı paket görselleştirmesi tamamlandı.",
     "v6.0.8 — Kalkan 500 HP & Mavi Aura, Flash Körlük Süre Ayarı, Kurtuluş Terminali P Tuşu Güçlendirmesi, Balon Uçuşu Yumuşak Kararma (Fade to Black), Çoklu Yayıncı Ajans Lisansları, WhatsApp İletişim Hattı, Kalıcı Lisans Koruma ve Senkronizasyon Sistemi.",
