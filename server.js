@@ -436,13 +436,14 @@ function logEkle(lisansKod, cihazKimlik, islem, ip) {
 // =====================================================================
 // SÜRÜM BİLGİLERİ & İNDİRME LİNKLERİ
 // =====================================================================
-const EN_GUNCEL_SURUM = "6.0.8";
+const EN_GUNCEL_SURUM = "6.0.9";
 const EN_DUSUK_SURUM = "1.0.0";
 const SETUP_INDIRME_LINKI = "https://drive.usercontent.google.com/download?id=1g-dEVnq_8ksvCTuHq9q7Ur-MGiFBpzND&export=download&confirm=t";
 const SETUP_WEB_LINKI = "https://drive.google.com/file/d/1g-dEVnq_8ksvCTuHq9q7Ur-MGiFBpzND/view?usp=sharing";
 
 // Her güncellemede eklenen/değişen özellikler listesi
 const SURUM_NOTLARI = [
+    "v6.0.9 — Gelene Geçene Canlı Yayın Köprü ve Başlatma Onarımı: TikTok canlı yayın köprüsü başlatma kontrolü ve port yönetimi güçlendirildi; Unturned mod içi köprü önceliği sağlandı; dinamik köprü sürüm uyumluluğu ve yönetici paneli ses/canlı paket görselleştirmesi tamamlandı.",
     "v6.0.8 — Kalkan 500 HP & Mavi Aura, Flash Körlük Süre Ayarı, Kurtuluş Terminali P Tuşu Güçlendirmesi, Balon Uçuşu Yumuşak Kararma (Fade to Black), Çoklu Yayıncı Ajans Lisansları, WhatsApp İletişim Hattı, Kalıcı Lisans Koruma ve Senkronizasyon Sistemi.",
     "v6.0.7 — Gelene Geçene HD Profil & Gösterişli Zafer Ekranları: Profil avatarları 128x128 anti-aliased HD kesim ve dinamik renklere kavuşturuldu; yayıncı elendiğinde altın taçlı ve neon çerçeveli Katil Ekranı; balon görevi tamamlandığında dev renkli YAYINCI KAZANDI (WINNER) zafer şeridi; TikTok Live Studio için 0.0.0.0/127.0.0.1 uyumlu ve tekrarlı adetli (örn: 2x TikTok) canlı hediye widgetları eklendi; Launcher kart hover efektleri ayrıştırıldı ve manifesto başlığı altın kontürlü şeffaf stile güncellendi.",
     "v6.0.6 — Gelene Geçene Canlı Yayın Etkileşim Onarımı: Yayına bağlandıktan sonra hediye, beğeni ve takip ile canavarların spawn olmasını engelleyen motor zombi döngüsü (ZombieManager) ve JSON deserialization/regex eşleme hatası giderildi; unmapped hediyeler için otomatik canavar yönlendirmesi ve havuzlu beğeni sayacı eklendi.",
