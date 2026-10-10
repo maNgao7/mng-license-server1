@@ -144,7 +144,7 @@ document.addEventListener('DOMContentLoaded', () => {
     <div class="download-panel" role="dialog" aria-modal="true" aria-labelledby="downloadTitle">
       <button class="download-close" type="button" aria-label="Kapat">×</button>
       <div class="download-visual">
-        <div class="download-kicker">MNG TIKTOK GAME · SÜRÜM 6.0.9</div>
+        <div class="download-kicker">MNG TIKTOK GAME · SÜRÜM 6.1.1</div>
         <h2 id="downloadTitle">YAYININI OYUNA DÖNÜŞTÜR.</h2>
         <p>Launcher, oyunlar, widgetlar ve canlı yayın araçları tek kurulum paketinde.</p>
       </div>
@@ -152,7 +152,7 @@ document.addEventListener('DOMContentLoaded', () => {
         <div class="download-meta">
           <div><small>PLATFORM</small><strong>Windows 10 / 11</strong></div>
           <div><small>PAKET</small><strong>Güvenli kurulum</strong></div>
-          <div><small>SÜRÜM</small><strong>6.0.9 · Güncel</strong></div>
+          <div><small>SÜRÜM</small><strong>6.1.1 · Güncel</strong></div>
         </div>
         <div class="download-actions">
           <button class="download-now" type="button">İNDİRMEYİ BAŞLAT</button>

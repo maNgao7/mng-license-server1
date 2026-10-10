@@ -655,10 +655,11 @@
 
         /* TABLO DÜZENİ VE TİPOGRAFİ */
         .table-responsive {
-            overflow-x: auto;
+            overflow: visible;
             border: 1px solid var(--border);
             border-radius: 10px;
             background: var(--surface2);
+            width: 100%;
         }
 
         table {
@@ -856,7 +857,7 @@
         <header class="header">
             <div class="header-title">
                 <span>🎮 MNG TikTok Game</span>
-                <span class="badge-live">v6.0.9 Yönetici Paneli</span>
+                <span class="badge-live">v6.1.1 Yönetici Paneli</span>
             </div>
             <div class="header-actions">
                 <a href="/" target="_blank" class="btn-top">🌐 Web Sitesini Aç</a>
@@ -1405,8 +1406,31 @@
 
         function copyLicenseCode(code) {
             playClickSound();
-            navigator.clipboard.writeText(code);
-            alert("Lisans kodu kopyalandı: " + code);
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(code).then(() => {
+                    alert("Lisans kodu kopyalandı: " + code);
+                }).catch(() => {
+                    fallbackCopy(code);
+                });
+            } else {
+                fallbackCopy(code);
+            }
+        }
+
+        function fallbackCopy(text) {
+            const ta = document.createElement("textarea");
+            ta.value = text;
+            ta.style.position = "fixed";
+            ta.style.left = "-9999px";
+            document.body.appendChild(ta);
+            ta.select();
+            try {
+                document.execCommand('copy');
+                alert("Lisans kodu kopyalandı: " + text);
+            } catch {
+                prompt("Lisans kodunu kopyalayabilirsiniz:", text);
+            }
+            document.body.removeChild(ta);
         }
 
         // BİREYSEL LİSANS ÜRET
@@ -1491,22 +1515,40 @@
             playClickSound();
             if (!confirm(`'${kod}' kodlu lisansı iptal etmek istediğinize emin misiniz?`)) return;
             try {
-                await fetch(`/api/admin/lisans-iptal/${kod}`, {
+                const res = await fetch(`/api/admin/lisans/${kod}/iptal`, {
                     method: "POST",
                     headers: { "X-Admin-Token": adminToken }
                 });
-                loadLicenses();
+                const data = await res.json();
+                if (data.error) {
+                    alert("Hata: " + data.error);
+                } else {
+                    const found = allLicenses.find(l => l.kod === kod);
+                    if (found) found.durum = "iptal";
+                    localStorage.setItem("mng_admin_lisans_yedek", JSON.stringify(allLicenses));
+                    updatePoolStats();
+                    renderTable();
+                }
             } catch (e) { alert("Hata: " + e.message); }
         }
 
         async function unrevokeLicense(kod) {
             playClickSound();
             try {
-                await fetch(`/api/admin/lisans-aktif/${kod}`, {
+                const res = await fetch(`/api/admin/lisans/${kod}/aktif-et`, {
                     method: "POST",
                     headers: { "X-Admin-Token": adminToken }
                 });
-                loadLicenses();
+                const data = await res.json();
+                if (data.error) {
+                    alert("Hata: " + data.error);
+                } else {
+                    const found = allLicenses.find(l => l.kod === kod);
+                    if (found) found.durum = data.durum || (found.aktivasyon_zamani ? "aktif" : "beklemede");
+                    localStorage.setItem("mng_admin_lisans_yedek", JSON.stringify(allLicenses));
+                    updatePoolStats();
+                    renderTable();
+                }
             } catch (e) { alert("Hata: " + e.message); }
         }
 
@@ -1514,11 +1556,19 @@
             playClickSound();
             if (!confirm(`DİKKAT: '${kod}' lisansı havuzdan tamamen silinecektir. Emin misiniz?`)) return;
             try {
-                await fetch(`/api/admin/lisans/${kod}`, {
+                const res = await fetch(`/api/admin/lisans/${kod}`, {
                     method: "DELETE",
                     headers: { "X-Admin-Token": adminToken }
                 });
-                loadLicenses();
+                const data = await res.json();
+                if (data.error) {
+                    alert("Hata: " + data.error);
+                } else {
+                    allLicenses = allLicenses.filter(l => l.kod !== kod);
+                    localStorage.setItem("mng_admin_lisans_yedek", JSON.stringify(allLicenses));
+                    updatePoolStats();
+                    renderTable();
+                }
             } catch (e) { alert("Hata: " + e.message); }
         }
 
@@ -1583,29 +1633,8 @@
                     headers: { "X-Admin-Token": adminToken }
                 });
                 const serverLicenses = await res.json();
-
-                const localBackupRaw = localStorage.getItem("mng_admin_lisans_yedek");
-                let localBackup = [];
-                try { if (localBackupRaw) localBackup = JSON.parse(localBackupRaw); } catch {}
-
-                if ((!serverLicenses || serverLicenses.length === 0) && localBackup.length > 0) {
-                    await syncLicensesToServer(localBackup);
-                    allLicenses = localBackup;
-                } else {
-                    allLicenses = Array.isArray(serverLicenses) ? serverLicenses : [];
-                    if (localBackup.length > 0) {
-                        let hasNew = false;
-                        for (const b of localBackup) {
-                            if (!allLicenses.some(l => l.kod === b.kod)) {
-                                allLicenses.push(b);
-                                hasNew = true;
-                            }
-                        }
-                        if (hasNew) syncLicensesToServer(allLicenses);
-                    }
-                    localStorage.setItem("mng_admin_lisans_yedek", JSON.stringify(allLicenses));
-                }
-
+                allLicenses = Array.isArray(serverLicenses) ? serverLicenses : [];
+                localStorage.setItem("mng_admin_lisans_yedek", JSON.stringify(allLicenses));
                 updatePoolStats();
                 renderTable();
             } catch {
