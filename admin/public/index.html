@@ -477,92 +477,97 @@
 
             <!-- YENİ LİSANS OLUŞTUR -->
             <div class="create-card">
-                <div class="section-title">🔑 Yeni Lisans Kodu Oluştur</div>
-                
-                <div class="duration-group-label">⚡ HIZLI DENEME SÜRELERİ (DAKİKA BAZLI):</div>
-                <div class="duration-buttons">
-                    <button class="dur-btn quick" onclick="selectDuration('dakika', 1, this)">⚡ 1 Dakika (Test)</button>
-                    <button class="dur-btn quick" onclick="selectDuration('dakika', 10, this)">⚡ 10 Dakika</button>
-                    <button class="dur-btn quick" onclick="selectDuration('dakika', 20, this)">⚡ 20 Dakika</button>
-                </div>
-
-                <div class="duration-group-label">📅 STANDART & SINIRSIZ PAKETLER (GÜN BAZLI):</div>
-                <div class="duration-buttons">
-                    <button class="dur-btn" onclick="selectDuration('gun', 1, this)">1 Günlük</button>
-                    <button class="dur-btn" onclick="selectDuration('gun', 3, this)">3 Günlük</button>
-                    <button class="dur-btn active" onclick="selectDuration('gun', 7, this)">7 Günlük (Standart)</button>
-                    <button class="dur-btn" onclick="selectDuration('gun', 30, this)">30 Günlük (Aylık)</button>
-                    <button class="dur-btn" onclick="selectDuration('sinirsiz', -1, this)">♾️ Sınırsız Lisans</button>
-                </div>
-
-                <div class="duration-group-label" style="margin-top:8px;">✏️ ÖZEL SÜRE BELİRLE:</div>
-                <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:12px;">
-                    <input type="number" id="customDurVal" min="1" max="9999" placeholder="Miktar" style="width:90px;padding:8px 10px;background:var(--card-bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;">
-                    <select id="customDurUnit" style="padding:8px 10px;background:var(--card-bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;">
-                        <option value="dakika">Dakika</option>
-                        <option value="saat">Saat</option>
-                        <option value="gun" selected>Gün</option>
-                        <option value="ay">Ay (30 gün)</option>
-                        <option value="yil">Yıl (365 gün)</option>
-                    </select>
-                    <button class="dur-btn" onclick="applyCustomDuration()" style="background:rgba(37,244,238,0.15);border-color:rgba(37,244,238,0.4);color:#25f4ee;">✓ Uygula</button>
-                    <span id="customDurDisplay" style="font-size:12px;color:var(--text-dim);"></span>
-                </div>
-
-                <div class="form-row">
-                    <input type="text" id="licenseNote" class="form-input" placeholder="Müşteri Adı / Not Açıklaması (Örn: Mehmet - TikTok Canlı)">
-                    <button class="btn-create" onclick="createLicense()">+ Lisansı Oluştur</button>
-                </div>
-
-                <div class="new-license-box" id="newLicenseBox">
-                    <div>
-                        <div style="font-size:12px; color:var(--text-dim); margin-bottom:4px;">YENİ OLUŞTURULAN LİSANS KODU:</div>
-                        <div class="new-code" id="newLicenseCode"></div>
-                        <div style="font-size:11px; color:var(--text-dim); margin-top:2px;" id="newLicenseDesc"></div>
-                    </div>
-                    <button class="btn-copy" onclick="copyNewCode()">Kopyala 📋</button>
-                </div>
-            </div>
-
-            <!-- AJANS LİSANSI OLUŞTUR (ÇOKLU YAYINCI) -->
-            <div class="create-card" style="margin-top:20px;border-color:rgba(142,212,98,0.35);background:linear-gradient(135deg,rgba(142,212,98,0.06),rgba(37,244,238,0.04));">
-                <div class="section-title" style="color:#8ed462;">🏢 Ajans Lisansı Oluştur (Çoklu Yayıncı Ortak Lisans)</div>
-                <p style="font-size:12px;color:var(--text-dim);margin-bottom:14px;">
-                    Tek bir lisans anahtarı belirlediğiniz kişi sayısı kadar yayıncı tarafından kullanılabilir. Süre ilk yayıncı aktif ettiğinde ortak başlar ve tüm yayıncılar için aynı anda işler.
-                </p>
-                <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px;">
-                    <div style="flex:1;min-width:200px;">
-                        <label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:4px;">AJANS ADI</label>
-                        <input type="text" id="agencyName" class="form-input" style="width:100%;" placeholder="Örn: Trend Ajans / TikTok Takımı">
-                    </div>
-                    <div style="width:180px;">
-                        <label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:4px;">YAYINCI SAYISI (KAPASİTE)</label>
-                        <input type="number" id="agencyMaxUsers" class="form-input" style="width:100%;" min="1" max="1000" value="40" placeholder="Kişi Sayısı">
+                <div class="section-title" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
+                    <div>🔑 Yeni Lisans Kodu Oluştur</div>
+                    <div style="display:flex;gap:6px;">
+                        <button type="button" class="dur-btn active" id="btnModeStandard" onclick="switchLicenseMode('standard')">👤 Standart Lisans</button>
+                        <button type="button" class="dur-btn" id="btnModeAgency" onclick="switchLicenseMode('agency')">🏢 Ajans Lisansı</button>
                     </div>
                 </div>
 
-                <div class="duration-group-label">⏱️ AJANS ORTAK SÜRESİ:</div>
-                <div class="duration-buttons">
-                    <button class="dur-btn agency-dur" onclick="selectAgencyDuration('gun', 1, this)">1 Günlük</button>
-                    <button class="dur-btn agency-dur" onclick="selectAgencyDuration('gun', 7, this)">7 Günlük</button>
-                    <button class="dur-btn agency-dur active" onclick="selectAgencyDuration('gun', 30, this)">30 Günlük (Aylık)</button>
-                    <button class="dur-btn agency-dur" onclick="selectAgencyDuration('gun', 60, this)">60 Günlük (2 Ay)</button>
-                    <button class="dur-btn agency-dur" onclick="selectAgencyDuration('gun', 90, this)">90 Günlük (3 Ay)</button>
-                    <button class="dur-btn agency-dur" onclick="selectAgencyDuration('sinirsiz', -1, this)">♾️ Sınırsız</button>
-                </div>
-
-                <div class="form-row" style="margin-top:12px;">
-                    <input type="text" id="agencyNote" class="form-input" placeholder="Ajans Yetkilisi / Not (Örn: Ahmet Bey - 40 Yayıncı)">
-                    <button class="btn-create" style="background:linear-gradient(135deg, #10b981, #059669);" onclick="createAgencyLicense()">🏢 Ajans Lisansını Üret</button>
-                </div>
-
-                <div class="new-license-box" id="newAgencyLicenseBox" style="display:none;border-color:#10b981;background:rgba(16,185,129,0.12);">
-                    <div>
-                        <div style="font-size:12px; color:var(--text-dim); margin-bottom:4px;">YENİ AJANS LİSANS KODU:</div>
-                        <div class="new-code" id="newAgencyLicenseCode" style="color:#8ed462;"></div>
-                        <div style="font-size:11px; color:var(--text-dim); margin-top:2px;" id="newAgencyLicenseDesc"></div>
+                <!-- STANDART LİSANS FORMU -->
+                <div id="formStandardLicense">
+                    <div class="duration-group-label">⚡ HIZLI DENEME SÜRELERİ (DAKİKA BAZLI):</div>
+                    <div class="duration-buttons">
+                        <button class="dur-btn quick" onclick="selectDuration('dakika', 1, this)">⚡ 1 Dakika (Test)</button>
+                        <button class="dur-btn quick" onclick="selectDuration('dakika', 10, this)">⚡ 10 Dakika</button>
+                        <button class="dur-btn quick" onclick="selectDuration('dakika', 20, this)">⚡ 20 Dakika</button>
                     </div>
-                    <button class="btn-copy" onclick="copyNewAgencyCode()">Kopyala 📋</button>
+
+                    <div class="duration-group-label">📅 STANDART & SINIRSIZ PAKETLER (GÜN BAZLI):</div>
+                    <div class="duration-buttons">
+                        <button class="dur-btn" onclick="selectDuration('gun', 1, this)">1 Günlük</button>
+                        <button class="dur-btn" onclick="selectDuration('gun', 3, this)">3 Günlük</button>
+                        <button class="dur-btn active" onclick="selectDuration('gun', 7, this)">7 Günlük (Standart)</button>
+                        <button class="dur-btn" onclick="selectDuration('gun', 30, this)">30 Günlük (Aylık)</button>
+                        <button class="dur-btn" onclick="selectDuration('sinirsiz', -1, this)">♾️ Sınırsız Lisans</button>
+                    </div>
+
+                    <div class="duration-group-label" style="margin-top:8px;">✏️ ÖZEL SÜRE BELİRLE:</div>
+                    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:12px;">
+                        <input type="number" id="customDurVal" min="1" max="9999" placeholder="Miktar" style="width:90px;padding:8px 10px;background:var(--card-bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;">
+                        <select id="customDurUnit" style="padding:8px 10px;background:var(--card-bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;">
+                            <option value="dakika">Dakika</option>
+                            <option value="saat">Saat</option>
+                            <option value="gun" selected>Gün</option>
+                            <option value="ay">Ay (30 gün)</option>
+                            <option value="yil">Yıl (365 gün)</option>
+                        </select>
+                        <button class="dur-btn" onclick="applyCustomDuration()" style="background:rgba(37,244,238,0.15);border-color:rgba(37,244,238,0.4);color:#25f4ee;">✓ Uygula</button>
+                        <span id="customDurDisplay" style="font-size:12px;color:var(--text-dim);"></span>
+                    </div>
+
+                    <div class="form-row">
+                        <input type="text" id="licenseNote" class="form-input" placeholder="Müşteri Adı / Not Açıklaması (Örn: Mehmet - TikTok Canlı)">
+                        <button class="btn-create" onclick="createLicense()">+ Lisansı Oluştur</button>
+                    </div>
+
+                    <div class="new-license-box" id="newLicenseBox">
+                        <div>
+                            <div style="font-size:12px; color:var(--text-dim); margin-bottom:4px;">YENİ OLUŞTURULAN LİSANS KODU:</div>
+                            <div class="new-code" id="newLicenseCode"></div>
+                            <div style="font-size:11px; color:var(--text-dim); margin-top:2px;" id="newLicenseDesc"></div>
+                        </div>
+                        <button class="btn-copy" onclick="copyNewCode()">Kopyala 📋</button>
+                    </div>
+                </div>
+
+                <!-- AJANS LİSANSI FORMU -->
+                <div id="formAgencyLicense" style="display:none;">
+                    <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px;">
+                        <div style="flex:1;min-width:200px;">
+                            <label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:4px;">AJANS ADI</label>
+                            <input type="text" id="agencyName" class="form-input" style="width:100%;" placeholder="Örn: Trend Ajans / TikTok Takımı">
+                        </div>
+                        <div style="width:180px;">
+                            <label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:4px;">YAYINCI SAYISI (KAPASİTE)</label>
+                            <input type="number" id="agencyMaxUsers" class="form-input" style="width:100%;" min="1" max="1000" value="40" placeholder="Kişi Sayısı">
+                        </div>
+                    </div>
+
+                    <div class="duration-group-label">⏱️ AJANS ORTAK SÜRESİ:</div>
+                    <div class="duration-buttons">
+                        <button class="dur-btn agency-dur" onclick="selectAgencyDuration('gun', 1, this)">1 Günlük</button>
+                        <button class="dur-btn agency-dur" onclick="selectAgencyDuration('gun', 7, this)">7 Günlük</button>
+                        <button class="dur-btn agency-dur active" onclick="selectAgencyDuration('gun', 30, this)">30 Günlük (Aylık)</button>
+                        <button class="dur-btn agency-dur" onclick="selectAgencyDuration('gun', 60, this)">60 Günlük (2 Ay)</button>
+                        <button class="dur-btn agency-dur" onclick="selectAgencyDuration('gun', 90, this)">90 Günlük (3 Ay)</button>
+                        <button class="dur-btn agency-dur" onclick="selectAgencyDuration('sinirsiz', -1, this)">♾️ Sınırsız</button>
+                    </div>
+
+                    <div class="form-row" style="margin-top:12px;">
+                        <input type="text" id="agencyNote" class="form-input" placeholder="Ajans Yetkilisi / Not (Örn: Ahmet Bey - 40 Yayıncı)">
+                        <button class="btn-create" onclick="createAgencyLicense()">🏢 Ajans Lisansını Üret</button>
+                    </div>
+
+                    <div class="new-license-box" id="newAgencyLicenseBox" style="display:none;">
+                        <div>
+                            <div style="font-size:12px; color:var(--text-dim); margin-bottom:4px;">YENİ AJANS LİSANS KODU:</div>
+                            <div class="new-code" id="newAgencyLicenseCode" style="color:#25f4ee;"></div>
+                            <div style="font-size:11px; color:var(--text-dim); margin-top:2px;" id="newAgencyLicenseDesc"></div>
+                        </div>
+                        <button class="btn-copy" onclick="copyNewAgencyCode()">Kopyala 📋</button>
+                    </div>
                 </div>
             </div>
 
@@ -582,8 +587,6 @@
                         <button class="dur-btn" style="background:rgba(254,44,85,0.15);border-color:rgba(254,44,85,0.4);color:#fe2c55;padding:7px 12px;font-size:12px;" onclick="uploadLicensesJson()" title="Yedekten lisansları geri yükle">📤 Yedekten Yükle</button>
                         <input type="file" id="restoreFileInput" accept=".json" style="display:none;" onchange="handleRestoreFile(event)">
                     </div>
-                </div>
-                    <input type="text" id="searchInput" class="search-box" placeholder="Kod veya not ile filtrele..." oninput="renderTable()">
                 </div>
 
                 <table>
@@ -746,6 +749,14 @@
                 }
             };
             reader.readAsText(file);
+        }
+
+                function switchLicenseMode(mode) {
+            const isAgency = mode === 'agency';
+            document.getElementById('btnModeStandard').classList.toggle('active', !isAgency);
+            document.getElementById('btnModeAgency').classList.toggle('active', isAgency);
+            document.getElementById('formStandardLicense').style.display = isAgency ? 'none' : 'block';
+            document.getElementById('formAgencyLicense').style.display = isAgency ? 'block' : 'none';
         }
 
         let allRequests = [];
