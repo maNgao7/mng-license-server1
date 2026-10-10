@@ -424,13 +424,17 @@ function logEkle(lisansKod, cihazKimlik, islem, ip) {
 // =====================================================================
 // SÜRÜM BİLGİLERİ & İNDİRME LİNKLERİ
 // =====================================================================
-const EN_GUNCEL_SURUM = "6.0.1";
+const EN_GUNCEL_SURUM = "6.0.2";
 const EN_DUSUK_SURUM = "1.0.0";
 const SETUP_INDIRME_LINKI = "https://drive.usercontent.google.com/download?id=1g-dEVnq_8ksvCTuHq9q7Ur-MGiFBpzND&export=download&confirm=t";
 const SETUP_WEB_LINKI = "https://drive.google.com/file/d/1g-dEVnq_8ksvCTuHq9q7Ur-MGiFBpzND/view?usp=sharing";
 
 // Her güncellemede eklenen/değişen özellikler listesi
 const SURUM_NOTLARI = [
+    "v6.0.2 — Gelene Geçene Canlı Olay Düzeltmesi: Eski mod DLL'lerinin olay kuyruğunu tüketmesi engellendi; hediye, beğeni ve takip olayları güvenli biçimde işleniyor.",
+    "v6.0.2 — Ortak 630 Hediyelik Katalog: Gerçek görseller, adlar ve coin değerleri bütün oyunlarda tek kaynaktan sunuluyor.",
+    "v6.0.2 — Tasarım ve Widgetlar: Hediye alt yazısı/küçük görsel düzenleme, widget önizleme düzeltmesi ve localhost bağlantıları eklendi.",
+    "v6.0.2 — Şövalye Savaşı: Her kılıç darbesi yalnızca tek hedefe vurur ve savaş sesi yenilendi.",
     "v6.0.1 — Gelene Geçene Canlı Olay Onarımı: TikTok'un gerçek hediye kimliği ile yerel katalog kimliği farklı olduğunda Türkçe/İngilizce ad ve görsel dosyası üzerinden güvenli eşleştirme eklendi.",
     "v6.0.1 — Kesintisiz Yayın Bağlantısı: Hediye, beğeni ve takip bağlantısı koptuğunda oyun otomatik yeniden bağlanır; takip olaylarının çift işlenmesi engellendi ve olay kuyruğu korumaya alındı.",
     "v6.0.1 — TikTok Login Kit Hazırlığı: Gizlilik Politikası ve Kullanım Koşulları yayıma hazırlandı; resmî hesap girişi için güvenli OAuth altyapısı hazırlanıyor.",
