@@ -473,13 +473,14 @@ function logEkle(lisansKod, cihazKimlik, islem, ip) {
 // =====================================================================
 // SÜRÜM BİLGİLERİ & İNDİRME LİNKLERİ
 // =====================================================================
-const EN_GUNCEL_SURUM = "6.5.0";
+const EN_GUNCEL_SURUM = "6.5.1";
 const EN_DUSUK_SURUM = "1.0.0";
 const SETUP_INDIRME_LINKI = "https://drive.usercontent.google.com/download?id=1g-dEVnq_8ksvCTuHq9q7Ur-MGiFBpzND&export=download&confirm=t";
 const SETUP_WEB_LINKI = "https://drive.google.com/file/d/1g-dEVnq_8ksvCTuHq9q7Ur-MGiFBpzND/view?usp=sharing";
 
 // Her güncellemede eklenen/değişen özellikler listesi
 const SURUM_NOTLARI = [
+    "v6.5.1 — Launcher oyun kartları birbirinden ayrıldı: MNG Pony Life mercan-altın yarış temasına, MNG Duck Hunt ördek simgeli limon-yeşil karnaval temasına kavuştu. Normal ve ajans lisansları için kalıcı arşiv havuzu güçlendirildi; yönetici paneli ve özel veriler güvenli oturum korumasına alındı.",
     "v6.5.0 — İki Yeni Oyun: MNG Pony Life ve MNG Duck Hunt launcher'a eklendi. Pony Life'ta hızlanan atlar için gökkuşağı izi, elle yarış bitirme ve yenilenen lunapark sahnesi; Gelene Geçene'de sıcak hava balonu terminali ve yeni kalıcı canavar dengesi eklendi.",
     "v6.1.2 — Oyun Başlatma Kolaylığı: Canlı yayında olma zorunluluğu kaldırıldı (test ve internetsiz modda dahi doğrudan başlatma), Widget önizleme animasyonları ve iframe bağlantıları güvenceye alındı, UTF-8 BOM otomatik temizleme ve kalıcı hafızalı sıralama sistemi.",
     "v6.1.1 — Canlı Yayın Köprü ve Mod Düzeltmesi (ES Module Hatası Giderildi), TikTok VS Profil Uyumlu 3000 Portlu Kalıcı Widget Sistemi, İlk 3 Kürsülü En Çok Coin Atanlar Liderlik Widget'ı, Yönetici Paneli Gerçek İptal/Silme ve Kaydırmasız Tam Tablo Görünümü.",
@@ -1193,14 +1194,17 @@ app.post(["/api/admin/lisans/:kod/aktif-et", "/api/admin/lisans-aktif/:kod"], ad
 
 app.delete("/api/admin/lisans/:kod", adminKontrol, (req, res) => {
     const kod = req.params.kod.toUpperCase();
-    const index = lisanslarVeritabani.findIndex(l => l.kod === kod);
-    if (index === -1) return res.status(404).json({ error: "Lisans bulunamadı." });
+    const lisans = lisanslarVeritabani.find(l => l.kod === kod);
+    if (!lisans) return res.status(404).json({ error: "Lisans bulunamadı." });
 
-    lisanslarVeritabani.splice(index, 1);
-    karaListeVeritabani = karaListeVeritabani.filter(k => k !== kod);
-    karaListeKaydet();
+    lisans.durum = "arsivlendi";
+    lisans.arsivlenme_zamani = Date.now();
+    if (!karaListeVeritabani.includes(kod)) {
+        karaListeVeritabani.push(kod);
+        karaListeKaydet();
+    }
     dbKaydet();
-    res.json({ mesaj: "Lisans silindi." });
+    res.json({ mesaj: "Lisans kalıcı havuzda arşivlendi.", durum: lisans.durum });
 });
 
 // Gelen Talepleri Listele

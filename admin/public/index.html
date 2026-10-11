@@ -857,7 +857,7 @@
         <header class="header">
             <div class="header-title">
                 <span>🎮 MNG TikTok Game</span>
-                <span class="badge-live">v6.5.0 Yönetici Paneli</span>
+                <span class="badge-live">v6.5.1 Yönetici Paneli</span>
             </div>
             <div class="header-actions">
                 <a href="/" target="_blank" class="btn-top">🌐 Web Sitesini Aç</a>
@@ -1337,6 +1337,9 @@
                 } else if (l.durum === "suresi_doldu") {
                     durClass = "suresi-doldu";
                     durText = "Süresi Doldu";
+                } else if (l.durum === "arsivlendi") {
+                    durClass = "iptal";
+                    durText = "Kalıcı Arşiv";
                 }
 
                 // Geri sayım / Süre durumu
@@ -1363,6 +1366,8 @@
                     kalanText = '<span style="color:#c084fc;font-weight:600;">❌ Süre Doldu</span>';
                 } else if (durClass === "iptal") {
                     kalanText = '<span style="color:#ef4444;font-weight:600;">🚫 İptal</span>';
+                } else if (l.durum === "arsivlendi") {
+                    kalanText = '<span style="color:#94a3b8;font-weight:600;">📦 Kalıcı Arşiv</span>';
                 }
 
                 // Cihaz / Kullanıcı
@@ -1554,7 +1559,7 @@
 
         async function deleteLicense(kod) {
             playClickSound();
-            if (!confirm(`DİKKAT: '${kod}' lisansı havuzdan tamamen silinecektir. Emin misiniz?`)) return;
+            if (!confirm(`'${kod}' lisansı kalıcı havuzda arşivlenecek ve tekrar kullanılamayacaktır. Devam edilsin mi?`)) return;
             try {
                 const res = await fetch(`/api/admin/lisans/${kod}`, {
                     method: "DELETE",
@@ -1564,7 +1569,8 @@
                 if (data.error) {
                     alert("Hata: " + data.error);
                 } else {
-                    allLicenses = allLicenses.filter(l => l.kod !== kod);
+                    const found = allLicenses.find(l => l.kod === kod);
+                    if (found) found.durum = data.durum || "arsivlendi";
                     localStorage.setItem("mng_admin_lisans_yedek", JSON.stringify(allLicenses));
                     updatePoolStats();
                     renderTable();
