@@ -9,7 +9,9 @@
     "dev": "node --watch server.js"
   },
   "dependencies": {
+    "cors": "^2.8.5",
     "express": "^4.19.2",
-    "cors": "^2.8.5"
+    "express-rate-limit": "^8.7.1",
+    "helmet": "^8.3.0"
   }
 }

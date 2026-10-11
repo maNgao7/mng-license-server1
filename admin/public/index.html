@@ -1107,7 +1107,7 @@
     </div>
 
     <script>
-        let adminToken = localStorage.getItem("mng_admin_token");
+        let adminToken = null;
         let selectedBirim = "gun";
         let selectedMiktar = 7;
         let selectedLabel = "7 Günlük (Standart Paket)";
@@ -1719,12 +1719,15 @@
         }
 
         // AUTH & BAŞLANGIÇ
-        window.onload = () => {
-            if (adminToken) {
+        window.onload = async () => {
+            localStorage.removeItem("mng_admin_token");
+            try {
+                const session = await fetch("/api/admin/oturum", { cache: "no-store" });
+                if (!session.ok) throw new Error("Oturum yok");
                 showPanel();
                 loadLicenses();
                 loadRequests();
-            } else {
+            } catch {
                 showLogin();
             }
         };
@@ -1752,13 +1755,12 @@
                     body: JSON.stringify({ sifre: pw })
                 });
                 const data = await res.json();
-                if (data.token) {
-                    adminToken = data.token;
-                    localStorage.setItem("mng_admin_token", adminToken);
+                if (data.ok) {
                     showPanel();
                     loadLicenses();
                     loadRequests();
                 } else {
+                    err.textContent = data.error || "Hatalı şifre! Lütfen tekrar deneyin.";
                     err.style.display = "block";
                 }
             } catch {
@@ -1767,10 +1769,11 @@
             }
         }
 
-        function logout() {
+        async function logout() {
             playClickSound();
             localStorage.removeItem("mng_admin_token");
             adminToken = null;
+            try { await fetch("/api/admin/cikis", { method: "POST" }); } catch {}
             showLogin();
         }
     </script>

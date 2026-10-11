@@ -3,6 +3,8 @@ import cors from "cors";
 import crypto from "crypto";
 import fs from "fs";
 import path from "path";
+import helmet from "helmet";
+import { rateLimit } from "express-rate-limit";
 import { fileURLToPath } from "url";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -14,19 +16,13 @@ const PORT = process.env.PORT || 4000;
 // =====================================================================
 // ADMIN ÅİFRESİ
 // =====================================================================
-function adminSifreBul() {
-    if (process.env.ADMIN_SIFRE) return process.env.ADMIN_SIFRE.trim();
-    const sifreDosyasi = path.join(__dirname, "admin_sifre.txt");
-    try {
-        if (fs.existsSync(sifreDosyasi)) {
-            const okunan = fs.readFileSync(sifreDosyasi, "utf-8").trim();
-            if (okunan) return okunan;
-        }
-    } catch {}
-    return "mng-admin-2024-gizli";
-}
+const ADMIN_SIFRE = String(process.env.ADMIN_SIFRE || "").trim();
+const ADMIN_OTURUM_SURESI_MS = 8 * 60 * 60 * 1000;
+const adminOturumlari = new Map();
 
-const ADMIN_SIFRE = adminSifreBul();
+if (ADMIN_SIFRE.length < 16) {
+    console.warn("GÜVENLİK: ADMIN_SIFRE tanımlı değil veya 16 karakterden kısa. Yönetici girişi devre dışı.");
+}
 
 // =====================================================================
 // KALICI VERİTABANI (JSON Dosya Tabanlı)
@@ -271,13 +267,33 @@ await dbYukle();
 // =====================================================================
 // MIDDLEWARE & STATİK DOSYALAR
 // =====================================================================
-app.use(cors({
-    origin: "*",
-    methods: ["GET", "POST", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "X-Admin-Token"]
+app.set("trust proxy", 1);
+app.disable("x-powered-by");
+
+const izinliKaynaklar = new Set([
+    "https://mng-license-server1.onrender.com",
+    "http://localhost:4000",
+    "http://127.0.0.1:4000",
+    ...String(process.env.CORS_ORIGINS || "").split(",").map(v => v.trim()).filter(Boolean)
+]);
+
+app.use(helmet({
+    contentSecurityPolicy: false,
+    crossOriginResourcePolicy: { policy: "cross-origin" },
+    referrerPolicy: { policy: "strict-origin-when-cross-origin" }
 }));
 
-app.use(express.json());
+app.use(cors({
+    origin(origin, callback) {
+        if (!origin || izinliKaynaklar.has(origin)) return callback(null, true);
+        return callback(new Error("Bu kaynağa CORS izni verilmedi"));
+    },
+    methods: ["GET", "POST", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "X-Admin-Token"],
+    credentials: true
+}));
+
+app.use(express.json({ limit: "64kb" }));
 
 // Web Sitesi & Statik Dosyalar (Önbellek Engelleme ve Çift Konum Koruması)
 app.use((req, res, next) => {
@@ -314,7 +330,6 @@ app.get("/sitemap.xml", (req, res) => {
 });
 
 app.use(express.static(path.join(__dirname, "web")));
-app.use(express.static(__dirname));
 // Admin Paneli
 app.use("/admin", express.static(path.join(__dirname, "admin", "public")));
 app.get(["/admin", "/admin/*"], (req, res) => {
@@ -322,13 +337,35 @@ app.get(["/admin", "/admin/*"], (req, res) => {
 });
 app.use("/admin-assets", express.static(path.join(__dirname, "admin", "public")));
 
-// Admin yetkilendirme middleware
-function adminKontrol(req, res, next) {
-    const token = req.headers["x-admin-token"];
-    if (!token) return res.status(401).json({ error: "Admin token gerekli" });
+function cookieDegeri(req, ad) {
+    const cookies = String(req.headers.cookie || "").split(";");
+    for (const cookie of cookies) {
+        const [key, ...parts] = cookie.trim().split("=");
+        if (key === ad) return decodeURIComponent(parts.join("="));
+    }
+    return "";
+}
 
-    const beklenen = crypto.createHmac("sha256", ADMIN_SIFRE).update("mng-admin").digest("hex");
-    if (token !== beklenen) return res.status(403).json({ error: "Geçersiz admin token" });
+function adminCookieAyarla(req, res, token, maxAgeSeconds) {
+    const secure = req.secure || req.headers["x-forwarded-proto"] === "https";
+    const parts = [
+        `mng_admin_session=${encodeURIComponent(token)}`,
+        "HttpOnly",
+        "SameSite=Strict",
+        "Path=/",
+        `Max-Age=${maxAgeSeconds}`
+    ];
+    if (secure) parts.push("Secure");
+    res.setHeader("Set-Cookie", parts.join("; "));
+}
+
+function adminKontrol(req, res, next) {
+    const token = cookieDegeri(req, "mng_admin_session");
+    const expiresAt = adminOturumlari.get(token);
+    if (!token || !expiresAt || expiresAt <= Date.now()) {
+        if (token) adminOturumlari.delete(token);
+        return res.status(401).json({ error: "Yönetici oturumu gerekli" });
+    }
     next();
 }
 
@@ -935,11 +972,41 @@ app.get("/download/game/:gameZip", (req, res) => {
 // ADMİN APİLERİ
 // =====================================================================
 
-app.post("/api/admin/giris", (req, res) => {
+const adminGirisSiniri = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    limit: 5,
+    standardHeaders: "draft-7",
+    legacyHeaders: false,
+    skipSuccessfulRequests: true,
+    message: { error: "Çok fazla hatalı giriş yapıldı. 15 dakika sonra tekrar deneyin." }
+});
+
+function guvenliEsit(a, b) {
+    const left = Buffer.from(String(a || ""), "utf8");
+    const right = Buffer.from(String(b || ""), "utf8");
+    return left.length === right.length && crypto.timingSafeEqual(left, right);
+}
+
+app.post("/api/admin/giris", adminGirisSiniri, (req, res) => {
     const { sifre } = req.body;
-    if (!sifre || sifre !== ADMIN_SIFRE) return res.status(403).json({ error: "Yanlış şifre" });
-    const token = crypto.createHmac("sha256", ADMIN_SIFRE).update("mng-admin").digest("hex");
-    res.json({ token });
+    if (ADMIN_SIFRE.length < 16) return res.status(503).json({ error: "Yönetici girişi sunucuda yapılandırılmamış" });
+    if (!guvenliEsit(sifre, ADMIN_SIFRE)) return res.status(403).json({ error: "Yanlış şifre" });
+
+    const token = crypto.randomBytes(32).toString("base64url");
+    adminOturumlari.set(token, Date.now() + ADMIN_OTURUM_SURESI_MS);
+    adminCookieAyarla(req, res, token, Math.floor(ADMIN_OTURUM_SURESI_MS / 1000));
+    res.json({ ok: true, expiresIn: ADMIN_OTURUM_SURESI_MS });
+});
+
+app.get("/api/admin/oturum", adminKontrol, (req, res) => {
+    res.json({ ok: true });
+});
+
+app.post("/api/admin/cikis", (req, res) => {
+    const token = cookieDegeri(req, "mng_admin_session");
+    if (token) adminOturumlari.delete(token);
+    adminCookieAyarla(req, res, "", 0);
+    res.json({ ok: true });
 });
 
 // Yeni Lisans Oluştur (1 dk, 10 dk, 20 dk, 1 gün, 3 gün, 7 gün, 30 gün, sınırsız)
