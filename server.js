@@ -482,8 +482,12 @@ function logEkle(lisansKod, cihazKimlik, islem, ip) {
 // =====================================================================
 const EN_GUNCEL_SURUM = "6.5.5";
 const EN_DUSUK_SURUM = "1.0.0";
-const SETUP_INDIRME_LINKI = String(process.env.SETUP_DOWNLOAD_URL || "https://drive.usercontent.google.com/download?id=1g-dEVnq_8ksvCTuHq9q7Ur-MGiFBpzND&export=download&confirm=t").trim();
-const SETUP_WEB_LINKI = String(process.env.SETUP_WEB_URL || SETUP_INDIRME_LINKI).trim();
+const SETUP_INDIRME_LINKI = String(process.env.SETUP_DOWNLOAD_URL || "https://drive.usercontent.google.com/download?id=1AopEamftIZQzfGx8Eg2TrJr2zilSAfOH&export=download&confirm=t").trim();
+const SETUP_WEB_LINKI = String(process.env.SETUP_WEB_URL || "https://drive.google.com/file/d/1AopEamftIZQzfGx8Eg2TrJr2zilSAfOH/view?usp=drive_link").trim();
+const VARSAYILAN_PAKET_LINKLERI = Object.freeze({
+    BACKGROUNDS: "https://drive.usercontent.google.com/download?id=1VHwmK2Lt-DN6jVYB1Gp2sbeW6hU_rgB6&export=download&confirm=t",
+    MNG_ORBIT: "https://drive.usercontent.google.com/download?id=13gIJgjz2oCp4_eCHg-_tRoms-SAEsj5t&export=download&confirm=t"
+});
 
 // Her güncellemede eklenen/değişen özellikler listesi
 const SURUM_NOTLARI = [
@@ -962,7 +966,7 @@ app.get("/download/portable", (req, res) => {
 });
 
 app.get("/download/backgrounds.zip", (req, res) => {
-    const hariciLink = String(process.env.BACKGROUND_DOWNLOAD_URL || "").trim();
+    const hariciLink = String(process.env.BACKGROUND_DOWNLOAD_URL || VARSAYILAN_PAKET_LINKLERI.BACKGROUNDS).trim();
     if (hariciLink) return res.redirect(hariciLink);
     const paket = path.join(DOWNLOADS_DIR, "backgrounds-v6.5.5.zip");
     if (fs.existsSync(paket)) return res.download(paket, "TikMnG-Arka-Planlar-6.5.5.zip");
@@ -973,7 +977,7 @@ app.get("/download/game/:gameZip", (req, res) => {
     const dosya = req.params.gameZip;
     if (!/^[a-z0-9-]+\.zip$/i.test(dosya)) return res.status(400).json({ error: "Geçersiz paket adı." });
     const oyunAdi = dosya.replace(/\.zip$/i, "").toUpperCase().replace(/-/g, "_");
-    const hariciLink = String(process.env[`GAME_DOWNLOAD_${oyunAdi}_URL`] || "").trim();
+    const hariciLink = String(process.env[`GAME_DOWNLOAD_${oyunAdi}_URL`] || VARSAYILAN_PAKET_LINKLERI[oyunAdi] || "").trim();
     if (hariciLink) return res.redirect(hariciLink);
     const zipYolu = path.join(DOWNLOADS_DIR, "games", dosya);
     if (fs.existsSync(zipYolu)) {
