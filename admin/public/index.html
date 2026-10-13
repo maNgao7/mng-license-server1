@@ -1638,8 +1638,28 @@
                 const res = await fetch("/api/admin/lisanslar", {
                     headers: { "X-Admin-Token": adminToken }
                 });
+                if (!res.ok) throw new Error("Lisans havuzu alınamadı");
                 const serverLicenses = await res.json();
-                allLicenses = Array.isArray(serverLicenses) ? serverLicenses : [];
+                const localBackupRaw = localStorage.getItem("mng_admin_lisans_yedek");
+                let localLicenses = [];
+                if (localBackupRaw) {
+                    try {
+                        const parsed = JSON.parse(localBackupRaw);
+                        if (Array.isArray(parsed)) localLicenses = parsed;
+                    } catch {}
+                }
+
+                const remoteLicenses = Array.isArray(serverLicenses) ? serverLicenses : [];
+                const merged = new Map();
+                for (const license of [...remoteLicenses, ...localLicenses]) {
+                    if (license && license.kod && !merged.has(license.kod)) merged.set(license.kod, license);
+                }
+                allLicenses = [...merged.values()];
+
+                // Render havuzu boşalmışsa tarayıcıdaki son güvenli kopyayı geri yükle.
+                if (localLicenses.length > 0 && allLicenses.length > remoteLicenses.length) {
+                    await syncLicensesToServer(allLicenses);
+                }
                 localStorage.setItem("mng_admin_lisans_yedek", JSON.stringify(allLicenses));
                 updatePoolStats();
                 renderTable();

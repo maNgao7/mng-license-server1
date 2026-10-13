@@ -63,17 +63,18 @@ let karaListeVeritabani = [];
 // özel GitHub deposuna AES-GCM şifreli tek bir durum dosyası yazmak bu
 // sınırlamayı ücretsiz olarak aşar. Ana uygulama deposuna yazılmadığı için
 // lisans kaydında otomatik Render deploy'u da tetiklenmez.
-const GITHUB_BACKUP_TOKEN = String(process.env.GITHUB_LICENSE_TOKEN || "").trim();
-const GITHUB_BACKUP_REPO = String(process.env.GITHUB_LICENSE_REPO || "").trim();
+const GITHUB_BACKUP_TOKEN = String(process.env.GITHUB_LICENSE_TOKEN || process.env.GITHUB_TOKEN || "").trim();
+const GITHUB_BACKUP_REPO = String(process.env.GITHUB_LICENSE_REPO || process.env.BACKUP_REPO || "").trim();
 const GITHUB_BACKUP_PATH = String(process.env.GITHUB_LICENSE_PATH || "mng-license-backup.enc").trim();
+const GITHUB_BACKUP_SECRET = String(process.env.GITHUB_LICENSE_KEY || process.env.BACKUP_KEY || ADMIN_SIFRE).trim();
 const githubBackupEnabled = Boolean(GITHUB_BACKUP_TOKEN && GITHUB_BACKUP_REPO);
 let githubBackupSha = null;
 let githubBackupReady = false;
 let githubBackupTimer = null;
 let githubBackupQueue = Promise.resolve();
 
-function githubBackupKey() {
-    return crypto.createHash("sha256").update(`${ADMIN_SIFRE}:mng-license-backup:v1`).digest();
+function githubBackupKey(secret = GITHUB_BACKUP_SECRET) {
+    return crypto.createHash("sha256").update(`${secret}:mng-license-backup:v1`).digest();
 }
 
 function githubBackupEncrypt(value) {
@@ -86,9 +87,18 @@ function githubBackupEncrypt(value) {
 function githubBackupDecrypt(value) {
     const payload = JSON.parse(value);
     if (payload.v !== 1 || !payload.iv || !payload.tag || !payload.data) throw new Error("Geçersiz GitHub yedek biçimi");
-    const decipher = crypto.createDecipheriv("aes-256-gcm", githubBackupKey(), Buffer.from(payload.iv, "base64"));
-    decipher.setAuthTag(Buffer.from(payload.tag, "base64"));
-    return JSON.parse(Buffer.concat([decipher.update(Buffer.from(payload.data, "base64")), decipher.final()]).toString("utf8"));
+    const secrets = [...new Set([GITHUB_BACKUP_SECRET, ADMIN_SIFRE].filter(Boolean))];
+    let lastError;
+    for (const secret of secrets) {
+        try {
+            const decipher = crypto.createDecipheriv("aes-256-gcm", githubBackupKey(secret), Buffer.from(payload.iv, "base64"));
+            decipher.setAuthTag(Buffer.from(payload.tag, "base64"));
+            return JSON.parse(Buffer.concat([decipher.update(Buffer.from(payload.data, "base64")), decipher.final()]).toString("utf8"));
+        } catch (error) {
+            lastError = error;
+        }
+    }
+    throw lastError || new Error("GitHub yedeği çözülemedi");
 }
 
 async function githubBackupRequest(method, body) {
