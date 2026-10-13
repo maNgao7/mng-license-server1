@@ -20,6 +20,7 @@
         originalName: String(gift.name || ""), coins: Math.max(0, Number(gift.coins) || 0), file: gift.file
       }));
       state.filtered = state.catalog;
+      $("catalogTotal").textContent = `${state.catalog.length} HEDİYELİK KATALOG`;
       filterCatalog();
     } catch {
       $("catalogCount").textContent = "Katalog yüklenemedi";

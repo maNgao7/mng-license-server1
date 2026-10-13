@@ -1,7 +1,7 @@
 {
   "name": "mng-license-server",
-  "version": "6.5.1",
-  "description": "MNG TikTok Game Lisans Sunucusu",
+  "version": "6.5.2",
+  "description": "TikMnG Lisans ve Web Sunucusu",
   "type": "module",
   "main": "server.js",
   "scripts": {

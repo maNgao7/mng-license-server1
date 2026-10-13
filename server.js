@@ -310,22 +310,29 @@ app.get("/", (req, res) => {
     const rootPath = path.join(__dirname, "index.html");
     if (fs.existsSync(webPath)) return res.sendFile(webPath);
     if (fs.existsSync(rootPath)) return res.sendFile(rootPath);
-    res.send("MNG TikTok Game Web Portal");
+    res.send("TikMnG Web Portal");
 });
 
 app.get("/hediye-tasarimi", (req, res) => {
     res.sendFile(path.join(__dirname, "web", "gift-designer.html"));
 });
 
+app.get("/widgetlar", (req, res) => {
+    res.sendFile(path.join(__dirname, "web", "widgets.html"));
+});
+
 app.get("/robots.txt", (req, res) => {
-    res.type("text/plain").send("User-agent: *\nAllow: /\nDisallow: /admin\nSitemap: https://mng-license-server1.onrender.com/sitemap.xml\n");
+    const publicBaseUrl = String(process.env.PUBLIC_BASE_URL || "https://tikmng.onrender.com").replace(/\/$/, "");
+    res.type("text/plain").send(`User-agent: *\nAllow: /\nDisallow: /admin\nSitemap: ${publicBaseUrl}/sitemap.xml\n`);
 });
 
 app.get("/sitemap.xml", (req, res) => {
+    const publicBaseUrl = String(process.env.PUBLIC_BASE_URL || "https://tikmng.onrender.com").replace(/\/$/, "");
     res.type("application/xml").send(`<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url><loc>https://mng-license-server1.onrender.com/</loc><changefreq>weekly</changefreq><priority>1.0</priority></url>
-  <url><loc>https://mng-license-server1.onrender.com/hediye-tasarimi</loc><changefreq>monthly</changefreq><priority>0.9</priority></url>
+  <url><loc>${publicBaseUrl}/</loc><changefreq>weekly</changefreq><priority>1.0</priority></url>
+  <url><loc>${publicBaseUrl}/hediye-tasarimi</loc><changefreq>monthly</changefreq><priority>0.9</priority></url>
+  <url><loc>${publicBaseUrl}/widgetlar</loc><changefreq>monthly</changefreq><priority>0.9</priority></url>
 </urlset>`);
 });
 
@@ -473,13 +480,14 @@ function logEkle(lisansKod, cihazKimlik, islem, ip) {
 // =====================================================================
 // SÜRÜM BİLGİLERİ & İNDİRME LİNKLERİ
 // =====================================================================
-const EN_GUNCEL_SURUM = "6.5.1";
+const EN_GUNCEL_SURUM = "6.5.2";
 const EN_DUSUK_SURUM = "1.0.0";
 const SETUP_INDIRME_LINKI = "https://drive.usercontent.google.com/download?id=1g-dEVnq_8ksvCTuHq9q7Ur-MGiFBpzND&export=download&confirm=t";
 const SETUP_WEB_LINKI = "https://drive.google.com/file/d/1g-dEVnq_8ksvCTuHq9q7Ur-MGiFBpzND/view?usp=sharing";
 
 // Her güncellemede eklenen/değişen özellikler listesi
 const SURUM_NOTLARI = [
+    "v6.5.2 — TikMnG marka geçişi ve Süper Lig penaltı düzeltmesi: Kalecinin iki yanındaki direk içi hedef koridorlarında şutlar düz gider; nişan çizgisi ile top fiziği aynı sonucu verir. Pony Katırı ve MNG Dodge Hunter düzenlemeleri korunurken Vak Vak Jump'ın yeni masaüstü sürümü sonraki güncellemeye ayrıldı.",
     "v6.5.1 — Launcher oyun kartları birbirinden ayrıldı: MNG Pony Life mercan-altın yarış temasına, MNG Duck Hunt ördek simgeli limon-yeşil karnaval temasına kavuştu. Normal ve ajans lisansları için kalıcı arşiv havuzu güçlendirildi; yönetici paneli ve özel veriler güvenli oturum korumasına alındı.",
     "v6.5.0 — İki Yeni Oyun: MNG Pony Life ve MNG Duck Hunt launcher'a eklendi. Pony Life'ta hızlanan atlar için gökkuşağı izi, elle yarış bitirme ve yenilenen lunapark sahnesi; Gelene Geçene'de sıcak hava balonu terminali ve yeni kalıcı canavar dengesi eklendi.",
     "v6.1.2 — Oyun Başlatma Kolaylığı: Canlı yayında olma zorunluluğu kaldırıldı (test ve internetsiz modda dahi doğrudan başlatma), Widget önizleme animasyonları ve iframe bağlantıları güvenceye alındı, UTF-8 BOM otomatik temizleme ve kalıcı hafızalı sıralama sistemi.",
@@ -547,7 +555,7 @@ const SURUM_NOTLARI = [
     "v2.0.3 - Kaliteli Hediye Görselleri: Hediye küçük resimleri yerel yüksek kaliteli katalogdan hızlı yüklenir ve önbelleğe alınır.",
     "v2.0.3 - Lisans Koruması: Güncelleme kurulurken aktif lisans bilgisi aynı bilgisayarda yedeklenir; lisans ve oyun ayarları korunur.",
     "v2.0.2 — MNG Orbit Hediye Seçimi: Hediye görselleri artık küçük, hızlı ve aranabilir sayfalarla yüklenir; seçim sonrası oyun donmaz veya çökmez.",
-    "v2.0.2 — Güncelleme Ekranı: İndirme tamamlandığında MNG TikTok Game markalı tam ekran güncelleniyor ekranı ve hareketli ilerleme göstergesi görünür.",
+    "v2.0.2 — Güncelleme Ekranı: İndirme tamamlandığında TikMnG markalı tam ekran güncelleniyor ekranı ve hareketli ilerleme göstergesi görünür.",
     "v2.0.1 — Otomatik Başlatma Düzeltildi: Launcher açıldığında TikTok VS Profil oyununa otomatik girme sorunu çözüldü, kullanıcı istediği oyunu seçer.",
     "v2.0.1 — MNG Orbit Tüm Hediyeler Aktif: TikTok VS Profil kütüphanesindeki tüm popüler yerel hediyeler entegre edildi, aranabilir ve eksiksiz görünüyor.",
     "v2.0.1 — Anında Ses Tepkisi (0 ms): Yutma ve büyüme sesleri donanımsal 0 ms Web Audio ile anında çalar.",
@@ -1255,7 +1263,7 @@ setInterval(pingBot, 10 * 60 * 1000);
 app.listen(PORT, "0.0.0.0", () => {
     console.log("");
     console.log("==================================================");
-    console.log("  MNG TikTok Game — Web Sitesi & Lisans Sunucusu");
+    console.log("  TikMnG — Web Sitesi & Lisans Sunucusu");
     console.log(`  Web Portalı : http://localhost:${PORT}`);
     console.log(`  Admin Paneli : http://localhost:${PORT}/admin`);
     console.log(`  İndirme Linki: http://localhost:${PORT}/download/setup`);
