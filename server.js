@@ -322,17 +322,19 @@ app.get("/widgetlar", (req, res) => {
 });
 
 app.get("/robots.txt", (req, res) => {
-    const publicBaseUrl = String(process.env.PUBLIC_BASE_URL || "https://tikmng.onrender.com").replace(/\/$/, "");
-    res.type("text/plain").send(`User-agent: *\nAllow: /\nDisallow: /admin\nSitemap: ${publicBaseUrl}/sitemap.xml\n`);
+    const publicBaseUrl = String(process.env.PUBLIC_BASE_URL || "https://mng-license-server1.onrender.com").replace(/\/$/, "");
+    res.type("text/plain").send(`User-agent: *\nAllow: /\nDisallow: /admin\nDisallow: /api/\nSitemap: ${publicBaseUrl}/sitemap.xml\n`);
 });
 
 app.get("/sitemap.xml", (req, res) => {
-    const publicBaseUrl = String(process.env.PUBLIC_BASE_URL || "https://tikmng.onrender.com").replace(/\/$/, "");
+    const publicBaseUrl = String(process.env.PUBLIC_BASE_URL || "https://mng-license-server1.onrender.com").replace(/\/$/, "");
     res.type("application/xml").send(`<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url><loc>${publicBaseUrl}/</loc><changefreq>weekly</changefreq><priority>1.0</priority></url>
-  <url><loc>${publicBaseUrl}/hediye-tasarimi</loc><changefreq>monthly</changefreq><priority>0.9</priority></url>
-  <url><loc>${publicBaseUrl}/widgetlar</loc><changefreq>monthly</changefreq><priority>0.9</priority></url>
+  <url><loc>${publicBaseUrl}/</loc><lastmod>2026-10-13</lastmod><changefreq>weekly</changefreq><priority>1.0</priority></url>
+  <url><loc>${publicBaseUrl}/hediye-tasarimi</loc><lastmod>2026-10-13</lastmod><changefreq>monthly</changefreq><priority>0.9</priority></url>
+  <url><loc>${publicBaseUrl}/widgetlar</loc><lastmod>2026-10-13</lastmod><changefreq>monthly</changefreq><priority>0.9</priority></url>
+  <url><loc>${publicBaseUrl}/privacy.html</loc><lastmod>2026-10-13</lastmod><changefreq>yearly</changefreq><priority>0.4</priority></url>
+  <url><loc>${publicBaseUrl}/terms.html</loc><lastmod>2026-10-13</lastmod><changefreq>yearly</changefreq><priority>0.4</priority></url>
 </urlset>`);
 });
 
