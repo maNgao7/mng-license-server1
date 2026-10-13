@@ -480,13 +480,14 @@ function logEkle(lisansKod, cihazKimlik, islem, ip) {
 // =====================================================================
 // SÜRÜM BİLGİLERİ & İNDİRME LİNKLERİ
 // =====================================================================
-const EN_GUNCEL_SURUM = "6.5.2";
+const EN_GUNCEL_SURUM = "6.5.5";
 const EN_DUSUK_SURUM = "1.0.0";
-const SETUP_INDIRME_LINKI = "https://drive.usercontent.google.com/download?id=1g-dEVnq_8ksvCTuHq9q7Ur-MGiFBpzND&export=download&confirm=t";
-const SETUP_WEB_LINKI = "https://drive.google.com/file/d/1g-dEVnq_8ksvCTuHq9q7Ur-MGiFBpzND/view?usp=sharing";
+const SETUP_INDIRME_LINKI = String(process.env.SETUP_DOWNLOAD_URL || "https://drive.usercontent.google.com/download?id=1g-dEVnq_8ksvCTuHq9q7Ur-MGiFBpzND&export=download&confirm=t").trim();
+const SETUP_WEB_LINKI = String(process.env.SETUP_WEB_URL || SETUP_INDIRME_LINKI).trim();
 
 // Her güncellemede eklenen/değişen özellikler listesi
 const SURUM_NOTLARI = [
+    "v6.5.5 — Modüler kurulum: Launcher yeniden kompakt kart düzenine döndü; oyunlar launcher paketinden ayrıldı ve gerektiğinde tek tek indirilebilir hale geldi. Süper Lig düz şut koridoru ile yeni hediye şablonu, Vak Vak Jump için MNG Frog River güncel kaynağı ve 10 saniyelik bekleme bakışı, TikTok LIVE Studio uyumlu .html localhost widget bağlantıları ve otomatik arka plan paketi eklendi.",
     "v6.5.2 — TikMnG marka geçişi ve Süper Lig penaltı düzeltmesi: Kalecinin iki yanındaki direk içi hedef koridorlarında şutlar düz gider; nişan çizgisi ile top fiziği aynı sonucu verir. Pony Katırı ve MNG Dodge Hunter düzenlemeleri korunurken Vak Vak Jump'ın yeni masaüstü sürümü sonraki güncellemeye ayrıldı.",
     "v6.5.1 — Launcher oyun kartları birbirinden ayrıldı: MNG Pony Life mercan-altın yarış temasına, MNG Duck Hunt ördek simgeli limon-yeşil karnaval temasına kavuştu. Normal ve ajans lisansları için kalıcı arşiv havuzu güçlendirildi; yönetici paneli ve özel veriler güvenli oturum korumasına alındı.",
     "v6.5.0 — İki Yeni Oyun: MNG Pony Life ve MNG Duck Hunt launcher'a eklendi. Pony Life'ta hızlanan atlar için gökkuşağı izi, elle yarış bitirme ve yenilenen lunapark sahnesi; Gelene Geçene'de sıcak hava balonu terminali ve yeni kalıcı canavar dengesi eklendi.",
@@ -960,8 +961,20 @@ app.get("/download/portable", (req, res) => {
     }
 });
 
+app.get("/download/backgrounds.zip", (req, res) => {
+    const hariciLink = String(process.env.BACKGROUND_DOWNLOAD_URL || "").trim();
+    if (hariciLink) return res.redirect(hariciLink);
+    const paket = path.join(DOWNLOADS_DIR, "backgrounds-v6.5.5.zip");
+    if (fs.existsSync(paket)) return res.download(paket, "TikMnG-Arka-Planlar-6.5.5.zip");
+    res.status(404).json({ error: "Arka plan paketi henüz yüklenmedi." });
+});
+
 app.get("/download/game/:gameZip", (req, res) => {
     const dosya = req.params.gameZip;
+    if (!/^[a-z0-9-]+\.zip$/i.test(dosya)) return res.status(400).json({ error: "Geçersiz paket adı." });
+    const oyunAdi = dosya.replace(/\.zip$/i, "").toUpperCase().replace(/-/g, "_");
+    const hariciLink = String(process.env[`GAME_DOWNLOAD_${oyunAdi}_URL`] || "").trim();
+    if (hariciLink) return res.redirect(hariciLink);
     const zipYolu = path.join(DOWNLOADS_DIR, "games", dosya);
     if (fs.existsSync(zipYolu)) {
         return res.download(zipYolu);
