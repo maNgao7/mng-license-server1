@@ -492,9 +492,9 @@ function logEkle(lisansKod, cihazKimlik, islem, ip) {
 // =====================================================================
 // SÜRÜM BİLGİLERİ & İNDİRME LİNKLERİ
 // =====================================================================
-const EN_GUNCEL_SURUM = "6.5.5";
+const EN_GUNCEL_SURUM = "6.5.6";
 const EN_DUSUK_SURUM = "1.0.0";
-const SETUP_INDIRME_LINKI = "https://github.com/maNgao7/mng-license-server1/releases/download/v6.5.5/TikMnG-Setup-6.5.5.exe";
+const SETUP_INDIRME_LINKI = "https://github.com/maNgao7/mng-license-server1/releases/download/v6.5.6/TikMnG-Setup-6.5.6.exe";
 const SETUP_WEB_LINKI = SETUP_INDIRME_LINKI;
 const VARSAYILAN_PAKET_LINKLERI = Object.freeze({
     BACKGROUNDS: "https://drive.usercontent.google.com/download?id=1VHwmK2Lt-DN6jVYB1Gp2sbeW6hU_rgB6&export=download&confirm=t",
@@ -503,6 +503,7 @@ const VARSAYILAN_PAKET_LINKLERI = Object.freeze({
 
 // Her güncellemede eklenen/değişen özellikler listesi
 const SURUM_NOTLARI = [
+    "v6.5.6 — Görünür ve yönlendirmeli Windows kurulumu, güçlendirilmiş oyun paketi doğrulaması, güncellenmiş Süper Lig ve MNG Orbit paketleri eklendi.",
     "v6.5.5 — Modüler kurulum: Launcher yeniden kompakt kart düzenine döndü; oyunlar launcher paketinden ayrıldı ve gerektiğinde tek tek indirilebilir hale geldi. Süper Lig düz şut koridoru ile yeni hediye şablonu, Vak Vak Jump için MNG Frog River güncel kaynağı ve 10 saniyelik bekleme bakışı, TikTok LIVE Studio uyumlu .html localhost widget bağlantıları ve otomatik arka plan paketi eklendi.",
     "v6.5.2 — TikMnG marka geçişi ve Süper Lig penaltı düzeltmesi: Kalecinin iki yanındaki direk içi hedef koridorlarında şutlar düz gider; nişan çizgisi ile top fiziği aynı sonucu verir. Pony Katırı ve MNG Dodge Hunter düzenlemeleri korunurken Vak Vak Jump'ın yeni masaüstü sürümü sonraki güncellemeye ayrıldı.",
     "v6.5.1 — Launcher oyun kartları birbirinden ayrıldı: MNG Pony Life mercan-altın yarış temasına, MNG Duck Hunt ördek simgeli limon-yeşil karnaval temasına kavuştu. Normal ve ajans lisansları için kalıcı arşiv havuzu güçlendirildi; yönetici paneli ve özel veriler güvenli oturum korumasına alındı.",
