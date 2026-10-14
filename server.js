@@ -494,8 +494,8 @@ function logEkle(lisansKod, cihazKimlik, islem, ip) {
 // =====================================================================
 const EN_GUNCEL_SURUM = "6.5.5";
 const EN_DUSUK_SURUM = "1.0.0";
-const SETUP_INDIRME_LINKI = String(process.env.SETUP_DOWNLOAD_URL || "https://drive.usercontent.google.com/download?id=1AopEamftIZQzfGx8Eg2TrJr2zilSAfOH&export=download&confirm=t").trim();
-const SETUP_WEB_LINKI = String(process.env.SETUP_WEB_URL || "https://drive.google.com/file/d/1AopEamftIZQzfGx8Eg2TrJr2zilSAfOH/view?usp=drive_link").trim();
+const SETUP_INDIRME_LINKI = "https://github.com/maNgao7/mng-license-server1/releases/download/v6.5.5/TikMnG-Setup-6.5.5.exe";
+const SETUP_WEB_LINKI = SETUP_INDIRME_LINKI;
 const VARSAYILAN_PAKET_LINKLERI = Object.freeze({
     BACKGROUNDS: "https://drive.usercontent.google.com/download?id=1VHwmK2Lt-DN6jVYB1Gp2sbeW6hU_rgB6&export=download&confirm=t",
     MNG_ORBIT: "https://drive.usercontent.google.com/download?id=13gIJgjz2oCp4_eCHg-_tRoms-SAEsj5t&export=download&confirm=t"
@@ -961,8 +961,6 @@ app.post("/api/talep-gonder", (req, res) => {
 // =====================================================================
 
 app.get("/download/setup", (req, res) => {
-    // The Drive preview URL is more reliable in browsers for large executables;
-    // Google can otherwise reject the direct download confirmation URL with 404.
     res.setHeader("Cache-Control", "no-store");
     res.redirect(302, SETUP_WEB_LINKI);
 });
