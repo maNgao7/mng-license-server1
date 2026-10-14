@@ -495,6 +495,7 @@ function logEkle(lisansKod, cihazKimlik, islem, ip) {
 const EN_GUNCEL_SURUM = "6.5.6";
 const EN_DUSUK_SURUM = "1.0.0";
 const SETUP_INDIRME_LINKI = "https://github.com/maNgao7/mng-license-server1/releases/download/v6.5.6/TikMnG-Setup-6.5.6.exe";
+const PORTABLE_INDIRME_LINKI = "https://github.com/maNgao7/mng-license-server1/releases/download/v6.5.6/TikMnG-6.5.6-Portable.exe";
 const SETUP_WEB_LINKI = SETUP_INDIRME_LINKI;
 const VARSAYILAN_PAKET_LINKLERI = Object.freeze({
     BACKGROUNDS: "https://drive.usercontent.google.com/download?id=1VHwmK2Lt-DN6jVYB1Gp2sbeW6hU_rgB6&export=download&confirm=t",
@@ -972,12 +973,8 @@ app.get("/download/setup-direct", (req, res) => {
 });
 
 app.get("/download/portable", (req, res) => {
-    const portableYolu = path.join(DOWNLOADS_DIR, "MNG-TikTok-Game-Portable.exe");
-    if (fs.existsSync(portableYolu)) {
-        res.download(portableYolu, "MNG-TikTok-Game-Portable.exe");
-    } else {
-        res.status(404).send("Taşınabilir dosya henüz oluşturulmadı.");
-    }
+    res.setHeader("Cache-Control", "no-store");
+    res.redirect(302, PORTABLE_INDIRME_LINKI);
 });
 
 app.get("/download/backgrounds.zip", (req, res) => {
