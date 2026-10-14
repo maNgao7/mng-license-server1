@@ -136,7 +136,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // =========================================================================
   // İNDİRME PANELİ MODAL
   // =========================================================================
-  const directDownload = 'https://drive.usercontent.google.com/download?id=1g-dEVnq_8ksvCTuHq9q7Ur-MGiFBpzND&export=download&confirm=t';
+  const directDownload = '/download/setup';
   const stage = document.createElement('div');
   stage.className = 'download-stage';
   stage.hidden = true;
