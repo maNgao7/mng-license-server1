@@ -961,11 +961,15 @@ app.post("/api/talep-gonder", (req, res) => {
 // =====================================================================
 
 app.get("/download/setup", (req, res) => {
-    res.redirect(SETUP_INDIRME_LINKI);
+    // The Drive preview URL is more reliable in browsers for large executables;
+    // Google can otherwise reject the direct download confirmation URL with 404.
+    res.setHeader("Cache-Control", "no-store");
+    res.redirect(302, SETUP_WEB_LINKI);
 });
 
 app.get("/download/setup-direct", (req, res) => {
-    res.redirect(SETUP_INDIRME_LINKI);
+    res.setHeader("Cache-Control", "no-store");
+    res.redirect(302, SETUP_INDIRME_LINKI);
 });
 
 app.get("/download/portable", (req, res) => {
