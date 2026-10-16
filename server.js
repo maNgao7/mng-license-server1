@@ -492,21 +492,22 @@ function logEkle(lisansKod, cihazKimlik, islem, ip) {
 // =====================================================================
 // SÜRÜM BİLGİLERİ & İNDİRME LİNKLERİ
 // =====================================================================
-const EN_GUNCEL_SURUM = "6.5.12";
+const EN_GUNCEL_SURUM = "6.5.13";
 const EN_DUSUK_SURUM = "1.0.0";
-const SETUP_INDIRME_LINKI = "https://github.com/maNgao7/mng-license-server1/releases/download/v6.5.12/TikMnG-Setup-6.5.12.exe";
-const PORTABLE_INDIRME_LINKI = "https://github.com/maNgao7/mng-license-server1/releases/download/v6.5.12/TikMnG-6.5.12-Portable.exe";
+const SETUP_INDIRME_LINKI = "https://github.com/maNgao7/mng-license-server1/releases/download/v6.5.13/TikMnG-Setup-6.5.13.exe";
+const PORTABLE_INDIRME_LINKI = "https://github.com/maNgao7/mng-license-server1/releases/download/v6.5.13/TikMnG-6.5.13-Portable.exe";
 const SETUP_WEB_LINKI = SETUP_INDIRME_LINKI;
 const VARSAYILAN_PAKET_LINKLERI = Object.freeze({
     BACKGROUNDS: "https://drive.usercontent.google.com/download?id=1VHwmK2Lt-DN6jVYB1Gp2sbeW6hU_rgB6&export=download&confirm=t",
     MNG_ORBIT: "https://github.com/maNgao7/mng-license-server1/releases/download/v6.5.10/mng-orbit.zip",
     PENALTY_KICK: "https://github.com/maNgao7/mng-license-server1/releases/download/v6.5.10/penalty-kick.zip",
     TIGHTROPE_BALANCE: "https://github.com/maNgao7/mng-license-server1/releases/download/v6.5.10/tightrope-balance.zip",
-    ZOMBIE_WAR: "https://github.com/maNgao7/mng-license-server1/releases/download/v6.5.12/zombie-war.zip"
+    ZOMBIE_WAR: "https://github.com/maNgao7/mng-license-server1/releases/download/v6.5.13/zombie-war.zip"
 });
 
 // Her güncellemede eklenen/değişen özellikler listesi
 const SURUM_NOTLARI = [
+    "v6.5.13 — Zombie War: güncel TikTok mesaj biçimi düzeltildi. Gerçek beğeni paket adedi sayılır; her izleyicinin her 100 beğenisi yeniden eylemi tetikler. Bütün hediyelerde seri ilerlemesi ve seri bitişi aynı toplamdan sayılır, tekrar bildirimler miktarı katlamaz. Yalnızca Zombie War oyun paketi yenilenir.",
     "v6.5.12 — Zombie War canlı olayları tekilleştirildi: tek hediye yalnızca bir kez uygulanır, tekrar kullanılan TikTok mesaj kimlikleri beğeni sayacını durdurmaz ve her 100 beğeni yeniden 2 zombi çağırır. Gül 2, Nazar Boncuğu 5 zombi; takip 2 zombi ve tek Mishka kuralı kalıcılaştırıldı.",
     "v6.5.11 — Zombie War oyun paketi güncellemesi: 100 beğeni yayın toplamından sayılır; takip ve hediyeler sabit adetlerle çalışır; bölgesel hediye kimlikleri ad eşleşmesiyle kurtarılır. Launcher yalnızca Zombie War paketini yeniden indirir.",
     "v6.5.10 — Zombie War Java HTTP/2 uyumsuzluğu giderildi; çalışan yayın servisinin ikinci kez başlatılması önlendi. Oyun paketlerine sürüm doğrulaması, Süper Lig görsele uygun kalıcı hediyeler, tek tek düşen hediyeli cam kavanoz ve büyük dağınık launcher baloncukları eklendi.",
