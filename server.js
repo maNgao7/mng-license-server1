@@ -492,20 +492,22 @@ function logEkle(lisansKod, cihazKimlik, islem, ip) {
 // =====================================================================
 // SÜRÜM BİLGİLERİ & İNDİRME LİNKLERİ
 // =====================================================================
-const EN_GUNCEL_SURUM = "6.5.8";
+const EN_GUNCEL_SURUM = "6.5.9";
 const EN_DUSUK_SURUM = "1.0.0";
-const SETUP_INDIRME_LINKI = "https://github.com/maNgao7/mng-license-server1/releases/download/v6.5.8/TikMnG-Setup-6.5.8.exe";
-const PORTABLE_INDIRME_LINKI = "https://github.com/maNgao7/mng-license-server1/releases/download/v6.5.8/TikMnG-6.5.8-Portable.exe";
+const SETUP_INDIRME_LINKI = "https://github.com/maNgao7/mng-license-server1/releases/download/v6.5.9/TikMnG-Setup-6.5.9.exe";
+const PORTABLE_INDIRME_LINKI = "https://github.com/maNgao7/mng-license-server1/releases/download/v6.5.9/TikMnG-6.5.9-Portable.exe";
 const SETUP_WEB_LINKI = SETUP_INDIRME_LINKI;
 const VARSAYILAN_PAKET_LINKLERI = Object.freeze({
     BACKGROUNDS: "https://drive.usercontent.google.com/download?id=1VHwmK2Lt-DN6jVYB1Gp2sbeW6hU_rgB6&export=download&confirm=t",
-    MNG_ORBIT: "https://github.com/maNgao7/mng-license-server1/releases/download/v6.5.8/mng-orbit.zip",
-    TIGHTROPE_BALANCE: "https://github.com/maNgao7/mng-license-server1/releases/download/v6.5.8/tightrope-balance.zip",
-    ZOMBIE_WAR: "https://github.com/maNgao7/mng-license-server1/releases/download/v6.5.8/zombie-war.zip"
+    MNG_ORBIT: "https://github.com/maNgao7/mng-license-server1/releases/download/v6.5.9/mng-orbit.zip",
+    PENALTY_KICK: "https://github.com/maNgao7/mng-license-server1/releases/download/v6.5.9/penalty-kick.zip",
+    TIGHTROPE_BALANCE: "https://github.com/maNgao7/mng-license-server1/releases/download/v6.5.9/tightrope-balance.zip",
+    ZOMBIE_WAR: "https://github.com/maNgao7/mng-license-server1/releases/download/v6.5.9/zombie-war.zip"
 });
 
 // Her güncellemede eklenen/değişen özellikler listesi
 const SURUM_NOTLARI = [
+    "v6.5.9 — Zombie War bağlantı köprüsü oturum başına ayrı servis kapısıyla yenilendi. Dengesiz Yayıncı sesli denge ve fizik ayarları, Süper Lig kalıcı hediye eşleşmeleri, cüce kaleci, gerçek ses kapatma, widget kavanozu ve launcher görünümü güncellendi.",
     "v6.5.8 — Dengesiz Yayıncı ve TikMnG Zombie War eklendi. Düşüşten sonra sıfırdan başlatma, fiziksel hediye kavanozu, dönen Viral Benim profili, hayvanlı yayın arkadaşları, sıfırdan yayın sayacı ve Orbit arka plan seçimi düzeltmeleri hazırlandı.",
     "v6.5.7 — Pony Katırı paket doğrulaması düzeltildi; ortak arka plan paketi TikTok VS Profil ve Profil Puanlama içinde yeniden görünür hale getirildi.",
     "v6.5.6 — Görünür ve yönlendirmeli Windows kurulumu, güçlendirilmiş oyun paketi doğrulaması, güncellenmiş Süper Lig ve MNG Orbit paketleri eklendi.",
