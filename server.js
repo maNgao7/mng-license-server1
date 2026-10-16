@@ -492,21 +492,22 @@ function logEkle(lisansKod, cihazKimlik, islem, ip) {
 // =====================================================================
 // SÜRÜM BİLGİLERİ & İNDİRME LİNKLERİ
 // =====================================================================
-const EN_GUNCEL_SURUM = "6.5.10";
+const EN_GUNCEL_SURUM = "6.5.11";
 const EN_DUSUK_SURUM = "1.0.0";
-const SETUP_INDIRME_LINKI = "https://github.com/maNgao7/mng-license-server1/releases/download/v6.5.10/TikMnG-Setup-6.5.10.exe";
-const PORTABLE_INDIRME_LINKI = "https://github.com/maNgao7/mng-license-server1/releases/download/v6.5.10/TikMnG-6.5.10-Portable.exe";
+const SETUP_INDIRME_LINKI = "https://github.com/maNgao7/mng-license-server1/releases/download/v6.5.11/TikMnG-Setup-6.5.11.exe";
+const PORTABLE_INDIRME_LINKI = "https://github.com/maNgao7/mng-license-server1/releases/download/v6.5.11/TikMnG-6.5.11-Portable.exe";
 const SETUP_WEB_LINKI = SETUP_INDIRME_LINKI;
 const VARSAYILAN_PAKET_LINKLERI = Object.freeze({
     BACKGROUNDS: "https://drive.usercontent.google.com/download?id=1VHwmK2Lt-DN6jVYB1Gp2sbeW6hU_rgB6&export=download&confirm=t",
     MNG_ORBIT: "https://github.com/maNgao7/mng-license-server1/releases/download/v6.5.10/mng-orbit.zip",
     PENALTY_KICK: "https://github.com/maNgao7/mng-license-server1/releases/download/v6.5.10/penalty-kick.zip",
     TIGHTROPE_BALANCE: "https://github.com/maNgao7/mng-license-server1/releases/download/v6.5.10/tightrope-balance.zip",
-    ZOMBIE_WAR: "https://github.com/maNgao7/mng-license-server1/releases/download/v6.5.10/zombie-war.zip"
+    ZOMBIE_WAR: "https://github.com/maNgao7/mng-license-server1/releases/download/v6.5.11/zombie-war.zip"
 });
 
 // Her güncellemede eklenen/değişen özellikler listesi
 const SURUM_NOTLARI = [
+    "v6.5.11 — Zombie War oyun paketi güncellemesi: 100 beğeni yayın toplamından sayılır; takip ve hediyeler sabit adetlerle çalışır; bölgesel hediye kimlikleri ad eşleşmesiyle kurtarılır. Launcher yalnızca Zombie War paketini yeniden indirir.",
     "v6.5.10 — Zombie War Java HTTP/2 uyumsuzluğu giderildi; çalışan yayın servisinin ikinci kez başlatılması önlendi. Oyun paketlerine sürüm doğrulaması, Süper Lig görsele uygun kalıcı hediyeler, tek tek düşen hediyeli cam kavanoz ve büyük dağınık launcher baloncukları eklendi.",
     "v6.5.9 — Zombie War oturum bağlantısı, Dengesiz Yayıncı denge ayarları, Süper Lig ve yayın widgetları güncellendi.",
     "v6.5.8 — Dengesiz Yayıncı ve TikMnG Zombie War eklendi. Düşüşten sonra sıfırdan başlatma, fiziksel hediye kavanozu, dönen Viral Benim profili, hayvanlı yayın arkadaşları, sıfırdan yayın sayacı ve Orbit arka plan seçimi düzeltmeleri hazırlandı.",
