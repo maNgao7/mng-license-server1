@@ -492,14 +492,16 @@ function logEkle(lisansKod, cihazKimlik, islem, ip) {
 // =====================================================================
 // SÜRÜM BİLGİLERİ & İNDİRME LİNKLERİ
 // =====================================================================
-const EN_GUNCEL_SURUM = "6.5.15";
+const EN_GUNCEL_SURUM = "6.5.16";
 const EN_DUSUK_SURUM = "1.0.0";
-const SETUP_INDIRME_LINKI = "https://github.com/maNgao7/mng-license-server1/releases/download/v6.5.15/TikMnG-Setup-6.5.15.exe";
-const PORTABLE_INDIRME_LINKI = "https://github.com/maNgao7/mng-license-server1/releases/download/v6.5.15/TikMnG-6.5.15-Portable.exe";
+const SETUP_INDIRME_LINKI = "https://github.com/maNgao7/mng-license-server1/releases/download/v6.5.16/TikMnG-Setup-6.5.16.exe";
+const PORTABLE_INDIRME_LINKI = "https://github.com/maNgao7/mng-license-server1/releases/download/v6.5.16/TikMnG-6.5.16-Portable.exe";
 const SETUP_WEB_LINKI = SETUP_INDIRME_LINKI;
 const VARSAYILAN_PAKET_LINKLERI = Object.freeze({
     BACKGROUNDS: "https://drive.usercontent.google.com/download?id=1VHwmK2Lt-DN6jVYB1Gp2sbeW6hU_rgB6&export=download&confirm=t",
-    MNG_ORBIT: "https://github.com/maNgao7/mng-license-server1/releases/download/v6.5.10/mng-orbit.zip",
+    MNG_ORBIT: "https://github.com/maNgao7/mng-license-server1/releases/download/v6.5.16/mng-orbit.zip",
+    BATTLE_ROYALE: "https://github.com/maNgao7/mng-license-server1/releases/download/v6.5.16/battle-royale.zip",
+    SNOW_WAR: "https://github.com/maNgao7/mng-license-server1/releases/download/v6.5.16/snow-war.zip",
     PENALTY_KICK: "https://github.com/maNgao7/mng-license-server1/releases/download/v6.5.10/penalty-kick.zip",
     TIGHTROPE_BALANCE: "https://github.com/maNgao7/mng-license-server1/releases/download/v6.5.10/tightrope-balance.zip",
     ZOMBIE_WAR: "https://github.com/maNgao7/mng-license-server1/releases/download/v6.5.15/zombie-war.zip"
@@ -507,6 +509,7 @@ const VARSAYILAN_PAKET_LINKLERI = Object.freeze({
 
 // Her güncellemede eklenen/değişen özellikler listesi
 const SURUM_NOTLARI = [
+    "v6.5.16 — Minecraft, PUBG ve Minecraft Kartopu Savaşı launcher'a eklendi. İki oyun gömülü Java oyun motoruyla kurulabilir; yayıncı ayarları güncellemelerde korunur. Orbit karşılaşması ayarlanabilir kişi sayısına ulaştığında başlar; beklerken oyuncular yalnızca hediyelerle büyür. Launcher sürüm kontrolü GitHub sürümünü de doğrular.",
     "v6.5.15 — Widget galerisine TikTok kullanıcı adıyla doğrudan bağlanma, bağlantı durumunu görme ve bağlantıyı kesme eklendi. Tüm widgetlar launcher'ın ortak canlı bağlantısını kullanır; otomatik yayıncı bağlantısı yapılmaz. Oyun paketleri değişmedi.",
     "v6.5.14 — Zombie War: her 100 beğenide 5 zombi, takipte 5 zombi; sabit hediye eylemleri, 15 saniye hasar almadan sonra can yenileme ve daha hızlı zombi üretimi. Diğer oyun paketleri değişmedi.",
     "v6.5.13 — Zombie War: güncel TikTok mesaj biçimi düzeltildi. Gerçek beğeni paket adedi sayılır; her izleyicinin her 100 beğenisi yeniden eylemi tetikler. Bütün hediyelerde seri ilerlemesi ve seri bitişi aynı toplamdan sayılır, tekrar bildirimler miktarı katlamaz. Yalnızca Zombie War oyun paketi yenilenir.",
