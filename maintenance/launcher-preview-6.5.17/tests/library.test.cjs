@@ -106,6 +106,43 @@ function setupLibrary(f, overrides = {}) {
     return { library: createGameLibrary(options), options, progress, setPackage: next => { pkg = next; } };
 }
 
+test('updating one game preserves another game and survives a launcher restart', async t => {
+    const f = await fixture(t);
+    const packages = {};
+    function publish(id, version, executable) {
+        const archive = zipFixture([{ name: 'bundle/run.txt', data: executable }]);
+        const url = `/${id}-${version}.zip`;
+        f.routes.set(url, archive);
+        packages[id] = { version, url: f.origin + url, bytes: archive.length, sha256: sha(archive) };
+    }
+    publish('alpha', '1.0.0', 'alpha old');publish('beta', '4.2.0', 'beta unchanged');
+    const options = { root: f.root, definitions: { alpha: { id: 'alpha', klasor: 'alpha' }, beta: { id: 'beta', klasor: 'beta' } },
+        getPackage: id => packages[id], validate: valid, preservePaths: () => ['settings.json'] };
+    let library = createGameLibrary(options);
+    await library.install('alpha');await library.install('beta');
+    const oldAlpha = library.pathFor('alpha');const beta = library.pathFor('beta');
+    await write(oldAlpha, 'settings.json', '{"giftId":"7934","volume":0.35}');
+    await write(beta, 'settings.json', '{"untouched":true}');
+    const betaPointer = await fsp.readFile(path.join(f.root, '.game-library', 'beta', 'active.json'));
+    const requests = f.requests.length;
+    publish('alpha', '1.0.1', 'alpha new');
+    assert.equal(library.state('alpha').updateAvailable, true);
+    assert.equal(library.state('beta').updateAvailable, false);
+    await library.install('alpha');
+    assert.notEqual(library.pathFor('alpha'), oldAlpha);
+    assert.equal(await fsp.readFile(path.join(library.pathFor('alpha'), 'run.txt'), 'utf8'), 'alpha new');
+    assert.equal(await fsp.readFile(path.join(library.pathFor('alpha'), 'settings.json'), 'utf8'), '{"giftId":"7934","volume":0.35}');
+    assert.equal(library.pathFor('beta'), beta);
+    assert.equal(await fsp.readFile(path.join(beta, 'run.txt'), 'utf8'), 'beta unchanged');
+    assert.equal(await fsp.readFile(path.join(beta, 'settings.json'), 'utf8'), '{"untouched":true}');
+    assert.deepEqual(await fsp.readFile(path.join(f.root, '.game-library', 'beta', 'active.json')), betaPointer);
+    assert.deepEqual(f.requests.slice(requests).map(item=>item.path), ['/alpha-1.0.1.zip']);
+    library = createGameLibrary(options);
+    assert.equal(library.state('alpha').installedVersion, '1.0.1');
+    assert.equal(library.state('beta').installedVersion, '4.2.0');
+    assert.equal(library.pathFor('beta'), beta);
+});
+
 test("download export resumes an interrupted response with Range and If-Range", async t => {
     const f = await fixture(t);
     const data = crypto.randomBytes(65536);

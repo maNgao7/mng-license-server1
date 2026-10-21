@@ -46,6 +46,7 @@
       "signAndEditExecutable": true
     },
     "nsis": {
+      "deleteAppDataOnUninstall": false,
       "oneClick": false,
       "perMachine": false,
       "allowElevation": true,

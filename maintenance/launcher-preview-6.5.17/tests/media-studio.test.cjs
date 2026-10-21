@@ -15,7 +15,7 @@ const KEY = '0123456789abcdef0123456789abcdef';
 const BASE = '/tikmng/media';
 const options = { timeout: 10000 };
 
-function fixture(t, { disk = false } = {}) {
+function fixture(t, { disk = false, activeGame = '' } = {}) {
     const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'media-studio-test-'));
     const root = path.join(directory, 'library');
     const config = path.join(directory, 'config.json');
@@ -34,7 +34,7 @@ function fixture(t, { disk = false } = {}) {
     };
     const services = [];
     const make = (extra = {}) => {
-        const service = createMediaStudio({ store, root, accessKey: KEY, getChannel: () => channel,
+        const service = createMediaStudio({ store, root, accessKey: KEY, getChannel: () => channel, getActiveGame: () => activeGame,
             onEvent: event => notifications.push(event), ...extra });
         services.push(service);
         return service;
@@ -47,6 +47,7 @@ function fixture(t, { disk = false } = {}) {
     const studio = make();
     return { studio, make, store, root, directory, config, notifications,
         setChannel(value) { channel = value; },
+        setActiveGame(value) { activeGame = value; },
         source(name = 'clip.mp4', content = '0123456789') {
             const source = path.join(directory, name);
             fs.writeFileSync(source, content);
@@ -489,37 +490,249 @@ test('SSE travels over HTTP and reconnect has no event history despite Last-Even
     req.destroy();
 });
 
-function overlayHarness({ mode = '', item = null } = {}) {
+test('v1 defaults remain global and all new settings validate before persisting or importing', options, async t => {
+    const f = fixture(t);
+    const item = await mapped(f);
+    const defaults = { gameId: '', interrupt: false, fade: false, playLimit: 0, combineGifts: false, displaySeconds: 5 };
+    for (const [key, value] of Object.entries(defaults)) assert.equal(item[key], value);
+    const saved = f.store.get('media_studio_v1');
+    for (const key of Object.keys(defaults)) delete saved.items[0][key];
+    f.store.set('media_studio_v1', saved);
+    f.studio.close();
+    const restarted = f.make();
+    assert.deepEqual(restarted.list(), [item]);
+    for (const patch of [
+        { gameId: '../game' }, { gameId: 'GAME' }, { gameId: '-game' }, { gameId: 'a'.repeat(65) },
+        { gameId: 'game\n' }, { gameId: null }, { gameId: 1 }, { interrupt: 1 }, { fade: 'true' },
+        { combineGifts: null }, { playLimit: -1 }, { playLimit: 1.5 }, { playLimit: Infinity },
+        { playLimit: '2' }, { playLimit: Number.MAX_SAFE_INTEGER + 1 }, { displaySeconds: 0 },
+        { displaySeconds: -1 }, { displaySeconds: 86401 }, { displaySeconds: NaN }
+    ]) assert.throws(() => restarted.save({ id: item.id, ...patch }));
+    assert.deepEqual(restarted.list(), [item]);
+    const changed = restarted.save({ id: item.id, gameId: 'a'.repeat(64), interrupt: true, fade: true,
+        playLimit: 2, combineGifts: true, displaySeconds: 2.5 });
+    assert.equal(new URL(changed.previewUrl, 'http://localhost').searchParams.get('game'), changed.gameId);
+    assert.equal(new URL(changed.mediaUrl, 'http://localhost').searchParams.has('game'), false);
+    await assert.rejects(restarted.importFiles([f.source('bad.gif')], [{ displaySeconds: 0 }]), /displaySeconds/);
+    assert.equal(fs.readdirSync(f.root).length, 1);
+    const [image] = await restarted.importFiles([f.source('good.gif')], [{ gameId: 'game-2', displaySeconds: 3, interrupt: true }]);
+    assert.equal(image.gameId, 'game-2');
+    assert.equal(image.interrupt, true);
+    assert.equal(image.displaySeconds, 3);
+});
+
+test('image imports and HTTPS kinds serve exact MIME, reject mismatches and preserve authentication', options, async t => {
+    const f = fixture(t);
+    const formats = [['GIF', 'image/gif'], ['png', 'image/png'], ['jpg', 'image/jpeg'], ['jpeg', 'image/jpeg'], ['webp', 'image/webp']];
+    const images = await f.studio.importFiles(formats.map(([extension]) => f.source(`image.${extension}`)));
+    const base = await startServer(t, f.studio);
+    for (const [index, image] of images.entries()) {
+        assert.equal(image.kind, 'image');
+        assert.equal(image.mime, formats[index][1]);
+        assert.equal(image.category, 'Image');
+        const response = await request(base, `${BASE}/file/${image.id}`);
+        assert.equal(response.headers['content-type'], formats[index][1]);
+        assert.equal(response.headers['referrer-policy'], 'no-referrer');
+        const remote = f.studio.save({ title: 'Remote image', url: `https://cdn.example/image.${formats[index][0]}?token=remote-only`, kind: 'image' });
+        assert.equal(remote.kind, 'image');
+        assert.equal(remote.mime, formats[index][1]);
+        assert.equal((await request(base, `${BASE}/file/${remote.id}`, { key: 'bad' })).status, 403);
+        const redirect = await request(base, `${BASE}/file/${remote.id}`);
+        assert.equal(redirect.status, 307);
+        assert.equal(redirect.headers.location, remote.url);
+        assert.ok(!redirect.headers.location.includes(KEY));
+    }
+    const stream = f.studio.save({ title: 'Image endpoint', kind: 'image', url: 'https://cdn.example/render?id=1' });
+    assert.equal(stream.kind, 'image');
+    assert.equal(stream.mime, null);
+    assert.equal(f.studio.save({ title: 'Inferred', url: 'https://cdn.example/image.png' }).kind, 'image');
+    for (const [extension, kind] of [['mp4', 'image'], ['png', 'video'], ['jpg', 'audio'], ['mp3', 'image'], ['png', 'svg']]) {
+        assert.throws(() => f.studio.save({ title: 'Mismatch', url: `https://cdn.example/image.${extension}`, kind }), /kind/);
+    }
+    const overlay = await request(base, `${BASE}/${images[0].id}`);
+    assert.match(overlay.headers['content-security-policy'], /img-src 'self' https:/);
+    assert.match(overlay.body, /name="referrer" content="no-referrer"/);
+});
+
+test('duplicate keeps shared owned assets through removal and restart, rejects source and channel replacement', options, async t => {
+    const f = fixture(t, { disk: true });
+    const original = await mapped(f, { volume: 0.25 });
+    const clone = f.studio.duplicate(original.id, { gameId: 'race', giftId: '', enabled: false,
+        id: original.id, file: '../config.json', assetId: '../config', channel: 'bob', url: 'file:///secret', kind: 'image' });
+    assert.notEqual(clone.id, original.id);
+    assert.equal(clone.channel, 'alice');
+    assert.equal(clone.gameId, 'race');
+    assert.equal(clone.giftId, '');
+    assert.equal(clone.enabled, false);
+    assert.equal(clone.volume, 0.25);
+    assert.equal(clone.kind, 'video');
+    assert.equal(clone.url, '');
+    assert.equal(fs.readdirSync(f.root).length, 1);
+    assert.ok(!Object.hasOwn(clone, 'assetId'));
+    assert.ok(!Object.hasOwn(clone, 'file'));
+    assert.equal(f.studio.list()[0].gameId, '');
+    const grandchild = f.studio.duplicate(clone.id, { gameId: 'runner' });
+    f.studio.remove(original.id);
+    f.studio.remove(clone.id);
+    f.studio.close();
+    const restarted = f.make();
+    assert.deepEqual(restarted.list(), [grandchild]);
+    const base = await startServer(t, restarted);
+    assert.equal((await request(base, `${BASE}/file/${grandchild.id}`)).body, '0123456789');
+    assert.equal((await request(base, `${BASE}/${grandchild.id}?game=runner`)).status, 200);
+    f.setChannel('bob');
+    assert.throws(() => restarted.duplicate(grandchild.id), /Unknown/);
+    f.setChannel('alice');
+    assert.throws(() => restarted.duplicate(grandchild.id, null), /settings/);
+    assert.throws(() => restarted.duplicate(grandchild.id, { gameId: '../escape' }), /gameId/);
+    const remote = restarted.save({ title: 'Remote', url: 'https://cdn.example/image.webp', kind: 'image' });
+    assert.equal(restarted.duplicate(remote.id, { gameId: 'race' }).url, remote.url);
+    assert.ok(!fs.readFileSync(f.config, 'utf8').includes(f.directory));
+    assert.ok(!fs.readFileSync(f.config, 'utf8').includes(KEY));
+});
+
+test('shared asset loader denies traversal and mismatched ownership; failed duplicate is atomic', options, async t => {
+    const f = fixture(t);
+    const item = await mapped(f);
+    const saved = f.store.get('media_studio_v1');
+    const bad = [
+        { file: '../config.json', assetId: item.id }, { file: `${item.id}.mp4`, assetId: '../escape' },
+        { file: `${item.id}.mp4`, assetId: crypto.randomUUID() }, { file: `${item.id}.svg`, assetId: item.id }
+    ].map(patch => ({ ...saved.items[0], id: crypto.randomUUID(), ...patch }));
+    f.store.set('media_studio_v1', { version: 1, items: [...saved.items, ...bad] });
+    const restarted = f.make();
+    assert.deepEqual(restarted.list(), [item]);
+    const failing = f.make({ store: { get: () => saved, set() { throw new Error('disk full'); } } });
+    assert.throws(() => failing.duplicate(item.id, { gameId: 'race' }), /disk full/);
+    assert.deepEqual(failing.list(), [item]);
+    assert.equal(fs.readdirSync(f.root).length, 1);
+});
+
+test('game-scoped SSE excludes global and other games; only explicit tests bypass active game', options, async t => {
+    const f = fixture(t, { activeGame: 'race' });
+    const global = await mapped(f);
+    const race = f.studio.duplicate(global.id, { gameId: 'race' });
+    const runner = f.studio.duplicate(global.id, { gameId: 'runner' });
+    const clients = ['', 'race', 'runner'].map(game => fakeRequest(f.studio, `${BASE}/events?game=${game}`));
+    const preview = fakeRequest(f.studio, `${BASE}/events?game=runner&item=${runner.id}`);
+    const first = f.studio.ingest('gift', { giftId: '5655', eventId: 'a', test: true });
+    assert.deepEqual(first.map(event => event.item.id), [global.id, race.id]);
+    assert.ok(first.every(event => event.test === false));
+    assert.deepEqual(clients.map(client => client.events().length), [1, 1, 0]);
+    const tested = f.studio.test(runner.id);
+    assert.equal(tested.test, true);
+    assert.deepEqual(clients.map(client => client.events().length), [1, 1, 1]);
+    assert.equal(preview.events()[0].item.id, runner.id);
+    f.setActiveGame('runner');
+    assert.deepEqual(f.studio.ingest('gift', { giftId: '5655', eventId: 'b' }).map(event => event.item.id), [global.id, runner.id]);
+    f.setActiveGame('RUNNER');
+    assert.deepEqual(f.studio.ingest('gift', { giftId: '5655', eventId: 'c' }).map(event => event.item.id), [global.id]);
+    assert.equal(fakeRequest(f.studio, `${BASE}/events?item=${race.id}`).res.status, 404);
+    assert.equal(fakeRequest(f.studio, `${BASE}/events?game=runner&item=${race.id}`).res.status, 404);
+    for (const suffix of ['game=../escape', 'game=Race', 'game=-bad', 'game=a&game=b']) {
+        const response = fakeRequest(f.studio, `${BASE}/events?${suffix}`).res;
+        assert.equal(response.status, 400);
+        assert.ok(!response.body.includes(KEY));
+    }
+    const base = await startServer(t, f.studio);
+    assert.equal((await request(base, `${BASE}/${race.id}`)).status, 404);
+    const response = await request(base, `${BASE}/${race.id}?game=race&preview=1`);
+    assert.equal(response.status, 200);
+    assert.match(response.body, /data-game="race"/);
+    const unavailable = f.make({ getActiveGame() { throw new Error('closed game'); } });
+    assert.deepEqual(unavailable.ingest('gift', { giftId: '5655' }).map(event => event.item.id), [global.id]);
+});
+
+test('inactive game likes do not accumulate remainders or consume playback limits', options, async t => {
+    const f = fixture(t);
+    const item = await mapped(f, { gameId: 'race', trigger: 'like', playLimit: 1 });
+    assert.equal(f.studio.ingest('like', { count: 99 }).length, 0);
+    f.setActiveGame('race');
+    assert.equal(f.studio.ingest('like', { count: 1 }).length, 0);
+    assert.equal(f.studio.ingest('like', { count: 99 })[0].item.id, item.id);
+    assert.equal(f.studio.ingest('like', { count: 100 }).length, 0);
+});
+
+test('play limits are per action/session, gift repetitions bounded, and tests do not consume limits', options, async t => {
+    const f = fixture(t);
+    const once = await mapped(f, { playLimit: 2 });
+    const combo = await mapped(f, { combineGifts: true, playLimit: 3 });
+    const first = f.studio.ingest('gift', { giftId: '5655', repeatCount: 20 });
+    assert.deepEqual(first.map(event => event.item.id), [once.id, combo.id, combo.id, combo.id]);
+    assert.ok(first.every(event => event.trigger.count === 20));
+    assert.deepEqual(f.studio.ingest('gift', { giftId: '5655', repeatCount: 20 }).map(event => event.item.id), [once.id]);
+    assert.equal(f.studio.ingest('gift', { giftId: '5655' }).length, 0);
+    assert.equal(f.studio.test(combo.id).test, true);
+    assert.equal(f.studio.ingest('gift', { giftId: '5655' }).length, 0);
+    f.studio.save({ id: combo.id, playLimit: 0 });
+    assert.equal(f.studio.ingest('gift', { giftId: '5655', repeatCount: Number.MAX_SAFE_INTEGER }).length, 100);
+    f.studio.save({ id: combo.id, playLimit: 4 });
+    assert.equal(f.studio.ingest('gift', { giftId: '5655' }).length, 0);
+    f.studio.close();
+    const restarted = f.make();
+    restarted.test(once.id);
+    assert.equal(restarted.ingest('gift', { giftId: '5655' }).length, 2);
+    const cool = restarted.duplicate(combo.id, { cooldownSeconds: 10, playLimit: 0 });
+    assert.equal(restarted.ingest('gift', { giftId: '5655', repeatCount: 9 }).filter(event => event.item.id === cool.id).length, 1);
+});
+
+function overlayHarness({ mode = '', item = null, game = item?.gameId || '', extraQuery = '' } = {}) {
     const elements = [];
     const timeouts = new Map();
+    const messages = [];
+    const windowHandlers = new Map();
     let timerId = 0;
+    let now = 0;
     let receive;
-    let hide;
+    let eventsUrl;
     let sourceClosed = false;
+    const classList = () => {
+        const classes = new Set();
+        return { add(...names) { names.forEach(name => classes.add(name)); },
+            remove(...names) { names.forEach(name => classes.delete(name)); }, contains: name => classes.has(name) };
+    };
+    const bodyClasses = classList();
+    const parent = { postMessage(message, origin) { messages.push({ message: JSON.parse(JSON.stringify(message)), origin }); } };
     const stage = { children: [], replaceChildren(element) { this.children = [element]; } };
     class Element {
-        constructor(kind) { this.kind = kind; this.handlers = new Map(); this.currentTime = 0; this.duration = 10; elements.push(this); }
+        constructor(kind) { this.kind = kind; this.handlers = new Map(); this.classList = classList(); this.attributes = {};
+            this.currentTime = 0; this.duration = 10; this.paused = true; elements.push(this); }
         addEventListener(name, fn) { this.handlers.set(name, fn); }
         removeEventListener(name) { this.handlers.delete(name); }
         dispatch(name) { this.handlers.get(name)?.(); }
-        setAttribute() {}
+        setAttribute(name, value) { this.attributes[name] = value; }
         removeAttribute(name) { delete this[name]; }
         load() {}
         pause() { this.paused = true; }
-        play() { this.played = true; return Promise.resolve(); }
-        remove() { this.removed = true; }
+        play() { this.played = true; this.paused = false; this.playCalls = (this.playCalls || 0) + 1; return Promise.resolve(); }
+        remove() { this.removed = true; if (stage.children[0] === this) stage.children = []; }
     }
     const context = {
-        document: { getElementById: () => stage, body: { dataset: { channel: 'alice', item: item?.id || '', media: item ? JSON.stringify(item) : '' }, classList: { add() {} } }, createElement: kind => new Element(kind) },
-        location: { origin: 'http://127.0.0.1:1234', search: `?key=${KEY}&channel=alice${mode?'&'+mode+'=1':''}` },
+        document: { getElementById: () => stage, body: { dataset: { channel: 'alice', item: item?.id || '', game, media: item ? JSON.stringify(item) : '' }, classList: bodyClasses }, createElement: kind => new Element(kind) },
+        location: { origin: 'http://127.0.0.1:1234', search: `?key=${KEY}&channel=alice${mode?'&'+mode+'=1':''}${game?'&game='+game:''}${extraQuery}` },
         URL, URLSearchParams, queueMicrotask,
-        setTimeout(fn) { const id = ++timerId; timeouts.set(id, fn); return id; }, clearTimeout(id) { timeouts.delete(id); },
-        EventSource: class { addEventListener(name, fn) { assert.equal(name, 'studio:play'); receive = fn; } close() { sourceClosed = true; } },
-        window: { addEventListener(name, fn) { assert.equal(name, 'pagehide'); hide = fn; } }
+        setTimeout(fn, ms) { const id = ++timerId; timeouts.set(id, { fn, at: now + ms }); return id; }, clearTimeout(id) { timeouts.delete(id); },
+        EventSource: class { constructor(url) { eventsUrl = url; } addEventListener(name, fn) { assert.equal(name, 'studio:play'); receive = fn; } close() { sourceClosed = true; } },
+        window: { parent, addEventListener(name, fn) { windowHandlers.set(name, fn); } }
     };
     vm.runInNewContext(fs.readFileSync(path.join(__dirname, '../renderer/studio/overlay.js'), 'utf8'), context);
-    return { elements, timeouts, send(event) { receive({ data: JSON.stringify(event) }); }, hide,
-        isClosed: () => sourceClosed };
+    return { elements, timeouts, stage, messages, bodyClasses, eventsUrl, parent,
+        send(event) { receive({ data: JSON.stringify(event) }); },
+        message(data, source = parent) { windowHandlers.get('message')?.({ source, data }); },
+        hide() { windowHandlers.get('pagehide')(); }, isClosed: () => sourceClosed,
+        async advance(ms) {
+            const target = now + ms;
+            for (;;) {
+                const next = [...timeouts.entries()].filter(([, timer]) => timer.at <= target).sort((a, b) => a[1].at - b[1].at)[0];
+                if (!next) break;
+                const [id, timer] = next;
+                now = timer.at;
+                timeouts.delete(id);
+                timer.fn();
+                await Promise.resolve();
+            }
+            now = target;
+        } };
 }
 
 test('poster previews load authenticated clips without a live-event subscription or sound', options, async t => {

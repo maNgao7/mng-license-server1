@@ -530,6 +530,7 @@ async function widgetTikTokBagla(username) {
         if (generation !== widgetTikTokGeneration) return;
         widgetTikTokConnection = null;
         widgetLiveStatus = { status: "disconnected", username: clean, message: "Yayın bağlantısı kesildi. Yeniden bağlanmak için Bağlan'a basın." };
+        widgetTikTokYenidenBaglan(clean, generation);
     };
     on(WebcastEvent.DISCONNECTED || "disconnected", disconnected);
     on(WebcastEvent.STREAM_END || "streamEnd", disconnected);
@@ -548,6 +549,7 @@ async function widgetTikTokBagla(username) {
         const offline = /isn't online|not online|LIVE has ended|offline/i.test(raw);
         widgetLiveStatus = { status: offline ? "offline" : "error", username: clean, message: offline ? `@${clean} şu anda canlı yayında değil.` : (raw || "TikTok yayınına bağlanılamadı.") };
         try { await connection.disconnect(); } catch {}
+        widgetTikTokYenidenBaglan(clean, generation);
     } finally {
         clearTimeout(timeout);
     }
@@ -1759,11 +1761,12 @@ ipcMain.handle("tiktok-hesaplari", async () => ({
 }));
 ipcMain.handle("tiktok-hesap-kaydet", async (_event, { username }) => {
     const clean = String(username || "").replace(/^@/, "").trim();
-    if (!clean) return { basarili: false, hata: "Kullanıcı adı boş olamaz." };
+    if (!/^[a-zA-Z0-9_.]{1,24}$/.test(clean)) return { basarili: false, hata: "Geçerli TikTok kullanıcı adını yazın. Yalnızca harf, rakam, nokta ve alt çizgi kullanın." };
     const accounts = store.get("tiktok_accounts", []).filter(item => String(item).toLocaleLowerCase("tr-TR") !== clean.toLocaleLowerCase("tr-TR"));
     accounts.unshift(clean);
     store.set("tiktok_accounts", accounts.slice(0, 10));
     store.set("tiktok_active_account", clean);
+    platform?.disconnect();
     widgetKanaliniDegistir(clean);
     await widgetTikTokBaglantisiniKapat("Hesap seçildi. Yayına bağlanmak için Bağlan'a basın.");
     return { basarili: true, accounts: accounts.slice(0, 10), active: clean };
@@ -1773,6 +1776,7 @@ ipcMain.handle("tiktok-hesap-sec", async (_event, { username }) => {
     const accounts = store.get("tiktok_accounts", []);
     if (!accounts.includes(clean)) return { basarili: false, hata: "Hesap bulunamadı." };
     store.set("tiktok_active_account", clean);
+    platform?.disconnect();
     widgetKanaliniDegistir(clean);
     await widgetTikTokBaglantisiniKapat("Hesap seçildi. Yayına bağlanmak için Bağlan'a basın.");
     return { basarili: true, active: clean };
@@ -1787,6 +1791,7 @@ ipcMain.handle("tiktok-hesap-sil", async (_event, { username }) => {
         store.set("tiktok_active_account", active);
     }
     widgetKanaliniDegistir(active);
+    platform?.disconnect();
     await widgetTikTokBaglantisiniKapat("Hesap listesi değişti. Yayına bağlanmak için Bağlan'a basın.");
     return { basarili: true, accounts, active };
 });
@@ -2190,37 +2195,151 @@ ipcMain.handle("oyun-kaldir", async (event, { oyun }) => {
 
 let aktifOyun = null;
 const minecraftProcesses = new Map();
+const { GameLaunchSession } = require('./lib/game-launch-session.cjs');
+let oyunOturumu = null;
+let oyunBaslatmaSirasi = Promise.resolve();
 
-async function minecraftOyunuAc(oyun) {
-    const existing = minecraftProcesses.get(oyun);
-    if (existing && existing.exitCode === null) return { basarili: true };
+function oyunDurumunuGonder(payload) {
+    try { if (!mainWindow?.isDestroyed()) mainWindow?.webContents.send('durum', payload); } catch {}
+}
+
+function oyunOturumuOlustur(oyun) {
+    const session = new GameLaunchSession({
+        game: oyun, title: OYUN_TANIMLARI[oyun]?.ad || oyun,
+        onProgress: oyunDurumunuGonder,
+        onClosed: error => {
+            if (oyunOturumu !== session) return;
+            aktifOyun = null;
+            if (appWindow === session.window) appWindow = null;
+            if (!session.cleanupError) oyunOturumu = null;
+            try { mainWindow?.webContents.send('oyun-kapandi'); } catch {}
+            if (error) oyunDurumunuGonder({ oyun, tip: 'hata', phase: 'failed', mesaj: error.message });
+        }
+    });
+    oyunOturumu = session;
+    aktifOyun = oyun;
+    const owner = mainWindow;
+    const close = () => { void session.close(); };
+    owner?.once('closed', close);
+    session.disposers.add(() => owner?.removeListener('closed', close));
+    return session;
+}
+
+// Only children created by this session are stopped; port owners are never killed here.
+async function oyunOturumuSunucusunuBaslat(session, oyun) {
+    const runtime = nodeBilgisiBul();
+    const gameDir = oyunKlasoruBul(oyun);
+    const pony = oyun === 'pony-life';
+    const port = oyun === 'orbit' ? ORBIT_PORT
+        : oyun === 'crowd-control' || oyun === 'crowdControl' ? CROWD_CONTROL_PORT
+        : oyun === 'battle-game' ? BATTLE_GAME_PORT
+        : oyun === 'duck-hunt' ? DUCK_HUNT_PORT
+        : pony ? PONY_LIFE_PORT : oyun === 'frog-river' ? FROG_RIVER_PORT
+        : oyun === 'penalty-kick' ? PENALTY_KICK_PORT
+        : oyun === 'tightrope-balance' ? TIGHTROPE_BALANCE_PORT : APP_PORT;
+    const file = path.join(gameDir, pony ? 'server' : '', pony ? 'index.js' : 'server.js');
+    if (!fs.existsSync(file)) throw new Error(`Oyun sunucusu bulunamadı: ${file}`);
+    const env = { ...runtime.env, PORT: port };
+    if (oyun === 'vs' || oyun === 'puanlama' || oyun === 'orbit') env.MNG_BACKGROUNDS_DIR = arkaPlanKlasoru();
+    if (pony) Object.assign(env, { PONY_PORT: port, PONY_WIDGET_PORT, PONY_STATE_FILE: path.join(app.getPath('userData'), 'pony-life.json') });
+    if (oyun === 'frog-river') env.FROG_PORT = String(port);
+    session.ownChild(spawn(runtime.komut, [file], {
+        cwd: gameDir, env, windowsHide: true, stdio: ['ignore', 'pipe', 'pipe']
+    }), { name: `${OYUN_TANIMLARI[oyun]?.ad || oyun} sunucusu` });
+    const healthPath = ['vs', 'puanlama', 'orbit'].includes(oyun) ? '/' : '/api/health';
+    await session.waitForHttp(`http://127.0.0.1:${port}${healthPath}`);
+}
+
+async function geleneGeceneOturumKoprusunuBaslat(session, modDir) {
+    const candidates = [path.join(modDir, 'tiktok_unturned_bridge.js'),
+        app.isPackaged ? path.join(process.resourcesPath, 'apps', 'tiktok-vs', 'tiktok_unturned_bridge.js') : '',
+        path.join(__dirname, '..', 'apps', 'tiktok-vs', 'tiktok_unturned_bridge.js')].filter(Boolean);
+    const file = candidates.find(candidate => fs.existsSync(candidate) && fs.existsSync(path.join(path.dirname(candidate), 'node_modules')));
+    if (!file) throw new Error('TikTok canlı yayın köprüsü veya bağımlılıkları bulunamadı. Launcherı yeniden kurun.');
+    const directory = path.dirname(file);
+    const packageFile = path.join(directory, 'package.json');
+    let validPackage = false;
+    try { validPackage = JSON.parse(fs.readFileSync(packageFile, 'utf8').replace(/^\uFEFF/, '')).type === 'module'; } catch {}
+    if (!validPackage) fs.writeFileSync(packageFile, JSON.stringify({ name: 'unturned-mng-bridge', version: '6.5.0', type: 'module' }, null, 2), 'utf8');
+    const runtime = nodeBilgisiBul();
+    const logDir = path.join(app.getPath('userData'), 'logs');
+    fs.mkdirSync(logDir, { recursive: true });
+    const log = fs.createWriteStream(path.join(logDir, 'gelene-gecene-bridge.log'), { flags: 'a' });
+    const logError = error => { void session.close(new Error(`Köprü kaydı yazılamadı: ${error.message}`)); };
+    log.on('error', logError);
+    session.disposers.add(() => log.end());
+    const child = session.ownChild(spawn(runtime.komut, [file], {
+        cwd: directory, windowsHide: true, stdio: ['ignore', 'pipe', 'pipe'],
+        env: { ...runtime.env, PORT: '8088', NODE_PATH: path.join(directory, 'node_modules'), MNG_UNTURNED_MOD_DIR: modDir }
+    }), { name: 'TikTok canlı yayın köprüsü' });
+    child.stdout?.pipe(log, { end: false });
+    child.stderr?.pipe(log, { end: false });
+    session.disposers.add(() => { child.stdout?.unpipe(log); child.stderr?.unpipe(log); });
+    await session.waitForHttp('http://127.0.0.1:8088/status', { validate: status => Boolean(status.bridgeVersion || status.status) });
+}
+
+async function minecraftOyunuAc(oyun, session) {
     const gameDir = oyunKlasoruBul(oyun);
     const runtime = nodeBilgisiBul();
-    const title = OYUN_TANIMLARI[oyun].ad;
-    const loading = new BrowserWindow({ width: 540, height: 240, resizable: false,
-        title, backgroundColor: '#101419', autoHideMenuBar: true,
-        webPreferences: { nodeIntegration: false, contextIsolation: true, sandbox: true } });
-    await loading.loadFile(path.join(__dirname, 'renderer', 'minecraft-loading.html'), { query: { game: title } });
-    const child = spawn(runtime.komut, [path.join(gameDir, 'launch-game.cjs')], {
+    session.progress('engine', 'Oyun motoru başlatılıyor; hazır sinyali bekleniyor...');
+    const child = session.ownChild(spawn(runtime.komut, [path.join(gameDir, 'launch-game.cjs')], {
         cwd: gameDir, env: runtime.env, windowsHide: true, stdio: ['ignore', 'pipe', 'pipe']
+    }), { normalExit: true });
+    if (oyun === 'zombie-war') zombieWarProcess = child;
+    else minecraftProcesses.set(oyun, child);
+    session.disposers.add(() => {
+        if (minecraftProcesses.get(oyun) === child) minecraftProcesses.delete(oyun);
+        if (zombieWarProcess === child) zombieWarProcess = null;
     });
-    minecraftProcesses.set(oyun, child);
-    const closeLoading = () => { if (!loading.isDestroyed()) loading.close(); };
-    let failure = '';
-    child.stdout.on('data', chunk => {
-        if (/MNG_WORLD_LOADED|MNG_STARTUP_WORLD_SECONDS|MNG_(?:SNOW|BATTLE)_ARENA_READY/.test(String(chunk))) closeLoading();
-    });
-    child.stderr.on('data', chunk => { failure = (failure + chunk).slice(-3000); });
-    child.on('error', error => { closeLoading(); dialog.showErrorBox(title, error.message); });
-    child.on('exit', code => {
-        closeLoading(); minecraftProcesses.delete(oyun);
-        mainWindow?.webContents.send('oyun-kapandi');
-        if (code) dialog.showErrorBox(title, failure || 'Oyun açılamadı. Launcher üzerinden oyun paketini yeniden kurun.');
-    });
+    await session.waitForMarker(child);
+    if (session.tiktokUser) {
+        try {
+            const argumentsText = fs.readFileSync(path.join(gameDir, 'game-instance', 'launch-args.txt'), 'utf8');
+            if (argumentsText.length > 1024 * 1024) throw new Error('Invalid launch arguments');
+            const args = argumentsText.split(/\r?\n/).map(line => { try { return JSON.parse(line); } catch { return null; } });
+            const argument = args.find(value => typeof value === 'string' && /^-Dmng\.bridge\.port=\d{1,5}$/.test(value));
+            const port = Number(argument?.split('=')[1]);
+            if (!Number.isInteger(port) || port < 1024 || port > 65535) throw new Error('Missing owned bridge port');
+            session.accountBaseURL = `http://127.0.0.1:${port}/`;
+            await oyunYayinHesabiniIlet(session, oyun, session.accountBaseURL, session.tiktokUser);
+        } catch {
+            oyunDurumunuGonder({ oyun, tip: 'hesap-uyari', mesaj: 'Oyunun yayın bağlantısı otomatik bulunamadı. Oyun içindeki yayın hesabını kontrol edin.' });
+        }
+    }
+    session.markReady();
     return { basarili: true };
 }
 
-ipcMain.handle("uygulamayi-ac", async (event, { uygulama, tiktokUser, orbitSettings, orbitTest, orbitTestLabel }) => {
+async function oyunYayinHesabiniIlet(session, gameId, baseURL, username) {
+    if (!username) return;
+    const controller = new AbortController();
+    const cancel = () => controller.abort();
+    session.disposers.add(cancel);
+    try {
+        session.progress('account', 'Yayın hesabı oyuna iletiliyor...');
+        await require('./lib/game-account-handoff.cjs').handoffGameAccount({ gameId, baseURL, username, signal: controller.signal });
+    } catch {
+        if (!session.closed) oyunDurumunuGonder({ oyun: gameId, tip: 'hesap-uyari', mesaj: 'Yayın hesabı oyuna otomatik iletilemedi. Oyun içindeki bağlantı durumunu kontrol edin.' });
+    } finally { session.disposers.delete(cancel); }
+}
+
+let oyunKapanisiBekleniyor = false;
+app.on('before-quit', event => {
+    if (!oyunOturumu) return;
+    event.preventDefault();
+    if (oyunKapanisiBekleniyor) return;
+    oyunKapanisiBekleniyor = true;
+    oyunOturumu.close().then(() => { oyunOturumu = null; oyunKapanisiBekleniyor = false; app.quit(); });
+});
+
+ipcMain.handle('uygulamayi-ac', (event, options) => {
+    const launch = oyunBaslatmaSirasi.then(() => uygulamayiAc(options || {}));
+    oyunBaslatmaSirasi = launch.catch(() => {});
+    return launch;
+});
+
+async function uygulamayiAc({ uygulama, tiktokUser, orbitSettings, orbitTest, orbitTestLabel }) {
+    let session = null;
     try {
         // 1. Lisans Kontrolü (Süre bittiyse kesinlikle başlatılamaz!)
         const kod = store.get("lisans_kod");
@@ -2241,25 +2360,36 @@ ipcMain.handle("uygulamayi-ac", async (event, { uygulama, tiktokUser, orbitSetti
         }
 
 
-        if (OYUN_TANIMLARI[uygulama]?.minecraft) return await minecraftOyunuAc(uygulama);
-        if (uygulama === "zombie-war") {
-            if (zombieWarProcess && zombieWarProcess.exitCode === null) return { basarili: true };
-            const gameDir = oyunKlasoruBul("zombie-war");
-            const runtime = nodeBilgisiBul();
-            const child = spawn(runtime.komut, [path.join(gameDir, "launch-game.cjs")], {
-                cwd: gameDir, env: runtime.env, windowsHide: true, stdio: ["ignore", "pipe", "pipe"]
-            });
-            zombieWarProcess = child;
-            let failure = "";
-            child.stderr.on("data", chunk => { failure = (failure + chunk).slice(-3000); });
-            child.on("error", error => dialog.showErrorBox("Zombie War", error.message));
-            child.on("exit", code => {
-                zombieWarProcess = null;
-                mainWindow?.webContents.send("oyun-kapandi");
-                if (code) dialog.showErrorBox("Zombie War", failure || "Oyun başlatılamadı. Minecraft Forge 1.20.1 ve Java 17 kurulumunu kontrol edin.");
-            });
+        if (app.isQuiting) throw new Error('Launcher kapanırken oyun başlatılamaz.');
+        const launchKey = JSON.stringify({ uygulama, tiktokUser, orbitSettings, orbitTest, orbitTestLabel });
+        if (oyunOturumu?.ready && !oyunOturumu.closed && oyunOturumu.launchKey === launchKey) {
+            if (appWindow && !appWindow.isDestroyed()) { appWindow.restore(); appWindow.show(); appWindow.focus(); }
+            oyunOturumu.markReady();
             return { basarili: true };
         }
+        if (oyunOturumu) {
+            oyunDurumunuGonder({ oyun: uygulama, tip: 'baslatiliyor', phase: 'stopping', mesaj: 'Önceki oyun kapatılıyor...' });
+            const previous = oyunOturumu;
+            await previous.close();
+            if (previous.cleanupError) throw previous.cleanupError;
+        }
+
+        session = oyunOturumuOlustur(uygulama);
+        session.launchKey = launchKey;
+        session.tiktokUser = String(tiktokUser || store.get('tiktok_active_account', '') || '').trim().replace(/^@/, '');
+        const nativeGame = OYUN_TANIMLARI[uygulama]?.minecraft || uygulama === 'zombie-war';
+        const ports = nativeGame ? [] : uygulama === 'gelene-gecene' ? [8088]
+            : uygulama === 'orbit' ? [APP_PORT, ORBIT_PORT]
+            : uygulama === 'crowd-control' || uygulama === 'crowdControl' ? [CROWD_CONTROL_PORT]
+            : uygulama === 'battle-game' ? [BATTLE_GAME_PORT]
+            : uygulama === 'duck-hunt' ? [DUCK_HUNT_PORT]
+            : uygulama === 'pony-life' ? [PONY_LIFE_PORT, PONY_WIDGET_PORT]
+            : uygulama === 'frog-river' ? [FROG_RIVER_PORT]
+            : uygulama === 'penalty-kick' ? [PENALTY_KICK_PORT]
+            : uygulama === 'tightrope-balance' ? [TIGHTROPE_BALANCE_PORT] : [APP_PORT];
+        await session.stage('connections', 'Oyun bağlantıları kontrol ediliyor...', () =>
+            require('./lib/preview-ports.cjs').assertPreviewPortsAvailable(preview.enabled ? [31975, ...ports] : ports));
+        if (nativeGame) return await minecraftOyunuAc(uygulama, session);
         if (uygulama === "gelene-gecene") {
             const modDir = geleneGeceneModKlasoru();
             eskiGeleneGeceneDllleriniAyikla(modDir);
@@ -2271,70 +2401,30 @@ ipcMain.handle("uygulamayi-ac", async (event, { uygulama, tiktokUser, orbitSetti
                     fs.writeFileSync(configPath, JSON.stringify(config, null, 2), "utf8");
                 } catch {}
             }
-            await geleneGeceneKoprusunuBaslat(modDir);
+            await session.stage('server', 'Canlı yayın köprüsü başlatılıyor...', () => geleneGeceneOturumKoprusunuBaslat(session, modDir));
             const autoUser = String(tiktokUser || store.get("tiktok_active_account", "") || "").replace(/^@/, "").trim();
             if (autoUser) {
                 httpGet(`http://127.0.0.1:8088/connect?username=${encodeURIComponent(autoUser)}`).catch(() => {});
             }
-            mainWindow.webContents.send("durum", { tip: "hazir" });
-            await shell.openExternal("steam://run/304930");
+            await session.stage('external', 'Steam oyun başlatma isteği gönderiliyor...', () => shell.openExternal('steam://run/304930'));
+            session.markReady('Steam oyun başlatma isteği gönderildi.');
             return { basarili: true };
         }
 
-        // Önceki farklı bir oyun veya bağlantı varsa temizle
-        if (aktifOyun && aktifOyun !== uygulama) {
-            mainWindow.webContents.send("durum", { tip: "baslatiliyor", mesaj: "Önceki oyun bağlantıları kapatılıyor..." });
-            await sunuculariDurdur();
-        }
-        if (preview.enabled && aktifOyun !== uygulama) {
-            const testPorts = uygulama === 'orbit' ? [APP_PORT, ORBIT_PORT]
-                : uygulama === 'crowd-control' || uygulama === 'crowdControl' ? [CROWD_CONTROL_PORT]
-                : uygulama === 'battle-game' ? [BATTLE_GAME_PORT]
-                : uygulama === 'duck-hunt' ? [DUCK_HUNT_PORT]
-                : uygulama === 'pony-life' ? [PONY_LIFE_PORT, PONY_WIDGET_PORT]
-                : uygulama === 'frog-river' ? [FROG_RIVER_PORT]
-                : uygulama === 'penalty-kick' ? [PENALTY_KICK_PORT]
-                : uygulama === 'tightrope-balance' ? [TIGHTROPE_BALANCE_PORT] : [APP_PORT];
-            await require('./lib/preview-ports.cjs').assertPreviewPortsAvailable([31975, ...testPorts]);
-        }
-        aktifOyun = uygulama;
-
-        mainWindow.webContents.send("durum", { tip: "baslatiliyor", mesaj: "Sunucu başlatılıyor..." });
-
-        if (!OYUN_TANIMLARI[uygulama]?.minecraft && uygulama !== 'zombie-war') {
-            await require('./lib/shared-game-assets.cjs').prepareSharedGameAssets({
+        await session.stage('assets', 'Oyun görselleri hazırlanıyor...', () =>
+            require('./lib/shared-game-assets.cjs').prepareSharedGameAssets({
                 gameDirectory: oyunKlasoruBul(uygulama), libraryRoot: platform.snapshot().libraryRoot,
                 bundledAssets: path.join(__dirname, 'renderer', 'gift-assets')
-            });
-        }
+            }), 120000);
 
         if (uygulama === "orbit") {
             if (!fs.existsSync(path.join(appKlasoruBul(), 'server.js'))) {
-                mainWindow.webContents.send('durum', { tip: 'baslatiliyor', mesaj: 'Ortak profil servisi hazırlanıyor...' });
-                const dependency = await platform.install('vs');
+                const dependency = await session.stage('dependency', 'Ortak profil servisi hazırlanıyor...', () => platform.install('vs'), 180000);
                 if (!dependency.basarili) throw new Error(dependency.hata);
             }
-            await sunucuyuBaslat();
-            await orbitSunucuyuBaslat();
-        } else if (uygulama === "crowd-control" || uygulama === "crowdControl") {
-            await crowdControlSunucuyuBaslat();
-        } else if (uygulama === "battle-game") {
-            await battleGameSunucuyuBaslat();
-        } else if (["duck-hunt", "pony-life", "frog-river", "penalty-kick", "tightrope-balance"].includes(uygulama)) {
-            await yeniOyunSunucusunuBaslat(uygulama);
-        } else {
-            if (orbitServerProcess) {
-                try { require("child_process").execSync(`taskkill /pid ${orbitServerProcess.pid} /f /t`, { stdio: "ignore" }); } catch {}
-                orbitServerProcess = null;
-                killProcessOnPort(ORBIT_PORT);
-            }
-            if (crowdControlServerProcess) {
-                try { require("child_process").execSync(`taskkill /pid ${crowdControlServerProcess.pid} /f /t`, { stdio: "ignore" }); } catch {}
-                crowdControlServerProcess = null;
-                killProcessOnPort(CROWD_CONTROL_PORT);
-            }
-            await sunucuyuBaslat();
+            await session.stage('profile-server', 'Ortak profil sunucusu başlatılıyor...', () => oyunOturumuSunucusunuBaslat(session, 'vs'));
         }
+        await session.stage('server', 'Oyun sunucusu başlatılıyor...', () => oyunOturumuSunucusunuBaslat(session, uygulama));
 
         const gameTitle = uygulama === "vs" ? "TikTok VS Profil"
             : (uygulama === "crowd-control" || uygulama === "crowdControl") ? "Crowd Control"
@@ -2362,20 +2452,20 @@ ipcMain.handle("uygulamayi-ac", async (event, { uygulama, tiktokUser, orbitSetti
             const raw = JSON.stringify({ ...(orbitSettings || {}), test: orbitTest, testLabel: orbitTestLabel });
             if (raw.length <= 12000) targetUrl += "?orbitConfig=" + encodeURIComponent(Buffer.from(raw).toString("base64url"));
         }
-        const autoUser = String(tiktokUser || "").replace(/^@/, "").trim();
+        const autoUser = session.tiktokUser;
         if (autoUser) targetUrl += (targetUrl.includes("?") ? "&" : "?") + "autoUser=" + encodeURIComponent(autoUser);
+        session.accountBaseURL = baseUrl.split('?')[0] + '/';
 
-        if (appWindow && !appWindow.isDestroyed()) {
-            appWindow.setTitle(gameTitle);
-            appWindow.focus();
-            appWindow.loadURL(targetUrl);
-            if (uygulama === "orbit") { appWindow.restore(); appWindow.center(); }
-            return { basarili: true };
+        // These packages do not consume the legacy autoUser query parameter.
+        if (['duck-hunt', 'penalty-kick', 'frog-river', 'pony-life', 'tightrope-balance'].includes(uygulama)) {
+            await oyunYayinHesabiniIlet(session, uygulama, baseUrl.split('?')[0] + '/', session.tiktokUser);
         }
 
+        session.progress('window', 'Oyun penceresi yükleniyor...');
         appWindow = new BrowserWindow({
             width: 1280,
             height: 900,
+            show: false,
             title: gameTitle,
             icon: path.join(__dirname, "renderer", "assets", "icon-v3.ico"),
             backgroundColor: "#000000",
@@ -2386,25 +2476,19 @@ ipcMain.handle("uygulamayi-ac", async (event, { uygulama, tiktokUser, orbitSetti
         });
 
 
+        session.window = appWindow;
         appWindow.setMenuBarVisibility(false);
-        appWindow.maximize();
-        appWindow.loadURL(targetUrl);
-
-        appWindow.on("closed", () => {
-            appWindow = null;
-            aktifOyun = null;
-            sunuculariDurdur().catch(() => {});
-            try { mainWindow?.webContents?.send("oyun-kapandi"); } catch {}
-        });
-
-        mainWindow.webContents.send("durum", { tip: "hazir" });
+        await session.loadWindow(appWindow, targetUrl);
+        session.markReady();
         return { basarili: true };
 
     } catch (hata) {
-        mainWindow.webContents.send("durum", { tip: "hata", mesaj: hata.message });
-        return { basarili: false, hata: hata.message };
+        if (session) await session.close(hata);
+        const message = session?.error?.message || hata.message;
+        oyunDurumunuGonder({ oyun: uygulama, tip: 'hata', phase: 'failed', mesaj: message });
+        return { basarili: false, hata: message };
     }
-});
+}
 
 // =====================================================================
 // HTTP / HTTPS YARDIMCILARI
@@ -2683,7 +2767,7 @@ app.whenReady().then(() => {
     platform = require('./lib/platform.cjs').createPlatform({
         app, ipcMain, store, dialog, definitions: OYUN_TANIMLARI, getWindow: () => mainWindow,
         serverURL: lisansSunucuUrlBul, accessKey: WIDGET_ACCESS_KEY, port: WIDGET_PORT,
-        getChannel: () => widgetChannel, event: widgetGenelOlayEkle,
+        getChannel: () => widgetChannel, getActiveGame: () => aktifOyun || '', event: widgetGenelOlayEkle,
         profile: widgetTikTokProfiliniOku, gift: widgetTikTokHediyesiniOku,
         setLiveStatus: status => { widgetLiveStatus = status; }, closeDirect: widgetTikTokBaglantisiniKapat,
         resolveLegacy: id => id === 'gelene-gecene' ? geleneGeceneModKlasoru() : oyunKlasoruBul(id, true),

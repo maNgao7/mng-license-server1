@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="tiktok-account.css">
     <link rel="stylesheet" href="workspace-v3.css">
+    <link rel="stylesheet" href="license-entry.css">
 </head>
 <body>
 
@@ -23,6 +24,9 @@
         <div class="spinner"></div>
         <div class="overlay-text" id="loadingText">Başlatılıyor...</div>
     </div>
+    <section id="gameLaunchOverlay" class="game-launch-overlay" hidden role="dialog" aria-modal="true" aria-labelledby="gameLaunchTitle">
+        <div class="game-launch-scene"><img id="gameLaunchCover" alt="" hidden><div class="game-launch-content"><small>TikMnG</small><h2 id="gameLaunchTitle">Oyun açılıyor</h2><div class="game-launch-indicator" role="progressbar" aria-label="Oyun hazırlanıyor"></div><p id="gameLaunchPhase" role="status">Oyun dosyaları kontrol ediliyor</p></div></div>
+    </section>
 
     <!-- ANA EKRAN -->
     <div class="launcher" id="launcher" style="display:flex;">
@@ -334,56 +338,93 @@
 
     </div>
 
-    <div class="compact-modal" id="tiktokAccountModal" hidden><div class="compact-dialog"><button class="modal-x" type="button" onclick="tiktokHesapPanelKapat()">×</button><h2>TikTok Yayıncı Hesabı</h2><p>Kullanıcı adını seçip Bağlan'a basınca yayın bağlantısı açılır. Uygulama kendiliğinden hiçbir yayına bağlanmaz.</p><div class="account-entry"><span>@</span><input id="accountUsername" autocomplete="off" placeholder="kullanıcı adı"><button type="button" onclick="tiktokHesapEkle()">HESABI EKLE</button></div><div class="account-connect-actions"><button type="button" onclick="tiktokYayinaBaglan()">BAĞLAN</button><button type="button" class="secondary" onclick="tiktokYayinBaglantisiniKes()">BAĞLANTIYI KES</button></div><div id="accountConnectionStatus" class="account-connection-status">Yayın bağlantısı kapalı.</div><div id="accountList" class="account-list"></div><small>Bu sürüm TikTok şifrenizi istemez. Resmî giriş, TikTok geliştirici onayı alındığında etkinleştirilebilir.</small></div></div>
+    <div class="compact-modal" id="tiktokAccountModal" hidden><div class="compact-dialog"><button class="modal-x" type="button" onclick="tiktokHesapPanelKapat()">×</button><h2>Yayın Hesabı</h2><div class="account-entry"><span>@</span><input id="accountUsername" autocomplete="off" maxlength="24" placeholder="TikTok kullanıcı adı"><button type="button" onclick="tiktokHesapEkle()">EKLE VE BAĞLAN</button></div><div class="account-connect-actions"><button type="button" onclick="tiktokYayinaBaglan()">YENİDEN BAĞLAN</button><button type="button" class="secondary" onclick="tiktokYayinBaglantisiniKes()">BAĞLANTIYI KES</button></div><div id="accountConnectionStatus" class="account-connection-status" role="status">Yayın bağlantısı kapalı.</div><div id="accountList" class="account-list"></div><small>TikTok şifren istenmez. Resmî hesap girişi henüz etkin değil.</small></div></div>
     <div class="compact-modal" id="widgetModal" hidden><div class="compact-dialog widget-dialog"><button class="modal-x" type="button" onclick="widgetPanelKapat()" aria-label="Kapat">×</button><div class="widget-gallery-head"><div><span class="widget-kicker">YAYINCI ARAÇLARI</span><h2>Canlı Yayın Widget Galerisi</h2><p>13 widgetın bağlantısını TikTok LIVE Studio'da Bağlantı Kaynağına, OBS'de Tarayıcı Kaynağına yapıştırın.</p></div><div class="widget-channel"><small>AKTİF YAYINCI</small><b id="widgetChannelLabel">@hesap seçilmedi</b><span>Veriler bu hesaba özel ve kalıcı tutulur.</span></div></div><section class="widget-live-connect" aria-label="TikTok canlı yayın bağlantısı"><div class="widget-live-connect-copy"><b>TikTok canlı yayını</b><span>Bir kez bağlanın; galerideki tüm widgetlar aynı canlı etkinlikleri kullanır.</span></div><label class="widget-live-username"><span>@</span><input id="widgetUsername" autocomplete="off" spellcheck="false" placeholder="TikTok kullanıcı adı"><span id="widgetConnectionStatus" role="status">Yayın bağlantısı kapalı.</span></label><div class="widget-live-connect-actions"><button type="button" id="widgetConnectButton" onclick="widgetYayinBaglan()">BAĞLAN</button><button type="button" class="secondary" onclick="widgetYayinBaglantiyiKes()">BAĞLANTIYI KES</button></div></section><div class="widget-customizer"><label>Vurgu rengi<input id="widgetAccent" type="color" value="#25f4ee" oninput="widgetOnIzlemeleriGuncelle()"></label><label>Liste uzunluğu<select id="widgetItemCount" onchange="widgetOnIzlemeleriGuncelle()"><option value="4">4 kişi</option><option value="6">6 kişi</option><option value="8">8 kişi</option><option value="10" selected>10 kişi</option><option value="13">13 kişi</option></select></label><label class="widget-search"><span>Widget ara</span><input id="widgetSearch" type="search" placeholder="Hediye, beğeni, sıralama..." oninput="widgetGalerisiniFiltrele(this.value)"></label><button type="button" onclick="widgetOnIzlemeleriGuncelle()">ÖN İZLEMELERİ YENİLE</button></div><div class="widget-category-bar" id="widgetCategoryBar"></div><div class="widget-collection" id="widgetCollection"></div></div></div>
     <div class="compact-modal" id="widgetSettingsModal" hidden><div class="compact-dialog widget-settings-dialog"><button class="modal-x" type="button" onclick="widgetAyarPanelKapat()" aria-label="Kapat">×</button><span class="widget-kicker">WIDGET AYARLARI</span><h2 id="widgetSettingsTitle">Widget</h2><div class="widget-settings-layout"><iframe id="widgetSettingsPreview" title="Widget canlı ön izlemesi"></iframe><form id="widgetSettingsForm"><div id="widgetSettingsFields" class="widget-settings-fields"></div><div class="widget-settings-actions"><button type="button" class="secondary" onclick="widgetAyarVarsayilan()">VARSAYILAN</button><button type="submit">KAYDET</button></div></form></div></div></div>
     <div class="compact-modal" id="backgroundModal" hidden><div class="compact-dialog background-dialog"><button class="modal-x" type="button" onclick="arkaPlanPanelKapat()">×</button><h2>Video Arka Planları</h2><p>Videolar sessiz ve sürekli döngüye hazırdır.</p><button class="auto-background" type="button" onclick="arkaPlanSec(-1)">OTOMATİK DÖNGÜ</button><div id="backgroundGrid" class="background-grid"></div></div></div>
 
     <!-- LİSANS EKRANI -->
-    <div class="license-page" id="licensePage" style="display:none">
-        <div class="license-box">
-            <div class="license-logo">
-                <span class="license-logo-surface"><img src="assets/logo-v3.png" alt="TikMnG"></span>
-            </div>
-            <div class="license-title">Lisans Anahtarınızı Girin</div>
-            <div class="license-desc" id="licenseDesc">Uygulamayı kullanabilmek için yöneticinizden aldığınız lisans kodunu girin.</div>
+    <div class="license-page" id="licensePage" style="display:none" aria-labelledby="licenseEntryTitle">
+        <div class="license-entry-visual" aria-hidden="true"></div>
+        <section class="license-entry-panel">
+            <header class="license-entry-brand">
+                <img src="assets/logo-v3.png" width="52" height="52" alt="">
+                <div>
+                    <h1><span class="license-brand-tik">Tik</span><span>Mn</span><span class="license-brand-g">G</span></h1>
+                    <p>Canlı Yayın Oyun Platformu</p>
+                </div>
+            </header>
 
-            <div class="license-input-wrap">
-                <input
-                    type="text"
-                    class="license-input"
-                    id="licenseInput"
-                    placeholder="Örn: MNG7-XXXX-XXXX"
-                    maxlength="25"
-                    autocomplete="off"
-                    spellcheck="false"
-                    oninput="licenseInputTemizle(this)"
-                    onkeydown="if(event.key==='Enter') lisansDogrula()"
-                >
-            </div>
+            <div class="license-box">
+                <div class="license-entry-heading">
+                    <p class="license-entry-eyebrow">YAYINCI GİRİŞİ</p>
+                    <h2 class="license-title" id="licenseEntryTitle">Giriş yap</h2>
+                    <p class="license-desc" id="licenseDesc" role="status" aria-live="polite">Yayıncı hesabınız ve lisansınızla devam edin.</p>
+                </div>
 
-            <div class="license-actions">
-                <button class="license-btn" id="licenseBtn" onclick="lisansDogrula()">
-                    AKTİFLEŞTİR
-                </button>
-                <button class="license-cancel-btn" id="licenseCancelBtn" onclick="anaEkranaDon()">
-                    Vazgeç
-                </button>
-            </div>
+                <form id="licenseEntryForm" novalidate aria-labelledby="licenseEntryTitle">
+                    <div class="license-entry-field">
+                        <label for="licenseUsername">TikTok kullanıcı adı</label>
+                        <div class="license-entry-username-wrap">
+                            <span aria-hidden="true">@</span>
+                            <input
+                                type="text"
+                                id="licenseUsername"
+                                name="username"
+                                placeholder="kullaniciadi"
+                                autocomplete="username"
+                                autocapitalize="none"
+                                autocorrect="off"
+                                spellcheck="false"
+                                enterkeyhint="go"
+                                aria-describedby="licenseDesc licenseError"
+                            >
+                        </div>
+                    </div>
 
-            <div class="license-error" id="licenseError"></div>
+                    <div class="license-input-wrap license-entry-field">
+                        <label for="licenseInput">Lisans anahtarı</label>
+                        <input
+                            type="text"
+                            class="license-input"
+                            id="licenseInput"
+                            name="license"
+                            placeholder="MNG7-XXXX-XXXX"
+                            maxlength="25"
+                            autocomplete="off"
+                            autocapitalize="characters"
+                            spellcheck="false"
+                            enterkeyhint="go"
+                            aria-describedby="licenseDesc licenseError"
+                            oninput="licenseInputTemizle(this)"
+                        >
+                    </div>
 
-            <!-- Güncelleme Butonu (Lisans ekranında güncelleme gerekince görünür) -->
-            <div id="licenseUpdateBox" style="display:none; margin-top: 14px;">
-                <button class="update-direct-btn" id="licenseUpdateBtn" onclick="guncellemeBaslat()">
-                    ⚡ Yeni Sürümü Güncelle (<span id="licenseUpdateVer">v5.0.2</span>)
-                </button>
-            </div>
+                    <div class="license-error" id="licenseError" role="alert" aria-atomic="true"></div>
 
-            <div class="license-info">
-                <span>Lisans anahtarınız yoksa yöneticinizle iletişime geçin.</span>
+                    <div class="license-actions">
+                        <button class="license-btn" id="licenseBtn" type="button" onclick="lisansDogrula()" aria-live="polite">
+                            Giriş yap
+                        </button>
+                        <button class="license-cancel-btn" id="licenseCancelBtn" type="button" onclick="anaEkranaDon()">
+                            Vazgeç
+                        </button>
+                    </div>
+                </form>
+
+                <!-- Güncelleme Butonu (Lisans ekranında güncelleme gerekince görünür) -->
+                <div id="licenseUpdateBox" style="display:none; margin-top: 14px;">
+                    <button class="update-direct-btn" id="licenseUpdateBtn" type="button" onclick="guncellemeBaslat()">
+                        Yeni sürümü güncelle (<span id="licenseUpdateVer">v5.0.2</span>)
+                    </button>
+                </div>
+
+                <div class="license-info">
+                    <span>Lisans anahtarınız yoksa yöneticinizle iletişime geçin.</span>
+                </div>
             </div>
-        </div>
+            <footer class="license-entry-footer">TikMnG</footer>
+        </section>
     </div>
 
     <!-- OTOMATİK GÜNCELLEME MODALI -->
@@ -522,6 +563,7 @@
     </div>
 
     <script src="app.js"></script>
+    <script src="license-entry.js"></script>
     <script src="vendor/lucide.js"></script>
     <script src="workspace.js"></script>
     <script>

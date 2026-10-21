@@ -6,9 +6,10 @@ const { createGameLibrary } = require('./game-library.cjs');
 const { createMediaStudio } = require('./media-studio.cjs');
 const { TikfinityBridge } = require('./tikfinity.cjs');
 const { readMediaArchive } = require('./media-archive.cjs');
+const { createSpeechAudience, MODES: SPEECH_AUDIENCES } = require('./tts-audience.cjs');
 const bundledCatalog = require('./catalog-defaults.json');
 
-const TTS_DEFAULTS = { enabled: false, names: true, volume: 0.7, rate: 1, pitch: 1, voiceURI: '', maxLength: 180, cooldownSeconds: 3, blockedWords: '' };
+const TTS_DEFAULTS = { enabled: false, names: true, volume: 0.7, rate: 1, pitch: 1, voiceURI: '', voicePreset: 'natural', audience: 'all', giftId: '7934', maxLength: 180, cooldownSeconds: 3, blockedWords: '' };
 const httpsURL = value => { const url = new URL(value); if (url.protocol !== 'https:' || url.username || url.password) throw new Error('Güvenli HTTPS adresi gerekli.'); return url.href; };
 
 function createPlatform(ctx) {
@@ -17,9 +18,10 @@ function createPlatform(ctx) {
     let catalog = store.get('content_catalog_v1', null);
     let catalogError = '';
     const controllers = new Map();
+    const speechAudience = createSpeechAudience();
     let library;
     const send = (name, data) => ctx.getWindow()?.webContents.send(name, data);
-    const known = id => definitions[id] && id !== 'crowdControl';
+    const known = id => Object.hasOwn(definitions, id) && id !== 'crowdControl';
     const gameData = id => catalog?.games?.find(game => game.id === id) || bundledCatalog.games.find(game => game.id === id);
     function packageFor(id) {
         const def = definitions[id];
@@ -39,7 +41,7 @@ function createPlatform(ctx) {
     }
     library = makeLibrary(root);
     const mediaRoot = store.get('media_root_v1', fs.existsSync('D:/') ? 'D:/TikMNG-Medya' : path.join(app.getPath('videos'), 'TikMNG'));
-    let studio = createMediaStudio({ store, root: mediaRoot, accessKey: ctx.accessKey, getChannel: ctx.getChannel,
+    let studio = createMediaStudio({ store, root: mediaRoot, accessKey: ctx.accessKey, getChannel: ctx.getChannel, getActiveGame: ctx.getActiveGame,
         onEvent: event => send('workspace-media-event', event) });
     const bridge = new TikfinityBridge();
     bridge.on('status', status => ctx.setLiveStatus(status));
@@ -48,8 +50,8 @@ function createPlatform(ctx) {
         ctx.event(type, type === 'gift' ? { ...profile, ...ctx.gift(data) }
             : { ...profile, ...data, message: data.comment || data.message || '', eventId: data.msgId || data.logId || '' });
     });
-    function mediaURL(id = '') { return `http://tikmng.localhost:${ctx.port}/tikmng/media${id ? '/' + encodeURIComponent(id) : ''}?key=${ctx.accessKey}&channel=${encodeURIComponent(ctx.getChannel())}`; }
-    function items() { return studio.list().map(item => ({ ...item, overlayUrl: mediaURL(item.id) })); }
+    function mediaURL(id = '', gameId = '') { return `http://tikmng.localhost:${ctx.port}/tikmng/media${id ? '/' + encodeURIComponent(id) : ''}?key=${ctx.accessKey}&channel=${encodeURIComponent(ctx.getChannel())}${gameId ? '&game=' + encodeURIComponent(gameId) : ''}`; }
+    function items() { return studio.list().map(item => ({ ...item, overlayUrl: mediaURL(item.id, item.gameId) })); }
     function statuses() {
         const result = {};
         for (const [id, def] of Object.entries(definitions)) {
@@ -57,7 +59,7 @@ function createPlatform(ctx) {
             const state = library.state(id);
             result[id] = { ...state, id, kurulu: state.installed, ad: gameData(id)?.title || def.ad, boyut: def.boyut,
                 description: gameData(id)?.description || '', requirements: gameData(id)?.requirements || (def.minecraft ? 'Windows 10/11 64 bit, 8 GB RAM, en az 3 GB boş disk' : 'Windows 10/11 64 bit'),
-                resources: gameData(id)?.resources || [] };
+                resources: gameData(id)?.resources || [], overlayUrl: mediaURL('', id) };
         }
         result.crowdControl = result['crowd-control'];
         return result;
@@ -85,7 +87,7 @@ function createPlatform(ctx) {
         return { games: Object.values(statuses()).filter((game, index, all) => all.findIndex(g => g.id === game.id) === index),
             libraryRoot: store.get('library_root_v1', root), mediaRoot: store.get('media_root_v1', mediaRoot), media: items(),
             remoteMedia: catalog?.media || [], catalogRevision: catalog?.revision || 0, catalogError, overlayUrl: mediaURL(),
-            source: store.get('live_source_v1', 'direct'), tikfinityUrl: store.get('tikfinity_url_v1', 'ws://127.0.0.1:21213/'),
+            source: store.get('live_source_v1', 'direct'), tikfinityUrl: store.get('tikfinity_url_v1', 'ws://127.0.0.1:21213/'), activeGame: ctx.getActiveGame?.() || '',
             tts: { ...TTS_DEFAULTS, ...store.get('tts_settings_v1', {}) }, version: app.getVersion(), preview: Boolean(app.isTikMNGPreview) };
     }
     async function install(id, options = {}) {
@@ -113,7 +115,7 @@ function createPlatform(ctx) {
             const previousRoot = store.get('media_root_v1', mediaRoot);
             if (path.resolve(selected) !== path.resolve(previousRoot) && fs.existsSync(previousRoot)) {
                 for (const file of fs.readdirSync(previousRoot, { withFileTypes: true })) {
-                    if (!file.isFile() || !/^[a-f\d-]{36}\.(mp4|webm|mp3|wav|ogg)$/i.test(file.name)) continue;
+                    if (!file.isFile() || !/^[a-f\d-]{36}\.(mp4|webm|mp3|wav|ogg|gif|png|jpe?g|webp)$/i.test(file.name)) continue;
                     const destination = path.join(selected, file.name);
                     if (!fs.existsSync(destination)) await fs.promises.copyFile(path.join(previousRoot, file.name), destination, fs.constants.COPYFILE_EXCL);
                     else {
@@ -123,7 +125,7 @@ function createPlatform(ctx) {
                 }
             }
             studio.close?.();
-            studio = createMediaStudio({ store, root: selected, accessKey: ctx.accessKey, getChannel: ctx.getChannel, onEvent: event => send('workspace-media-event', event) });
+            studio = createMediaStudio({ store, root: selected, accessKey: ctx.accessKey, getChannel: ctx.getChannel, getActiveGame: ctx.getActiveGame, onEvent: event => send('workspace-media-event', event) });
             store.set('media_root_v1', selected);
         } else {
             // Existing installations stay discoverable after choosing another disk.
@@ -134,9 +136,18 @@ function createPlatform(ctx) {
         }
         return snapshot();
     });
-    handle('media-import', async () => {
-        const result = await dialog.showOpenDialog(ctx.getWindow(), { title: 'Video veya ses ekle', properties: ['openFile', 'multiSelections'], filters: [{ name: 'Video ve ses', extensions: ['mp4', 'webm', 'mp3', 'wav', 'ogg'] }] });
-        if (!result.canceled) await studio.importFiles(result.filePaths);
+    function validGame(gameId) {
+        if (gameId && !known(gameId)) throw new Error('Oyun bulunamadı.');
+        return gameId || '';
+    }
+    handle('media-import', async ({ gameId = '' } = {}) => {
+        validGame(gameId);
+        const result = await dialog.showOpenDialog(ctx.getWindow(), { title: 'Video, ses veya görsel ekle', properties: ['openFile', 'multiSelections'], filters: [{ name: 'Medya', extensions: ['mp4', 'webm', 'mp3', 'wav', 'ogg', 'gif', 'png', 'jpg', 'jpeg', 'webp'] }] });
+        if (!result.canceled) {
+            const before = new Set(studio.list().map(item => item.id));
+            await studio.importFiles(result.filePaths);
+            for (const item of studio.list().filter(item => !before.has(item.id))) await studio.save({ ...item, gameId });
+        }
         return snapshot();
     });
     async function importArchive(directory) {
@@ -157,7 +168,8 @@ function createPlatform(ctx) {
         if (result.canceled) return snapshot();
         return importArchive(result.filePaths[0]);
     });
-    handle('media-save', async item => { await studio.save(item); return snapshot(); });
+    handle('media-save', async item => { validGame(item.gameId); await studio.save(item); return snapshot(); });
+    handle('media-duplicate', async ({ id, gameId = '' }) => { validGame(gameId); await studio.duplicate(id, { gameId, giftId: '', enabled: true }); return snapshot(); });
     handle('media-remove', async ({ id }) => { await studio.remove(id); return snapshot(); });
     handle('media-test', async ({ id }) => { await studio.test(id); return { ok: true }; });
     handle('media-remote', async ({ id }) => {
@@ -189,13 +201,21 @@ function createPlatform(ctx) {
         const result = { enabled: Boolean(settings.enabled), names: Boolean(settings.names), voiceURI: String(settings.voiceURI || '').slice(0, 200),
             volume: Math.max(0, Math.min(1, Number(settings.volume) || 0)), rate: Math.max(0.5, Math.min(2, Number(settings.rate) || 1)),
             pitch: Math.max(0.5, Math.min(2, Number(settings.pitch) || 1)), maxLength: Math.max(20, Math.min(500, Number(settings.maxLength) || 180)),
-            cooldownSeconds: Math.max(1, Math.min(60, Number(settings.cooldownSeconds) || 3)), blockedWords: String(settings.blockedWords || '').slice(0, 2000) };
+            cooldownSeconds: Math.max(1, Math.min(60, Number(settings.cooldownSeconds) || 3)), blockedWords: String(settings.blockedWords || '').slice(0, 2000),
+            audience: SPEECH_AUDIENCES.has(settings.audience) ? settings.audience : 'all',
+            giftId: /^\d{1,20}$/.test(String(settings.giftId || '')) ? String(settings.giftId) : '7934',
+            voicePreset: ['natural', 'male', 'female', 'child', 'deep'].includes(settings.voicePreset) ? settings.voicePreset : 'natural' };
         store.set('tts_settings_v1', result);
         return snapshot();
     });
     const timer = setInterval(refreshCatalog, 5 * 60000); timer.unref();
     return { snapshot, statuses, install, pathFor: id => library.pathFor(id), refreshCatalog, importArchive,
-        ingest(type, payload, channel) { studio.ingest(type, payload, channel); if (type === 'chat') send('workspace-chat', payload); },
+        ingest(type, payload, channel) {
+            studio.ingest(type, payload, channel);
+            if (channel !== ctx.getChannel()) return;
+            speechAudience.observe(type, payload, channel);
+            if (type === 'chat' && speechAudience.allows(payload, { ...TTS_DEFAULTS, ...store.get('tts_settings_v1', {}) }, channel)) send('workspace-chat', payload);
+        },
         handleRequest: (...args) => studio.handleRequest(...args),
         connectTikfinity(username) { bridge.connect(store.get('tikfinity_url_v1', 'ws://127.0.0.1:21213/'), username); },
         source: () => store.get('live_source_v1', 'direct'), disconnect: () => bridge.close(),

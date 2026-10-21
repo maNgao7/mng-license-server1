@@ -7,14 +7,18 @@ const crypto = require('node:crypto');
 const STORE_KEY = 'media_studio_v1';
 const BASE = '/tikmng/media';
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
+const GAME = /^[a-z0-9][a-z0-9-]{0,63}$/;
 const TYPES = Object.freeze({
     '.mp4': ['video', 'video/mp4'], '.webm': ['video', 'video/webm'],
-    '.mp3': ['audio', 'audio/mpeg'], '.wav': ['audio', 'audio/wav'], '.ogg': ['audio', 'audio/ogg']
+    '.mp3': ['audio', 'audio/mpeg'], '.wav': ['audio', 'audio/wav'], '.ogg': ['audio', 'audio/ogg'],
+    '.gif': ['image', 'image/gif'], '.png': ['image', 'image/png'],
+    '.jpg': ['image', 'image/jpeg'], '.jpeg': ['image', 'image/jpeg'], '.webp': ['image', 'image/webp']
 });
 const LIMITS = Object.freeze({ items: 1000, clients: 50, events: 100, dedupe: 4096, listeners: 50 });
 const ASSETS = path.join(__dirname, '..', 'renderer', 'studio');
 const DEFAULTS = Object.freeze({ trigger: 'gift', giftId: '', likeThreshold: 100,
-    startSeconds: 0, endSeconds: null, volume: 1, cooldownSeconds: 0, enabled: true });
+    startSeconds: 0, endSeconds: null, volume: 1, cooldownSeconds: 0, enabled: true,
+    gameId: '', interrupt: false, fade: false, playLimit: 0, combineGifts: false, displaySeconds: 5 });
 
 function remoteMetadata(value, requestedKind) {
     if (typeof value !== 'string' || value.length > 8192 || /[\x00-\x20\x7f]/.test(value)) throw new TypeError('Invalid HTTPS media URL');
@@ -25,7 +29,7 @@ function remoteMetadata(value, requestedKind) {
     const extension = path.extname(url.pathname).toLowerCase();
     const detected = TYPES[extension];
     const kind = requestedKind ?? detected?.[0] ?? 'video';
-    if (!['video', 'audio'].includes(kind) || (detected && detected[0] !== kind)) throw new TypeError('Invalid remote media kind');
+    if (!['video', 'audio', 'image'].includes(kind) || (detected && detected[0] !== kind)) throw new TypeError('Invalid remote media kind');
     let filename;
     try { filename = decodeURIComponent(url.pathname.split('/').pop() || ''); } catch { filename = ''; }
     filename = filename.replace(/[\x00-\x1f\x7f/\\]/g, '_').slice(0, 255).trim() || `Remote ${kind}`;
@@ -62,7 +66,8 @@ function numberField(value, name, max, integer = false) {
 
 function validateSettings(input, previous) {
     const next = { ...previous };
-    for (const name of ['title', 'category', 'trigger', 'giftId', 'likeThreshold', 'startSeconds', 'endSeconds', 'volume', 'cooldownSeconds', 'enabled']) {
+    for (const name of ['title', 'category', 'trigger', 'giftId', 'likeThreshold', 'startSeconds', 'endSeconds', 'volume', 'cooldownSeconds', 'enabled',
+        'gameId', 'interrupt', 'fade', 'playLimit', 'combineGifts', 'displaySeconds']) {
         if (Object.hasOwn(input, name)) next[name] = input[name];
     }
     next.title = textField(next.title, 'title', 160);
@@ -79,6 +84,13 @@ function validateSettings(input, previous) {
     numberField(next.volume, 'volume', 1);
     numberField(next.cooldownSeconds, 'cooldownSeconds', 86400);
     if (typeof next.enabled !== 'boolean') throw new TypeError('Invalid enabled');
+    if (typeof next.gameId !== 'string' || (next.gameId !== '' && !GAME.test(next.gameId))) throw new TypeError('Invalid gameId');
+    for (const name of ['interrupt', 'fade', 'combineGifts']) {
+        if (typeof next[name] !== 'boolean') throw new TypeError(`Invalid ${name}`);
+    }
+    numberField(next.playLimit, 'playLimit', Number.MAX_SAFE_INTEGER, true);
+    numberField(next.displaySeconds, 'displaySeconds', 86400);
+    if (next.displaySeconds === 0) throw new TypeError('Invalid displaySeconds');
     return next;
 }
 
@@ -95,7 +107,7 @@ function validateSettings(input, previous) {
  *   origin-relative protected URLs including key/channel. url is the HTTPS source
  *   for remote items, otherwise ''. save({title,url,...}) without id creates a remote
  *   item; save({id,url,...}) replaces its source while preserving its UUID. Extensionless
- *   URLs default to video; pass kind:'audio' when needed. Remote file requests redirect
+ *   URLs default to video; pass kind:'audio' or 'image' when needed. Remote file requests redirect
  *   to HTTPS for browser playback (no server fetch/download or range proxy).
  * - SSE event "studio:play" and onEvent/addListener receive the same JSON-safe object:
  *   {type:'studio:play', id, channel, createdAt, test, item, trigger:{type,eventId,
@@ -104,14 +116,26 @@ function validateSettings(input, previous) {
  * - test(id) bypasses enabled/trigger/cooldown; ingest emits once per final gift per
  *   matching item (never by gift name), with independent cooldowns. Like remainders
  *   are per item/channel, threshold defaults to 100; excess over the burst cap is dropped.
+ * - getActiveGame() optionally returns a safe game slug (otherwise only global actions
+ *   run). gameId:'' remains global. ?game=slug SSE receives only that game's actions,
+ *   and normal actions require getActiveGame() === gameId. test(id) bypasses that gate
+ *   and playLimit but never the client's channel/item/game scope.
+ * - combineGifts:false preserves one play per final gift. true repeats trigger.count
+ *   times within the 100-event ingest cap, cooldown and playLimit. playLimit:0 is unlimited;
+ *   positive limits count emitted plays per item for this service session, not test plays.
+ * - duplicate(id, patch={}) synchronously clones current-channel settings with a new
+ *   UUID and shared owned asset (or HTTPS source). Only editable settings are patched;
+ *   callers cannot replace source, id, channel, file or asset ownership through patch.
+ *   Shared assets survive removal of either mapping and service restart.
  * - No event history or offline queue is stored. close() before recreating for a new
  *   root/key or shutting down. Runtime dedupe/remainders/cooldowns reset on restart.
  */
-function createMediaStudio({ store, root, accessKey, getChannel = () => 'varsayilan', onEvent } = {}) {
+function createMediaStudio({ store, root, accessKey, getChannel = () => 'varsayilan', getActiveGame = () => '', onEvent } = {}) {
     if (!store || typeof store.get !== 'function' || typeof store.set !== 'function') throw new TypeError('store.get/set required');
     if (typeof root !== 'string' || !path.isAbsolute(root)) throw new TypeError('Absolute media root required');
     if (typeof accessKey !== 'string' || !accessKey.length || accessKey.length > 512) throw new TypeError('accessKey required');
     if (typeof getChannel !== 'function') throw new TypeError('getChannel must be a function');
+    if (typeof getActiveGame !== 'function') throw new TypeError('getActiveGame must be a function');
     const mediaRoot = path.resolve(root);
     const keyHash = crypto.createHash('sha256').update(accessKey).digest();
     const clients = new Set();
@@ -119,6 +143,7 @@ function createMediaStudio({ store, root, accessKey, getChannel = () => 'varsayi
     const recent = new Map();
     const cooldowns = new Map();
     const remainders = new Map();
+    const playCounts = new Map();
     let closed = false;
     let items = [];
     const saved = store.get(STORE_KEY, { version: 1, items: [] });
@@ -130,8 +155,9 @@ function createMediaStudio({ store, root, accessKey, getChannel = () => 'varsayi
                 if (entry.sourceUrl) media = remoteMetadata(entry.sourceUrl, entry.kind);
                 else {
                     const extension = path.extname(entry.file || '');
-                    if (!TYPES[extension] || entry.file !== entry.id + extension) continue;
-                    media = { file: entry.file, bytes: numberField(entry.bytes, 'bytes', Number.MAX_SAFE_INTEGER, true) };
+                    const assetId = entry.assetId ?? entry.id;
+                    if (!UUID.test(assetId) || !TYPES[extension] || entry.file !== assetId + extension) continue;
+                    media = { file: entry.file, assetId, bytes: numberField(entry.bytes, 'bytes', Number.MAX_SAFE_INTEGER, true) };
                 }
                 const clean = validateSettings(entry, { id: entry.id, ...DEFAULTS });
                 items.push({ ...clean, ...media, channel: normalizeChannel(entry.channel),
@@ -145,7 +171,7 @@ function createMediaStudio({ store, root, accessKey, getChannel = () => 'varsayi
     const assertOpen = () => { if (closed) throw new Error('Media Studio is closed'); };
     const configured = item => item.trigger !== 'gift' || Boolean(item.giftId);
     const active = item => item.enabled && configured(item);
-    const protectedUrl = (route, channel) => `${route}?${new URLSearchParams({ key: accessKey, channel })}`;
+    const protectedUrl = (route, channel, gameId = '') => `${route}?${new URLSearchParams({ key: accessKey, channel, ...(gameId ? { game: gameId } : {}) })}`;
     function publicItem(item) {
         const [kind, mime] = item.sourceUrl ? [item.kind, item.mime] : TYPES[path.extname(item.file)];
         return {
@@ -153,9 +179,11 @@ function createMediaStudio({ store, root, accessKey, getChannel = () => 'varsayi
             trigger: item.trigger, giftId: item.giftId, likeThreshold: item.likeThreshold,
             startSeconds: item.startSeconds, endSeconds: item.endSeconds, volume: item.volume,
             cooldownSeconds: item.cooldownSeconds, enabled: item.enabled, configured: configured(item),
+            gameId: item.gameId, interrupt: item.interrupt, fade: item.fade, playLimit: item.playLimit,
+            combineGifts: item.combineGifts, displaySeconds: item.displaySeconds,
             filename: item.filename, bytes: item.bytes, createdAt: item.createdAt, kind, mime,
             url: item.sourceUrl || '', remote: Boolean(item.sourceUrl),
-            previewUrl: protectedUrl(`${BASE}/${item.id}`, item.channel),
+            previewUrl: protectedUrl(`${BASE}/${item.id}`, item.channel, item.gameId),
             mediaUrl: protectedUrl(`${BASE}/file/${item.id}`, item.channel)
         };
     }
@@ -196,8 +224,10 @@ function createMediaStudio({ store, root, accessKey, getChannel = () => 'varsayi
             if (!stat.isFile()) throw new TypeError('Source must be a file');
             const filename = textField(path.basename(source), 'filename', 255);
             const title = textField(metadata[index]?.title ?? path.basename(filename, path.extname(filename)).slice(0, 160), 'title', 160);
-            const category = textField(metadata[index]?.category ?? (TYPES[extension][0] === 'video' ? 'Video' : 'Audio'), 'category', 80, true);
-            sources.push({ source, extension, filename, bytes: stat.size, title, category });
+            const kind = TYPES[extension][0];
+            const category = textField(metadata[index]?.category ?? (kind === 'video' ? 'Video' : kind === 'image' ? 'Image' : 'Audio'), 'category', 80, true);
+            const settings = validateSettings(metadata[index] || {}, { ...DEFAULTS, title, category });
+            sources.push({ source, extension, filename, bytes: stat.size, settings });
         }
         await fs.promises.mkdir(mediaRoot, { recursive: true });
         const added = [];
@@ -211,7 +241,7 @@ function createMediaStudio({ store, root, accessKey, getChannel = () => 'varsayi
                 await fs.promises.copyFile(source.source, destination, fs.constants.COPYFILE_EXCL);
                 copies.push(destination);
                 added.push({ id, file, channel, filename: source.filename, bytes: source.bytes, createdAt: Date.now(),
-                    title: source.title, category: source.category, ...DEFAULTS });
+                    ...source.settings });
             }
             assertOpen();
             if (items.length + added.length > LIMITS.items) throw new Error('Media library is full');
@@ -232,11 +262,21 @@ function createMediaStudio({ store, root, accessKey, getChannel = () => 'varsayi
         if (!previous && !source) throw new TypeError('New items require a HTTPS media URL');
         if (!previous && items.length >= LIMITS.items) throw new Error('Media library is full');
         const next = validateSettings(input, { ...(previous || { id: crypto.randomUUID(), channel: currentChannel(),
-            createdAt: Date.now(), ...DEFAULTS, title: source.filename.slice(0, 160), category: source.kind === 'audio' ? 'Audio' : 'Video' }),
+            createdAt: Date.now(), ...DEFAULTS, title: source.filename.slice(0, 160), category: source.kind === 'audio' ? 'Audio' : source.kind === 'image' ? 'Image' : 'Video' }),
             ...(source || {}) });
         commit(previous ? items.map(item => item.id === next.id ? next : item) : [...items, next]);
         if (!previous) return publicItem(next);
-        if (next.likeThreshold !== previous.likeThreshold || next.trigger !== previous.trigger || next.enabled !== previous.enabled) remainders.delete(next.id);
+        if (next.likeThreshold !== previous.likeThreshold || next.trigger !== previous.trigger || next.enabled !== previous.enabled || next.gameId !== previous.gameId) remainders.delete(next.id);
+        return publicItem(next);
+    }
+    function duplicate(id, patch = {}) {
+        assertOpen();
+        const previous = requireItem(id);
+        if (!patch || typeof patch !== 'object' || Array.isArray(patch)) throw new TypeError('Media settings required');
+        if (items.length >= LIMITS.items) throw new Error('Media library is full');
+        const next = validateSettings(patch, { ...previous, id: crypto.randomUUID(), createdAt: Date.now(),
+            ...(previous.sourceUrl ? {} : { assetId: previous.assetId || previous.id }) });
+        commit([...items, next]);
         return publicItem(next);
     }
     function remove(id) {
@@ -245,6 +285,7 @@ function createMediaStudio({ store, root, accessKey, getChannel = () => 'varsayi
         commit(items.filter(item => item.id !== id));
         remainders.delete(id);
         cooldowns.delete(id);
+        playCounts.delete(id);
         return true;
     }
 
@@ -262,7 +303,7 @@ function createMediaStudio({ store, root, accessKey, getChannel = () => 'varsayi
             createdAt: Date.now(), test: isTest, item: publicItem(item), trigger };
         const frame = `event: studio:play\ndata: ${JSON.stringify(event)}\n\n`;
         for (const client of clients) {
-            if (client.channel === item.channel && (!client.itemId || client.itemId === item.id)) write(client, frame);
+            if (client.channel === item.channel && client.gameId === item.gameId && (!client.itemId || client.itemId === item.id)) write(client, frame);
         }
         for (const listener of listeners) {
             try {
@@ -301,18 +342,22 @@ function createMediaStudio({ store, root, accessKey, getChannel = () => 'varsayi
         }
         const trigger = { type, eventId, giftId: normalizedGift, count };
         const events = [];
+        let activeGame = '';
+        try { activeGame = getActiveGame(); } catch { /* Global actions remain available if the parent is unavailable. */ }
         for (const item of items) {
-            if (item.channel !== channel || !active(item) || item.trigger !== type || (type === 'gift' && item.giftId !== normalizedGift)) continue;
-            let plays = 1;
+            if (item.channel !== channel || (item.gameId && activeGame !== item.gameId) || !active(item) || item.trigger !== type || (type === 'gift' && item.giftId !== normalizedGift)) continue;
+            let plays = type === 'gift' && item.combineGifts ? count : 1;
             if (type === 'like') {
                 const sum = (remainders.get(item.id) || 0) + count % item.likeThreshold;
                 plays = Math.floor(count / item.likeThreshold) + Math.floor(sum / item.likeThreshold);
                 remainders.set(item.id, sum % item.likeThreshold);
             }
             plays = Math.min(plays, LIMITS.events - events.length);
+            if (item.playLimit > 0) plays = Math.min(plays, Math.max(0, item.playLimit - (playCounts.get(item.id) || 0)));
             for (let index = 0; index < plays; index++) {
                 if (item.cooldownSeconds > 0 && cooldowns.has(item.id) && now - cooldowns.get(item.id) < item.cooldownSeconds * 1000) break;
                 cooldowns.set(item.id, now);
+                playCounts.set(item.id, Math.min(Number.MAX_SAFE_INTEGER, (playCounts.get(item.id) || 0) + 1));
                 events.push(emit(item, trigger));
             }
         }
@@ -396,6 +441,10 @@ function createMediaStudio({ store, root, accessKey, getChannel = () => 'varsayi
             reply(req, res, 405, 'text/plain; charset=utf-8', 'Method not allowed'); return true;
         }
         const channel = normalizeChannel(url.searchParams.get('channel') || currentChannel());
+        const gameId = url.searchParams.get('game') || '';
+        if ((gameId && !GAME.test(gameId)) || url.searchParams.getAll('game').length > 1) {
+            reply(req, res, 400, 'text/plain; charset=utf-8', 'Invalid game scope'); return true;
+        }
         const route = url.pathname.slice(BASE.length);
         if (route.startsWith('/file/')) {
             const item = find(route.slice(6), channel);
@@ -411,12 +460,12 @@ function createMediaStudio({ store, root, accessKey, getChannel = () => 'varsayi
         }
         if (route === '/events') {
             const itemId = url.searchParams.get('item') || '';
-            if (itemId && !find(itemId, channel)) { reply(req, res, 404, 'text/plain; charset=utf-8', 'Unknown media item'); return true; }
+            if (itemId && find(itemId, channel)?.gameId !== gameId) { reply(req, res, 404, 'text/plain; charset=utf-8', 'Unknown media item'); return true; }
             if (req.method === 'HEAD') { reply(req, res, 200, 'text/event-stream'); return true; }
             if (clients.size >= LIMITS.clients) { reply(req, res, 503, 'text/plain; charset=utf-8', 'Too many media clients'); return true; }
             res.writeHead(200, { 'Content-Type': 'text/event-stream; charset=utf-8', Connection: 'keep-alive', 'X-Accel-Buffering': 'no' });
             res.flushHeaders?.();
-            const client = { res, channel, itemId };
+            const client = { res, channel, itemId, gameId };
             clients.add(client);
             res.once('close', () => clients.delete(client));
             res.once('error', () => disconnect(client));
@@ -426,16 +475,16 @@ function createMediaStudio({ store, root, accessKey, getChannel = () => 'varsayi
         }
         const itemId = route ? route.slice(1) : '';
         const selectedItem = itemId ? find(itemId, channel) : null;
-        if (route && !selectedItem) { reply(req, res, 404, 'text/plain; charset=utf-8', 'Unknown media item'); return true; }
+        if (route && (!selectedItem || selectedItem.gameId !== gameId)) { reply(req, res, 404, 'text/plain; charset=utf-8', 'Unknown media item'); return true; }
         try {
             const scriptUrl = protectedUrl(`${BASE}/client.js`, channel);
             const cssUrl = protectedUrl(`${BASE}/client.css`, channel);
             const nonce = crypto.randomBytes(18).toString('base64');
-            res.setHeader('Content-Security-Policy', `default-src 'none'; script-src 'nonce-${nonce}'; style-src 'self'; media-src 'self' https:; connect-src 'self'; base-uri 'none'; frame-ancestors 'self' file: http://127.0.0.1:* http://localhost:* http://tikmng.localhost:*`);
+            res.setHeader('Content-Security-Policy', `default-src 'none'; script-src 'nonce-${nonce}'; style-src 'self'; media-src 'self' https:; img-src 'self' https:; connect-src 'self'; base-uri 'none'; frame-ancestors 'self' file: http://127.0.0.1:* http://localhost:* http://tikmng.localhost:*`);
             const attribute = value => value.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
             const html = fs.readFileSync(path.join(ASSETS, 'overlay.html'), 'utf8')
                 .replaceAll('{{NONCE}}', attribute(nonce)).replace('{{CLIENT_CSS}}', attribute(cssUrl)).replace('{{CLIENT_JS}}', attribute(scriptUrl))
-                .replace('{{CHANNEL}}', attribute(channel)).replace('{{ITEM}}', attribute(itemId))
+                .replace('{{CHANNEL}}', attribute(channel)).replace('{{ITEM}}', attribute(itemId)).replace('{{GAME}}', attribute(gameId))
                 .replace('{{MEDIA}}', attribute(selectedItem ? JSON.stringify(publicItem(selectedItem)) : ''));
             reply(req, res, 200, 'text/html; charset=utf-8', html);
         } catch { reply(req, res, 500, 'text/plain; charset=utf-8', 'Overlay unavailable'); }
@@ -451,9 +500,9 @@ function createMediaStudio({ store, root, accessKey, getChannel = () => 'varsayi
         closed = true;
         clearInterval(heartbeat);
         for (const client of clients) disconnect(client);
-        listeners.clear(); recent.clear(); cooldowns.clear(); remainders.clear();
+        listeners.clear(); recent.clear(); cooldowns.clear(); remainders.clear(); playCounts.clear();
     }
-    return { list, importFiles, save, remove, ingest, test, handleRequest, addListener, close };
+    return { list, importFiles, save, duplicate, remove, ingest, test, handleRequest, addListener, close };
 }
 
 module.exports = { createMediaStudio };

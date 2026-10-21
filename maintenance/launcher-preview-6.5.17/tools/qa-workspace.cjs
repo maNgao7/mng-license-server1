@@ -12,17 +12,19 @@ const renderer=path.resolve(__dirname,'../renderer');
 const temporary=fs.mkdtempSync(path.join(os.tmpdir(),'tikmng-workspace-qa-'));
 const output=process.env.MNG_QA_OUTPUT||'D:/TikMnG-Launcher-Test-Raporu';fs.mkdirSync(output,{recursive:true});
 const values=new Map();const store={get:(key,fallback)=>values.get(key)??fallback,set:(key,value)=>values.set(key,structuredClone(value))};
-const events=[];const studio=createMediaStudio({store,root:path.join(temporary,'media'),accessKey:'synthetic-workspace-qa-key',getChannel:()=> 'qa',onEvent:event=>events.push(event)});
+const events=[];let activeGame='';const studio=createMediaStudio({store,root:path.join(temporary,'media'),accessKey:'synthetic-workspace-qa-key',getChannel:()=> 'qa',getActiveGame:()=>activeGame,onEvent:event=>events.push(event)});
 const catalog=require('../lib/catalog-defaults.json');
 const calls=[];let origin,browser,server;
 const games=catalog.games.map((g,index)=>({id:g.id,ad:g.title,installed:index<4,installedVersion:index<4?'6.5.16':null,availableVersion:g.version,boyut:g.bytes?Math.round(g.bytes/1048576)+' MB':'',requirements:g.requirements||'Windows 10/11',resources:g.resources,description:'',updateAvailable:false}));
 const gifts=JSON.parse(fs.readFileSync(path.join(renderer,'gift-assets/katalog_tam.json'),'utf8')).map(g=>({id:String(g.id),name:g.trName||g.name,coins:g.coins,image:'/gift-assets/'+g.file}));
-function snapshot(){return{games,media:studio.list().map(item=>({...item,overlayUrl:origin+item.previewUrl})),remoteMedia:[],overlayUrl:origin+'/tikmng/media?key=synthetic-workspace-qa-key&channel=qa',version:'6.5.17',preview:true,tts:values.get('tts')||{...TTS_DEFAULTS},source:'direct',tikfinityUrl:'ws://127.0.0.1:21213/',libraryRoot:'D:/Isolated-QA/Games',mediaRoot:'D:/Isolated-QA/Media'};}
+function snapshot(){return{games:games.map(game=>({...game,overlayUrl:origin+'/tikmng/media?key=synthetic-workspace-qa-key&channel=qa&game='+game.id})),media:studio.list().map(item=>({...item,overlayUrl:origin+item.previewUrl})),remoteMedia:[],overlayUrl:origin+'/tikmng/media?key=synthetic-workspace-qa-key&channel=qa',version:'6.5.17',preview:true,tts:values.get('tts')||{...TTS_DEFAULTS},source:'direct',tikfinityUrl:'ws://127.0.0.1:21213/',libraryRoot:'D:/Isolated-QA/Games',mediaRoot:'D:/Isolated-QA/Media'};}
 async function api(action,data={}){
     calls.push([action,data]);
     if(action==='media-save'){studio.save(data);return snapshot();}
     if(action==='media-test'){studio.test(data.id);return{ok:true};}
     if(action==='media-remove'){studio.remove(data.id);return snapshot();}
+    if(action==='media-duplicate'){studio.duplicate(data.id,{gameId:data.gameId,giftId:'',enabled:true});return snapshot();}
+    if(action==='play'){activeGame=data.id;return{basarili:true};}
     if(action==='tts'){values.set('tts',data);return snapshot();}
     if(action==='install'){games.find(g=>g.id===data.id).installed=true;return{basarili:true};}
     if(action==='folder')return{canceled:true};
@@ -50,7 +52,10 @@ async function main(){
     await page.exposeFunction('__qaCall',api);
     await page.exposeFunction('__qaGifts',()=>gifts);
     await page.addInitScript(()=>{
-        window.mngAPI={workspace:(a,d)=>window.__qaCall(a,d),workspaceListen:()=>{},orbitHediyeKatalogu:()=>window.__qaGifts(),widgetBilgisi:async()=>({channel:'qa',widgets:[],liveStatus:{status:'disconnected'}})};
+        window.__qaListeners={};window.__spoken=[];
+        Object.defineProperty(window,'speechSynthesis',{configurable:true,value:{getVoices:()=>[{name:'QA Tolga Male',lang:'tr-TR',voiceURI:'qa-male'},{name:'QA Emel Female',lang:'tr-TR',voiceURI:'qa-female'}],addEventListener:()=>{},cancel:()=>{},speak:u=>{window.__spoken.push({text:u.text,pitch:u.pitch,rate:u.rate,voice:u.voice?.voiceURI});queueMicrotask(()=>u.onend?.());}}});
+        window.SpeechSynthesisUtterance=class{constructor(text){this.text=text;}};
+        window.mngAPI={workspace:(a,d)=>window.__qaCall(a,d),workspaceListen:(name,fn)=>{window.__qaListeners[name]=fn;},orbitHediyeKatalogu:()=>window.__qaGifts(),widgetBilgisi:async()=>({channel:'qa',widgets:[],liveStatus:{status:'disconnected'}})};
         window.oynaButonu=async id=>window.__qaCall('play',{id});window.tiktokHesapPanelAc=()=>{};
     });
     await page.goto(origin);await page.locator('.library-card').nth(13).waitFor();
@@ -68,12 +73,24 @@ async function main(){
     await page.locator('#librarySearch').fill('kartopu');assert.equal(await page.locator('.library-card').count(),1);
     await page.locator('[data-open="snow-war"]').click();await page.locator('[data-install="snow-war"]').click();await page.locator('[data-play="snow-war"]').waitFor();
     await page.locator('[data-workspace-view="media"]').click();assert.equal(await page.locator('#mediaLibrary .media-row').count(),24);
+    assert.equal(await page.locator('#mediaCategory').count(),0);
+    await page.locator('[data-media-category="Racon"]').click();assert.equal(await page.locator('#mediaLibrary .media-row').count(),13);
+    await page.locator('[data-media-category=""]').click();assert.equal(await page.locator('#mediaLibrary .media-row').count(),24);
     const firstPoster=page.frameLocator('#mediaLibrary iframe').first();await firstPoster.locator('video').waitFor();
     await page.waitForFunction(()=>[...document.querySelectorAll('iframe')].some(frame=>frame.contentDocument?.querySelector('video')?.readyState>=2));
     await page.screenshot({path:path.join(output,'video-studyosu.png')});
     await page.locator('[data-media-page="1"]').click();assert.equal(await page.locator('#mediaLibrary .media-row').count(),2);
     await page.locator('#mediaSearch').fill('Deneme');assert.equal(await page.locator('#mediaLibrary .media-row').count(),1);
     await page.locator('[data-edit-media]').first().click();await page.locator('#mediaEditor[open]').waitFor();
+    await page.waitForFunction(()=>Number(document.querySelector('[name="endSeconds"]').value)>4);
+    await page.locator('#trimStart').evaluate(input=>{input.value='1';input.dispatchEvent(new Event('input',{bubbles:true}));});
+    await page.locator('#trimEnd').evaluate(input=>{input.value='4';input.dispatchEvent(new Event('input',{bubbles:true}));});
+    assert.equal(Number(await page.locator('[name="startSeconds"]').inputValue()),1);
+    assert.equal(Number(await page.locator('[name="endSeconds"]').inputValue()),4);
+    await page.locator('[data-action="preview-clip"]').click();
+    await page.waitForFunction(()=>{const v=document.querySelector('#mediaEditor iframe').contentDocument?.querySelector('video');return v&&!v.paused&&v.currentTime>=1;});
+    await page.locator('[name="interrupt"]').check();await page.locator('[name="fade"]').check();
+    assert.equal(await page.locator('#trimEnd').evaluate(el=>getComputedStyle(el).backgroundColor),'rgba(0, 0, 0, 0)');
     await page.locator('[data-action="choose-gift"]').click();await page.locator('#giftSearch').fill('GG');
     await page.locator('[data-gift-choice="6064"]').click();assert.match(await page.locator('#chosenGift').innerText(),/GG/);
     await page.locator('input[name="volume"]').evaluate(input=>{input.value='0.35';input.dispatchEvent(new Event('input',{bubbles:true}));});await page.locator('[data-action="editor-test"]').click();
@@ -81,13 +98,30 @@ async function main(){
     await page.waitForFunction(()=>{const v=document.querySelector('#mediaEditor iframe').contentDocument?.querySelector('video');return v&&!v.paused&&v.currentTime>0;});
     assert.equal(studio.list().find(item=>item.title.startsWith('Racon')).giftId,'6064');
     assert.equal(studio.list().find(item=>item.title.startsWith('Racon')).volume,0.35);
+    assert.equal(studio.list().find(item=>item.title.startsWith('Racon')).startSeconds,1);
+    assert.equal(studio.list().find(item=>item.title.startsWith('Racon')).endSeconds,4);
+    assert.equal(studio.list().find(item=>item.title.startsWith('Racon')).interrupt,true);
     const count=events.length;assert.equal(studio.ingest('gift',{giftId:'5655',repeatEnd:true,eventId:'wrong'}).length,0);assert.equal(events.length,count);
     assert.equal(studio.ingest('gift',{giftId:'6064',repeatEnd:true,eventId:'correct'}).length,1);
+    await page.waitForFunction(()=>{const v=document.querySelector('#mediaEditor iframe').contentDocument?.querySelector('video');return v&&!v.paused&&v.currentTime>1.2;});
     await page.screenshot({path:path.join(output,'video-hediye-eslestirmesi.png')});
     await page.locator('[data-action="choose-gift"]').click();await page.locator('#giftSearch').fill('Gül');await page.screenshot({path:path.join(output,'hediye-katalogu.png')});
     await page.locator('[data-action="close-gifts"]').click();await page.locator('#giftPicker[open]').waitFor({state:'hidden'});
     await page.locator('#mediaEditor header [data-action="close-media"]').click();await page.locator('#mediaEditor[open]').waitFor({state:'hidden'});
+    await page.locator('[data-workspace-view="games"]').click();await page.locator('#librarySearch').fill('');await page.locator('[data-category="all"]').click();
+    await page.locator('[data-open="vs"]').click();assert.match(await page.locator('#allMediaLink').inputValue(),/game=vs/);
+    await page.locator('[data-action="media-library"]').click();await page.locator('#assetSearch').fill('Deneme');await page.locator('[data-asset]').first().click();
+    await page.locator('#mediaEditor[open]').waitFor();await page.locator('[data-action="choose-gift"]').click();await page.locator('#giftSearch').fill('GG');await page.locator('[data-gift-choice="6064"]').click();
+    await page.locator('[name="enabled"]').check();await page.locator('#mediaEditor [type="submit"]').click();await page.locator('#mediaEditor[open]').waitFor({state:'hidden'});
+    assert.equal(await page.locator('#mediaLibrary .media-row').count(),1);assert.equal(studio.list().filter(item=>item.gameId==='vs').length,1);
+    await page.screenshot({path:path.join(output,'oyuna-ozel-medya.png'),fullPage:true});
+    await page.locator('[data-workspace-view="media"]').click();await page.locator('#mediaSearch').fill('Deneme');assert.equal(await page.locator('#mediaLibrary .media-row').count(),1);
     await page.locator('[data-workspace-view="speech"]').click();await page.locator('input[name="names"]').uncheck();await page.locator('#speechForm [type="submit"]').click();assert.equal(values.get('tts').names,false);
+    for(const profile of ['natural','male','female','child','deep']){await page.locator('[name="voicePreset"]').selectOption(profile);await page.locator('[data-action="speech-test"]').click();}
+    const spoken=await page.evaluate(()=>window.__spoken);assert.equal(spoken.length,5);assert.equal(new Set(spoken.map(item=>item.pitch)).size,5);assert.equal(spoken[1].voice,'qa-male');assert.equal(spoken[2].voice,'qa-female');
+    await page.locator('[name="audience"]').selectOption('gift');await page.locator('#speechForm [name="giftId"]').selectOption('7934');await page.locator('#speechForm [type="submit"]').click();
+    assert.equal(values.get('tts').audience,'gift');assert.equal(values.get('tts').giftId,'7934');assert.equal(values.get('tts').voicePreset,'deep');
+    await page.screenshot({path:path.join(output,'sesli-yorum-ayarlari.png')});
     await page.locator('[data-workspace-view="games"]').click();await page.locator('#librarySearch').fill('');await page.locator('[data-category="all"]').click();
     for(const width of [1920,960,390]){
         await page.setViewportSize({width,height:width===390?844:1080});

@@ -48,11 +48,14 @@ document.addEventListener("DOMContentLoaded", async () => {
     API.durumDinle((data) => {
         if (data.tip === "baslatiliyor" || data.tip === "yukleniyor") {
             statusGoster(data.mesaj);
+            if (document.getElementById('gameLaunchOverlay')?.hidden === false) document.getElementById('gameLaunchPhase').textContent = data.mesaj || 'Oyun hazırlanıyor';
         } else if (data.tip === "hazir") {
             statusGizle();
         } else if (data.tip === "hata") {
             statusGizle();
             hataGoster(data.mesaj);
+        } else if (data.tip === 'hesap-uyari') {
+            window.dispatchEvent(new CustomEvent('tikmng-notice', { detail: { text: data.mesaj, error: true } }));
         }
     });
 
@@ -96,6 +99,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     // Açılışta lisans ve sürüm kontrolü yap
     await ilkAcilisLisansKontrol();
+    if (lisansDurumu?.gecerli && aktifTikTokHesabi) API.tiktokBaglan(aktifTikTokHesabi).catch(()=>{});
 });
 
 // =====================================================================
@@ -154,7 +158,7 @@ let tiktokHesaplari = [];
 async function tiktokHesaplariniYukle() {
     if (!API.tiktokHesaplari) return;
     const data = await API.tiktokHesaplari();
-    tiktokHesaplari = data.accounts || [];
+    tiktokHesaplari = (data.accounts || []).filter(name=>/^[a-zA-Z0-9_.]{1,24}$/.test(name));
     aktifTikTokHesabi = data.active || "";
     const label = document.getElementById("tiktokAccountLabel");
     if (label) label.textContent = aktifTikTokHesabi ? `@${aktifTikTokHesabi}` : "TikTok hesabı ekle";
@@ -186,6 +190,7 @@ function tiktokHesapListesiniCiz(){
 async function tiktokHesapEkle(){
     const input=document.getElementById("accountUsername"); const result=await API.tiktokHesapKaydet(input.value);
     if(!result.basarili)return hataGoster(result.hata); input.value=""; await tiktokHesaplariniYukle();
+    await tiktokYayinaBaglan();
 }
 async function tiktokYayinaBaglan(){
     const input=document.getElementById("accountUsername");
@@ -200,7 +205,7 @@ async function tiktokYayinaBaglan(){
     await tiktokBaglantiDurumunuYukle();
 }
 async function tiktokYayinBaglantisiniKes(){await API.tiktokBaglantiyiKes();await tiktokBaglantiDurumunuYukle();}
-async function tiktokHesapSec(username){ const result=await API.tiktokHesapSec(username); if(result.basarili)await tiktokHesaplariniYukle(); }
+async function tiktokHesapSec(username){ const result=await API.tiktokHesapSec(username); if(result.basarili){await tiktokHesaplariniYukle();await tiktokYayinaBaglan();} }
 async function tiktokHesapSil(username){
     if(!API.tiktokHesapSil) return;
     const result=await API.tiktokHesapSil(username);
@@ -680,7 +685,7 @@ function lisansEkraniGoster(aciklama) {
     const btn = document.getElementById("licenseBtn");
     btn.disabled = false;
     btn.classList.remove("loading");
-    btn.textContent = "AKTİFLEŞTİR";
+    btn.textContent = "Giriş yap";
     btn.style.background = "";
 
     setTimeout(() => input.focus(), 150);
@@ -697,6 +702,14 @@ async function lisansDogrula() {
     const btn = document.getElementById("licenseBtn");
     const error = document.getElementById("licenseError");
     const kod = input.value.trim();
+    const username = String(document.getElementById('licenseUsername')?.value || '').trim().replace(/^@/, '');
+
+    if (!/^[a-zA-Z0-9_.]{1,24}$/.test(username)) {
+        error.textContent = 'Geçerli TikTok kullanıcı adını yazın.';
+        error.classList.add('visible');
+        document.getElementById('licenseUsername')?.focus();
+        return;
+    }
 
     if (!kod) {
         error.textContent = "Lütfen bir lisans kodu girin.";
@@ -714,15 +727,19 @@ async function lisansDogrula() {
 
         if (sonuc.gecerli) {
             lisansDurumu = sonuc;
+            const account = await API.tiktokHesapKaydet(username);
+            if (!account.basarili) throw new Error(account.hata || 'Yayın hesabı kaydedilemedi.');
+            await tiktokHesaplariniYukle();
+            await API.tiktokBaglan(username);
             btn.textContent = "✓ Aktifleştirildi!";
-            btn.style.background = "linear-gradient(135deg, #00d4aa, #00a87d)";
+            btn.style.background = '#37dad2';
 
             setTimeout(async () => {
                 anaEkraniGoster();
                 lisansUIGuncelle(sonuc);
                 btn.disabled = false;
                 btn.classList.remove("loading");
-                btn.textContent = "AKTİFLEŞTİR";
+                btn.textContent = "Giriş yap";
                 btn.style.background = "";
 
                 if (bekleyenUygulama) {
@@ -736,7 +753,7 @@ async function lisansDogrula() {
             error.classList.add("visible");
             btn.disabled = false;
             btn.classList.remove("loading");
-            btn.textContent = "AKTİFLEŞTİR";
+            btn.textContent = "Giriş yap";
             btn.style.background = "";
 
             if (sonuc.reason === "update_required") {
@@ -759,7 +776,7 @@ async function lisansDogrula() {
         error.classList.add("visible");
         btn.disabled = false;
         btn.classList.remove("loading");
-        btn.textContent = "AKTİFLEŞTİR";
+        btn.textContent = "Giriş yap";
         btn.style.background = "";
     }
 }
@@ -925,6 +942,18 @@ async function oynaButonu(uygulama) {
 }
 
 async function oyunuBaslat(uygulama, directOptions) {
+    if (window.tikmngGameLaunching) return;
+    window.tikmngGameLaunching = true;
+    const launch = document.getElementById('gameLaunchOverlay');
+    if (launch) {
+        const cover = document.querySelector(`[data-game-id="${uygulama}"] .cover-button>img`) || document.querySelector('.game-detail-cover img');
+        document.getElementById('gameLaunchTitle').textContent = cover?.alt || 'Oyun açılıyor';
+        const art = document.getElementById('gameLaunchCover');
+        if (cover) { art.src = cover.src; art.hidden = false; } else { art.removeAttribute('src'); art.hidden = true; }
+        document.getElementById('gameLaunchPhase').textContent = 'Lisans ve oyun dosyaları kontrol ediliyor';
+        launch.hidden = false;
+        const workspace = document.getElementById('workspaceRoot');if(workspace)workspace.inert = true;
+    }
     statusGoster("Uygulama başlatılıyor...");
 
     const oyunButonlari = [
@@ -937,7 +966,8 @@ async function oyunuBaslat(uygulama, directOptions) {
     try {
         const liveInfo = await API.widgetBilgisi();
         const connectedUser = liveInfo?.liveStatus?.status === "connected" ? liveInfo.liveStatus.username : "";
-        const options = { ...(directOptions || {}), tiktokUser: directOptions?.tiktokUser || connectedUser };
+        const account = await API.tiktokHesaplari();
+        const options = { ...(directOptions || {}), tiktokUser: directOptions?.tiktokUser || connectedUser || account.active || '' };
         const sonuc = await API.uygulamaAc(uygulama, options);
 
         if (sonuc.basarili) {
@@ -948,6 +978,9 @@ async function oyunuBaslat(uygulama, directOptions) {
     } catch (hata) {
         hataGoster("Hata: " + hata.message);
     } finally {
+        window.tikmngGameLaunching = false;
+        if (launch) launch.hidden = true;
+        const workspace = document.getElementById('workspaceRoot');if(workspace)workspace.inert = false;
         oyunButonlari.forEach(btn => { btn.disabled = false; });
     }
 }
@@ -985,6 +1018,7 @@ function statusGizle() {
 }
 
 function hataGoster(mesaj) {
+    if (API.workspace) { window.dispatchEvent(new CustomEvent('tikmng-notice', { detail: { text: String(mesaj), error: true } })); return; }
     statusGizle();
     const bar = document.getElementById("statusBar");
     bar.style.display = "flex";

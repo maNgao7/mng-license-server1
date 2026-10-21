@@ -16,6 +16,24 @@ This is a local test build, not a published stable update.
 - Bundled gift catalog: 686 entries, usable without installing the VS game.
 - Separate preview configuration/media/game roots and disabled stable updater.
 - Responsive UI checks at 1920, 1440, 960 and 390 pixels.
+- Game-specific gift/media actions with independent protected overlay links.
+- Drag and numeric trim editing, actual clip preview, queue/interrupt, playback
+  limits, fade and image/GIF support. Existing global mappings remain intact.
+- Username/license entry: server validation still required, account saved and
+  connection attempted only after successful activation. Three responsive widths.
+- Five system-voice profiles; actual base voices depend on Windows installation.
+- TTS eligibility: selected gift or follow events observed during this session,
+  with account/channel isolation. Historic follower lists are not available.
+- Unified launcher launch indicator; readiness waits and owned-process cleanup
+  tested with mocked windows/children for every current game family.
+- Independent game update regression: only one selected package is downloaded;
+  the second game's executable, settings and active pointer stay byte-identical,
+  including after recreating the launcher library.
+- Shared account handoff uses each owned game's actual HTTP/WebSocket protocol;
+  native bridge ports are read from that launch's arguments, never guessed.
+- Current automated suite: 213 checks; widget browser QA: 13 types / 39 layouts;
+  actual media browser QA: seven playback scenarios. Public live gifts and clean
+  second-machine acceptance remain unverified, not implied by these tests.
 
 ## Still Requires Acceptance
 

@@ -388,10 +388,69 @@ test('TTS settings are clamped, truncated and retained after restart', options, 
     const f = fixture(t);
     const snapshot = await f.invoke('tts', { enabled: 1, names: 0, volume: 5, rate: -3, pitch: 99, maxLength: 900,
         cooldownSeconds: -5, voiceURI: 'v'.repeat(250), blockedWords: 'w'.repeat(2500) });
-    assert.deepEqual(snapshot.tts, { enabled: true, names: false, volume: 1, rate: 0.5, pitch: 2, maxLength: 500,
+    assert.deepEqual(snapshot.tts, { ...TTS_DEFAULTS, enabled: true, names: false, volume: 1, rate: 0.5, pitch: 2, maxLength: 500,
         cooldownSeconds: 1, voiceURI: 'v'.repeat(200), blockedWords: 'w'.repeat(2000) });
     f.restart();
     assert.deepEqual(f.platform.snapshot().tts, snapshot.tts);
+});
+
+test('game overlay URLs, imports and duplicate actions preserve global mappings', options, async t => {
+    const f = fixture(t);
+    f.context.getActiveGame = () => 'alpha';
+    f.restart();
+    f.select(f.write('input/clip.mp4', 'synthetic bytes'));
+    const imported = await f.invoke('media-import');
+    const original = imported.media[0];
+    await f.invoke('media-save', { id: original.id, giftId: '5655', enabled: true });
+    const duplicated = await f.invoke('media-duplicate', { id: original.id, gameId: 'alpha' });
+    assert.equal(duplicated.error, undefined);
+    const copy = duplicated.media.find(item => item.id !== original.id);
+    assert.equal(copy.gameId, 'alpha');assert.equal(copy.giftId, '');assert.equal(copy.enabled, true);
+    const global = duplicated.media.find(item => item.id === original.id);
+    assert.equal(global.gameId, '');assert.equal(global.giftId, '5655');assert.equal(global.enabled, true);
+    assert.equal(new URL(copy.overlayUrl).searchParams.get('game'), 'alpha');
+    assert.equal(new URL(duplicated.games.find(game => game.id === 'alpha').overlayUrl).searchParams.get('game'), 'alpha');
+    assert.equal(duplicated.activeGame, 'alpha');
+    const count = duplicated.media.length;
+    const invalid = await f.invoke('media-duplicate', { id: original.id, gameId: 'not-a-game' });
+    assert.ok(invalid.error);assert.equal(f.platform.snapshot().media.length, count);
+    const rejected = await f.invoke('media-save', { id: original.id, gameId: '../escape' });
+    assert.ok(rejected.error);assert.equal(f.platform.snapshot().media.find(item => item.id === original.id).gameId, '');
+    f.select(f.write('input/own-image.png', 'synthetic image bytes'));
+    const withImage = await f.invoke('media-import', { gameId: 'alpha' });
+    const image = withImage.media.find(item => item.kind === 'image');
+    assert.equal(image.gameId, 'alpha');
+    assert.ok(f.dialogs.at(-1).filters[0].extensions.includes('gif'));
+    const next = path.join(f.temporary, 'new-images');fs.mkdirSync(next);f.select(next);
+    const moved = await f.invoke('folder', { kind: 'media' });
+    assert.equal(moved.error, undefined);
+    const record = f.store.get('media_studio_v1').items.find(item => item.id === image.id);
+    assert.equal(fs.readFileSync(path.join(next, record.file), 'utf8'), 'synthetic image bytes');
+    f.restart();assert.equal(f.platform.snapshot().media.find(item => item.id === image.id).gameId, 'alpha');
+});
+
+test('central chat speech requires configured gift/follow events from the active channel', options, async t => {
+    const f = fixture(t);
+    await f.invoke('tts', { ...TTS_DEFAULTS, enabled: true, audience: 'gift', giftId: '7934', voicePreset: 'child' });
+    const messages = () => f.notifications.filter(item => item.name === 'workspace-chat');
+    f.platform.ingest('chat', { username: 'viewer', message: 'not yet' }, 'testhost');
+    assert.equal(messages().length, 0);
+    f.platform.ingest('gift', { username: 'viewer', giftId: '5655' }, 'testhost');
+    f.platform.ingest('chat', { username: 'viewer', message: 'wrong gift' }, 'testhost');
+    assert.equal(messages().length, 0);
+    f.platform.ingest('gift', { username: 'viewer', giftId: '7934' }, 'anotherhost');
+    f.platform.ingest('chat', { username: 'viewer', message: 'wrong channel' }, 'testhost');
+    assert.equal(messages().length, 0);
+    f.platform.ingest('gift', { username: 'viewer', giftId: '7934' }, 'testhost');
+    f.platform.ingest('chat', { username: '@VIEWER', message: 'allowed' }, 'testhost');
+    assert.equal(messages().length, 1);
+    await f.invoke('tts', { ...TTS_DEFAULTS, enabled: true, audience: 'follow', voicePreset: 'female' });
+    f.platform.ingest('chat', { username: 'viewer', message: 'gift is insufficient now' }, 'testhost');
+    assert.equal(messages().length, 1);
+    f.platform.ingest('follow', { username: 'viewer' }, 'testhost');
+    f.platform.ingest('chat', { username: 'viewer', message: 'following now' }, 'testhost');
+    assert.equal(messages().length, 2);
+    assert.equal(f.platform.snapshot().tts.voicePreset, 'female');
 });
 
 test('catalog refresh validates responses and retains the cached catalog on errors', options, async t => {
