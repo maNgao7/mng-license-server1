@@ -8,6 +8,7 @@ import { rateLimit } from "express-rate-limit";
 import { fileURLToPath } from "url";
 import { agencySlug, validCapacity, validAgencyDuration, createAgencyKey, parseAgencyKey,
     createAgencyReceipt, readAgencyReceipt, agencyMembers, touchAgencyMember, agencySummary } from "./agency-licenses.js";
+import { assertLicenseEditable, editLicense, renewLicense } from "./license-management.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -749,7 +750,7 @@ app.post("/api/license/verify", (req, res) => {
 
     sureliDurumGuncelle(lisans);
 
-    if (lisans.durum === "iptal") {
+    if (lisans.durum === "iptal" || lisans.durum === "arsivlendi") {
         logEkle(temizKod, deviceId, "red_iptal", ip);
         return res.json({
             valid: false,
@@ -926,8 +927,8 @@ app.post("/api/license/check", (req, res) => {
                 max_cihaz: keyInfo?.max_cihaz || 1,
                 cihazlar: [],
                 ajans_kurtarma: keyInfo?.tip === "ajans",
-                sure_birim: keyInfo?.birim || (expiresAt ? "gun" : "sinirsiz"),
-                sure_miktar: keyInfo?.miktar ?? 0,
+                sure_birim: keyInfo?.tip === "ajans" ? keyInfo.birim : (expiresAt ? "gun" : "sinirsiz"),
+                sure_miktar: keyInfo?.tip === "ajans" ? keyInfo.miktar : (expiresAt ? Math.max(1, Math.ceil((Number(expiresAt) - Date.now()) / 86400000)) : -1),
                 durum: (expiresAt && Date.now() > Number(expiresAt)) ? "suresi_doldu" : "aktif",
                 olusturma_zamani: Date.now(),
                 aktivasyon_zamani: keyInfo?.aktivasyon_zamani || Date.now(),
@@ -946,7 +947,7 @@ app.post("/api/license/check", (req, res) => {
 
     sureliDurumGuncelle(lisans);
 
-    if (lisans.durum === "iptal") return res.json({ valid: false, reason: "revoked", message: "Bu lisans iptal edilmiş." });
+    if (lisans.durum === "iptal" || lisans.durum === "arsivlendi") return res.json({ valid: false, reason: "revoked", message: "Bu lisansın erişimi kapatılmış." });
     if (lisans.tip === "ajans") {
         if (lisans.engelli_cihazlar?.includes(deviceId)) {
             return res.json({ valid: false, reason: "device_mismatch", message: "Bu cihazın ajans erişimi kaldırıldı." });
@@ -1130,7 +1131,7 @@ app.post("/api/admin/cikis", (req, res) => {
 
 // Yeni Lisans Oluştur (1 dk, 10 dk, 20 dk, 1 gün, 3 gün, 7 gün, 30 gün, sınırsız)
 app.post("/api/admin/lisans-olustur", adminKontrol, (req, res) => {
-    const { sure_birim, sure_miktar, notlar } = req.body;
+    const { sure_birim, sure_miktar, notlar, ad } = req.body;
     // sure_birim: "dakika" | "gun" | "sinirsiz"
     // sure_miktar: number (örn 1, 10, 20, 1, 3, 7, 30, -1)
 
@@ -1139,6 +1140,10 @@ app.post("/api/admin/lisans-olustur", adminKontrol, (req, res) => {
 
     if (!validAgencyDuration(birim, miktar)) {
         return res.status(400).json({ error: "Geçersiz süre miktarı!" });
+    }
+    if ((ad !== undefined && (typeof ad !== "string" || ad.trim().length > 80))
+        || (notlar !== undefined && (typeof notlar !== "string" || notlar.length > 1000))) {
+        return res.status(400).json({ error: "İsim en fazla 80, not en fazla 1000 karakter olabilir." });
     }
 
     const sureObj = { birim, miktar: birim === "sinirsiz" ? -1 : miktar };
@@ -1168,7 +1173,8 @@ app.post("/api/admin/lisans-olustur", adminKontrol, (req, res) => {
         aktivasyon_zamani: null,
         bitis_zamani: null,
         cihaz_kimlik: null,
-        notlar: notlar || ""
+        musteri_adi: (ad || "").trim(),
+        notlar: (notlar || "").trim()
     };
 
     lisanslarVeritabani.unshift(yeniLisans);
@@ -1267,7 +1273,7 @@ app.post("/api/admin/lisanslar-senkronize", adminKontrol, (req, res) => {
             lisanslarVeritabani.push(gelen);
             eklenen++;
         } else {
-            if (gelen.notlar && !lisanslarVeritabani[mevcutIndex].notlar) {
+            if (gelen.notlar && !lisanslarVeritabani[mevcutIndex].notlar && lisanslarVeritabani[mevcutIndex].durum !== "arsivlendi") {
                 lisanslarVeritabani[mevcutIndex].notlar = gelen.notlar;
             }
         }
@@ -1288,6 +1294,7 @@ function ajansBul(req, res) {
         res.status(404).json({ error: "Ajans lisansı bulunamadı." });
         return null;
     }
+    if (req.method !== "GET") assertLicenseEditable(license);
     return license;
 }
 
@@ -1369,6 +1376,7 @@ app.post(["/api/admin/lisans/:kod/iptal", "/api/admin/lisans-iptal/:kod"], admin
     const kod = req.params.kod.toUpperCase();
     const lisans = lisanslarVeritabani.find(l => l.kod === kod);
     if (!lisans) return res.status(404).json({ error: "Lisans bulunamadı." });
+    assertLicenseEditable(lisans);
 
     lisans.durum = "iptal";
     if (!karaListeVeritabani.includes(kod)) {
@@ -1383,6 +1391,7 @@ app.post(["/api/admin/lisans/:kod/aktif-et", "/api/admin/lisans-aktif/:kod"], ad
     const kod = req.params.kod.toUpperCase();
     const lisans = lisanslarVeritabani.find(l => l.kod === kod);
     if (!lisans) return res.status(404).json({ error: "Lisans bulunamadı." });
+    assertLicenseEditable(lisans);
 
     karaListeVeritabani = karaListeVeritabani.filter(k => k !== kod);
     karaListeKaydet();
@@ -1401,6 +1410,26 @@ app.post(["/api/admin/lisans/:kod/aktif-et", "/api/admin/lisans-aktif/:kod"], ad
     res.json({ mesaj: "Lisans tekrar aktif edildi.", durum: lisans.durum });
 });
 
+app.post("/api/admin/lisans/:kod/duzenle", adminKontrol, (req, res) => {
+    const index = lisanslarVeritabani.findIndex(l => l.kod === req.params.kod.toUpperCase());
+    if (index === -1) return res.status(404).json({ error: "Lisans bulunamadı." });
+    const updated = editLicense(lisanslarVeritabani[index], req.body);
+    lisanslarVeritabani[index] = updated;
+    dbKaydet();
+    logEkle(updated.kod, null, req.body.sure ? "lisans_sure_" + req.body.sure.islem : "lisans_bilgi_duzenlendi", req.ip);
+    res.json({ basarili: true, lisans: updated });
+});
+
+app.post("/api/admin/lisans/:kod/yenile", adminKontrol, (req, res) => {
+    const index = lisanslarVeritabani.findIndex(l => l.kod === req.params.kod.toUpperCase());
+    if (index === -1) return res.status(404).json({ error: "Lisans bulunamadı." });
+    const updated = renewLicense(lisanslarVeritabani[index]);
+    lisanslarVeritabani[index] = updated;
+    dbKaydet();
+    logEkle(updated.kod, null, "lisans_yenilendi", req.ip);
+    res.json({ basarili: true, lisans: updated });
+});
+
 app.delete("/api/admin/lisans/:kod", adminKontrol, (req, res) => {
     const kod = req.params.kod.toUpperCase();
     const lisans = lisanslarVeritabani.find(l => l.kod === kod);
@@ -1413,7 +1442,8 @@ app.delete("/api/admin/lisans/:kod", adminKontrol, (req, res) => {
         karaListeKaydet();
     }
     dbKaydet();
-    res.json({ mesaj: "Lisans kalıcı havuzda arşivlendi.", durum: lisans.durum });
+    logEkle(kod, null, "lisans_kalici_silindi", req.ip);
+    res.json({ mesaj: "Lisans listeden kaldırıldı ve erişimi kalıcı olarak kapatıldı.", durum: lisans.durum });
 });
 
 // Gelen Talepleri Listele
@@ -1430,7 +1460,7 @@ app.delete("/api/admin/talep/:id", adminKontrol, (req, res) => {
 
 app.get("/api/admin/istatistikler", adminKontrol, (req, res) => {
     lisanslarVeritabani.forEach(l => sureliDurumGuncelle(l));
-    const toplam = lisanslarVeritabani.length;
+    const toplam = lisanslarVeritabani.filter(l => l.durum !== "arsivlendi").length;
     const aktif = lisanslarVeritabani.filter(l => l.durum === "aktif").length;
     const beklemede = lisanslarVeritabani.filter(l => l.durum === "beklemede").length;
     const iptal = lisanslarVeritabani.filter(l => l.durum === "iptal").length;
@@ -1446,7 +1476,7 @@ app.get("/api/health", (req, res) => {
 app.use((error, req, res, next) => {
     if (res.headersSent) return next(error);
     const status = error.status || 500;
-    res.status(status).json({ error: status === 503 ? "Lisans kaydedilemedi. Sunucu depolamasını kontrol edip tekrar deneyin."
+    res.status(status).json({ error: error.publicMessage ? error.message : status === 503 ? "Lisans kaydedilemedi. Sunucu depolamasını kontrol edip tekrar deneyin."
         : status === 413 ? "Yedek dosyası çok büyük. En fazla 8 MB yükleyebilirsiniz."
         : status === 400 ? "Gönderilen veri okunamadı." : "Sunucu işlemi tamamlayamadı." });
 });

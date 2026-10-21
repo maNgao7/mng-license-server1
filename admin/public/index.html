@@ -5,9 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="robots" content="noindex,nofollow">
   <title>TikMnG · Yönetim</title>
-  <link rel="stylesheet" href="/admin/dashboard.css?v=20261021">
+  <link rel="stylesheet" href="/admin/dashboard.css?v=20261021c">
   <script src="/admin/lucide.js" defer></script>
-  <script src="/admin/dashboard.js?v=20261021" defer></script>
+  <script src="/admin/dashboard.js?v=20261021c" defer></script>
 </head>
 <body>
   <main id="loginPage" class="login-page">
@@ -64,6 +64,7 @@
         <form id="createForm">
           <div class="form-grid">
             <div id="agencyNameField"><label for="agencyName">Ajans / marka / kullanıcı adı</label><input id="agencyName" placeholder="Örn. Trend Ajans veya yayıncı adı" maxlength="80" required></div>
+            <div id="individualNameField" hidden><label for="individualName">Müşteri / yayıncı adı</label><input id="individualName" placeholder="Örn. Deniz veya @yayıncı" maxlength="80"></div>
             <div id="capacityField"><label for="agencyCapacity">Yayıncı kapasitesi</label><input type="number" id="agencyCapacity" min="1" max="1000" step="1" value="20" required></div>
             <div><label for="durationAmount">Lisans süresi</label><div class="input-pair"><input type="number" id="durationAmount" min="1" max="36500" step="1" value="30" required><select id="durationUnit" aria-label="Süre birimi"><option value="gun">Gün</option><option value="dakika">Dakika</option><option value="saat">Saat</option><option value="ay">Ay</option><option value="yil">Yıl</option><option value="sinirsiz">Sınırsız</option></select></div></div>
             <div><label for="licenseNote">Not <span class="optional">(isteğe bağlı)</span></label><input id="licenseNote" maxlength="1000" placeholder="Yetkili veya müşteri bilgisi"></div>
@@ -78,8 +79,8 @@
         <div class="section-heading"><div><h2 id="listTitle">Lisans havuzu</h2><span id="resultCount" class="muted"></span></div>
           <div class="table-tools"><button class="icon-button" id="export" title="Lisans yedeğini indir" aria-label="Lisans yedeğini indir"><i data-lucide="download"></i></button><button class="icon-button" id="import" title="JSON yedeği yükle" aria-label="JSON yedeği yükle"><i data-lucide="upload"></i></button><input type="file" id="importFile" accept=".json" hidden></div>
         </div>
-        <div class="list-filters"><div class="search-field"><i data-lucide="search"></i><input id="search" type="search" placeholder="Ajans, lisans, yayıncı veya not ara" aria-label="Lisans ara"></div><select id="statusFilter" aria-label="Lisans durumu"><option value="all">Tüm durumlar</option><option value="aktif">Aktif</option><option value="beklemede">Beklemede</option><option value="suresi_doldu">Süresi dolmuş</option><option value="iptal">İptal edilmiş</option><option value="arsivlendi">Arşiv</option></select></div>
-        <div class="table-scroll"><table class="license-table"><thead><tr><th>Ajans / lisans</th><th>Durum</th><th>Yayıncı / kapasite</th><th>Süre</th><th>Not</th><th class="align-right">İşlemler</th></tr></thead><tbody id="licensesBody"><tr><td colspan="6" class="empty">Lisanslar yükleniyor…</td></tr></tbody></table></div>
+        <div class="list-filters"><div class="search-field"><i data-lucide="search"></i><input id="search" type="search" placeholder="Ajans, lisans, yayıncı veya not ara" aria-label="Lisans ara"></div><select id="statusFilter" aria-label="Lisans durumu"><option value="all">Tüm durumlar</option><option value="aktif">Aktif</option><option value="beklemede">Beklemede</option><option value="suresi_doldu">Süresi dolmuş</option><option value="iptal">İptal edilmiş</option><option value="arsivlendi">Silinenler</option></select></div>
+        <div class="table-scroll"><table class="license-table"><thead><tr><th>Ajans / yayıncı</th><th>Durum</th><th>Yayıncı / kapasite</th><th>Süre</th><th>Müşteri / not</th><th class="align-right">İşlemler</th></tr></thead><tbody id="licensesBody"><tr><td colspan="6" class="empty">Lisanslar yükleniyor…</td></tr></tbody></table></div>
         <footer class="table-footer"><span id="listSummary"></span><span>Kontenjan, kayıtlı farklı cihaz sayısıdır.</span></footer>
       </section>
 

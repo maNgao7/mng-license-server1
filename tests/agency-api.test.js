@@ -226,3 +226,125 @@ test("admin assets are reachable, private data stays behind session auth, and pu
     assert.equal(sent.data.basarili, true);
     assert.equal((await f.request("/api/admin/talepler", undefined, true)).data.length, 1);
 });
+
+test("expired individual licenses renew on the same key and device; active renewals preserve paid time", async t => {
+    const f = await fixture(t);
+    const created = await f.request("/api/admin/lisans-olustur", { ad: "Deniz", sure_birim: "gun", sure_miktar: 7, notlar: "Ilk not" }, true);
+    const code = created.data.kod;
+    const original = (await verify(f, code, "renew-device")).data;
+    const edit = body => f.request(`/api/admin/lisans/${code}/duzenle`, body, true);
+    const renew = () => f.request(`/api/admin/lisans/${code}/yenile`, {}, true);
+    assert.equal((await f.request(`/api/admin/lisans/${code}/duzenle`, { ad: "Unauthorized" })).status, 401);
+    assert.equal((await f.request(`/api/admin/lisans/${code}/yenile`, {})).status, 401);
+    const renamed = (await edit({ ad: "Yeni isim", notlar: "Belirgin not" })).data.lisans;
+    assert.equal(renamed.musteri_adi, "Yeni isim");
+    assert.equal(renamed.bitis_zamani, original.expiresAt);
+    assert.equal(renamed.kod, code);
+    await edit({ sure: { islem: "azalt", birim: "gun", miktar: 8 } });
+    assert.equal((await check(f, code, "renew-device", original)).data.reason, "expired");
+    const before = Date.now();
+    const renewed = (await renew()).data.lisans;
+    assert.equal(renewed.durum, "aktif");
+    assert.equal(renewed.sure_miktar, 7);
+    assert.ok(renewed.bitis_zamani >= before + 7 * 86400000);
+    const cached = (await check(f, code, "renew-device", { activationToken: original.activationToken, expiresAt: original.expiresAt })).data;
+    assert.equal(cached.valid, true);
+    assert.equal(cached.expiresAt, renewed.bitis_zamani);
+    assert.notEqual(cached.activationToken, original.activationToken);
+    assert.equal((await verify(f, code, "another-device")).data.reason, "device_mismatch");
+    const activeRenewal = (await renew()).data.lisans;
+    assert.equal(activeRenewal.bitis_zamani, renewed.bitis_zamani + 7 * 86400000);
+    const increased = (await edit({ sure: { islem: "ekle", birim: "dakika", miktar: 60 } })).data.lisans;
+    assert.equal(increased.bitis_zamani, activeRenewal.bitis_zamani + 3600000);
+    assert.equal(increased.sure_miktar, 7);
+    const decreased = (await edit({ sure: { islem: "azalt", birim: "dakika", miktar: 30 } })).data.lisans;
+    assert.equal(decreased.bitis_zamani, increased.bitis_zamani - 1800000);
+    const replaced = (await edit({ sure: { islem: "ayarla", birim: "gun", miktar: 3 } })).data.lisans;
+    assert.equal(replaced.sure_miktar, 3);
+    assert.ok(Math.abs(replaced.bitis_zamani - Date.now() - 3 * 86400000) < 2000);
+    assert.equal((await renew()).data.lisans.bitis_zamani, replaced.bitis_zamani + 3 * 86400000);
+    await f.stop();
+    const restarted = await fixture(t, [], f.dir);
+    const record = (await restarted.request("/api/admin/lisanslar", undefined, true)).data[0];
+    assert.equal(record.musteri_adi, "Yeni isim");
+    assert.equal(record.notlar, "Belirgin not");
+    assert.equal(record.sure_miktar, 3);
+    assert.equal((await check(restarted, code, "renew-device")).data.valid, true);
+});
+
+test("agency renewal and rename preserve every registered device and the original key", async t => {
+    const f = await fixture(t);
+    const code = await f.create({ max_yayinci: 2 });
+    const oldReceipt = (await verify(f, code, "agency-one")).data;
+    await verify(f, code, "agency-two");
+    const edited = await f.request(`/api/admin/lisans/${code}/duzenle`, { ad: "Yeni Ajans", notlar: "Yeni yetkili", sure: { islem: "ayarla", birim: "gun", miktar: 7 } }, true);
+    assert.equal(edited.data.lisans.kod, code);
+    assert.equal(edited.data.lisans.ajans_adi, "Yeni Ajans");
+    const renewed = await f.request(`/api/admin/lisans/${code}/yenile`, {}, true);
+    for (const device of ["agency-one", "agency-two"]) {
+        const result = (await check(f, code, device, { activationToken: oldReceipt.activationToken, expiresAt: oldReceipt.expiresAt })).data;
+        assert.equal(result.valid, true);
+        assert.equal(result.expiresAt, renewed.data.lisans.bitis_zamani);
+    }
+    assert.equal((await detail(f, code)).data.kullanilan, 2);
+    assert.equal((await verify(f, code, "agency-third")).data.reason, "agency_limit_reached");
+});
+
+test("deleted unlimited licenses cannot be reopened, renewed, edited or resurrected by stale backups", async t => {
+    const f = await fixture(t);
+    const code = (await f.request("/api/admin/lisans-olustur", { ad: "Silinecek", sure_birim: "sinirsiz", sure_miktar: -1 }, true)).data.kod;
+    const token = (await verify(f, code, "unlimited-device")).data;
+    assert.equal(token.isUnlimited, true);
+    const stale = (await f.request("/api/admin/lisanslar", undefined, true)).data;
+    await f.request(`/api/admin/lisans/${code}`, {}, true, "DELETE");
+    for (const route of [`/api/admin/lisans/${code}/aktif-et`, `/api/admin/lisans-aktif/${code}`, `/api/admin/lisans/${code}/iptal`, `/api/admin/lisans-iptal/${code}`, `/api/admin/lisans/${code}/yenile`, `/api/admin/lisans/${code}/duzenle`]) {
+        assert.equal((await f.request(route, { sure: { islem: "ayarla", birim: "sinirsiz", miktar: -1 } }, true)).status, 410);
+    }
+    assert.equal((await verify(f, code, "unlimited-device")).data.reason, "revoked");
+    assert.equal((await check(f, code, "unlimited-device", { activationToken: token.activationToken, expiresAt: null })).data.reason, "revoked");
+    await f.request("/api/admin/lisanslar-senkronize", { lisanslar: stale }, true);
+    const deleted = (await f.request("/api/admin/lisanslar", undefined, true)).data;
+    assert.equal(deleted[0].durum, "arsivlendi");
+    assert.equal((await f.request("/api/admin/istatistikler", undefined, true)).data.toplam, 0);
+    const restored = await fixture(t, deleted);
+    assert.equal((await verify(restored, code, "unlimited-device")).data.reason, "revoked");
+    assert.equal((await check(restored, code, "unlimited-device")).data.reason, "revoked");
+    await f.stop();
+    const restarted = await fixture(t, [], f.dir);
+    assert.equal((await verify(restarted, code, "unlimited-device")).data.reason, "revoked");
+});
+
+test("pending durations start only at first activation and invalid edits are atomic", async t => {
+    const f = await fixture(t);
+    const code = await f.create();
+    const route = `/api/admin/lisans/${code}/duzenle`;
+    for (const sure of [{ islem: "unknown", birim: "gun", miktar: 7 }, { islem: "ayarla", birim: "gun", miktar: 0 }, { islem: "ayarla", birim: "gun", miktar: -7 }, { islem: "ayarla", birim: "gun", miktar: 1.5 }]) {
+        assert.equal((await f.request(route, { ad: "Should not save", sure }, true)).status, 400);
+    }
+    assert.equal((await f.request(`/api/admin/lisans/${code}/yenile`, {}, true)).status, 409);
+    assert.equal((await detail(f, code)).data.ajans_adi, "Trend Ajans");
+    const changed = await f.request(route, { sure: { islem: "ayarla", birim: "gun", miktar: 7 } }, true);
+    assert.equal(changed.data.lisans.durum, "beklemede");
+    assert.equal(changed.data.lisans.bitis_zamani, null);
+    assert.equal(changed.data.lisans.aktivasyon_zamani, null);
+    const activated = (await verify(f, code, "pending-first")).data;
+    assert.ok(Math.abs(activated.expiresAt - Date.now() - 7 * 86400000) < 2000);
+    await f.request(`/api/admin/lisans/${code}/iptal`, {}, true);
+    assert.equal((await f.request(`/api/admin/lisans/${code}/yenile`, {}, true)).status, 409);
+    await f.request(route, { sure: { islem: "ayarla", birim: "sinirsiz", miktar: -1 } }, true);
+    assert.equal((await verify(f, code, "pending-first")).data.reason, "revoked");
+});
+
+test("changing unlimited individual licenses to finite time issues a finite recovery receipt", async t => {
+    const f = await fixture(t);
+    const code = (await f.request("/api/admin/lisans-olustur", { sure_birim: "sinirsiz", sure_miktar: -1 }, true)).data.kod;
+    await verify(f, code, "converted-device");
+    await f.request(`/api/admin/lisans/${code}/duzenle`, { sure: { islem: "ayarla", birim: "gun", miktar: 2 } }, true);
+    const finite = (await check(f, code, "converted-device")).data;
+    assert.equal(finite.valid, true);
+    assert.equal(finite.isUnlimited, false);
+    const restored = await fixture(t);
+    const result = (await check(restored, code, "converted-device", { activationToken: finite.activationToken, expiresAt: finite.expiresAt })).data;
+    assert.equal(result.isUnlimited, false);
+    assert.equal(result.expiresAt, finite.expiresAt);
+});

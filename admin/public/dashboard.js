@@ -1,11 +1,11 @@
 "use strict";
 
 const $ = id => document.getElementById(id);
-const state = { licenses: [], requests: [], view: "licenses", mode: "agency", expanded: new Set(), details: new Map(), loading: false, authenticated: false };
+const state = { licenses: [], requests: [], view: "licenses", mode: "agency", expanded: new Set(), details: new Map(), editing: null, editDuration: false, loading: false, authenticated: false };
 const escapeHtml = value => String(value ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
 const icon = name => `<i data-lucide="${name}" aria-hidden="true"></i>`;
 const date = value => value ? new Date(value).toLocaleString("tr-TR", { dateStyle: "short", timeStyle: "short" }) : "Kayıt yok";
-const statusLabels = { aktif: "Aktif", beklemede: "Beklemede", suresi_doldu: "Süresi dolmuş", iptal: "İptal", arsivlendi: "Arşiv" };
+const statusLabels = { aktif: "Aktif", beklemede: "Beklemede", suresi_doldu: "Süresi dolmuş", iptal: "İptal", arsivlendi: "Kalıcı olarak silindi" };
 const icons = () => window.lucide?.createIcons();
 let toastTimer;
 
@@ -68,14 +68,15 @@ function remainingLabel(license) {
 }
 
 function refreshStats() {
-    const agencies = state.licenses.filter(l => l.tip === "ajans");
+    const visible = state.licenses.filter(l => l.durum !== "arsivlendi");
+    const agencies = visible.filter(l => l.tip === "ajans");
     const usable = agencies.filter(l => ["aktif", "beklemede"].includes(currentStatus(l)));
     const used = usable.reduce((total, l) => total + usage(l).used, 0);
     const capacity = usable.reduce((total, l) => total + usage(l).capacity, 0);
-    $("licenseCount").textContent = state.licenses.length;
+    $("licenseCount").textContent = visible.length;
     $("agencyCount").textContent = agencies.length;
     $("requestCount").textContent = state.requests.length;
-    $("statTotal").textContent = state.licenses.length;
+    $("statTotal").textContent = visible.length;
     $("statActive").textContent = state.licenses.filter(l => currentStatus(l) === "aktif").length;
     $("statSeats").textContent = `${used} / ${capacity}`;
     $("statAvailable").textContent = Math.max(0, capacity - used);
@@ -88,14 +89,16 @@ function actionButton(action, code, name, title, extraClass = "") {
 function renderLicenses() {
     const query = $("search").value.toLocaleLowerCase("tr").trim();
     const filtered = state.licenses.filter(l => {
+        if (l.durum === "arsivlendi" && $("statusFilter").value !== "arsivlendi") return false;
         if (state.view === "agencies" && l.tip !== "ajans") return false;
         if ($("statusFilter").value !== "all" && currentStatus(l) !== $("statusFilter").value) return false;
-        return !query || [l.kod, l.ajans_adi, l.notlar, l.cihaz_kimlik,
+        return !query || [l.kod, l.ajans_adi, l.musteri_adi, l.notlar, l.cihaz_kimlik,
             ...(l.yayinci_kayitlari || []).map(m => `${m.ad} ${m.cihaz_kimlik}`)]
             .join(" ").toLocaleLowerCase("tr").includes(query);
     });
     $("resultCount").textContent = `${filtered.length} kayıt`;
-    $("listSummary").textContent = `${filtered.length} / ${state.licenses.length} lisans`;
+    $("listSummary").textContent = $("statusFilter").value === "arsivlendi" ? `${filtered.length} silinen lisans`
+        : `${filtered.length} / ${state.licenses.filter(l => l.durum !== "arsivlendi").length} lisans`;
     $("licensesBody").innerHTML = filtered.length ? filtered.map(licenseRow).join("")
         : '<tr><td colspan="6" class="empty">Bu filtrede lisans bulunamadı.</td></tr>';
     icons();
@@ -105,19 +108,46 @@ function licenseRow(l) {
     const agency = l.tip === "ajans";
     const expanded = state.expanded.has(l.kod);
     const status = currentStatus(l);
+    const deleted = status === "arsivlendi";
     const { used, capacity } = usage(l);
     const code = escapeHtml(l.kod);
-    const name = agency ? (l.ajans_adi || "Ajans") : "Bireysel lisans";
+    const name = agency ? (l.ajans_adi || "Ajans") : (l.musteri_adi || "Bireysel lisans");
     const members = agency ? `<div class="usage-label">${used} / ${capacity}<small>${Math.max(0, capacity - used)} boş</small></div><div class="usage-track ${used >= capacity ? "full" : ""}"><span style="width:${Math.min(100, used / capacity * 100)}%"></span></div>`
         : `<span class="muted">${l.cihaz_kimlik ? "1 kayıtlı cihaz" : "Henüz giriş yok"}</span>`;
-    return `<tr>
-      <td><div class="license-title">${agency ? `<button type="button" class="expand-button" data-action="expand" data-code="${code}" aria-expanded="${expanded}" aria-label="${escapeHtml(name)} yayıncılarını ${expanded ? "kapat" : "göster"}">${icon("chevron-right")}</button>` : icon("key-round")}<span>${escapeHtml(name)}</span></div><code class="license-code">${code}</code></td>
+    return `<tr data-license="${code}">
+      <td><div class="license-title">${agency && !deleted ? `<button type="button" class="expand-button" data-action="expand" data-code="${code}" aria-expanded="${expanded}" aria-label="${escapeHtml(name)} yayıncılarını ${expanded ? "kapat" : "göster"}">${icon("chevron-right")}</button>` : icon(agency ? "building-2" : "key-round")}<span>${escapeHtml(name)}</span></div><code class="license-code">${code}</code></td>
       <td><span class="state ${statusLabels[status] ? status : "arsivlendi"}">${escapeHtml(statusLabels[status] || status)}</span></td>
-      <td>${members}</td><td class="time-cell">${durationLabel(l)}<br><span class="muted" title="${date(l.bitis_zamani)}">${remainingLabel(l)}</span></td>
-      <td class="notes-cell">${escapeHtml(l.notlar || "—")}</td>
-      <td><div class="row-actions">${actionButton("copy", l.kod, "copy", "Lisansı kopyala")}${status === "iptal" || status === "arsivlendi"
-        ? actionButton("activate", l.kod, "rotate-ccw", "Lisansı yeniden aç") : actionButton("revoke", l.kod, "ban", "Lisansı iptal et", "danger")}${status !== "arsivlendi" ? actionButton("archive", l.kod, "archive", "Lisansı arşivle") : ""}</div></td>
-    </tr>${agency && expanded ? `<tr class="agency-detail" data-detail="${code}"><td colspan="6">${detailMarkup(l)}</td></tr>` : ""}`;
+      <td>${members}</td><td class="time-cell"><strong>${durationLabel(l)}</strong><br><span class="muted" title="${date(l.bitis_zamani)}">${remainingLabel(l)}</span>${deleted ? "" : `<button type="button" class="text-command" data-action="edit-time" data-code="${code}">${icon("calendar-clock")} Süreyi düzenle</button>`}</td>
+      <td class="notes-cell"><div class="note-content"><strong>${escapeHtml(l.notlar || "—")}</strong>${deleted ? "" : actionButton("edit", l.kod, "pencil", "İsim ve notu düzenle")}</div></td>
+      <td><div class="row-actions">${deleted ? '<span class="muted">Erişim kapalı</span>' : `${status !== "beklemede" && status !== "iptal" && l.sure_birim !== "sinirsiz" && l.sure_miktar !== -1 ? `<button type="button" class="renew-button" data-action="renew" data-code="${code}" title="${durationLabel(l)} yenile">${icon("rotate-cw")} Yenile</button>` : ""}${actionButton("copy", l.kod, "copy", "Lisansı kopyala")}${status === "iptal"
+        ? actionButton("activate", l.kod, "rotate-ccw", "Lisansı yeniden aç") : actionButton("revoke", l.kod, "ban", "Lisansı iptal et", "danger")}${actionButton("archive", l.kod, "trash-2", "Lisansı kalıcı sil", "danger")}`}</div></td>
+    </tr>${!deleted && state.editing === l.kod ? `<tr class="license-editor"><td colspan="6">${editorMarkup(l)}</td></tr>` : ""}${agency && expanded && !deleted ? `<tr class="agency-detail" data-detail="${code}"><td colspan="6">${detailMarkup(l)}</td></tr>` : ""}`;
+}
+
+function editorMarkup(l) {
+    const agency = l.tip === "ajans";
+    const pending = l.durum === "beklemede";
+    const adjustable = !pending && Boolean(l.bitis_zamani);
+    const time = state.editDuration;
+    const unit = pending ? l.sure_birim : "gun";
+    return `<form class="license-editor-form" data-code="${escapeHtml(l.kod)}">
+      <div class="editor-grid"><div><label>${agency ? "Ajans adı" : "Müşteri / yayıncı adı"}<input name="ad" value="${escapeHtml(agency ? l.ajans_adi : l.musteri_adi || "")}" maxlength="80" ${agency ? "required" : ""}></label>
+        <p class="muted">Lisans kodu: <code>${escapeHtml(l.kod)}</code></p></div>
+      <div><label>Not<textarea name="notlar" maxlength="1000" rows="3">${escapeHtml(l.notlar || "")}</textarea></label></div>
+      <div><label class="check-line"><input type="checkbox" name="changeDuration" ${time ? "checked" : ""}> Süreyi değiştir</label>
+        <fieldset class="duration-controls" ${time ? "" : "disabled"}><label>İşlem<select name="operation"><option value="ayarla" ${adjustable ? "" : "selected"}>Süreyi yeniden belirle</option>${adjustable ? '<option value="ekle" selected>Süre ekle</option><option value="azalt">Süre azalt</option>' : ""}</select></label>
+        <div class="duration-values"><label>Miktar<input type="number" name="amount" min="1" max="36500" step="1" value="${pending && l.sure_miktar > 0 ? l.sure_miktar : 1}" ${unit === "sinirsiz" ? "disabled" : "required"}></label><label>Birim<select name="unit"><option value="gun" ${unit === "gun" ? "selected" : ""}>Gün</option><option value="saat">Saat</option><option value="dakika" ${unit === "dakika" ? "selected" : ""}>Dakika</option><option value="sinirsiz" ${unit === "sinirsiz" ? "selected" : ""}>Sınırsız</option></select></label></div></fieldset>
+        <p class="muted">Yenileme paketi: ${durationLabel(l)}<br>Bitiş: ${l.bitis_zamani ? date(l.bitis_zamani) : (pending ? "İlk girişte başlar" : "Sınırsız")}</p></div></div>
+      <div class="editor-footer"><button type="button" data-action="cancel-edit" data-code="${escapeHtml(l.kod)}">Vazgeç</button><button type="submit" class="primary">${icon("check")} Değişiklikleri kaydet</button></div>
+    </form>`;
+}
+
+function readDuration(amount, unit) {
+    amount = Number(amount);
+    if (unit === "saat") { unit = "dakika"; amount *= 60; }
+    if (unit === "ay") { unit = "gun"; amount *= 30; }
+    if (unit === "yil") { unit = "gun"; amount *= 365; }
+    return { birim: unit, miktar: unit === "sinirsiz" ? -1 : amount };
 }
 
 function detailMarkup(license) {
@@ -185,6 +215,7 @@ function setMode(mode) {
     state.mode = mode;
     const agency = mode === "agency";
     $("agencyNameField").hidden = !agency;
+    $("individualNameField").hidden = agency;
     $("capacityField").hidden = !agency;
     $("agencyName").required = agency;
     $("agencyCapacity").required = agency;
@@ -260,7 +291,11 @@ $("logout").addEventListener("click", async () => {
 });
 document.querySelectorAll("[data-view]").forEach(button => button.addEventListener("click", () => switchView(button.dataset.view)));
 document.querySelectorAll("[data-mode]").forEach(button => button.addEventListener("click", () => setMode(button.dataset.mode)));
-$("refresh").addEventListener("click", refresh);
+$("refresh").addEventListener("click", () => {
+    if (state.editing && !confirm("Kaydedilmemiş düzenlemeler kapatılsın mı?")) return;
+    state.editing = null;
+    refresh();
+});
 $("search").addEventListener("input", renderLicenses);
 $("statusFilter").addEventListener("change", renderLicenses);
 $("agencyName").addEventListener("input", updateKeyPreview);
@@ -277,15 +312,11 @@ $("createForm").addEventListener("submit", async event => {
     await run(event.submitter, async () => {
         $("createError").hidden = true;
         try {
-            let unit = $("durationUnit").value;
-            let amount = Number($("durationAmount").value);
-            if (unit === "saat") { unit = "dakika"; amount *= 60; }
-            if (unit === "ay") { unit = "gun"; amount *= 30; }
-            if (unit === "yil") { unit = "gun"; amount *= 365; }
-            if (unit === "sinirsiz") amount = -1;
-            const payload = { sure_birim: unit, sure_miktar: amount, notlar: $("licenseNote").value.trim() };
+            const duration = readDuration($("durationAmount").value, $("durationUnit").value);
+            const payload = { sure_birim: duration.birim, sure_miktar: duration.miktar, notlar: $("licenseNote").value.trim() };
             const agency = state.mode === "agency";
             if (agency) Object.assign(payload, { ajans_adi: $("agencyName").value.trim(), max_yayinci: Number($("agencyCapacity").value) });
+            else payload.ad = $("individualName").value.trim();
             const result = await api(agency ? "/api/admin/ajans-lisansi-olustur" : "/api/admin/lisans-olustur", payload);
             $("newCode").textContent = result.kod;
             $("newLicense").hidden = false;
@@ -304,6 +335,23 @@ $("licensesBody").addEventListener("click", async event => {
     const { action, code, device } = button.dataset;
     await run(button, async () => {
         if (action === "copy") return copy(code);
+        if (action === "cancel-edit") { state.editing = null; renderLicenses(); return; }
+        if (action === "edit" || action === "edit-time") {
+            state.editing = code;
+            state.editDuration = action === "edit-time";
+            renderLicenses();
+            $("licensesBody").querySelector(action === "edit-time" ? '.license-editor [name="operation"]' : '.license-editor [name="ad"]')?.focus();
+            return;
+        }
+        if (action === "renew") {
+            const license = state.licenses.find(item => item.kod === code);
+            if (!license || !confirm(`${durationLabel(license)} kullanım süresi eklensin mi? Aktif lisansın kalan süresi korunur.`)) return;
+            await api(`/api/admin/lisans/${encodeURIComponent(code)}/yenile`, {});
+            state.editing = null;
+            toast("Lisans yenilendi.");
+            await refresh();
+            return;
+        }
         if (action === "expand") {
             if (state.expanded.has(code)) state.expanded.delete(code);
             else { state.expanded.add(code); renderLicenses(); await loadDetail(code); }
@@ -315,10 +363,15 @@ $("licensesBody").addEventListener("click", async event => {
             if (!confirm(action === "block" ? "Bu cihazın ajans erişimi kaldırılsın mı? Kontenjan boşalır ve cihaz yeniden izin verilene kadar giriş yapamaz." : "Bu cihaza yeniden giriş izni verilsin mi? Sonraki girişte boş kontenjan kullanır.")) return;
             await api(`/api/admin/ajans/${encodeURIComponent(code)}/erisim`, { deviceId: device, engelli: action === "block" });
         } else {
-            const label = { revoke: "iptal edilsin", activate: "yeniden açılsın", archive: "arşivlensin ve erişimi kapatılsın" }[action];
+            const label = { revoke: "iptal edilsin", activate: "yeniden açılsın", archive: "kalıcı silinsin ve erişimi kapatılsın" }[action];
             if (!label || !confirm(`Bu lisans ${label} mi?`)) return;
             const suffix = { revoke: "/iptal", activate: "/aktif-et", archive: "" }[action];
             await api(`/api/admin/lisans/${encodeURIComponent(code)}${suffix}`, {}, action === "archive" ? "DELETE" : "POST");
+        }
+        if (action === "archive") {
+            state.expanded.delete(code);
+            state.details.delete(code);
+            if (state.editing === code) state.editing = null;
         }
         toast("Değişiklik kaydedildi.");
         await refresh();
@@ -330,11 +383,28 @@ $("licensesBody").addEventListener("submit", async event => {
     const form = event.target;
     await run(event.submitter, async () => {
         const code = encodeURIComponent(form.dataset.code);
-        if (form.classList.contains("capacity-form")) await api(`/api/admin/ajans/${code}/kapasite`, { max_yayinci: Number(form.querySelector("input").value) });
+        if (form.classList.contains("license-editor-form")) {
+            const fields = form.elements;
+            const payload = { ad: fields.ad.value, notlar: fields.notlar.value };
+            if (fields.changeDuration.checked) payload.sure = { islem: fields.operation.value, ...readDuration(fields.amount.value, fields.unit.value) };
+            await api(`/api/admin/lisans/${code}/duzenle`, payload);
+            state.editing = null;
+        } else if (form.classList.contains("capacity-form")) await api(`/api/admin/ajans/${code}/kapasite`, { max_yayinci: Number(form.querySelector("input").value) });
         else if (form.classList.contains("member-name")) await api(`/api/admin/ajans/${code}/yayinci`, { deviceId: form.dataset.device, ad: form.querySelector("input").value });
         toast("Değişiklik kaydedildi.");
         await refresh();
     });
+});
+
+$("licensesBody").addEventListener("change", event => {
+    const form = event.target.closest(".license-editor-form");
+    if (!form) return;
+    const fields = form.elements;
+    form.querySelector("fieldset").disabled = !fields.changeDuration.checked;
+    const unlimited = fields.unit.value === "sinirsiz";
+    fields.amount.disabled = unlimited;
+    fields.amount.required = !unlimited;
+    if (unlimited) fields.operation.value = "ayarla";
 });
 
 function renderRequests() {
@@ -411,5 +481,5 @@ async function init() {
 }
 init();
 setInterval(() => {
-    if (state.authenticated && !document.hidden && !["INPUT", "SELECT", "TEXTAREA"].includes(document.activeElement.tagName)) refresh();
+    if (state.authenticated && !state.editing && !document.hidden && !["INPUT", "SELECT", "TEXTAREA"].includes(document.activeElement.tagName)) refresh();
 }, 60000);

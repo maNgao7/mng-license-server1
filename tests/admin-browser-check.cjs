@@ -78,8 +78,10 @@ async function main() {
         await page.setViewportSize({ width: 1440, height: 1000 });
         await page.locator('[data-mode="standard"]').click();
         assert.equal(await page.locator('#agencyNameField').isVisible(), false);
+        await page.locator('#individualName').fill('Deniz Yayinci');
         await page.locator('#createButton').click();
         await page.waitForFunction(() => document.getElementById('newCode').textContent.startsWith('MNG30D-'));
+        await page.locator('.license-title span').filter({ hasText: 'Deniz Yayinci' }).waitFor();
         console.log('Individual license format unchanged');
         await page.locator('[data-view="agencies"]').click();
         page.once('dialog', dialog => dialog.accept());
@@ -124,6 +126,114 @@ async function main() {
         await page.locator('#refresh').click();
         await page.waitForFunction(() => document.getElementById('pageError').hidden);
         console.log('Connection failure and recovery passed');
+        await page.locator('[data-view="licenses"]').click();
+        const created = await context.request.post(base + '/api/admin/lisans-olustur', {
+            data: { ad: 'Sure Denemesi', sure_birim: 'gun', sure_miktar: 7, notlar: 'Ilk not' }
+        });
+        assert.ok(created.ok());
+        const editCode = (await created.json()).kod;
+        const activated = await context.request.post(base + '/api/license/verify', { data: { code: editCode, deviceId: 'browser-edit-device' } });
+        const originalEnd = (await activated.json()).expiresAt;
+        const record = async key => (await (await context.request.get(base + '/api/admin/lisanslar')).json()).find(l => l.kod === key);
+        const row = page.locator(`tr[data-license="${editCode}"]`);
+        const editor = page.locator('.license-editor-form');
+        const refreshList = async () => {
+            const loaded = page.waitForResponse(response => response.url() === base + '/api/admin/talepler' && response.request().method() === 'GET');
+            await page.locator('#refresh').click();
+            await loaded;
+            await page.waitForFunction(() => !document.querySelector('#refresh').disabled);
+        };
+        const saveEditor = async () => {
+            await editor.getByRole('button', { name: 'Değişiklikleri kaydet', exact: true }).click();
+            await editor.waitFor({ state: 'detached' });
+            await page.waitForFunction(() => !document.querySelector('#refresh').disabled);
+        };
+        await refreshList();
+        await row.locator('[data-action="edit"]').click();
+        assert.equal(await editor.locator('[name="changeDuration"]').isChecked(), false);
+        assert.equal(await editor.locator('[name="operation"]').isDisabled(), true);
+        await editor.locator('[name="ad"]').fill('Deniz Yeni Isim');
+        await editor.locator('[name="notlar"]').fill('Yeni gorunur musteri notu');
+        await saveEditor();
+        assert.equal((await record(editCode)).bitis_zamani, originalEnd);
+        assert.equal(await row.locator('.license-title span').textContent(), 'Deniz Yeni Isim');
+        assert.equal(await row.locator('.note-content strong').textContent(), 'Yeni gorunur musteri notu');
+        console.log('Individual name creation and inline name/note editing preserve expiration');
+        const adjustDuration = async (operation, amount, unit = 'gun') => {
+            await row.locator('[data-action="edit-time"]').click();
+            assert.equal(await editor.locator('[name="changeDuration"]').isChecked(), true);
+            await editor.locator('[name="operation"]').selectOption(operation);
+            await editor.locator('[name="amount"]').fill(String(amount));
+            await editor.locator('[name="unit"]').selectOption(unit);
+            await saveEditor();
+            return record(editCode);
+        };
+        const reset = await adjustDuration('ayarla', 7);
+        assert.equal(reset.sure_miktar, 7);
+        assert.ok(Math.abs(reset.bitis_zamani - Date.now() - 7 * 86400000) < 5000);
+        const increased = await adjustDuration('ekle', 2);
+        assert.equal(increased.bitis_zamani, reset.bitis_zamani + 2 * 86400000);
+        const decreased = await adjustDuration('azalt', 1);
+        assert.equal(decreased.bitis_zamani, increased.bitis_zamani - 86400000);
+        assert.equal(decreased.sure_miktar, 7);
+        const hourAdded = await adjustDuration('ekle', 1, 'saat');
+        assert.equal(hourAdded.bitis_zamani, decreased.bitis_zamani + 3600000);
+        console.log('Duration reset, increase, decrease and hour conversion passed through UI');
+        await row.locator('[data-action="edit-time"]').click();
+        await editor.scrollIntoViewIfNeeded();
+        await page.screenshot({ path: path.join(out, 'license-editor-desktop.png'), fullPage: true });
+        for (const width of [390, 320]) {
+            await page.setViewportSize({ width, height: 844 });
+            await editor.evaluate(form => { form.closest('.table-scroll').scrollLeft = 0; });
+            assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
+            assert.ok(await editor.evaluate(form => [...form.querySelectorAll('input,select,textarea,button')].every(control => {
+                const rect = control.getBoundingClientRect();
+                return rect.left >= 0 && rect.right <= innerWidth;
+            })), 'All inline editor controls fit the mobile viewport');
+        }
+        await page.screenshot({ path: path.join(out, 'license-editor-mobile.png'), fullPage: true });
+        await editor.locator('[data-action="cancel-edit"]').click();
+        await page.setViewportSize({ width: 1440, height: 1000 });
+        const expired = await adjustDuration('azalt', 20);
+        assert.equal(expired.durum, 'suresi_doldu');
+        await row.locator('.state').filter({ hasText: 'Süresi dolmuş' }).waitFor();
+        page.once('dialog', dialog => dialog.accept());
+        await row.locator('[data-action="renew"]').click();
+        await row.locator('.state').filter({ hasText: /^Aktif$/ }).waitFor();
+        const renewed = await record(editCode);
+        assert.ok(Math.abs(renewed.bitis_zamani - Date.now() - 7 * 86400000) < 5000);
+        assert.equal(renewed.cihaz_kimlik, 'browser-edit-device');
+        page.once('dialog', dialog => dialog.accept());
+        await row.locator('[data-action="renew"]').click();
+        await row.locator('.time-cell > .muted').filter({ hasText: '14 gün kaldı' }).waitFor();
+        assert.equal((await record(editCode)).bitis_zamani, renewed.bitis_zamani + 7 * 86400000);
+        console.log('Expired renewal and active renewal retaining remaining time passed through UI');
+        const unlimitedResponse = await context.request.post(base + '/api/admin/lisans-olustur', {
+            data: { ad: 'Silinecek Sinirsiz', sure_birim: 'sinirsiz', sure_miktar: -1 }
+        });
+        assert.ok(unlimitedResponse.ok());
+        const unlimitedCode = (await unlimitedResponse.json()).kod;
+        const unlimitedRow = page.locator(`tr[data-license="${unlimitedCode}"]`);
+        await context.request.post(base + '/api/license/verify', { data: { code: unlimitedCode, deviceId: 'browser-delete-device' } });
+        await refreshList();
+        await unlimitedRow.waitFor();
+        const countBefore = Number(await page.locator('#licenseCount').textContent());
+        page.once('dialog', dialog => dialog.accept());
+        await unlimitedRow.locator('[data-action="archive"]').click();
+        await unlimitedRow.waitFor({ state: 'detached' });
+        assert.equal(Number(await page.locator('#licenseCount').textContent()), countBefore - 1);
+        await page.reload();
+        await page.locator('#syncStatus').filter({ hasText: 'Güncel' }).waitFor();
+        assert.equal(await unlimitedRow.count(), 0);
+        const denied = await context.request.post(base + '/api/license/verify', { data: { code: unlimitedCode, deviceId: 'browser-delete-device' } });
+        assert.equal((await denied.json()).valid, false);
+        await page.locator('#statusFilter').selectOption('arsivlendi');
+        await unlimitedRow.waitFor();
+        assert.equal(await unlimitedRow.locator('[data-action]').count(), 0);
+        assert.equal(await unlimitedRow.locator('.state').textContent(), 'Kalıcı olarak silindi');
+        await page.locator('#statusFilter').selectOption('all');
+        assert.equal(await unlimitedRow.count(), 0);
+        console.log('Permanent deletion hides unlimited licenses, survives reload and denies access; audit cannot reopen');
         await page.goto(base + '/');
         await page.waitForFunction(() => document.querySelector('#heroCanvas')?.width > 0);
         const demoBox = await page.locator('#sim').boundingBox();
@@ -188,7 +298,7 @@ async function main() {
         await guest.close();
         console.log('Public admin entry opens the protected login screen');
         assert.deepEqual(errors, []);
-        fs.writeFileSync(path.join(out, 'browser-result.json'), JSON.stringify({ checkedAt: new Date().toISOString(), errors, checks: ['admin login', '25-character agency key naming', 'agency expansion', 'member rename', 'capacity save', 'desktop overflow', 'mobile overflow', 'individual legacy format', 'member block and unblock', 'backup export and import', 'XSS escaping', 'search', 'empty state', 'connection recovery', 'public navigation framing', 'public mobile menu', 'public inquiry form', 'admin request-to-license flow', 'visible admin entry across five viewport sizes', 'full-height artwork and active demo below hero', 'guest admin entry opens protected login'] }, null, 2));
+        fs.writeFileSync(path.join(out, 'browser-result.json'), JSON.stringify({ checkedAt: new Date().toISOString(), errors, checks: ['admin login', '25-character agency key naming', 'agency expansion', 'member rename', 'capacity save', 'desktop overflow', 'mobile overflow', 'individual legacy format', 'member block and unblock', 'backup export and import', 'XSS escaping', 'search', 'empty state', 'connection recovery', 'individual customer name creation', 'inline name and note editing preserves expiration', 'duration reset, increase and decrease', 'hour duration conversion', 'inline editor desktop and mobile framing', 'expired renewal', 'active renewal preserves remaining time', 'deleted unlimited license hidden after reload and denied access', 'deleted audit is read-only', 'public navigation framing', 'public mobile menu', 'public inquiry form', 'admin request-to-license flow', 'visible admin entry across five viewport sizes', 'full-height artwork and active demo below hero', 'guest admin entry opens protected login'] }, null, 2));
         console.log('Browser checks passed. Screenshots: ' + out);
     } finally {
         if (browser) await browser.close();
