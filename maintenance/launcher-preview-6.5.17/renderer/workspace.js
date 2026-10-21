@@ -1,6 +1,8 @@
 'use strict';
 (() => {
     const api = window.mngAPI;
+    const speechEngine = window.MNGSpeechEngine?.createSpeechEngine({ bridge: {
+        listVoices: data => call('speech-status',data), synthesize: data => call('speech-synthesize',data), cancel: () => call('speech-cancel') } });
     const $ = id => document.getElementById(id);
     const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
     const icon = name => `<i data-lucide="${name}" aria-hidden="true"></i>`;
@@ -10,7 +12,7 @@
     const labels = { games:'Oyunlar', widgets:'Widget’lar', media:'Video Stüdyosu', speech:'Sesli Yorumlar', downloads:'İndirmeler', settings:'Ayarlar' };
     const mb = bytes => bytes ? `${(bytes / 1048576).toFixed(1)} MB` : 'Boyut bekleniyor';
     function notify(text, error=false) { const node=$('workspaceNotice'); node.textContent=text; node.classList.toggle('error',error); node.hidden=false; clearTimeout(notify.timer); notify.timer=setTimeout(()=>{node.hidden=true;},6000); }
-    async function call(action,data) { const result=await api.workspace(action,data); if(result?.error) throw new Error(result.error); return result; }
+    async function call(action,data) { const result=await api.workspace(action,data); if(result?.error) throw Object.assign(new Error(result.error),{code:result.code}); return result; }
     async function refresh(remote=false) { state.data=await call(remote?'refresh':'snapshot'); render(); }
     const gameCategory = game => ['battle-royale','snow-war','zombie-war'].includes(game.id)?'minecraft':game.id==='gelene-gecene'?'steam':'web';
     const description = game => game.description || document.getElementById(gameKey(game.id)+'Card')?.querySelector('.game-desc')?.textContent || 'Canlı yayın oyunu';
@@ -68,6 +70,8 @@
         $('mediaSearch').addEventListener('input',event=>{state.mediaSearch=event.target.value;state.mediaPage=0;renderMediaLists();});
         body.querySelectorAll('[data-media-category]').forEach(button=>button.addEventListener('click',()=>{state.mediaCategory=button.dataset.mediaCategory;state.mediaPage=0;body.querySelectorAll('[data-media-category]').forEach(b=>b.setAttribute('aria-selected',b===button));renderMediaLists();}));
         renderMediaLists();
+        body.querySelector('.overlay-link').insertAdjacentHTML('beforeend','<div class="overlay-connection" id="mediaConnection" role="status"><span class="source-dot"></span><span>Yayın kaynağı kontrol ediliyor…</span></div>');
+        updateMediaConnection();
     }
     function renderMediaLists(){
         const query=state.mediaSearch.trim().toLocaleLowerCase('tr');
@@ -80,78 +84,60 @@
         let pagination=$('mediaPagination');if(!pagination){pagination=document.createElement('div');pagination.id='mediaPagination';pagination.className='media-pagination';$('mediaLibrary').after(pagination);}
         pagination.innerHTML=pages>1?`<button class="workspace-icon" data-media-page="${state.mediaPage-1}" ${state.mediaPage===0?'disabled':''} title="Önceki sayfa" aria-label="Önceki sayfa">${icon('chevron-left')}</button><span>${state.mediaPage+1} / ${pages}</span><button class="workspace-icon" data-media-page="${state.mediaPage+1}" ${state.mediaPage===pages-1?'disabled':''} title="Sonraki sayfa" aria-label="Sonraki sayfa">${icon('chevron-right')}</button>`:'';
         if($('remoteMediaLibrary'))$('remoteMediaLibrary').innerHTML=remoteMatches.map(item=>`<article class="media-row" data-remote-media-id="${esc(item.id)}"><div class="media-thumb">${icon('cloud-download')}</div><div class="media-info"><small>${esc(item.category||'Genel')}</small><h3>${esc(item.title)}</h3></div><button class="workspace-button" data-download-media="${esc(item.id)}">${icon('download')} Kütüphaneme ekle</button></article>`).join('')||`<p class="workspace-empty">${remote.length?'Bu filtrede yayımlanan medya bulunamadı.':'Yayımlanan video yok.'}</p>`;
+        $('mediaLibrary').querySelectorAll('[data-media-id]').forEach(tile=>{tile.dataset.hoverMedia=tile.dataset.mediaId;});
+        bindMediaHovers($('mediaLibrary'));
         window.lucide?.createIcons();
     }
+    async function updateMediaConnection(){
+        const node=$('mediaConnection'),gameId=state.game||'';if(!node)return;
+        try{const status=await call('media-status',{gameId});if(!node.isConnected)return;const count=Number(status.receivers)||0;node.classList.toggle('connected',count>0);node.querySelector('span:last-child').textContent=count?`${count} yayın kaynağı bağlı · ${status.configured||0} etkin eşleştirme`:'Yayın kaynağı bağlı değil';node.title=gameId&&status.activeGame!==gameId?'Hediye eylemleri bu oyun açıkken çalışır.':'Aynı bilgisayardaki OBS veya TikTok LIVE Studio bağlantısı';}catch{node.querySelector('span:last-child').textContent='Yayın kaynağı durumu alınamadı';}
+    }
     function renderSpeech(body) {
-        const t=state.speechDraft||state.data.tts;
-        body.innerHTML=`<form id="speechForm" class="settings-form"><div class="band-heading"><h2>Yorumları Seslendir</h2><label class="toggle-label"><input name="enabled" type="checkbox" ${t.enabled?'checked':''}> Açık</label></div><label>Ses<select name="voiceURI"><option value="">Otomatik Türkçe ses</option>${state.voices.map(v=>`<option value="${esc(v.voiceURI)}" ${v.voiceURI===t.voiceURI?'selected':''}>${esc(v.name)} (${esc(v.lang)})</option>`).join('')}</select></label><p class="muted">${state.voices.some(v=>v.lang.toLowerCase().startsWith('tr'))?'Türkçe sistem sesi bulundu.':'Türkçe sistem sesi bulunamadı. Windows dil ve konuşma ayarlarından Türkçe ses ekleyebilirsin.'}</p><div class="settings-columns"><label>Ses düzeyi <output id="speechVolume">${Math.round(t.volume*100)}%</output><input name="volume" type="range" min="0" max="1" step="0.01" value="${t.volume}"></label><label>Konuşma hızı<input name="rate" type="range" min="0.5" max="2" step="0.05" value="${t.rate}"></label><label>Ses tonu<input name="pitch" type="range" min="0.5" max="2" step="0.05" value="${t.pitch}"></label></div><div class="settings-columns"><label>En fazla karakter<input name="maxLength" type="number" min="20" max="500" value="${t.maxLength}"></label><label>Kişi başına bekleme (sn)<input name="cooldownSeconds" type="number" min="1" max="60" value="${t.cooldownSeconds}"></label></div><label class="toggle-label"><input name="names" type="checkbox" ${t.names?'checked':''}> Kullanıcı adını da oku</label><label>Okunmayacak kelimeler<textarea name="blockedWords" rows="3" placeholder="Virgülle ayır">${esc(t.blockedWords)}</textarea></label><div class="detail-commands"><button type="submit" class="workspace-button primary">${icon('check')} Kaydet</button><button type="button" class="workspace-button" data-action="speech-test">${icon('volume-2')} Sesi dene</button><button type="button" class="workspace-icon" data-action="speech-stop" title="Konuşmayı durdur" aria-label="Konuşmayı durdur">${icon('square')}</button></div><p id="speechStatus" class="muted" role="status">${state.queue.length} yorum sırada</p></form>`;
-        const form=$('speechForm'); form.elements.volume.addEventListener('input',()=>{$('speechVolume').textContent=Math.round(form.elements.volume.value*100)+'%';});
-        form.querySelector('label:has(select[name="voiceURI"])').insertAdjacentHTML('beforebegin',`<div class="settings-columns"><label>Kimlerin yorumları okunsun?<select name="audience">${[['all','Herkes'],['gift','Seçilen hediyeyi gönderenler'],['follow','Bu oturumda takip edenler'],['gift-or-follow','Hediye gönderen veya takip edenler']].map(([id,label])=>`<option value="${id}" ${t.audience===id?'selected':''}>${label}</option>`).join('')}</select></label><label>Okuma hakkı veren hediye<select name="giftId">${state.gifts.map(g=>`<option value="${esc(g.id)}" ${String(t.giftId||'7934')===String(g.id)?'selected':''}>${esc(g.name)} · ${g.coins} coin</option>`).join('')}</select></label></div><p class="muted">Haklar bu launcher oturumunda gelen hediye ve takip olaylarıyla açılır. Önceden takip edenlerin listesi alınamaz.</p><label>Ses profili<select name="voicePreset">${[['natural','Doğal'],['male','Erkek tarzı'],['female','Kadın tarzı'],['child','Çocuk tarzı'],['deep','Kalın anlatıcı']].map(([id,label])=>`<option value="${id}" ${(t.voicePreset||'natural')===id?'selected':''}>${label}</option>`).join('')}</select></label>`);
-        form.elements.audience.addEventListener('change',()=>{stopSpeech();});
-        trackDraft(form,'speechDraft');
-        updateSpeechVoiceOptions();
-        form.querySelector('[data-action="speech-test"]').disabled=!speechAvailable();
-        form.querySelector('[data-action="speech-stop"]').disabled=!speechAvailable();
-        updateSpeechStatus();
+        const t=state.speechDraft||state.data.tts,providers=state.speechCatalog?.providers||{};
+        body.innerHTML=`<form id="speechForm" class="settings-form"><div class="band-heading"><div><h2>Sesli Yorumlar</h2><span>Canlı yayındaki yorumlar</span></div><label class="toggle-label"><input name="enabled" type="checkbox" ${t.enabled?'checked':''}> Açık</label></div>
+        <div class="speech-providers"><span class="provider-tag ${providers.windows?.available?'ready':''}">Windows · Standart ses</span><span class="provider-tag ${providers.azure?.available?'ready':''}">Azure · ${providers.azure?.available?'Doğal sesler bağlı':providers.azure?.configured?'Bağlantı doğrulanamadı':'Hesap bağlı değil'}</span></div>
+        <div class="settings-columns"><label>Kimlerin yorumları okunsun?<select name="audience">${[['all','Herkes'],['gift','Seçilen hediyeyi gönderenler'],['follow','Bu oturumda takip edenler'],['gift-or-follow','Hediye gönderen veya takip edenler']].map(([id,label])=>`<option value="${id}" ${t.audience===id?'selected':''}>${label}</option>`).join('')}</select></label><label>Okuma hakkı veren hediye<select name="giftId">${state.gifts.map(g=>`<option value="${esc(g.id)}" ${String(t.giftId||'7934')===String(g.id)?'selected':''}>${esc(g.name)} · ${g.coins} coin</option>`).join('')}</select></label></div>
+        <p class="muted">Okuma hakkı bu oturumda gelen hediye ve takip olaylarıyla açılır. Önceden takip edenlerin listesi alınamaz.</p>
+        <div class="settings-columns"><label>Ses kaynağı<select name="provider"><option value="">Kullanılabilir tüm sesler</option><option value="windows">Windows · Standart</option><option value="azure">Azure · Doğal</option></select></label><label>Ses profili<select name="voicePreset">${[['natural','Tüm sesler'],['male','Erkek'],['female','Kadın'],['child','Çocuk']].map(([id,label])=>`<option value="${id}">${label}</option>`).join('')}</select></label></div>
+        <label>Konuşmacı<select name="voiceURI"></select></label><p id="speechAvailability" class="speech-availability" role="status"></p>
+        <div class="settings-columns"><label>Ses düzeyi <output id="speechVolume">${Math.round(t.volume*100)}%</output><input name="volume" type="range" min="0" max="1" step="0.01" value="${t.volume}"></label><label>Konuşma hızı<input name="rate" type="range" min="0.5" max="2" step="0.05" value="${t.rate}"></label></div>
+        <div class="settings-columns"><label>En fazla karakter<input name="maxLength" type="number" min="20" max="500" value="${t.maxLength}"></label><label>Kişi başına bekleme (sn)<input name="cooldownSeconds" type="number" min="1" max="60" value="${t.cooldownSeconds}"></label></div><label class="toggle-label"><input name="names" type="checkbox" ${t.names?'checked':''}> Kullanıcı adını da oku</label>
+        <label class="toggle-label"><input name="allowOfflineFallback" type="checkbox" ${t.allowOfflineFallback?'checked':''}> Doğal ses bağlantısı kesilirse aynı profildeki Windows sesine geç</label>
+        <label>Okunmayacak kelimeler<textarea name="blockedWords" rows="3" placeholder="Virgülle ayır">${esc(t.blockedWords)}</textarea></label>
+        <div class="detail-commands"><button type="submit" class="workspace-button primary">${icon('check')} Kaydet</button><button type="button" class="workspace-button" data-action="speech-test">${icon('volume-2')} Sesi dene</button><button type="button" class="workspace-icon" data-action="speech-stop" title="Konuşmayı durdur" aria-label="Konuşmayı durdur">${icon('square')}</button><button type="button" class="workspace-icon" data-action="speech-refresh" title="Sesleri yenile" aria-label="Sesleri yenile">${icon('refresh-cw')}</button></div><p id="speechStatus" class="muted" role="status"></p></form>
+        <details class="speech-account"><summary>Doğal ses hesabı</summary><p class="muted">Kadın ve erkek doğal sesler için kendi Azure Speech hesabını bağlayabilirsin. Ücretsiz kota ve kullanımla ilgili sınırları sağlayıcının hesabından kontrol et. Türkçe çocuk sesi şu anda bu sağlayıcıda sunulmuyor.</p><form id="speechAccountForm" class="settings-form"><div class="settings-columns"><label>Bölge<input name="region" placeholder="westeurope" autocomplete="off" required pattern="[a-z][a-z0-9]{1,40}"></label><label>Speech anahtarı<input name="key" type="password" autocomplete="off" placeholder="${providers.azure?.configured?'Kayıtlı anahtarı koru':'Kendi hesabının anahtarı'}"></label></div><div class="detail-commands"><button type="submit" class="workspace-button">${icon('link')} Hesabı bağla</button><button type="button" class="workspace-button" data-action="speech-clear">${icon('unlink')} Hesabı kaldır</button><button type="button" class="workspace-button" data-url="https://azure.microsoft.com/products/ai-services/ai-speech">${icon('external-link')} Azure Speech</button></div><p class="muted">Anahtar Windows tarafından şifrelenir. Yorum ve ses kayıtları burada arşivlenmez.</p></form></details>`;
+        const form=$('speechForm');
+        form.elements.provider.value=t.provider||'';form.elements.voicePreset.value=['natural','male','female','child'].includes(t.voicePreset)?t.voicePreset:'natural';
+        form.elements.volume.addEventListener('input',()=>{$('speechVolume').textContent=Math.round(form.elements.volume.value*100)+'%';});
+        for(const name of ['provider','voicePreset'])form.elements[name].addEventListener('change',()=>{stopSpeech();updateSpeechVoiceOptions(true);});
+        form.elements.audience.addEventListener('change',stopSpeech);trackDraft(form,'speechDraft');updateSpeechVoiceOptions();
         form.addEventListener('submit',event=>{event.preventDefault();act(async()=>{const submitted=formDraft(form);state.data=await call('tts',speechValues());if(JSON.stringify(state.speechDraft)===JSON.stringify(submitted))state.speechDraft=null;stopSpeech();notify('Ses ayarları kaydedildi.');});});
+        $('speechAccountForm').addEventListener('submit',event=>{event.preventDefault();const account=event.currentTarget,button=account.querySelector('[type="submit"]');button.disabled=true;act(async()=>{try{state.speechCatalog=await call('speech-configure',{region:account.elements.region.value,key:account.elements.key.value});account.elements.key.value='';state.voices=state.speechCatalog.voices||[];render();notify(state.speechCatalog.providers.azure?.available?'Doğal sesler bağlandı.':'Ses hesabı doğrulanamadı. Anahtar ve bölgeyi kontrol et.',!state.speechCatalog.providers.azure?.available);}finally{button.disabled=false;}});});
     }
     function formDraft(form){return Object.fromEntries([...form.elements].filter(field=>field.name).map(field=>[field.name,field.type==='checkbox'?field.checked:field.value]));}
     function trackDraft(form,key){const remember=()=>{state[key]=formDraft(form);};form.addEventListener('input',remember);form.addEventListener('change',remember);}
-    function speechValues(){const f=$('speechForm').elements;return {enabled:f.enabled.checked,names:f.names.checked,voiceURI:f.voiceURI.value,voicePreset:f.voicePreset.value,audience:f.audience.value,giftId:f.giftId.value,volume:Number(f.volume.value),rate:Number(f.rate.value),pitch:Number(f.pitch.value),maxLength:Number(f.maxLength.value),cooldownSeconds:Number(f.cooldownSeconds.value),blockedWords:f.blockedWords.value};}
-    function speechAvailable(){return typeof window.SpeechSynthesisUtterance==='function'&&typeof window.speechSynthesis?.speak==='function'&&typeof window.speechSynthesis?.cancel==='function';}
-    function updateSpeechStatus(){const status=$('speechStatus');if(status)status.textContent=speechAvailable()?state.queue.length+' yorum sırada':'Bu sistemde sesli okuma kullanılamıyor.';}
-    function updateSpeechVoiceOptions(){
-        const select=$('speechForm')?.elements.voiceURI;if(!select)return;
-        const selected=state.speechDraft?.voiceURI??state.data.tts.voiceURI;
-        select.innerHTML=`<option value="">Otomatik Türkçe ses</option>${state.voices.map(voice=>`<option value="${esc(voice.voiceURI)}">${esc(voice.name)} (${esc(voice.lang)})</option>`).join('')}${selected&&!state.voices.some(voice=>voice.voiceURI===selected)?`<option value="${esc(selected)}">Kayıtlı ses (şu anda kullanılamıyor)</option>`:''}`;
-        select.value=selected;
-        select.closest('label').nextElementSibling.textContent=state.voices.some(voice=>String(voice.lang).toLowerCase().startsWith('tr'))?'Türkçe sistem sesi bulundu.':'Türkçe sistem sesi bulunamadı. Windows dil ve konuşma ayarlarından Türkçe ses ekleyebilirsin.';
+    function speechValues(){const f=$('speechForm').elements;return {enabled:f.enabled.checked,names:f.names.checked,voiceURI:f.voiceURI.value,voicePreset:f.voicePreset.value,provider:f.provider.value,allowOfflineFallback:f.allowOfflineFallback.checked,audience:f.audience.value,giftId:f.giftId.value,volume:Number(f.volume.value),rate:Number(f.rate.value),pitch:1,maxLength:Number(f.maxLength.value),cooldownSeconds:Number(f.cooldownSeconds.value),blockedWords:f.blockedWords.value};}
+    function speechAvailable(){return Boolean(speechEngine&&state.voices.length);}
+    function updateSpeechStatus(){const status=$('speechStatus');if(status)status.textContent=state.speaking?'Konuşuyor…':state.queue.length+' yorum sırada';}
+    function updateSpeechVoiceOptions(reset=false){
+        const form=$('speechForm');if(!form)return;const f=form.elements,selected=reset?'':state.speechDraft?.voiceURI??state.data.tts.voiceURI,provider=f.provider.value,preset=f.voicePreset.value;
+        const voices=state.voices.filter(voice=>(!provider||voice.provider===provider)&&(preset==='natural'||preset==='child'?preset!=='child'||voice.age==='child':voice.gender===preset&&voice.age!=='child'));
+        f.voiceURI.innerHTML=`<option value="">${voices.length?'Otomatik seç':'Kullanılabilir ses yok'}</option>`+voices.map(voice=>`<option value="${esc(voice.voiceURI)}">${esc(voice.name)} · ${voice.neural?'Doğal':'Windows standart'} · ${voice.gender==='female'?'Kadın':voice.gender==='male'?'Erkek':'Ses'}</option>`).join('')+(selected&&!voices.some(voice=>voice.voiceURI===selected)?`<option value="${esc(selected)}" disabled>Kayıtlı ses kullanılamıyor</option>`:'');
+        f.voiceURI.value=selected;const available=voices.length>0&&(!selected||voices.some(voice=>voice.voiceURI===selected));
+        form.querySelector('[data-action="speech-test"]').disabled=!available;
+        const label=$('speechAvailability');label.classList.toggle('unavailable',!available);label.textContent=!state.speechCatalog?'Sesler kontrol ediliyor…':available?(voices.some(voice=>voice.neural)?'Doğal sesler hazır.':'Windows standart ses kalitesi. Doğal kadın/erkek sesleri için ses hesabını bağlayabilirsin.'):preset==='child'?'Türkçe çocuk sesi mevcut değil. Farklı bir profil seç.':'Bu profilde kullanılabilir Türkçe ses yok. Ses hesabını bağla veya farklı bir ses seç.';
+        updateSpeechStatus();
     }
-    function updateVoices(){try{state.voices=window.speechSynthesis?.getVoices?.()||[];}catch{state.voices=[];}updateSpeechVoiceOptions();}
-    function cancelSpeech(){try{window.speechSynthesis?.cancel?.();}catch{ /* A missing or shutting-down speech engine has nothing left to stop. */ }}
+    async function updateVoices(refresh=false){try{state.speechCatalog=await speechEngine?.listVoices({refresh});state.voices=state.speechCatalog?.voices||[];}catch{state.voices=[];}updateSpeechVoiceOptions();}
     function stopSpeech(){
-        state.speechGeneration++;
-        state.queue=[];
-        if(state.activeSpeech){state.activeSpeech.finished=true;clearTimeout(state.activeSpeech.timeout);}
-        state.activeSpeech=null;
-        state.speaking=false;
-        cancelSpeech();
-        updateSpeechStatus();
+        state.speechGeneration++;state.queue=[];state.activeSpeech=null;state.speaking=false;speechEngine?.stop();updateSpeechStatus();
     }
-    function speakNext(){
-        if(state.speaking||!state.queue.length)return;
-        if(!speechAvailable()){stopSpeech();return;}
-        const {text,settings}=state.queue.shift();
-        const generation=state.speechGeneration;
-        const active={finished:false,timeout:null,utterance:null};
-        state.activeSpeech=active;
-        state.speaking=true;
-        updateSpeechStatus();
-        // Invalidate completion before cancel: speech engines may fire error/end synchronously.
-        function finish(error,cancel=false){
-            if(active.finished||state.activeSpeech!==active||state.speechGeneration!==generation)return;
-            active.finished=true;
-            clearTimeout(active.timeout);
-            state.activeSpeech=null;
-            state.speaking=false;
-            if(cancel)cancelSpeech();
-            if(error)notify('Sistem sesi oynatılamadı. Bir ses seçip tekrar dene.',true);
-            updateSpeechStatus();
-            queueMicrotask(()=>{if(state.speechGeneration===generation)speakNext();});
-        }
-        try{
-            const utterance=active.utterance=new window.SpeechSynthesisUtterance(text);
-            const profile={natural:[1,1],male:[0.82,0.96],female:[1.25,1.02],child:[1.65,1.12],deep:[0.6,0.88]}[settings.voicePreset]||[1,1];
-            const gender=settings.voicePreset==='male'||settings.voicePreset==='deep'?/tolga|\b(male|david|mark|george)\b/i:settings.voicePreset==='female'||settings.voicePreset==='child'?/emel|\b(female|zira|hazel|susan)\b/i:null;
-            const turkish=state.voices.filter(v=>String(v.lang).toLowerCase().startsWith('tr'));
-            const voice=state.voices.find(v=>v.voiceURI===settings.voiceURI)||(gender&&turkish.find(v=>gender.test(v.name)))||turkish[0];
-            if(voice)utterance.voice=voice;
-            utterance.lang=voice?.lang||'tr-TR';utterance.volume=settings.volume;utterance.rate=Math.max(0.5,Math.min(2,settings.rate*profile[1]));utterance.pitch=Math.max(0.5,Math.min(2,settings.pitch*profile[0]));
-            utterance.onend=()=>finish(false);
-            utterance.onerror=event=>finish(!['canceled','interrupted'].includes(event?.error));
-            active.timeout=setTimeout(()=>finish(true,true),30000);
-            window.speechSynthesis.speak(utterance);
-        }catch{finish(true,true);}
+    async function speakNext(){
+        if(state.speaking||!state.queue.length)return;if(!speechAvailable()){stopSpeech();return;}
+        const {text,settings}=state.queue.shift(),generation=state.speechGeneration;state.speaking=true;updateSpeechStatus();
+        try{const result=await speechEngine.speak(text,settings);if(generation!==state.speechGeneration)return;if(result.fallbackUsed)notify('Doğal ses bağlantısı kesildi; '+result.voice.name+' kullanıldı.');}
+        catch(error){if(generation!==state.speechGeneration)return;if(error.code!=='SPEECH_CANCELLED'){notify(error.message||'Ses oynatılamadı.',true);state.queue=[];}}
+        finally{if(generation===state.speechGeneration){state.speaking=false;updateSpeechStatus();queueMicrotask(speakNext);}}
     }
     function chat(payload){const t=state.data?.tts;if(!t?.enabled||!speechAvailable())return;const name=String(payload.username||payload.uniqueId||'izleyici');let message=String(payload.message||payload.comment||'').replace(/https?:\/\/\S+/gi,'').trim();if(!message||message.startsWith('!'))return;const blocked=String(t.blockedWords||'').split(',').map(x=>x.trim().toLocaleLowerCase('tr')).filter(Boolean);if(blocked.some(word=>message.toLocaleLowerCase('tr').includes(word)))return;const last=state.lastUsers.get(name)||0;if(Date.now()-last<t.cooldownSeconds*1000)return;state.lastUsers.set(name,Date.now());if(state.lastUsers.size>1000)state.lastUsers.delete(state.lastUsers.keys().next().value);if(state.queue.length>=20)return;state.queue.push({text:(t.names?name+': ':'')+message.slice(0,t.maxLength),settings:{...t}});speakNext();updateSpeechStatus();}
     function renderWidgets(body){
@@ -165,7 +151,10 @@
         if(preview&&typeof window.widgetOnIzlemeUrl==='function')return window.widgetOnIzlemeUrl(raw,item.id);
         return window.widgetOzellestirilmisUrl?.(raw,item.id)||raw;
     }
-    function renderDownloads(body){body.innerHTML=`<div class="band-heading"><h2>İndirme Kuyruğu</h2></div>${[...state.progress].map(([id])=>`<section class="download-row"><h3>${esc(state.data.games.find(g=>g.id===id)?.ad||'Medya')}</h3>${progressMarkup(id)}<button class="workspace-button" data-cancel="${esc(id)}">${icon('pause')} Durdur</button></section>`).join('')||'<p class="workspace-empty">Etkin indirme yok.</p>'}`;}
+    function renderDownloads(body){
+        const installed=state.data.games.filter(game=>game.installed);
+        body.innerHTML=`<div class="band-heading"><div><h2>İndirmeler ve Kurulu Oyunlar</h2><span>${state.progress.size} işlem · ${installed.length} kurulu oyun</span></div></div>${[...state.progress].map(([id])=>`<section class="download-row"><h3>${esc(state.data.games.find(g=>g.id===id)?.ad||'Medya')}</h3>${progressMarkup(id)}<button class="workspace-button" data-cancel="${esc(id)}">${icon('pause')} Durdur</button></section>`).join('')||'<p class="download-idle">Şu anda indirme yapılmıyor.</p>'}<section class="detail-band"><h2>Kurulu Oyunlar</h2><div class="installed-list">${installed.map(game=>`<article><img src="assets/game-covers/${covers[game.id]}.png" alt=""><div><strong>${esc(game.ad)}</strong><small>${esc(game.installedVersion||'Kurulu')}${game.updateAvailable?' · Güncelleme var':''}</small></div><button class="workspace-button" data-open="${esc(game.id)}">${icon('arrow-up-right')} Gir</button></article>`).join('')||'<p class="workspace-empty">Henüz oyun kurulmadı.</p>'}</div></section>`;
+    }
     function renderSettings(body){
         const draft=state.sourceDraft||{source:state.data.source,endpoint:state.data.tikfinityUrl};
         body.innerHTML=`<section class="connection-settings"><div class="band-heading"><h2>Yayın Hesabı</h2><button class="workspace-button primary" data-action="widget-connect">${icon('radio')} Hesabı yönet</button></div><p id="settingsConnectionStatus" role="status">${esc(state.widgetInfo?.liveStatus?.message||'Yayın bağlantısı kapalı.')}</p></section><details class="connection-advanced"><summary>Gelişmiş bağlantı</summary><form id="sourceForm" class="settings-form"><label>Yayın bağlantısı<select name="source"><option value="direct">TikMnG bağlantısı</option><option value="tikfinity">TikFinity genel bağlantı</option></select></label><label>Yerel köprü adresi<input name="endpoint" value="${esc(draft.endpoint)}" placeholder="ws://127.0.0.1:21213/"></label><button class="workspace-button" type="submit">${icon('check')} Kaydet</button></form></details><section class="detail-band"><h2>Depolama</h2><div class="storage-row"><div><strong>Oyun klasörü</strong><p>${esc(state.data.libraryRoot)}</p></div><button class="workspace-button" data-folder="games">${icon('folder')} Değiştir</button></div><div class="storage-row"><div><strong>Medya klasörü</strong><p>${esc(state.data.mediaRoot)}</p></div><button class="workspace-button" data-folder="media">${icon('folder')} Değiştir</button></div></section><section class="detail-band"><h2>İçerik ve Uygulama</h2><p class="muted">İçerik kataloğu: ${esc(state.data.catalogRevision||'Yerel katalog')}${state.data.catalogError?' · '+esc(state.data.catalogError):''}</p><div class="detail-commands"><button class="workspace-button" data-action="refresh">${icon('refresh-cw')} İçerikleri yenile</button><button class="workspace-button" data-action="update">${icon('download-cloud')} Uygulama güncellemesini kontrol et</button><button class="workspace-button" data-action="license">${icon('key-round')} Lisans</button></div></section>`;
@@ -190,11 +179,29 @@
         $('trimSelection').textContent=`${stamp(start)} – ${stamp(end)}`;$('trimDuration').textContent=state.mediaDuration?stamp(state.mediaDuration):'Süre bekleniyor';
         previewTrim();
     }
+    function bindMediaHovers(root){
+        root.querySelectorAll('[data-hover-media]').forEach(tile=>{
+            const frame=tile.querySelector('iframe'),item=state.data.media.find(record=>record.id===tile.dataset.hoverMedia);if(!frame||!item||item.kind!=='video')return;
+            const start=()=>{frame.src=mediaPreviewUrl(item,'hover');};
+            const stop=()=>{frame.src=mediaPreviewUrl(item,'poster');};
+            tile.addEventListener('pointerenter',start);tile.addEventListener('pointerleave',stop);
+            tile.addEventListener('focusin',start);tile.addEventListener('focusout',stop);
+        });
+    }
     async function openMediaLibrary(){
         const dialog=$('mediaAssetPicker');
-        dialog.innerHTML=`<header><h2>Medya Kütüphanesi</h2><button class="workspace-icon" data-action="close-assets" title="Kapat" aria-label="Kapat">${icon('x')}</button></header><label class="workspace-search">${icon('search')}<input id="assetSearch" type="search" placeholder="Medya ara" aria-label="Kütüphanede medya ara"></label><div id="assetChoices" class="asset-choice-list"></div><div class="detail-commands"><button class="workspace-button" data-action="asset-import">${icon('import')} Dosyadan ekle</button><button class="workspace-button" data-action="asset-url">${icon('link')} URL ekle</button></div>`;
-        const draw=()=>{const q=$('assetSearch').value.toLocaleLowerCase('tr');const list=state.data.media.filter(item=>!item.gameId&&[item.title,item.category].join(' ').toLocaleLowerCase('tr').includes(q));$('assetChoices').innerHTML=list.slice(0,80).map(item=>`<button class="asset-choice" data-asset="${esc(item.id)}">${icon(item.kind==='audio'?'audio-lines':item.kind==='image'?'image':'clapperboard')}<span><strong>${esc(item.title)}</strong><small>${esc(item.category||'Genel')}</small></span>${icon('plus')}</button>`).join('')||'<p class="workspace-empty">Medya bulunamadı.</p>';window.lucide?.createIcons();};
-        $('assetSearch').addEventListener('input',draw);draw();dialog.showModal();$('assetSearch').focus();
+        const assets=(state.data.media||[]).filter(item=>!item.gameId),categories=[...new Set(assets.map(item=>item.category||'Genel'))].sort((a,b)=>a.localeCompare(b,'tr'));
+        let selected='',page=0;
+        dialog.innerHTML=`<header><div><small class="muted">${esc(state.data.games.find(g=>g.id===state.game)?.ad||'Yayın medyası')}</small><h2>Medya Kütüphanesi</h2></div><button class="workspace-icon" data-action="close-assets" title="Kapat" aria-label="Kapat">${icon('x')}</button></header><div class="asset-toolbar"><label class="workspace-search">${icon('search')}<input id="assetSearch" type="search" placeholder="Video, ses veya görsel ara" aria-label="Kütüphanede medya ara"></label><span id="assetCount" role="status"></span><button class="workspace-button" data-action="asset-import">${icon('import')} Dosyadan ekle</button><button class="workspace-button" data-action="asset-url">${icon('link')} URL ekle</button></div><div id="assetCategories" class="library-tabs media-category-tabs" role="tablist" aria-label="Kütüphane kategorileri">${['',...categories].map(c=>`<button data-asset-category="${esc(c)}" role="tab" aria-selected="${!c}">${esc(c||'Tümü')}</button>`).join('')}</div><div id="assetChoices" class="asset-choice-list"></div><div id="assetPages" class="media-pagination"></div>`;
+        const draw=()=>{
+            const q=$('assetSearch').value.toLocaleLowerCase('tr'),list=assets.filter(item=>(!selected||(item.category||'Genel')===selected)&&[item.title,item.category].join(' ').toLocaleLowerCase('tr').includes(q)),pages=Math.max(1,Math.ceil(list.length/24));page=Math.min(page,pages-1);
+            $('assetCount').textContent=`${list.length} medya`;
+            $('assetChoices').innerHTML=list.slice(page*24,page*24+24).map(item=>`<button class="asset-choice" data-asset="${esc(item.id)}" data-hover-media="${esc(item.id)}"><span class="asset-poster">${item.kind==='audio'?icon('audio-lines'):`<iframe loading="lazy" tabindex="-1" title="${esc(item.title)} ön izlemesi" src="${esc(mediaPreviewUrl(item,'poster'))}" allow="autoplay"></iframe>`}<span class="asset-play">${icon('play')}</span></span><span class="asset-title"><strong>${esc(item.title)}</strong><small>${esc(item.category||'Genel')} · ${item.kind==='audio'?'Ses':item.kind==='image'?'GIF / Görsel':'Video'}</small></span><span class="asset-add">${icon('plus')}</span></button>`).join('')||'<p class="workspace-empty">Medya bulunamadı.</p>';
+            $('assetPages').innerHTML=pages>1?`<button class="workspace-icon" data-asset-page="${page-1}" ${page===0?'disabled':''} title="Önceki sayfa" aria-label="Önceki sayfa">${icon('chevron-left')}</button><span>${page+1} / ${pages}</span><button class="workspace-icon" data-asset-page="${page+1}" ${page===pages-1?'disabled':''} title="Sonraki sayfa" aria-label="Sonraki sayfa">${icon('chevron-right')}</button>`:'';
+            bindMediaHovers($('assetChoices'));window.lucide?.createIcons();
+        };
+        dialog.onclick=event=>{const category=event.target.closest('[data-asset-category]'),pager=event.target.closest('[data-asset-page]');if(category){selected=category.dataset.assetCategory;page=0;dialog.querySelectorAll('[data-asset-category]').forEach(b=>b.setAttribute('aria-selected',b===category));draw();}if(pager){page=Number(pager.dataset.assetPage);draw();}};
+        $('assetSearch').addEventListener('input',()=>{page=0;draw();});draw();dialog.showModal();$('assetSearch').focus();
     }
     function giftMarkup(id){const gift=state.gifts.find(g=>String(g.id)===String(id));return gift?`<img src="${esc(gift.image)}" alt=""><span>${esc(gift.name)} · ${esc(gift.coins)} coin</span>`:`<span>${id?'Hediye #'+esc(id):'Hediye seçilmedi'}</span>`;}
     function openGiftPicker(){
@@ -220,7 +227,7 @@
         const f=form.elements,buttons=[...form.querySelectorAll('footer button')];buttons.forEach(button=>button.disabled=true);
         try{
             const item=state.media;state.data=await call('media-save',{...item,title:f.title.value,category:f.category.value,trigger:'gift',giftId:f.giftId.value,startSeconds:Number(f.startSeconds.value),endSeconds:Number(f.endSeconds.value)||null,volume:Number(f.volume.value),cooldownSeconds:Number(f.cooldownSeconds.value),enabled:f.enabled.checked,playLimit:Number(f.playLimit.value),displaySeconds:Number(f.displaySeconds.value),interrupt:f.interrupt.checked,fade:f.fade.checked,combineGifts:f.combineGifts.checked,...(f.url?{url:f.url.value,kind:f.kind.value}:{})});
-            if(test){state.media=state.data.media.find(record=>record.id===item.id);await call('media-test',{id:item.id});notify('Eşleştirme kaydedildi ve video testi gönderildi.');}
+            if(test){state.media=state.data.media.find(record=>record.id===item.id);const result=await call('media-test',{id:item.id});notify(result.receivers>0?'Test bağlı yayın kaynağına gönderildi.':'Ön izleme testi gönderildi. OBS / TikTok yayın kaynağı henüz bağlı değil.');}
             else{$('mediaEditor').close();render();notify('Video eşleştirmesi kaydedildi.');}
         }catch(error){$('mediaEditorError').textContent=error.message;}finally{buttons.forEach(button=>button.disabled=false);}
     }
@@ -246,6 +253,8 @@
         if(el.dataset.deleteMedia){if(confirm('Bu medya eşleştirmesi kaldırılsın mı?')){state.data=await call('media-remove',{id:el.dataset.deleteMedia});render();}return;}
         if(el.dataset.downloadMedia){el.disabled=true;try{state.data=await call('media-remote',{id:el.dataset.downloadMedia});render();}finally{el.disabled=false;}return;}
         if(el.dataset.widget){await window.widgetAyarlariDogrudanAc?.(el.dataset.widget);return;}
+        if(el.dataset.action==='speech-refresh'){el.disabled=true;try{await updateVoices(true);render();}finally{el.disabled=false;}return;}
+        if(el.dataset.action==='speech-clear'){stopSpeech();state.speechCatalog=await call('speech-configure',{clear:true});state.voices=state.speechCatalog.voices||[];render();return;}
         switch(el.dataset.action){case'media-library':await openMediaLibrary();break;case'close-assets':$('mediaAssetPicker').close();break;case'asset-import':$('mediaAssetPicker').close();await importMedia();break;case'asset-url':$('mediaAssetPicker').close();await editMedia(null);break;case'preview-clip':previewTrim(true);break;case'choose-gift':openGiftPicker();break;case'close-gifts':$('giftPicker').close();break;case'editor-test':await saveMediaEditor(true);break;case'refresh':await refresh(true);notify(state.data.catalogError||'İçerikler güncellendi.',Boolean(state.data.catalogError));break;case'media-import':await importMedia();break;case'media-folder':state.data=await call('media-folder');render();break;case'media-new':await editMedia(null);break;case'close-media':$('mediaEditor').close();$('mediaEditor').replaceChildren();break;case'widget-connect':window.tiktokHesapPanelAc();break;case'update':await window.guncellemeKontrolEt();break;case'license':window.yeniLisansGir();break;case'speech-stop':stopSpeech();break;case'speech-test':stopSpeech();state.queue.push({text:'Merhaba! TikMNG sesli yorum sistemi hazır.',settings:speechValues()});speakNext();break;}
     });}
     document.addEventListener('DOMContentLoaded',()=>{
@@ -257,7 +266,8 @@
         window.addEventListener('message',event=>{const frame=$('mediaEditor')?.querySelector('iframe');const data=event.data;if(!frame||event.source!==frame.contentWindow||event.origin!==new URL(frame.src).origin||data?.type!=='tikmng-media-metadata'||data.id!==state.media?.id)return;const duration=Number(data.duration);if(!Number.isFinite(duration)||duration<=0||duration>86400||duration===state.mediaDuration)return;state.mediaDuration=duration;const end=$('mediaEditorForm').elements.endSeconds;if(!Number(end.value))end.value=duration.toFixed(1);updateTrim();});
         $('mediaEditor').addEventListener('close',event=>{if(!event.target.open){event.target.replaceChildren();state.media=null;}});
         $('giftPicker').addEventListener('close',event=>event.target.replaceChildren());
-        updateVoices();window.speechSynthesis?.addEventListener?.('voiceschanged',updateVoices);
+        $('mediaAssetPicker').addEventListener('close',event=>{event.target.onclick=null;event.target.replaceChildren();});
+        updateVoices();
         window.addEventListener('pagehide',stopSpeech,{once:true});
         api.workspaceListen('progress',p=>{if(['complete','error','cancelled'].includes(p.phase))state.progress.delete(p.oyun);else state.progress.set(p.oyun,p);if(state.game===p.oyun&&$('detailProgress'))$('detailProgress').innerHTML=progressMarkup(p.oyun);else if(state.view==='downloads')render();});
         api.workspaceListen('catalog',()=>{act(()=>refresh());});api.workspaceListen('chat',chat);
@@ -265,6 +275,6 @@
         api.orbitHediyeKatalogu().then(gifts=>{state.gifts=gifts||[];if(state.view==='media'&&state.data)renderMediaLists();}).catch(()=>{});
         let activeChannel;
         const connection=async()=>{try{const info=await api.widgetBilgisi();state.widgetInfo=info;const status=info.liveStatus||{};const label=$('workspaceLive');label.className='live-label '+(status.status||'disconnected');label.textContent=(status.status==='connected'?'Canlı · @':status.status==='connecting'?'Bağlanıyor · @':'Yayın kapalı')+(status.status==='connected'||status.status==='connecting'?(status.username||info.channel):'');if(activeChannel!==undefined&&activeChannel!==info.channel){stopSpeech();state.lastUsers.clear();await refresh();}activeChannel=info.channel;}catch{}};
-        connection();const connectionTimer=setInterval(connection,5000);window.addEventListener('pagehide',()=>clearInterval(connectionTimer),{once:true});
+        connection();const connectionTimer=setInterval(()=>{connection();updateMediaConnection();},5000);window.addEventListener('pagehide',()=>clearInterval(connectionTimer),{once:true});
     });
 })();

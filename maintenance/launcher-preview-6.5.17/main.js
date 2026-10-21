@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, shell, dialog, protocol } = require("electron");
+const { app, BrowserWindow, ipcMain, shell, dialog, protocol, safeStorage } = require("electron");
 const path = require("path");
 const { spawn } = require("child_process");
 const fs = require("fs");
@@ -164,11 +164,11 @@ function widgetErisimAnahtariniBul() {
 
 const WIDGET_ACCESS_KEY = widgetErisimAnahtariniBul();
 
-function widgetYerelUrl(pathname, hostname = "localhost", channel = widgetChannel) {
+function widgetYerelUrl(pathname, hostname = "127.0.0.1", channel = widgetChannel) {
     return `http://${hostname}:${WIDGET_PORT}${pathname}?key=${WIDGET_ACCESS_KEY}&channel=${encodeURIComponent(widgetKanaliniTemizle(channel))}`;
 }
 
-function widgetKatmanUrl(type, hostname = "localhost", channel = widgetChannel) {
+function widgetKatmanUrl(type, hostname = "127.0.0.1", channel = widgetChannel) {
     const url = new URL(widgetYerelUrl("/widget-overlay.html", hostname, channel));
     url.searchParams.set("type", String(type || "myactions"));
     return url.href;
@@ -569,8 +569,9 @@ function widgetSunucusunuBaslat() {
         if (req.method === "OPTIONS") { res.writeHead(204); return res.end(); }
         const requestUrl = new URL(req.url, `http://127.0.0.1:${WIDGET_PORT}`);
         const p = requestUrl.pathname;
+        const isReadRequest = req.method === "GET" || req.method === "HEAD";
         if (platform?.handleRequest(req, res, requestUrl)) return;
-        if (req.method === 'GET' && ['/widget/vendor/matter.js', '/widget/physical-jar.js'].includes(p)) {
+        if (isReadRequest && ['/widget/vendor/matter.js', '/widget/physical-jar.js'].includes(p)) {
             const file = path.join(__dirname, 'renderer', 'widgets', p.endsWith('matter.js') ? 'vendor/matter.js' : 'physical-jar.js');
             res.writeHead(200, { 'Content-Type': 'text/javascript; charset=utf-8' });
             return fs.createReadStream(file).pipe(res);
@@ -580,7 +581,7 @@ function widgetSunucusunuBaslat() {
             refererChannel = new URL(String(req.headers.referer || ""), `http://127.0.0.1:${WIDGET_PORT}`).searchParams.get("channel") || "";
         } catch {}
         const requestedChannel = widgetKanaliniTemizle(requestUrl.searchParams.get("channel") || refererChannel || widgetChannel);
-        const protectedWidgetRequest = req.method === "GET" && (
+        const protectedWidgetRequest = isReadRequest && (
             p.startsWith("/widget/") ||
             p.startsWith("/widget-") ||
             p.startsWith("/api/widget/")
@@ -589,66 +590,66 @@ function widgetSunucusunuBaslat() {
             res.writeHead(403, { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-store" });
             return res.end("Bu widget baglantisi bu kuruluma ait degil.");
         }
-        if (req.method === "GET" && (p === "/widget/top-gift" || p === "/widget-top-gift.html" || p === "/widget/top-gift.html")) {
+        if (isReadRequest && (p === "/widget/top-gift" || p === "/widget-top-gift.html" || p === "/widget/top-gift.html")) {
             const file = path.join(__dirname, "renderer", "widgets", "top-gift.html");
             res.writeHead(200, { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store" });
             return res.end(fs.readFileSync(file));
         }
-        if (req.method === "GET" && (p === "/widget/top-gift/state" || p === "/api/widget/top-gift/state")) {
+        if (isReadRequest && (p === "/widget/top-gift/state" || p === "/api/widget/top-gift/state")) {
             res.writeHead(200, { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" });
             return res.end(JSON.stringify(widgetDurumu(widgetKanalHavuzu("widget_top_gifts", requestedChannel, widgetPool))));
         }
-        if (req.method === "GET" && (p === "/widget/top-likes" || p === "/widget-top-likes.html" || p === "/widget/top-likes.html")) {
+        if (isReadRequest && (p === "/widget/top-likes" || p === "/widget-top-likes.html" || p === "/widget/top-likes.html")) {
             const file = path.join(__dirname, "renderer", "widgets", "top-likes.html");
             res.writeHead(200, { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store" });
             return res.end(fs.readFileSync(file));
         }
-        if (req.method === "GET" && (p === "/widget/top-likes/state" || p === "/api/widget/top-likes/state")) {
+        if (isReadRequest && (p === "/widget/top-likes/state" || p === "/api/widget/top-likes/state")) {
             res.writeHead(200, { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" });
             return res.end(JSON.stringify(widgetBegeniDurumu(widgetKanalHavuzu("widget_top_likes", requestedChannel, widgetLikePool))));
         }
-        if (req.method === "GET" && (p === "/widget/leaderboard" || p === "/widget-leaderboard.html" || p === "/widget/leaderboard.html")) {
+        if (isReadRequest && (p === "/widget/leaderboard" || p === "/widget-leaderboard.html" || p === "/widget/leaderboard.html")) {
             const file = path.join(__dirname, "renderer", "widgets", "leaderboard.html");
             res.writeHead(200, { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store" });
             return res.end(fs.readFileSync(file));
         }
-        if (req.method === "GET" && (p === "/widget/leaderboard/state" || p === "/api/widget/leaderboard/state")) {
+        if (isReadRequest && (p === "/widget/leaderboard/state" || p === "/api/widget/leaderboard/state")) {
             res.writeHead(200, { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" });
             return res.end(JSON.stringify(widgetLeaderboardDurumu(widgetKanalHavuzu("widget_leaderboard", requestedChannel, widgetLeaderboardPool))));
         }
-        if (req.method === "GET" && (p === "/widget/gift-feed" || p === "/widget-gift-feed.html" || p === "/widget/gift-feed.html")) {
+        if (isReadRequest && (p === "/widget/gift-feed" || p === "/widget-gift-feed.html" || p === "/widget/gift-feed.html")) {
             const file = path.join(__dirname, "renderer", "widgets", "gift-feed.html");
             res.writeHead(200, { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store" });
             return res.end(fs.readFileSync(file));
         }
-        if (req.method === "GET" && (p === "/widget/activity" || p === "/widget-activity.html" || p === "/widget/activity.html")) {
+        if (isReadRequest && (p === "/widget/activity" || p === "/widget-activity.html" || p === "/widget/activity.html")) {
             const file = path.join(__dirname, "renderer", "widgets", "activity.html");
             res.writeHead(200, { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store" });
             return res.end(fs.readFileSync(file));
         }
-        if (req.method === "GET" && (p === "/widget/activity/state" || p === "/api/widget/activity/state")) {
+        if (isReadRequest && (p === "/widget/activity/state" || p === "/api/widget/activity/state")) {
             const pool = widgetKanalHavuzu("widget_activity", requestedChannel, widgetActivityPool);
             res.writeHead(200, { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" });
             return res.end(JSON.stringify(widgetEtkinlikDurumu(Array.isArray(pool) ? pool : [])));
         }
-        if (req.method === "GET" && (p === "/widget/overlay" || p === "/widget-overlay.html" || p === "/widget/overlay.html")) {
+        if (isReadRequest && (p === "/widget/overlay" || p === "/widget-overlay.html" || p === "/widget/overlay.html")) {
             const file = path.join(__dirname, "renderer", "widgets", "overlay.html");
             res.writeHead(200, { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store" });
             return res.end(fs.readFileSync(file));
         }
-        if (req.method === "GET" && p === "/assets/widgets/glass-gift-jar.png") {
+        if (isReadRequest && p === "/assets/widgets/glass-gift-jar.png") {
             const file = path.join(__dirname, "renderer", "assets", "widgets", "glass-gift-jar.png");
             if (!fs.existsSync(file)) { res.writeHead(404); return res.end("not found"); }
             res.writeHead(200, { "Content-Type": "image/png", "Cache-Control": "public, max-age=86400" });
             return fs.createReadStream(file).pipe(res);
         }
-        if (req.method === "GET" && (p === "/widget/state" || p === "/api/widget/state")) {
+        if (isReadRequest && (p === "/widget/state" || p === "/api/widget/state")) {
             res.writeHead(200, { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" });
             const state = widgetBirlesikDurum(requestedChannel);
             if (requestUrl.searchParams.get("type") !== "coinjar") state.jarGifts = [];
             return res.end(JSON.stringify(state));
         }
-        if (req.method === "GET" && requestUrl.pathname.startsWith("/widget/gift-assets/")) {
+        if (isReadRequest && requestUrl.pathname.startsWith("/widget/gift-assets/")) {
             const fileName = path.basename(decodeURIComponent(requestUrl.pathname.split("/").pop() || ""));
             const root = widgetGiftCatalogCache?.root || path.join(__dirname, "renderer", "gift-assets");
             const file = path.join(root, fileName);
@@ -2766,6 +2767,7 @@ app.whenReady().then(() => {
     appUpdates = require('./lib/app-updates.cjs').createAppUpdates({ app, notify: (name, data) => mainWindow?.webContents.send(name, data) });
     platform = require('./lib/platform.cjs').createPlatform({
         app, ipcMain, store, dialog, definitions: OYUN_TANIMLARI, getWindow: () => mainWindow,
+        speechCredentials: require('./lib/speech-credentials.cjs').createSpeechCredentials({ store, safeStorage }),
         serverURL: lisansSunucuUrlBul, accessKey: WIDGET_ACCESS_KEY, port: WIDGET_PORT,
         getChannel: () => widgetChannel, getActiveGame: () => aktifOyun || '', event: widgetGenelOlayEkle,
         profile: widgetTikTokProfiliniOku, gift: widgetTikTokHediyesiniOku,

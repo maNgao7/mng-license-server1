@@ -139,6 +139,7 @@ function createMediaStudio({ store, root, accessKey, getChannel = () => 'varsayi
     const mediaRoot = path.resolve(root);
     const keyHash = crypto.createHash('sha256').update(accessKey).digest();
     const clients = new Set();
+    const deliveryHistory = [];
     const listeners = new Set();
     const recent = new Map();
     const cooldowns = new Map();
@@ -301,7 +302,9 @@ function createMediaStudio({ store, root, accessKey, getChannel = () => 'varsayi
     function emit(item, trigger, isTest = false) {
         const event = { type: 'studio:play', id: crypto.randomUUID(), channel: item.channel,
             createdAt: Date.now(), test: isTest, item: publicItem(item), trigger };
-        const frame = `event: studio:play\ndata: ${JSON.stringify(event)}\n\n`;
+        const frame = `event: studio:play\nid: ${event.id}\ndata: ${JSON.stringify(event)}\n\n`;
+        deliveryHistory.push({ event, frame });
+        while (deliveryHistory.length > 256 || deliveryHistory[0]?.event.createdAt < Date.now() - 90000) deliveryHistory.shift();
         for (const client of clients) {
             if (client.channel === item.channel && client.gameId === item.gameId && (!client.itemId || client.itemId === item.id)) write(client, frame);
         }
@@ -316,6 +319,13 @@ function createMediaStudio({ store, root, accessKey, getChannel = () => 'varsayi
     function test(id) {
         assertOpen();
         return emit(requireItem(id), { type: 'test', eventId: '', giftId: '', count: 1 }, true);
+    }
+    function status(gameId = '', itemId = '') {
+        const channel = currentChannel();
+        const scoped = [...clients].filter(client => client.channel === channel && client.gameId === gameId && (!itemId || !client.itemId || client.itemId === itemId));
+        return { receivers: scoped.filter(client => !client.preview).length, previews: scoped.filter(client => client.preview).length,
+            configured: items.filter(item => item.channel === channel && item.gameId === gameId && active(item)).length,
+            gameId, activeGame: getActiveGame() || '' };
     }
     function ingest(type, payload = {}, channel = currentChannel()) {
         assertOpen();
@@ -465,12 +475,19 @@ function createMediaStudio({ store, root, accessKey, getChannel = () => 'varsayi
             if (clients.size >= LIMITS.clients) { reply(req, res, 503, 'text/plain; charset=utf-8', 'Too many media clients'); return true; }
             res.writeHead(200, { 'Content-Type': 'text/event-stream; charset=utf-8', Connection: 'keep-alive', 'X-Accel-Buffering': 'no' });
             res.flushHeaders?.();
-            const client = { res, channel, itemId, gameId };
+            const client = { res, channel, itemId, gameId, preview: url.searchParams.get('preview') === '1' };
             clients.add(client);
             res.once('close', () => clients.delete(client));
             res.once('error', () => disconnect(client));
             req.socket?.setTimeout(0);
             write(client, ': connected\nretry: 2000\n\n');
+            // EventSource reconnects carry the last received id; never replay old gifts on a new source.
+            const lastId = req.headers['last-event-id'];
+            const previous = deliveryHistory.findIndex(entry => entry.event.id === lastId);
+            if (previous >= 0) for (const entry of deliveryHistory.slice(previous + 1)) {
+                const event = entry.event;
+                if (event.createdAt >= Date.now() - 90000 && event.channel === channel && event.item.gameId === gameId && (!itemId || event.item.id === itemId)) write(client, entry.frame);
+            }
             return true;
         }
         const itemId = route ? route.slice(1) : '';
@@ -501,8 +518,9 @@ function createMediaStudio({ store, root, accessKey, getChannel = () => 'varsayi
         clearInterval(heartbeat);
         for (const client of clients) disconnect(client);
         listeners.clear(); recent.clear(); cooldowns.clear(); remainders.clear(); playCounts.clear();
+        deliveryHistory.length = 0;
     }
-    return { list, importFiles, save, duplicate, remove, ingest, test, handleRequest, addListener, close };
+    return { list, importFiles, save, duplicate, remove, ingest, test, status, handleRequest, addListener, close };
 }
 
 module.exports = { createMediaStudio };

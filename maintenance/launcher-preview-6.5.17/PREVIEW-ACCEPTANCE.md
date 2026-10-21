@@ -21,7 +21,18 @@ This is a local test build, not a published stable update.
   limits, fade and image/GIF support. Existing global mappings remain intact.
 - Username/license entry: server validation still required, account saved and
   connection attempted only after successful activation. Three responsive widths.
-- Five system-voice profiles; actual base voices depend on Windows installation.
+- Actual installed Turkish voice selection; unavailable female/child profiles
+  cannot silently become the same male voice with a different pitch.
+- Optional authenticated Azure neural TTS using the account's actual voice
+  catalog. Keys stay in the main process, protected by Windows encryption.
+  No provider key is bundled and no real Azure request was tested.
+- Numeric loopback overlay URLs replace the rejected branded .localhost links.
+  Media source diagnostics distinguish broadcast receivers from editor previews.
+- Bounded, channel/game-scoped SSE reconnect recovery for missed recent events.
+- Large visual media selector with category tabs, muted hover playback and fixed
+  16:9 previews. Twenty-four mounted cards must scroll, never shrink into strips.
+- Content refresh preserves valid cached/bundled catalogs on server errors,
+  validates manifests, and accurately reports the still-missing live deployment.
 - TTS eligibility: selected gift or follow events observed during this session,
   with account/channel isolation. Historic follower lists are not available.
 - Unified launcher launch indicator; readiness waits and owned-process cleanup
@@ -31,15 +42,22 @@ This is a local test build, not a published stable update.
   including after recreating the launcher library.
 - Shared account handoff uses each owned game's actual HTTP/WebSocket protocol;
   native bridge ports are read from that launch's arguments, never guessed.
-- Current automated suite: 213 checks; widget browser QA: 13 types / 39 layouts;
+- Current automated suite: 335 checks; widget browser QA: 13 types / 39 layouts;
   actual media browser QA: seven playback scenarios. Public live gifts and clean
   second-machine acceptance remain unverified, not implied by these tests.
+- Packaged preview acceptance: 189 protected media/widget source URLs return
+  HTTP 200, actual Windows WAV synthesis succeeds, and the real 159-asset visual
+  library keeps large, unclipped 16:9 cards with actual muted hover playback.
 
 ## Still Requires Acceptance
 
 - Live TikTok connection with the user's currently broadcasting account and a
   genuinely received gift. Synthetic integration tests are not a live gift test.
 - Publisher verification of each game on their broadcast/OBS setup.
+- Add the new numeric loopback URL in the affected TikTok LIVE Studio version.
+  Local HTTP success and browser playback do not prove its URL validator accepts it.
+- The live Render backend is older than GitHub main and still returns 404 for
+  /api/content/catalog. Review the game-default changes before redeploying main.
 - Full download/launch acceptance of every large game on a clean second machine.
 - User approval of artwork and the final library layout.
 

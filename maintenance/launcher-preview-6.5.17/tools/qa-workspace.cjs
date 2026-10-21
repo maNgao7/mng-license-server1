@@ -14,12 +14,17 @@ const output=process.env.MNG_QA_OUTPUT||'D:/TikMnG-Launcher-Test-Raporu';fs.mkdi
 const values=new Map();const store={get:(key,fallback)=>values.get(key)??fallback,set:(key,value)=>values.set(key,structuredClone(value))};
 const events=[];let activeGame='';const studio=createMediaStudio({store,root:path.join(temporary,'media'),accessKey:'synthetic-workspace-qa-key',getChannel:()=> 'qa',getActiveGame:()=>activeGame,onEvent:event=>events.push(event)});
 const catalog=require('../lib/catalog-defaults.json');
-const calls=[];let origin,browser,server;
+const calls=[];let origin,browser,server,speechAudio;
+const speechVoices=[{name:'QA Ahmet',lang:'tr-TR',voiceURI:'azure:qa-male',gender:'male',age:'unknown',provider:'azure',neural:true},{name:'QA Emel',lang:'tr-TR',voiceURI:'azure:qa-female',gender:'female',age:'unknown',provider:'azure',neural:true}];
 const games=catalog.games.map((g,index)=>({id:g.id,ad:g.title,installed:index<4,installedVersion:index<4?'6.5.16':null,availableVersion:g.version,boyut:g.bytes?Math.round(g.bytes/1048576)+' MB':'',requirements:g.requirements||'Windows 10/11',resources:g.resources,description:'',updateAvailable:false}));
 const gifts=JSON.parse(fs.readFileSync(path.join(renderer,'gift-assets/katalog_tam.json'),'utf8')).map(g=>({id:String(g.id),name:g.trName||g.name,coins:g.coins,image:'/gift-assets/'+g.file}));
 function snapshot(){return{games:games.map(game=>({...game,overlayUrl:origin+'/tikmng/media?key=synthetic-workspace-qa-key&channel=qa&game='+game.id})),media:studio.list().map(item=>({...item,overlayUrl:origin+item.previewUrl})),remoteMedia:[],overlayUrl:origin+'/tikmng/media?key=synthetic-workspace-qa-key&channel=qa',version:'6.5.17',preview:true,tts:values.get('tts')||{...TTS_DEFAULTS},source:'direct',tikfinityUrl:'ws://127.0.0.1:21213/',libraryRoot:'D:/Isolated-QA/Games',mediaRoot:'D:/Isolated-QA/Media'};}
 async function api(action,data={}){
     calls.push([action,data]);
+    if(action==='speech-status')return{voices:speechVoices,profiles:[],providers:{azure:{available:true,configured:true},windows:{available:false}}};
+    if(action==='speech-synthesize'){const voice=speechVoices.find(v=>v.voiceURI===data.voiceURI)||speechVoices.find(v=>data.voicePreset==='natural'||v.gender===data.voicePreset);assert.ok(voice);return{audioBase64:speechAudio,mimeType:'audio/wav',voice,fallbackUsed:false};}
+    if(action==='speech-cancel')return{ok:true};
+    if(action==='media-status')return studio.status(data.gameId);
     if(action==='media-save'){studio.save(data);return snapshot();}
     if(action==='media-test'){studio.test(data.id);return{ok:true};}
     if(action==='media-remove'){studio.remove(data.id);return snapshot();}
@@ -33,6 +38,7 @@ async function api(action,data={}){
 async function main(){
     const clip=path.join(temporary,'sample.mp4');
     execFileSync(process.env.FFMPEG_PATH||'C:/Users/User/AppData/Local/Microsoft/WinGet/Links/ffmpeg.exe',['-hide_banner','-loglevel','error','-f','lavfi','-i','testsrc2=size=640x360:rate=24','-t','5','-an','-c:v','libx264','-pix_fmt','yuv420p',clip],{windowsHide:true});
+    const wav=path.join(temporary,'speech.wav');execFileSync(process.env.FFMPEG_PATH||'C:/Users/User/AppData/Local/Microsoft/WinGet/Links/ffmpeg.exe',['-hide_banner','-loglevel','error','-f','lavfi','-i','sine=frequency=440:sample_rate=24000','-t','0.15',wav],{windowsHide:true});speechAudio=fs.readFileSync(wav).toString('base64');
     for(let index=0;index<26;index++){
         const [item]=await studio.importFiles([clip],[{title:index===0?'Racon · Deneme Videosu':'Yayın Videosu '+(index+1),category:index<13?'Racon':'Takım Videoları'}]);
         if(index===0)studio.save({id:item.id,giftId:'5655'});
@@ -40,7 +46,7 @@ async function main(){
     server=http.createServer((req,res)=>{
         const url=new URL(req.url,'http://127.0.0.1');
         if(studio.handleRequest(req,res,url))return;
-        if(url.pathname==='/'){res.setHeader('Content-Type','text/html; charset=utf-8');res.end('<!doctype html><html lang="tr"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="/style.css"><link rel="stylesheet" href="/workspace-v3.css"><body><div class="launcher"><main class="main"></main></div><script src="/vendor/lucide.js"></script><script src="/workspace.js"></script></body></html>');return;}
+        if(url.pathname==='/'){res.setHeader('Content-Type','text/html; charset=utf-8');res.end('<!doctype html><html lang="tr"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="/style.css"><link rel="stylesheet" href="/workspace-v3.css"><body><div class="launcher"><main class="main"></main></div><script src="/vendor/lucide.js"></script><script src="/speech-engine.js"></script><script src="/workspace.js"></script></body></html>');return;}
         const file=path.resolve(renderer,'.'+decodeURIComponent(url.pathname));
         if(!file.startsWith(renderer+path.sep)||!fs.existsSync(file)||!fs.statSync(file).isFile()){res.writeHead(404);res.end();return;}
         res.setHeader('Content-Type',({'.css':'text/css','.js':'text/javascript','.png':'image/png','.svg':'image/svg+xml','.jpg':'image/jpeg'})[path.extname(file)]||'application/octet-stream');fs.createReadStream(file).pipe(res);
@@ -110,17 +116,28 @@ async function main(){
     await page.locator('#mediaEditor header [data-action="close-media"]').click();await page.locator('#mediaEditor[open]').waitFor({state:'hidden'});
     await page.locator('[data-workspace-view="games"]').click();await page.locator('#librarySearch').fill('');await page.locator('[data-category="all"]').click();
     await page.locator('[data-open="vs"]').click();assert.match(await page.locator('#allMediaLink').inputValue(),/game=vs/);
-    await page.locator('[data-action="media-library"]').click();await page.locator('#assetSearch').fill('Deneme');await page.locator('[data-asset]').first().click();
+    await page.locator('[data-action="media-library"]').click();assert.equal(await page.locator('#assetChoices [data-asset]').count(),24);
+    const cardSize=await page.locator('#assetChoices [data-asset]').first().evaluate(tile=>{const poster=tile.querySelector('.asset-poster').getBoundingClientRect(),title=tile.querySelector('.asset-title').getBoundingClientRect(),card=tile.getBoundingClientRect();return{width:poster.width,height:poster.height,cardHeight:card.height,titleBottom:title.bottom,cardBottom:card.bottom,scroll:tile.parentElement.scrollHeight>tile.parentElement.clientHeight};});
+    assert.ok(cardSize.height>200,'Catalog previews must stay large with all 24 cards mounted');assert.ok(Math.abs(cardSize.height/cardSize.width-9/16)<0.01);assert.ok(cardSize.titleBottom<=cardSize.cardBottom+1,'Title must not be clipped');assert.equal(cardSize.scroll,true);
+    await page.screenshot({path:path.join(output,'gorsel-medya-katalogu-tumu.png')});
+    await page.locator('[data-asset-category="Racon"]').click();assert.equal(await page.locator('#assetChoices [data-asset]').count(),13);
+    await page.locator('#assetSearch').fill('Deneme');await page.locator('[data-asset]').first().hover();
+    await page.waitForFunction(()=>{const v=document.querySelector('#assetChoices iframe').contentDocument?.querySelector('video');return v&&!v.paused&&v.muted&&v.currentTime>0;});
+    assert.equal(studio.status().receivers,0,'Catalog hover must not subscribe as a broadcast receiver');
+    await page.screenshot({path:path.join(output,'gorsel-medya-katalogu.png')});
+    await page.locator('[data-asset]').first().click();
     await page.locator('#mediaEditor[open]').waitFor();await page.locator('[data-action="choose-gift"]').click();await page.locator('#giftSearch').fill('GG');await page.locator('[data-gift-choice="6064"]').click();
     await page.locator('[name="enabled"]').check();await page.locator('#mediaEditor [type="submit"]').click();await page.locator('#mediaEditor[open]').waitFor({state:'hidden'});
     assert.equal(await page.locator('#mediaLibrary .media-row').count(),1);assert.equal(studio.list().filter(item=>item.gameId==='vs').length,1);
     await page.screenshot({path:path.join(output,'oyuna-ozel-medya.png'),fullPage:true});
     await page.locator('[data-workspace-view="media"]').click();await page.locator('#mediaSearch').fill('Deneme');assert.equal(await page.locator('#mediaLibrary .media-row').count(),1);
     await page.locator('[data-workspace-view="speech"]').click();await page.locator('input[name="names"]').uncheck();await page.locator('#speechForm [type="submit"]').click();assert.equal(values.get('tts').names,false);
-    for(const profile of ['natural','male','female','child','deep']){await page.locator('[name="voicePreset"]').selectOption(profile);await page.locator('[data-action="speech-test"]').click();}
-    const spoken=await page.evaluate(()=>window.__spoken);assert.equal(spoken.length,5);assert.equal(new Set(spoken.map(item=>item.pitch)).size,5);assert.equal(spoken[1].voice,'qa-male');assert.equal(spoken[2].voice,'qa-female');
+    for(const profile of ['male','female']){await page.locator('[name="voicePreset"]').selectOption(profile);await page.locator('[name="voiceURI"]').selectOption('azure:qa-'+profile);await page.locator('[data-action="speech-test"]').click();await page.waitForFunction(()=>document.getElementById('speechStatus').textContent==='0 yorum sırada');}
+    const spoken=calls.filter(([action])=>action==='speech-synthesize');assert.equal(spoken.length,2);assert.equal(spoken[0][1].voiceURI,'azure:qa-male');assert.equal(spoken[1][1].voiceURI,'azure:qa-female');
+    await page.locator('[name="voicePreset"]').selectOption('child');assert.equal(await page.locator('[data-action="speech-test"]').isDisabled(),true);assert.match(await page.locator('#speechAvailability').innerText(),/mevcut değil/);
+    await page.locator('[name="voicePreset"]').selectOption('female');
     await page.locator('[name="audience"]').selectOption('gift');await page.locator('#speechForm [name="giftId"]').selectOption('7934');await page.locator('#speechForm [type="submit"]').click();
-    assert.equal(values.get('tts').audience,'gift');assert.equal(values.get('tts').giftId,'7934');assert.equal(values.get('tts').voicePreset,'deep');
+    assert.equal(values.get('tts').audience,'gift');assert.equal(values.get('tts').giftId,'7934');assert.equal(values.get('tts').voicePreset,'female');
     await page.screenshot({path:path.join(output,'sesli-yorum-ayarlari.png')});
     await page.locator('[data-workspace-view="games"]').click();await page.locator('#librarySearch').fill('');await page.locator('[data-category="all"]').click();
     for(const width of [1920,960,390]){

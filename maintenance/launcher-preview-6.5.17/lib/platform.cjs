@@ -7,9 +7,11 @@ const { createMediaStudio } = require('./media-studio.cjs');
 const { TikfinityBridge } = require('./tikfinity.cjs');
 const { readMediaArchive } = require('./media-archive.cjs');
 const { createSpeechAudience, MODES: SPEECH_AUDIENCES } = require('./tts-audience.cjs');
+const { createSpeechService } = require('./speech-service.cjs');
+const { loadContentCatalog } = require('./content-catalog.cjs');
 const bundledCatalog = require('./catalog-defaults.json');
 
-const TTS_DEFAULTS = { enabled: false, names: true, volume: 0.7, rate: 1, pitch: 1, voiceURI: '', voicePreset: 'natural', audience: 'all', giftId: '7934', maxLength: 180, cooldownSeconds: 3, blockedWords: '' };
+const TTS_DEFAULTS = { enabled: false, names: true, volume: 0.7, rate: 1, pitch: 1, voiceURI: '', voicePreset: 'natural', provider: '', allowOfflineFallback: false, audience: 'all', giftId: '7934', maxLength: 180, cooldownSeconds: 3, blockedWords: '' };
 const httpsURL = value => { const url = new URL(value); if (url.protocol !== 'https:' || url.username || url.password) throw new Error('Güvenli HTTPS adresi gerekli.'); return url.href; };
 
 function createPlatform(ctx) {
@@ -17,8 +19,13 @@ function createPlatform(ctx) {
     const root = store.get('library_root_v1', path.join(app.getPath('userData'), 'games'));
     let catalog = store.get('content_catalog_v1', null);
     let catalogError = '';
+    let catalogStatus = { source: catalog ? 'cache' : 'bundled', message: 'Kayıtlı içerikler kullanılıyor.', remoteAvailable: false };
     const controllers = new Map();
     const speechAudience = createSpeechAudience();
+    let credentialError = '';
+    let savedSpeech;
+    try { savedSpeech = ctx.speechCredentials?.read(); } catch { credentialError = 'Kayıtlı ses hesabı açılamadı. Doğal ses hesabını yeniden bağlayın.'; }
+    const speech = ctx.speechService || createSpeechService({ azure: savedSpeech || undefined });
     let library;
     const send = (name, data) => ctx.getWindow()?.webContents.send(name, data);
     const known = id => Object.hasOwn(definitions, id) && id !== 'crowdControl';
@@ -50,7 +57,7 @@ function createPlatform(ctx) {
         ctx.event(type, type === 'gift' ? { ...profile, ...ctx.gift(data) }
             : { ...profile, ...data, message: data.comment || data.message || '', eventId: data.msgId || data.logId || '' });
     });
-    function mediaURL(id = '', gameId = '') { return `http://tikmng.localhost:${ctx.port}/tikmng/media${id ? '/' + encodeURIComponent(id) : ''}?key=${ctx.accessKey}&channel=${encodeURIComponent(ctx.getChannel())}${gameId ? '&game=' + encodeURIComponent(gameId) : ''}`; }
+    function mediaURL(id = '', gameId = '') { return `http://127.0.0.1:${ctx.port}/tikmng/media${id ? '/' + encodeURIComponent(id) : ''}?key=${ctx.accessKey}&channel=${encodeURIComponent(ctx.getChannel())}${gameId ? '&game=' + encodeURIComponent(gameId) : ''}`; }
     function items() { return studio.list().map(item => ({ ...item, overlayUrl: mediaURL(item.id, item.gameId) })); }
     function statuses() {
         const result = {};
@@ -65,28 +72,18 @@ function createPlatform(ctx) {
         return result;
     }
     async function refreshCatalog() {
-        try {
-            const response = await fetch(ctx.serverURL() + '/api/content/catalog', { signal: AbortSignal.timeout(10000), cache: 'no-store' });
-            if (!response.ok) throw new Error(`Katalog sunucusu: ${response.status}`);
-            const next = await response.json();
-            if (next.schemaVersion !== 1 || !Array.isArray(next.games) || !Array.isArray(next.media)
-                || next.games.length > 100 || next.media.length > 2000) throw new Error('İçerik kataloğu okunamadı.');
-            for (const game of next.games) {
-                if (!known(game.id)) continue;
-                if (game.url) httpsURL(new URL(game.url, ctx.serverURL()).href);
-                if (game.sha256 && !/^[a-f\d]{64}$/i.test(game.sha256)) throw new Error('Paket doğrulama bilgisi geçersiz.');
-            }
-            catalog = next;
-            store.set('content_catalog_v1', next);
-            catalogError = '';
-            send('workspace-catalog', { revision: next.revision });
-        } catch (error) { catalogError = error.message; }
+        const result = await loadContentCatalog({ serverURL: ctx.serverURL, known, cached: catalog, bundled: bundledCatalog });
+        catalog = result.catalog;
+        catalogStatus = result.status;
+        catalogError = result.status.degraded ? result.status.message : '';
+        if (result.status.cacheable) store.set('content_catalog_v1', catalog);
+        send('workspace-catalog', { revision: catalog.revision });
         return snapshot();
     }
     function snapshot() {
         return { games: Object.values(statuses()).filter((game, index, all) => all.findIndex(g => g.id === game.id) === index),
             libraryRoot: store.get('library_root_v1', root), mediaRoot: store.get('media_root_v1', mediaRoot), media: items(),
-            remoteMedia: catalog?.media || [], catalogRevision: catalog?.revision || 0, catalogError, overlayUrl: mediaURL(),
+            remoteMedia: catalog?.media || [], catalogRevision: catalog?.revision || 0, catalogError, catalogStatus, overlayUrl: mediaURL(),
             source: store.get('live_source_v1', 'direct'), tikfinityUrl: store.get('tikfinity_url_v1', 'ws://127.0.0.1:21213/'), activeGame: ctx.getActiveGame?.() || '',
             tts: { ...TTS_DEFAULTS, ...store.get('tts_settings_v1', {}) }, version: app.getVersion(), preview: Boolean(app.isTikMNGPreview) };
     }
@@ -99,8 +96,18 @@ function createPlatform(ctx) {
         finally { controllers.delete(id); send('workspace-catalog', {}); }
     }
     const handle = (name, fn) => ipcMain.handle('workspace-' + name, async (_event, data = {}) => {
-        try { return await fn(data); } catch (error) { return { error: error.message }; }
+        try { return await fn(data); } catch (error) { return { error: speechError(error), ...(error.code ? { code: error.code } : {}) }; }
     });
+    function speechError(error) {
+        return ({ VOICE_UNAVAILABLE: 'Seçilen Türkçe ses bu sistemde yok. Kullanılabilir bir ses seçin.',
+            WINDOWS_UNAVAILABLE: 'Windows Türkçe konuşma sesi kullanılamıyor.', AZURE_NOT_CONFIGURED: 'Doğal sesler için Azure Speech hesabınızı bağlayın.',
+            AZURE_CONFIGURATION: 'Ses hesabı ayarlarını kontrol edin.', AZURE_AUTH: 'Ses hesabının anahtarı veya bölgesi doğrulanamadı.',
+            AZURE_LIMIT: 'Ses hesabının kullanım kotası doldu. Hesap limitini kontrol edin.', AZURE_UNAVAILABLE: 'Doğal ses hizmetine ulaşılamadı.',
+            INVALID_AUDIO: 'Ses hizmetinden geçerli bir kayıt alınamadı.', SPEECH_CANCELLED: 'Ses durduruldu.',
+            CREDENTIALS_UNAVAILABLE: 'Windows güvenli anahtar kaydı kullanılamıyor. Anahtar açık metin olarak kaydedilmedi.',
+            CREDENTIALS_INVALID_REGION: 'Geçerli bir Azure Speech bölgesi yazın.', CREDENTIALS_INVALID_KEY: 'Ses hesabı anahtarını kontrol edin.',
+            CREDENTIALS_CORRUPT: 'Kayıtlı ses hesabı açılamadı. Hesabı yeniden bağlayın.', CREDENTIALS_DECRYPT_FAILED: 'Ses hesabı bu Windows oturumunda açılamadı. Yeniden bağlayın.' })[error.code] || error.message;
+    }
     handle('snapshot', snapshot);
     handle('refresh', refreshCatalog);
     handle('install', ({ id, repair }) => install(id, { repair: Boolean(repair) }));
@@ -171,7 +178,8 @@ function createPlatform(ctx) {
     handle('media-save', async item => { validGame(item.gameId); await studio.save(item); return snapshot(); });
     handle('media-duplicate', async ({ id, gameId = '' }) => { validGame(gameId); await studio.duplicate(id, { gameId, giftId: '', enabled: true }); return snapshot(); });
     handle('media-remove', async ({ id }) => { await studio.remove(id); return snapshot(); });
-    handle('media-test', async ({ id }) => { await studio.test(id); return { ok: true }; });
+    handle('media-test', async ({ id }) => { const event = await studio.test(id); return { ok: true, receivers: studio.status(event.item.gameId, id).receivers }; });
+    handle('media-status', ({ gameId = '' } = {}) => studio.status(validGame(gameId)));
     handle('media-remote', async ({ id }) => {
         const item = catalog?.media?.find(media => media.id === id);
         if (!item) throw new Error('Video katalogda bulunamadı.');
@@ -204,9 +212,21 @@ function createPlatform(ctx) {
             cooldownSeconds: Math.max(1, Math.min(60, Number(settings.cooldownSeconds) || 3)), blockedWords: String(settings.blockedWords || '').slice(0, 2000),
             audience: SPEECH_AUDIENCES.has(settings.audience) ? settings.audience : 'all',
             giftId: /^\d{1,20}$/.test(String(settings.giftId || '')) ? String(settings.giftId) : '7934',
-            voicePreset: ['natural', 'male', 'female', 'child', 'deep'].includes(settings.voicePreset) ? settings.voicePreset : 'natural' };
+            voicePreset: ['natural', 'male', 'female', 'child'].includes(settings.voicePreset) ? settings.voicePreset : 'natural',
+            provider: ['', 'windows', 'azure'].includes(settings.provider) ? settings.provider : '', allowOfflineFallback: settings.allowOfflineFallback === true };
         store.set('tts_settings_v1', result);
         return snapshot();
+    });
+    handle('speech-status', async data => ({ ...await speech.status({ refresh: data.refresh === true }), credentialError }));
+    handle('speech-synthesize', data => speech.synthesize({ text: data.text, voiceURI: data.voiceURI, voicePreset: data.voicePreset,
+        provider: data.provider, rate: data.rate, allowOfflineFallback: data.allowOfflineFallback === true }));
+    handle('speech-cancel', () => { speech.cancel(); return { ok: true }; });
+    handle('speech-configure', async data => {
+        if (!ctx.speechCredentials) throw new Error('Güvenli ses ayarları kullanılamıyor.');
+        const config = ctx.speechCredentials.write({ key: data.key, region: data.region, clear: data.clear === true });
+        credentialError = '';
+        speech.configure(config || {});
+        return speech.status({ refresh: true });
     });
     const timer = setInterval(refreshCatalog, 5 * 60000); timer.unref();
     return { snapshot, statuses, install, pathFor: id => library.pathFor(id), refreshCatalog, importArchive,
@@ -219,6 +239,6 @@ function createPlatform(ctx) {
         handleRequest: (...args) => studio.handleRequest(...args),
         connectTikfinity(username) { bridge.connect(store.get('tikfinity_url_v1', 'ws://127.0.0.1:21213/'), username); },
         source: () => store.get('live_source_v1', 'direct'), disconnect: () => bridge.close(),
-        close() { clearInterval(timer); bridge.close(); for (const controller of controllers.values()) controller.abort(); studio.close?.(); } };
+        close() { clearInterval(timer); bridge.close(); speech.cancel(); for (const controller of controllers.values()) controller.abort(); studio.close?.(); } };
 }
 module.exports = { createPlatform, TTS_DEFAULTS };

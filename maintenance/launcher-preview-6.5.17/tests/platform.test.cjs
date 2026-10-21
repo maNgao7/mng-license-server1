@@ -169,7 +169,7 @@ test('snapshot exposes isolated roots, defaults, unique games and protected over
     assert.deepEqual(snapshot.games.map(game => game.id), ['alpha', 'crowd-control']);
     assert.equal(f.platform.statuses().crowdControl.id, 'crowd-control');
     const overlay = new URL(snapshot.overlayUrl);
-    assert.equal(overlay.hostname, 'tikmng.localhost');
+    assert.equal(overlay.hostname, '127.0.0.1');
     assert.equal(overlay.searchParams.get('key'), KEY);
     assert.equal(overlay.searchParams.get('channel'), 'testhost');
     assert.deepEqual(f.writes, []);
@@ -371,7 +371,7 @@ test('media save validation is returned through IPC and test/ingest emit object 
     const snapshot = await f.invoke('media-save', { id: original.id, giftId: '5655', title: 'Edited name' });
     assert.equal(snapshot.media[0].id, original.id);
     assert.equal(snapshot.media[0].previewUrl, original.previewUrl);
-    assert.deepEqual(await f.invoke('media-test', { id: original.id }), { ok: true });
+    assert.deepEqual(await f.invoke('media-test', { id: original.id }), { ok: true, receivers: 0 });
     const preview = f.notifications.find(item => item.name === 'workspace-media-event').data;
     assert.equal(preview.type, 'studio:play');
     assert.equal(preview.test, true);
@@ -476,4 +476,27 @@ test('catalog refresh validates responses and retains the cached catalog on erro
         assert.equal(rejected.catalogRevision, 7);
         assert.deepEqual(f.store.get('content_catalog_v1'), validCatalog);
     }
+});
+
+test('missing catalog service reports a usable local fallback without a raw 404 error', options, async t => {
+    const f = fixture(t);
+    t.mock.method(globalThis, 'fetch', async () => new Response('Cannot GET', { status: 404 }));
+    const result = await f.invoke('refresh');
+    assert.equal(result.catalogStatus.source, 'bundled');assert.equal(result.catalogStatus.code, 'not-published');
+    assert.ok(!result.catalogError.includes('404'));assert.ok(result.games.length > 0);
+    assert.equal(f.writes.some(write=>write.key==='content_catalog_v1'),false);
+});
+
+test('speech IPC forwards only supported voice settings and never returns saved credentials', options, async t => {
+    const f = fixture(t);const seen=[];let canceled=0;
+    const status={ voices:[{ voiceURI:'azure:tr-TR-EmelNeural', gender:'female' }], providers:{ azure:{ configured:true,available:true } }, profiles:[] };
+    f.context.speechService={status:async()=>status,synthesize:async input=>{seen.push(input);return {audioBase64:'synthetic-only',mimeType:'audio/wav'};},configure:config=>seen.push(config),cancel:()=>canceled++};
+    f.context.speechCredentials={read:()=>({key:'private-key-only-in-main',region:'testregion'}),write:()=>({key:'replacement-private',region:'testregion'})};f.restart();
+    assert.deepEqual(await f.invoke('speech-status'),{...status,credentialError:''});
+    await f.invoke('speech-synthesize',{text:'Merhaba',voiceURI:'azure:tr-TR-EmelNeural',voicePreset:'female',provider:'azure',rate:1,allowOfflineFallback:false,key:'must-not-forward',url:'https://must-not-forward.invalid'});
+    assert.equal(seen[0].voicePreset,'female');assert.equal(Object.hasOwn(seen[0],'key'),false);assert.equal(Object.hasOwn(seen[0],'url'),false);
+    const configured=await f.invoke('speech-configure',{key:'new-private',region:'testregion'});assert.ok(!JSON.stringify(configured).includes('private'));
+    await f.invoke('speech-cancel');assert.ok(canceled>0);
+    f.context.speechCredentials.read=()=>{throw new Error('private-sensitive-failure');};f.restart();
+    const recovered=await f.invoke('speech-status');assert.ok(recovered.credentialError);assert.ok(!recovered.credentialError.includes('sensitive'));
 });

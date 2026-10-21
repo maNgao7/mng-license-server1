@@ -94,7 +94,7 @@ function request(base, route, { key = KEY, channel = 'alice', headers = {}, meth
     });
 }
 
-function fakeRequest(studio, route, { channel = 'alice', key = KEY, backpressure = false } = {}) {
+function fakeRequest(studio, route, { channel = 'alice', key = KEY, backpressure = false, headers = {} } = {}) {
     const res = new EventEmitter();
     res.headers = {};
     res.frames = [];
@@ -106,7 +106,7 @@ function fakeRequest(studio, route, { channel = 'alice', key = KEY, backpressure
     const url = new URL(route, 'http://127.0.0.1');
     url.searchParams.set('key', key);
     url.searchParams.set('channel', channel);
-    const handled = studio.handleRequest({ method: 'GET', headers: {}, socket: { setTimeout() {} } }, res, url);
+    const handled = studio.handleRequest({ method: 'GET', headers, socket: { setTimeout() {} } }, res, url);
     return { handled, res, events: () => res.frames.filter(frame => frame.startsWith('event:')).map(frame => JSON.parse(frame.split('\ndata: ')[1])) };
 }
 
@@ -462,7 +462,7 @@ test('SSE caps clients, drops slow clients, heartbeats and cleans up on close', 
     f.studio.close();
 });
 
-test('SSE travels over HTTP and reconnect has no event history despite Last-Event-ID', options, async t => {
+test('SSE travels over HTTP and an unknown Last-Event-ID does not replay old events', options, async t => {
     const f = fixture(t);
     const item = await mapped(f);
     const base = await startServer(t, f.studio);
@@ -488,6 +488,31 @@ test('SSE travels over HTTP and reconnect has no event history despite Last-Even
     assert.ok(frame.includes('event: studio:play'));
     assert.ok(!frame.includes(f.directory));
     req.destroy();
+});
+
+test('source diagnostics exclude posters, hover previews, editor previews and other scopes', options, async t => {
+    const f = fixture(t);
+    const item = await mapped(f);
+    assert.deepEqual(f.studio.status(), { receivers: 0, previews: 0, configured: 1, gameId: '', activeGame: '' });
+    const preview = fakeRequest(f.studio, `${BASE}/events?preview=1&item=${item.id}`);
+    const global = fakeRequest(f.studio, `${BASE}/events`);
+    const game = fakeRequest(f.studio, `${BASE}/events?game=alpha`);
+    fakeRequest(f.studio, `${BASE}/events`, { channel: 'bob' });
+    assert.equal(f.studio.status().receivers, 1);assert.equal(f.studio.status().previews, 1);
+    assert.equal(f.studio.status('alpha').receivers, 1);
+    global.res.destroy();assert.equal(f.studio.status().receivers, 0);
+    preview.res.destroy();game.res.destroy();
+});
+
+test('SSE reconnect recovers only missed same-scope events, never historic events for a new source', options, async t => {
+    const f = fixture(t);
+    const item = await mapped(f),other = await mapped(f, { gameId: 'alpha' });
+    const first=f.studio.test(item.id),missed=f.studio.test(item.id);
+    f.studio.test(other.id);
+    const recovered=fakeRequest(f.studio, `${BASE}/events`, { headers: { 'last-event-id': first.id } });
+    assert.deepEqual(recovered.events().map(event=>event.id),[missed.id]);
+    assert.deepEqual(fakeRequest(f.studio, `${BASE}/events`).events(),[]);
+    assert.deepEqual(fakeRequest(f.studio, `${BASE}/events`, { channel:'bob', headers: { 'last-event-id': first.id } }).events(),[]);
 });
 
 test('v1 defaults remain global and all new settings validate before persisting or importing', options, async t => {

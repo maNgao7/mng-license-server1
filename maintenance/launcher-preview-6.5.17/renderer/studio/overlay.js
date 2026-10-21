@@ -8,6 +8,7 @@
     const itemId = document.body.dataset.item;
     const gameId = document.body.dataset.game || '';
     const poster = parameters.get('poster') === '1';
+    const hover = !poster && parameters.get('hover') === '1';
     const preview = !poster && parameters.get('preview') === '1';
     const idPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
     const gamePattern = /^[a-z0-9][a-z0-9-]{0,63}$/;
@@ -21,6 +22,7 @@
     let previewTrim = null;
     let source = null;
     let disposed = false;
+    let hoverLoops = 0;
 
     function mediaUrl(item) {
         if (!idPattern.test(item.id) || typeof item.mediaUrl !== 'string') return null;
@@ -195,9 +197,9 @@
             element.autoplay = false;
             element.loop = false;
             element.playsInline = true;
-            element.controls = preview;
+            element.controls = preview && !hover;
             element.volume = settings.volume;
-            element.muted = poster || parameters.get('mute') === '1';
+            element.muted = poster || hover || parameters.get('mute') === '1';
         } else element.draggable = false;
         for (const [name, listener] of handlers) element.addEventListener(name, listener);
         stage.replaceChildren(element);
@@ -221,8 +223,10 @@
     }
 
     function showPreview() {
-        const session = createSession(selectedMedia, mediaUrl(selectedMedia), false, () => {
+        if (disposed || !selectedMedia) return;
+        const session = createSession(selectedMedia, mediaUrl(selectedMedia), hover, () => {
             if (staticPreview === session) staticPreview = null;
+            if (hover && !disposed && hoverLoops++ < 10) setTimeout(showPreview, 1000);
         });
         staticPreview = session;
     }
@@ -263,9 +267,9 @@
         } catch { /* Malformed messages never become media sources. */ }
     }
 
-    if (poster || preview) document.body.classList.add(poster ? 'poster' : 'preview');
+    if (poster || preview || hover) document.body.classList.add(poster ? 'poster' : 'preview');
     const validScope = !gameId || gamePattern.test(gameId);
-    if ((poster || preview) && key && channel && stage && validScope) {
+    if ((poster || preview || hover) && key && channel && stage && validScope) {
         try {
             selectedMedia = normalizeItem(JSON.parse(document.body.dataset.media));
             if (selectedMedia && selectedMedia.id === itemId) {
@@ -283,9 +287,9 @@
         if (!playing && !staticPreview) showPreview();
         (playing || staticPreview)?.trim(data);
     });
-    if (!poster && key && channel && stage && validScope) {
+    if (!poster && !hover && key && channel && stage && validScope) {
         const eventsUrl = new URL('/tikmng/media/events', location.origin);
-        eventsUrl.search = new URLSearchParams({ key, channel, ...(gameId ? { game: gameId } : {}), ...(itemId ? { item: itemId } : {}) }).toString();
+        eventsUrl.search = new URLSearchParams({ key, channel, ...(preview ? { preview: '1' } : {}), ...(gameId ? { game: gameId } : {}), ...(itemId ? { item: itemId } : {}) }).toString();
         source = new EventSource(eventsUrl.href);
         source.addEventListener('studio:play', receive);
     }
