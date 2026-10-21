@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <title>TikMnG · İçerik kataloğu</title>
+  <link rel="stylesheet" href="/admin/content.css">
+  <script src="/admin/lucide.js" defer></script>
+  <script src="/admin/content.js" defer></script>
+</head>
+<body>
+  <header class="topbar"><a class="brand" href="/admin/">TikMnG</a><nav aria-label="Yönetim"><a href="/admin/"><i data-lucide="key-round"></i> Lisanslar</a><a href="/admin/content.html" aria-current="page"><i data-lucide="library"></i> İçerik kataloğu</a></nav></header>
+  <main>
+    <div id="authRequired" class="auth" hidden><h1>Yönetici oturumu gerekli</h1><a class="button primary" href="/admin/">Yönetici girişine git</a></div>
+    <div id="error" role="alert" hidden></div>
+    <div id="catalogApp" hidden>
+      <header class="heading"><div><h1>İçerik kataloğu</h1><p id="status" role="status">Yükleniyor</p></div><div class="commands"><button id="reload" class="icon" title="Kataloğu yenile" aria-label="Kataloğu yenile"><i data-lucide="refresh-cw"></i></button><button id="publish" class="primary"><i data-lucide="send"></i> Yayımla</button></div></header>
+      <section class="summary" aria-label="Yayın durumu"><div><span>Taslak revizyonu</span><strong id="draftRevision">0</strong></div><div><span>Yayımlanan revizyon</span><strong id="publishedRevision">0</strong></div><div><span>Son yayın</span><strong id="publishedAt">Henüz yok</strong></div></section>
+      <div class="toolbar"><div class="tabs" role="tablist" aria-label="Katalog türü"><button id="gamesTab" role="tab" aria-selected="true">Oyunlar <span id="gameCount"></span></button><button id="mediaTab" role="tab" aria-selected="false">Medya <span id="mediaCount"></span></button><button id="launcherTab" role="tab" aria-selected="false">Launcher</button></div><div class="segmented" role="group" aria-label="Katalog sürümü"><button id="draftMode" aria-pressed="true">Taslak</button><button id="publishedMode" aria-pressed="false">Yayında</button></div></div>
+      <div class="filterbar"><input id="search" type="search" placeholder="Başlık veya kimlik ara" aria-label="İçerik ara"><select id="categoryFilter" aria-label="Kategori filtresi" hidden><option value="">Tüm kategoriler</option></select><button id="add"><i data-lucide="plus"></i> Yeni oyun</button></div>
+      <div class="content-grid">
+        <section class="listing" aria-label="Katalog listesi"><div class="table-scroll"><table><thead><tr><th>İçerik</th><th id="detailHeading">Paket sürümü</th><th>Boyut</th><th><span class="sr-only">Düzenle</span></th></tr></thead><tbody id="rows"></tbody></table></div><p id="resultCount" class="muted"></p></section>
+        <section id="editor" aria-label="İçerik düzenleyici" hidden>
+          <form id="entryForm"><fieldset id="entryFields"><div class="editor-heading"><h2 id="editorTitle">İçerik düzenle</h2><button type="button" id="closeEditor" class="icon" title="Düzenleyiciyi kapat" aria-label="Düzenleyiciyi kapat"><i data-lucide="x"></i></button></div>
+            <div class="fields two"><label>Kimlik<input name="id" maxlength="64" pattern="[a-z0-9][a-z0-9_-]{0,63}" required></label><label>Başlık<input name="title" maxlength="120" required></label></div>
+            <div id="gameFields"><label>Açıklama<textarea name="description" maxlength="2000" rows="3"></textarea></label><label>Paket sürümü<input name="version" maxlength="40" pattern="[0-9A-Za-z][0-9A-Za-z._+\-]{0,39}"></label><label>Gereksinimler<textarea name="requirements" maxlength="1000" rows="2"></textarea></label></div>
+            <div id="mediaFields" hidden><label>Kategori<input name="category" maxlength="60" list="categories"></label><datalist id="categories"></datalist><div class="upload"><label>Video dosyası<input id="videoFile" type="file" accept="video/mp4,video/webm,.mp4,.webm"></label><button id="upload" type="button"><i data-lucide="upload"></i> Yükle</button><progress id="uploadProgress" max="100" value="0" aria-label="Video yükleme ilerlemesi" hidden></progress><span id="uploadStatus" role="status"></span></div></div>
+            <label id="urlLabel">Paket URL<input name="url" maxlength="2048" required></label>
+            <div class="fields integrity"><label>SHA-256<input name="sha256" maxlength="64" pattern="[a-f0-9]{64}" placeholder="Bilinmiyor" spellcheck="false"></label><label>Byte<input name="bytes" type="number" min="1" max="107374182400" step="1" placeholder="Bilinmiyor"></label></div>
+            <div id="resourcesSection"><div class="resource-heading"><h3>Kaynaklar</h3><button id="addResource" type="button" class="icon" title="Kaynak ekle" aria-label="Kaynak ekle"><i data-lucide="plus"></i></button></div><div id="resources"></div></div>
+            <div id="filesSection"><div class="resource-heading"><h3>Dosya yamaları</h3><button id="addFile" type="button" class="icon" title="Yama dosyası ekle" aria-label="Yama dosyası ekle"><i data-lucide="plus"></i></button></div><div id="files"></div></div>
+            <footer class="editor-actions"><button type="button" id="deleteEntry" class="danger icon" title="İçeriği sil" aria-label="İçeriği sil"><i data-lucide="trash-2"></i></button><span id="editStatus" role="status"></span><button type="submit" id="save" class="primary"><i data-lucide="save"></i> Taslağı kaydet</button></footer>
+          </fieldset></form>
+        </section>
+      </div>
+      <section id="launcherEditor" hidden aria-label="Launcher bilgisi"><form id="launcherForm"><fieldset id="launcherFields"><label class="check"><input id="launcherEnabled" type="checkbox"> Launcher bilgisi yayımla</label><div id="launcherValues"><div class="fields two"><label>Sürüm<input id="launcherVersion" maxlength="40" pattern="[0-9A-Za-z][0-9A-Za-z._+\-]{0,39}"></label><label>Yükleyici URL<input id="launcherUrl" maxlength="2048"></label></div><div class="fields integrity"><label>SHA-256<input id="launcherHash" maxlength="64" pattern="[a-f0-9]{64}" spellcheck="false"></label><label>Byte<input id="launcherBytes" type="number" min="1" max="107374182400" step="1"></label></div><label>Değişiklikler<textarea id="launcherChangelog" maxlength="4000" rows="5"></textarea></label></div><footer class="editor-actions"><span id="launcherStatus" role="status"></span><button id="saveLauncher" class="primary" type="submit"><i data-lucide="save"></i> Taslağı kaydet</button></footer></fieldset></form></section>
+    </div>
+    <p id="loading" role="status">Katalog yükleniyor…</p>
+  </main>
+</body>
+</html>

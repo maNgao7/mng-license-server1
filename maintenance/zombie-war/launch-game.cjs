@@ -22,7 +22,7 @@ function launchArguments(bridgePort = 43821) {
   const variables = {
     natives_directory: nativeDir, library_directory: path.join(runtime, 'libraries'),
     classpath: [...libraries, path.join(runtime, 'client.jar')].join(path.delimiter),
-    classpath_separator: path.delimiter, launcher_name: 'TikMnG', launcher_version: '6.5.13',
+    classpath_separator: path.delimiter, launcher_name: 'TikMnG', launcher_version: '6.5.14',
     version_name: 'TikMnG-Zombie-War', version_type: 'release',
     auth_player_name: 'TikMnG', auth_uuid: '00000000000000000000000000000000', auth_access_token: '0',
     clientid: '', auth_xuid: '', user_type: 'legacy',
@@ -98,8 +98,9 @@ async function main() {
   child.stdout.on('data', chunk => {
     log.write(chunk);
     if (/Created:.*atlas|Setting user|Starting integrated minecraft server/i.test(String(chunk))) console.log('MNG_GAME_READY');
-    if (smoke && /PlayerList.*logged in with entity id/i.test(String(chunk))) {
-      smokePassed = true; console.log('MNG_WORLD_LOADED'); clearTimeout(smokeTimer); child.kill();
+    if (smoke && !smokePassed && /PlayerList.*logged in with entity id/i.test(String(chunk))) {
+      smokePassed = true; console.log('MNG_WORLD_LOADED'); clearTimeout(smokeTimer);
+      setTimeout(() => child.kill(), 2500);
     }
   });
   child.stderr.on('data', chunk => log.write(chunk));

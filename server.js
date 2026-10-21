@@ -9,6 +9,7 @@ import { fileURLToPath } from "url";
 import { agencySlug, validCapacity, validAgencyDuration, createAgencyKey, parseAgencyKey,
     createAgencyReceipt, readAgencyReceipt, agencyMembers, touchAgencyMember, agencySummary } from "./agency-licenses.js";
 import { assertLicenseEditable, editLicense, renewLicense } from "./license-management.js";
+import { registerContentRoutes } from "./content-management.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -319,6 +320,7 @@ app.use(cors({
 
 app.use("/api/admin/lisanslar-senkronize", adminKontrol, express.json({ limit: "8mb" }));
 app.use(express.json({ limit: "64kb" }));
+registerContentRoutes(app, { dataDir: DATA_DIR, adminKontrol });
 app.get("/admin/lucide.js", (req, res) => {
     res.sendFile(path.join(__dirname, "node_modules/lucide/dist/umd/lucide.min.js"));
 });
@@ -528,7 +530,7 @@ const VARSAYILAN_PAKET_LINKLERI = Object.freeze({
     SNOW_WAR: "https://github.com/maNgao7/mng-license-server1/releases/download/v6.5.16/snow-war.zip",
     PENALTY_KICK: "https://github.com/maNgao7/mng-license-server1/releases/download/v6.5.10/penalty-kick.zip",
     TIGHTROPE_BALANCE: "https://github.com/maNgao7/mng-license-server1/releases/download/v6.5.10/tightrope-balance.zip",
-    ZOMBIE_WAR: "https://github.com/maNgao7/mng-license-server1/releases/download/v6.5.15/zombie-war.zip"
+    ZOMBIE_WAR: "https://github.com/maNgao7/mng-license-server1/releases/download/zombie-war-6.5.17/zombie-war.zip"
 });
 
 // Her güncellemede eklenen/değişen özellikler listesi

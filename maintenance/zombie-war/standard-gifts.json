@@ -1,0 +1,20 @@
+{
+  "version": 11,
+  "gifts": [
+    { "id": "5655", "name": "Gül", "action": "ZOMBIE", "amount": 2, "threshold": 1, "target": "zombie" },
+    { "id": "5319", "name": "Blue Bead", "action": "ZOMBIE", "amount": 5, "threshold": 1, "target": "zombie" },
+    { "id": "5879", "name": "Donat", "action": "HELPER", "amount": 3, "threshold": 1, "target": "zombie" },
+    { "id": "5658", "name": "Parfüm", "action": "FLASH", "amount": 5, "threshold": 1, "target": "zombie" },
+    { "id": "17473", "name": "Buket", "action": "INFINITE", "amount": 300, "threshold": 1, "target": "zombie" },
+    { "id": "8913", "name": "Rosa", "action": "UPGRADE", "amount": 1, "threshold": 1, "target": "zombie" },
+    { "id": "5303", "name": "Çay", "action": "VOICE_FIRE", "amount": 180, "threshold": 1, "target": "zombie" },
+    { "id": "5282", "name": "Kalp", "action": "DOWNGRADE", "amount": 1, "threshold": 1, "target": "zombie" },
+    { "id": "5486", "name": "Mishka Bear", "action": "STRONG_ZOMBIE", "amount": 1, "threshold": 1, "target": "mutant" },
+    { "id": "6427", "name": "Şapka ve Bıyık", "action": "CHAOS", "amount": 1, "threshold": 1, "target": "zombie" },
+    { "id": "7168", "name": "Para Tabancası", "action": "VOICE_FIRE", "amount": 300, "threshold": 1, "target": "zombie" },
+    { "id": "5994", "name": "Türk kahvesi", "action": "ZOMBIE", "amount": 5, "threshold": 1, "target": "spider" },
+    { "id": "6267", "name": "Corgi", "action": "CLEAR", "amount": 1, "threshold": 1, "target": "zombie" },
+    { "id": "11046", "name": "Galaksi", "action": "VOICE_FIRE", "amount": 600, "threshold": 1, "target": "zombie" },
+    { "id": "7934", "name": "Beni Sev", "action": "HELPER", "amount": 1, "threshold": 1, "target": "zombie" }
+  ]
+}
