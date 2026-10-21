@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self' mng-bg:; media-src 'self' mng-bg: file: data: blob:; img-src 'self' mng-bg: data: blob:; frame-src 'self' http://localhost:31975 http://127.0.0.1:31975 http://tikmng.localhost:31975 http://localhost:31976 http://127.0.0.1:31976 http://tikmng.localhost:31976; connect-src 'self' http://localhost:31975 http://127.0.0.1:31975 http://tikmng.localhost:31975 http://localhost:31976 http://127.0.0.1:31976 http://tikmng.localhost:31976; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline';">
+    <title>TikMnG</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="tiktok-account.css">
+    <link rel="stylesheet" href="workspace-v3.css">
+</head>
+<body>
+
+    <!-- DİNAMİK ARKA PLAN VİDEO DÖNGÜSÜ -->
+    <div class="video-bg-container" id="videoBgContainer">
+        <video class="bg-video active" id="bgVideoA" autoplay muted loop playsinline></video>
+        <video class="bg-video" id="bgVideoB" autoplay muted loop playsinline></video>
+        <div class="video-bg-overlay"></div>
+    </div>
+
+    <!-- OVERLAY: Yükleniyor (Sadece ihtiyaç olduğunda görünür) -->
+    <div class="overlay" id="loadingOverlay" style="display:none;">
+        <div class="spinner"></div>
+        <div class="overlay-text" id="loadingText">Başlatılıyor...</div>
+    </div>
+
+    <!-- ANA EKRAN -->
+    <div class="launcher" id="launcher" style="display:flex;">
+
+        <!-- BAŞLIK -->
+        <header class="header">
+            <div class="header-logo">
+                <span class="logo-surface"><img src="assets/logo-v3.png" class="logo-img" alt="TikMnG"></span>
+                <div>
+                    <div class="logo-title"><span style="color:#25f4ee">Tik</span><span style="color:#ffffff">Mn</span><span style="color:#fe2c55">G</span></div>
+                    <div class="logo-sub">Canlı Yayın Oyun Platformu</div>
+                </div>
+            </div>
+            <div class="header-actions">
+                <button class="header-tool" type="button" onclick="widgetPanelAc()">WIDGETLAR</button>
+                <button class="tiktok-account" id="tiktokAccountButton" type="button" onclick="tiktokHesapPanelAc()"><span class="tiktok-account-dot"></span><span id="tiktokAccountLabel">TikTok hesabı ekle</span></button>
+            </div>
+            <div class="header-license" id="headerLicense">
+                <div class="license-dot aktif" id="licenseDot"></div>
+                <div>
+                    <div class="license-status" id="licenseStatus">Kontrol ediliyor...</div>
+                    <div class="license-remaining" id="licenseRemaining"></div>
+                </div>
+            </div>
+        </header>
+
+        <!-- OYUN KARTLARI -->
+        <main class="main">
+
+            <section class="games-manifesto" aria-label="Oyunlarımız">
+                <h1 id="gamesHeadline"><span>SİZ DE HEP AYNI OYUNLARDAN</span><span>SIKILMADINIZ MI?</span></h1>
+                <p>Canlı yayınınız değiştikçe oyun da değişsin. Etkileşim, rekabet ve yeni deneyimler tek merkezde.</p>
+            </section>
+
+            <div class="games-grid">
+
+                <!-- TikTok VS Profil -->
+                <div class="game-card" id="vsCard">
+                    <div class="game-card-bg vs-bg"></div>
+                    <div class="game-card-content">
+                        <div class="game-card-head">
+                            <div class="game-icon">⚔️</div>
+                            <span class="game-badge kurulu" id="vsBadge">✓ HAZIR</span>
+                        </div>
+                        <div class="game-title">TikTok VS Profil</div>
+                        <div class="game-desc">İki TikTok profilini karşılaştır. Canlı yayın skor takibi, hediye sistemi ve çok daha fazlası.</div>
+                        <div class="game-features">
+                            <span>🔴 Canlı Yayın</span>
+                            <span>🏆 Skor Takibi</span>
+                            <span>🎁 Hediye Sistemi</span>
+                        </div>
+                        <div class="game-progress-wrap" id="vsProgressWrap" style="display:none">
+                            <div class="game-progress-bar" id="vsProgressBar"></div>
+                            <div class="game-progress-stat">
+                                <span id="vsProgressPct">0%</span>
+                                <span id="vsProgressMb"></span>
+                            </div>
+                        </div>
+                        <button class="play-btn" id="vsPlayBtn" onclick="oyunAksiyon('vs')">
+                            <span class="play-icon" id="vsPlayIcon">▶</span>
+                            <span class="play-btn-text" id="vsPlayText">OYNA</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Profil Puanlama -->
+                <div class="game-card" id="puanlamaCard">
+                    <div class="game-card-bg puan-bg"></div>
+                    <div class="game-card-content">
+                        <div class="game-card-head">
+                            <div class="game-icon">⭐</div>
+                            <span class="game-badge kurulu" id="puanlamaBadge">✓ HAZIR</span>
+                        </div>
+                        <div class="game-title">Profil Puanlama</div>
+                        <div class="game-desc">İzleyicilerin TikTok profillerini puanla. Chat'ten gelen oyları topla ve sırala.</div>
+                        <div class="game-features">
+                            <span>📊 Puanlama</span>
+                            <span>👥 İzleyici Listesi</span>
+                            <span>🏅 Sıralama</span>
+                        </div>
+                        <div class="game-progress-wrap" id="puanlamaProgressWrap" style="display:none">
+                            <div class="game-progress-bar" id="puanlamaProgressBar"></div>
+                            <div class="game-progress-stat">
+                                <span id="puanlamaProgressPct">0%</span>
+                                <span id="puanlamaProgressMb"></span>
+                            </div>
+                        </div>
+                        <button class="play-btn" id="puanlamaPlayBtn" onclick="oyunAksiyon('puanlama')">
+                            <span class="play-icon" id="puanlamaPlayIcon">▶</span>
+                            <span class="play-btn-text" id="puanlamaPlayText">OYNA</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- MNG Orbit -->
+                <div class="game-card" id="orbitCard">
+                    <div class="game-card-bg orbit-bg"></div>
+                    <div class="game-card-content">
+                        <div class="game-card-head">
+                            <div class="game-icon">◉</div>
+                            <div style="display:flex; align-items:center; gap:6px;">
+                                <span class="popular-badge"><span class="orbit-crown">👑</span> EN POPÜLER · EN SEVİLEN</span>
+                                <span class="game-badge kurulu" id="orbitBadge">✓ HAZIR</span>
+                            </div>
+                        </div>
+                        <div class="game-title">Orbit Balonları <small>(Canlı Balon Oyunu)</small></div>
+                        <div class="game-desc">Canlı yayın etkileşimleriyle büyüyen, izleyici odaklı yörünge arenası.</div>
+                        <div class="game-features">
+                            <span>🔴 Canlı Arena</span>
+                            <span>🎁 Hediye Büyümesi</span>
+                            <span>🏆 Tur Lideri</span>
+                        </div>
+                        <div class="game-progress-wrap" id="orbitProgressWrap" style="display:none">
+                            <div class="game-progress-bar" id="orbitProgressBar"></div>
+                            <div class="game-progress-stat">
+                                <span id="orbitProgressPct">0%</span>
+                                <span id="orbitProgressMb"></span>
+                            </div>
+                        </div>
+                        <button class="play-btn" id="orbitPlayBtn" onclick="oyunAksiyon('orbit')">
+                            <span class="play-icon" id="orbitPlayIcon">▶</span>
+                            <span class="play-btn-text" id="orbitPlayText">OYNA</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- MNG Crowd Control -->
+                <div class="game-card" id="crowdControlCard">
+                    <div class="game-card-bg crowd-control-bg"></div>
+                    <div class="game-card-content">
+                        <div class="game-card-head">
+                            <div class="game-icon">🎯</div>
+                            <div style="display:flex; align-items:center; gap:6px;">
+                                <span class="game-badge indirilebilir" id="crowdControlBadge">İNDİRİLEBİLİR (6 MB)</span>
+                            </div>
+                        </div>
+                        <div class="game-title">Crowd Control <small>(Hayatta Kal)</small></div>
+                        <div class="game-desc">Hediyeler engel ya da destek olur. Hayatta kal, boss'ları yık!</div>
+                        <div class="game-features">
+                            <span>🎁 Hediye = Engel</span>
+                            <span>👹 Boss Modu</span>
+                            <span>🏆 En Çok Öldüren</span>
+                        </div>
+                        <div class="game-progress-wrap" id="crowdControlProgressWrap" style="display:none">
+                            <div class="game-progress-bar" id="crowdControlProgressBar"></div>
+                            <div class="game-progress-stat">
+                                <span id="crowdControlProgressPct">0%</span>
+                                <span id="crowdControlProgressMb"></span>
+                            </div>
+                        </div>
+                        <button class="play-btn kur-btn" id="crowdControlPlayBtn" onclick="oyunAksiyon('crowd-control')">
+                            <span class="play-icon" id="crowdControlPlayIcon">⬇</span>
+                            <span class="play-btn-text" id="crowdControlPlayText">YÜKLE (6 MB)</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Savaş Alanı -->
+                <div class="game-card" id="savasAlaniCard">
+                    <div class="game-card-bg battle-bg"></div>
+                    <div class="game-card-content">
+                        <div class="game-card-head">
+                            <div class="game-icon">⚔️</div>
+                            <div style="display:flex; align-items:center; gap:6px;">
+                                <span class="game-badge kurulu" id="savasAlaniBadge">✓ HAZIR</span>
+                            </div>
+                        </div>
+                        <div class="game-title">Şövalye Savaşı <small>(Strateji)</small></div>
+                        <div class="game-desc">Attıkları hediye kadarıyla asker üretip canlı yayında birbirleriyle savaşırlar!</div>
+                        <div class="game-features">
+                            <span>⚔️ Birlik Üretimi</span>
+                            <span>🏰 Kale Savaşı</span>
+                            <span>🏆 Zafer Lideri</span>
+                        </div>
+                        <div class="game-progress-wrap" id="savasAlaniProgressWrap" style="display:none">
+                            <div class="game-progress-bar" id="savasAlaniProgressBar"></div>
+                            <div class="game-progress-stat">
+                                <span id="savasAlaniProgressPct">0%</span>
+                                <span id="savasAlaniProgressMb"></span>
+                            </div>
+                        </div>
+                        <button class="play-btn kur-btn" id="savasAlaniPlayBtn" onclick="oyunAksiyon('battle-game')">
+                            <span class="play-icon" id="savasAlaniPlayIcon">⬇</span>
+                            <span class="play-btn-text" id="savasAlaniPlayText">YÜKLE (9 MB)</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="game-card gelene-card" id="geleneGeceneCard">
+                    <div class="game-card-bg gelene-bg"></div><div class="game-card-content">
+                        <div class="game-card-head"><div class="game-icon">☣</div><div class="game-badges"><span class="game-badge indirilebilir" id="geleneGeceneBadge">KURULABİLİR</span></div></div>
+                        <div class="game-title">Gelene Geçene <small>(Hayatta Kalma)</small></div>
+                        <div class="game-desc">Yayın hediyeleri canavara dönüşür. Kurtuluş terminalini tamamla, izleyicilerin desteğiyle hayatta kal.</div>
+                        <div class="game-features"><span>Canlı Hediye Saldırıları</span><span>Kurtuluş Terminali</span><span>Steam + Unturned</span></div>
+                        <div class="steam-note">Oynamadan önce ücretsiz Unturned kurulmalıdır. KUR düğmesi modu oyuna otomatik yerleştirir.</div>
+                        <button class="steam-link" type="button" onclick="window.mngAPI.hariciLinkAc('steam://run/304930')">STEAM'DEN UNTURNED'I AÇ</button>
+                        <div class="game-progress-wrap" id="geleneGeceneProgressWrap" style="display:none"><div class="game-progress-bar" id="geleneGeceneProgressBar"></div><div class="game-progress-stat"><span id="geleneGeceneProgressPct">0%</span><span id="geleneGeceneProgressMb"></span></div></div>
+                        <button class="play-btn kur-btn gelene-play" id="geleneGecenePlayBtn" onclick="oyunAksiyon('gelene-gecene')"><span class="play-icon" id="geleneGecenePlayIcon">⬇</span><span class="play-btn-text" id="geleneGecenePlayText">KUR</span></button>
+                    </div>
+                </div>
+
+                <div class="game-card pony-card" id="ponyLifeCard">
+                    <div class="game-card-bg pony-life-bg"></div>
+                    <div class="game-card-content">
+                        <div class="game-card-head"><div class="game-icon">♞</div><div class="game-badges"><span class="game-badge kurulu" id="ponyLifeBadge">✓ HAZIR</span></div></div>
+                        <div class="game-title">Pony Katırı <small>(Canlı At Yarışı)</small></div>
+                        <div class="game-desc">İzleyiciler hediyeler ve beğenilerle yarışa katılır, atlarını hızlandırır ve canlı kürsü için mücadele eder.</div>
+                        <div class="game-features"><span>Canlı Yarış</span><span>Gökkuşağı Hız İzi</span><span>Yayıncı Mini Oyunu</span></div>
+                        <button class="play-btn" id="ponyLifePlayBtn" onclick="oyunAksiyon('pony-life')"><span class="play-icon" id="ponyLifePlayIcon">▶</span><span class="play-btn-text" id="ponyLifePlayText">OYNA</span></button>
+                    </div>
+                </div>
+
+                <div class="game-card duck-card" id="duckHuntCard">
+                    <div class="game-card-bg duck-hunt-bg"></div>
+                    <div class="game-card-content">
+                        <div class="game-card-head"><div class="game-icon">🦆</div><div class="game-badges"><span class="game-badge kurulu" id="duckHuntBadge">✓ HAZIR</span></div></div>
+                        <div class="game-title">MNG Dodge Hunter <small>(Karnaval Poligon)</small></div>
+                        <div class="game-desc">Canlı yayın hediyeleri ördeklere dönüşür. Nişan al, hedefleri vur ve yayın sıralamasını değiştir.</div>
+                        <div class="game-features"><span>3D Poligon</span><span>Hediye Hedefleri</span><span>Canlı Sıralama</span></div>
+                        <button class="play-btn" id="duckHuntPlayBtn" onclick="oyunAksiyon('duck-hunt')"><span class="play-icon" id="duckHuntPlayIcon">▶</span><span class="play-btn-text" id="duckHuntPlayText">OYNA</span></button>
+                    </div>
+                </div>
+
+                <div class="game-card frog-card" id="frogRiverCard">
+                    <div class="game-card-bg frog-river-bg"></div>
+                    <div class="game-card-content">
+                        <div class="game-card-head"><div class="game-icon">🐸</div><div class="game-badges"><span class="sparkle-badge">YENİ OYUN</span><span class="game-badge kurulu" id="frogRiverBadge">✓ HAZIR</span></div></div>
+                        <div class="game-title">Vak Vak Jump <small>(Nehir Yarışı)</small></div>
+                        <div class="game-desc">Kurbağanı seç, nilüferlerden ilerle; canlı yayın destekleri ve cezalarıyla hedefe ulaş.</div>
+                        <div class="game-features"><span>Canlı Hediye Etkileri</span><span>Kurbağa Seçimi</span><span>Nehir Macerası</span></div>
+                        <button class="play-btn" id="frogRiverPlayBtn" onclick="oyunAksiyon('frog-river')"><span class="play-icon" id="frogRiverPlayIcon">▶</span><span class="play-btn-text" id="frogRiverPlayText">OYNA</span></button>
+                    </div>
+                </div>
+
+                <div class="game-card penalty-card" id="penaltyKickCard">
+                    <div class="game-card-bg penalty-kick-bg"></div>
+                    <div class="game-card-content">
+                        <div class="game-card-head"><div class="game-icon">⚽</div><div class="game-badges"><span class="sparkle-badge">YENİ OYUN</span><span class="game-badge kurulu" id="penaltyKickBadge">✓ HAZIR</span></div></div>
+                        <div class="game-title">Süper Lig <small>(Penaltı)</small></div>
+                        <div class="game-desc">Yayın hediyeleri takımları ve saha olaylarını değiştirir. Nişan al, şutunu çek ve skoru belirle.</div>
+                        <div class="game-features"><span>686 Hediye</span><span>Takım Forması</span><span>Penaltı ve Frikik</span></div>
+                        <button class="play-btn" id="penaltyKickPlayBtn" onclick="oyunAksiyon('penalty-kick')"><span class="play-icon" id="penaltyKickPlayIcon">▶</span><span class="play-btn-text" id="penaltyKickPlayText">OYNA</span></button>
+                    </div>
+                </div>
+
+                <div class="game-card tightrope-card" id="tightropeBalanceCard">
+                    <div class="game-card-bg tightrope-balance-bg"></div>
+                    <div class="game-card-content">
+                        <div class="game-card-head"><div class="game-icon">🧗‍♂️</div><div class="game-badges"><span class="sparkle-badge">YENİ OYUN</span><span class="game-badge kurulu" id="tightropeBalanceBadge">✓ HAZIR</span></div></div>
+                        <div class="game-title">Dengesiz Yayıncı <small>(1000m)</small></div>
+                        <div class="game-desc">İki dağ arasındaki dev uçurumda ip üstünde yürü! Hediyeler sağ ve sol kavanozları doldurur, dengeyi koru ve hedefe ulaş.</div>
+                        <div class="game-features"><span>1000m Parkur</span><span>Sağ/Sol Denge</span><span>Fizik Simülasyonu</span></div>
+                        <button class="play-btn" id="tightropeBalancePlayBtn" onclick="oyunAksiyon('tightrope-balance')"><span class="play-icon" id="tightropeBalancePlayIcon">▶</span><span class="play-btn-text" id="tightropeBalancePlayText">OYNA</span></button>
+                    </div>
+                </div>
+                <div class="game-card zombie-card" id="zombieWarCard">
+                    <div class="game-card-bg zombie-war-bg"></div>
+                    <div class="game-card-content">
+                        <div class="game-card-head"><div class="game-icon">⚔</div><div class="game-badges"><span class="sparkle-badge">YENİ OYUN</span><span class="game-badge" id="zombieWarBadge">KUR</span></div></div>
+                        <div class="game-title">Zombie War <small>(Minecraft)</small></div>
+                        <div class="game-desc">Canlı yayın hediyeleriyle gelen yaratıklara karşı savaş. İzleyici profilleri, silah ilerlemesi ve sesle ateş etme.</div>
+                        <div class="game-features"><span>Forge 1.20.1</span><span>Canlı Etkileşim</span><span>Sesle Ateş</span></div>
+                        <button class="play-btn" id="zombieWarPlayBtn" onclick="oyunAksiyon('zombie-war')"><span id="zombieWarPlayIcon">⬇</span><span id="zombieWarPlayText">KUR</span></button>
+                    </div>
+                </div>
+                <div class="game-card royale-card" id="battleRoyaleCard">
+                    <div class="game-card-bg battle-royale-bg"></div>
+                    <div class="game-card-content">
+                        <div class="game-card-head"><div class="game-icon">BR</div><div class="game-badges"><span class="sparkle-badge">YENİ OYUN</span><span class="game-badge" id="battleRoyaleBadge">KUR</span></div></div>
+                        <div class="game-title">Minecraft, PUBG</div>
+                        <div class="game-desc">İzleyiciler uçaktan paraşütle iner, hediyelerle silah ve zırh geliştirir; daralan alanda son kişi olmak için savaşır.</div>
+                        <div class="game-features"><span>Paraşüt</span><span>Daralan Alan</span><span>Canlı Hediyeler</span></div>
+                        <button class="play-btn" id="battleRoyalePlayBtn" onclick="oyunAksiyon('battle-royale')"><span id="battleRoyalePlayIcon">⬇</span><span id="battleRoyalePlayText">KUR</span></button>
+                        <div class="game-progress" id="battleRoyaleProgressWrap" style="display:none"><div class="game-progress-track"><div id="battleRoyaleProgressBar"></div></div><span id="battleRoyaleProgressPct">%0</span></div>
+                    </div>
+                </div>
+                <div class="game-card snow-card" id="snowWarCard">
+                    <div class="game-card-bg snow-war-bg"></div>
+                    <div class="game-card-content">
+                        <div class="game-card-head"><div class="game-icon">❄</div><div class="game-badges"><span class="sparkle-badge">YENİ OYUN</span><span class="game-badge" id="snowWarBadge">KUR</span></div></div>
+                        <div class="game-title">Minecraft Kartopu Savaşı</div>
+                        <div class="game-desc">İzleyici profilleriyle kartopu savaşçıları gelir; hediyelerle takımını, canını ve özel kar saldırılarını güçlendirir.</div>
+                        <div class="game-features"><span>Kartopu Arenası</span><span>Profil Fotoğrafları</span><span>Hediye Kataloğu</span></div>
+                        <button class="play-btn" id="snowWarPlayBtn" onclick="oyunAksiyon('snow-war')"><span id="snowWarPlayIcon">⬇</span><span id="snowWarPlayText">KUR</span></button>
+                        <div class="game-progress" id="snowWarProgressWrap" style="display:none"><div class="game-progress-track"><div id="snowWarProgressBar"></div></div><span id="snowWarProgressPct">%0</span></div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- DURUM MESAJI -->
+            <div class="status-bar" id="statusBar" style="display:none">
+                <div class="status-spinner"></div>
+                <span id="statusMsg"></span>
+            </div>
+        </main>
+
+        <!-- ALT BAR -->
+        <footer class="footer">
+            <div class="footer-left">
+                <span class="footer-version" id="footerVersion">v6.5.17</span>
+            </div>
+            <div class="footer-right">
+                <button class="footer-btn" onclick="arkaPlanPanelAc()">ARKA PLANLAR</button>
+                <button class="footer-btn" style="background:rgba(139,92,246,0.2);border-color:rgba(139,92,246,0.4);color:#a78bfa;" onclick="hediyeTasarimiAc()">🎨 Hediye Tasarım Oluştur (PNG)</button>
+                <button class="footer-btn" id="yeniLisansBtn" onclick="yeniLisansGir()">🔑 Lisans Gir</button>
+            </div>
+        </footer>
+
+    </div>
+
+    <div class="compact-modal" id="tiktokAccountModal" hidden><div class="compact-dialog"><button class="modal-x" type="button" onclick="tiktokHesapPanelKapat()">×</button><h2>TikTok Yayıncı Hesabı</h2><p>Kullanıcı adını seçip Bağlan'a basınca yayın bağlantısı açılır. Uygulama kendiliğinden hiçbir yayına bağlanmaz.</p><div class="account-entry"><span>@</span><input id="accountUsername" autocomplete="off" placeholder="kullanıcı adı"><button type="button" onclick="tiktokHesapEkle()">HESABI EKLE</button></div><div class="account-connect-actions"><button type="button" onclick="tiktokYayinaBaglan()">BAĞLAN</button><button type="button" class="secondary" onclick="tiktokYayinBaglantisiniKes()">BAĞLANTIYI KES</button></div><div id="accountConnectionStatus" class="account-connection-status">Yayın bağlantısı kapalı.</div><div id="accountList" class="account-list"></div><small>Bu sürüm TikTok şifrenizi istemez. Resmî giriş, TikTok geliştirici onayı alındığında etkinleştirilebilir.</small></div></div>
+    <div class="compact-modal" id="widgetModal" hidden><div class="compact-dialog widget-dialog"><button class="modal-x" type="button" onclick="widgetPanelKapat()" aria-label="Kapat">×</button><div class="widget-gallery-head"><div><span class="widget-kicker">YAYINCI ARAÇLARI</span><h2>Canlı Yayın Widget Galerisi</h2><p>13 widgetın bağlantısını TikTok LIVE Studio'da Bağlantı Kaynağına, OBS'de Tarayıcı Kaynağına yapıştırın.</p></div><div class="widget-channel"><small>AKTİF YAYINCI</small><b id="widgetChannelLabel">@hesap seçilmedi</b><span>Veriler bu hesaba özel ve kalıcı tutulur.</span></div></div><section class="widget-live-connect" aria-label="TikTok canlı yayın bağlantısı"><div class="widget-live-connect-copy"><b>TikTok canlı yayını</b><span>Bir kez bağlanın; galerideki tüm widgetlar aynı canlı etkinlikleri kullanır.</span></div><label class="widget-live-username"><span>@</span><input id="widgetUsername" autocomplete="off" spellcheck="false" placeholder="TikTok kullanıcı adı"><span id="widgetConnectionStatus" role="status">Yayın bağlantısı kapalı.</span></label><div class="widget-live-connect-actions"><button type="button" id="widgetConnectButton" onclick="widgetYayinBaglan()">BAĞLAN</button><button type="button" class="secondary" onclick="widgetYayinBaglantiyiKes()">BAĞLANTIYI KES</button></div></section><div class="widget-customizer"><label>Vurgu rengi<input id="widgetAccent" type="color" value="#25f4ee" oninput="widgetOnIzlemeleriGuncelle()"></label><label>Liste uzunluğu<select id="widgetItemCount" onchange="widgetOnIzlemeleriGuncelle()"><option value="4">4 kişi</option><option value="6">6 kişi</option><option value="8">8 kişi</option><option value="10" selected>10 kişi</option><option value="13">13 kişi</option></select></label><label class="widget-search"><span>Widget ara</span><input id="widgetSearch" type="search" placeholder="Hediye, beğeni, sıralama..." oninput="widgetGalerisiniFiltrele(this.value)"></label><button type="button" onclick="widgetOnIzlemeleriGuncelle()">ÖN İZLEMELERİ YENİLE</button></div><div class="widget-category-bar" id="widgetCategoryBar"></div><div class="widget-collection" id="widgetCollection"></div></div></div>
+    <div class="compact-modal" id="widgetSettingsModal" hidden><div class="compact-dialog widget-settings-dialog"><button class="modal-x" type="button" onclick="widgetAyarPanelKapat()" aria-label="Kapat">×</button><span class="widget-kicker">WIDGET AYARLARI</span><h2 id="widgetSettingsTitle">Widget</h2><div class="widget-settings-layout"><iframe id="widgetSettingsPreview" title="Widget canlı ön izlemesi"></iframe><form id="widgetSettingsForm"><div id="widgetSettingsFields" class="widget-settings-fields"></div><div class="widget-settings-actions"><button type="button" class="secondary" onclick="widgetAyarVarsayilan()">VARSAYILAN</button><button type="submit">KAYDET</button></div></form></div></div></div>
+    <div class="compact-modal" id="backgroundModal" hidden><div class="compact-dialog background-dialog"><button class="modal-x" type="button" onclick="arkaPlanPanelKapat()">×</button><h2>Video Arka Planları</h2><p>Videolar sessiz ve sürekli döngüye hazırdır.</p><button class="auto-background" type="button" onclick="arkaPlanSec(-1)">OTOMATİK DÖNGÜ</button><div id="backgroundGrid" class="background-grid"></div></div></div>
+
+    <!-- LİSANS EKRANI -->
+    <div class="license-page" id="licensePage" style="display:none">
+        <div class="license-box">
+            <div class="license-logo">
+                <span class="license-logo-surface"><img src="assets/logo-v3.png" alt="TikMnG"></span>
+            </div>
+            <div class="license-title">Lisans Anahtarınızı Girin</div>
+            <div class="license-desc" id="licenseDesc">Uygulamayı kullanabilmek için yöneticinizden aldığınız lisans kodunu girin.</div>
+
+            <div class="license-input-wrap">
+                <input
+                    type="text"
+                    class="license-input"
+                    id="licenseInput"
+                    placeholder="Örn: MNG7-XXXX-XXXX"
+                    maxlength="25"
+                    autocomplete="off"
+                    spellcheck="false"
+                    oninput="licenseInputTemizle(this)"
+                    onkeydown="if(event.key==='Enter') lisansDogrula()"
+                >
+            </div>
+
+            <div class="license-actions">
+                <button class="license-btn" id="licenseBtn" onclick="lisansDogrula()">
+                    AKTİFLEŞTİR
+                </button>
+                <button class="license-cancel-btn" id="licenseCancelBtn" onclick="anaEkranaDon()">
+                    Vazgeç
+                </button>
+            </div>
+
+            <div class="license-error" id="licenseError"></div>
+
+            <!-- Güncelleme Butonu (Lisans ekranında güncelleme gerekince görünür) -->
+            <div id="licenseUpdateBox" style="display:none; margin-top: 14px;">
+                <button class="update-direct-btn" id="licenseUpdateBtn" onclick="guncellemeBaslat()">
+                    ⚡ Yeni Sürümü Güncelle (<span id="licenseUpdateVer">v5.0.2</span>)
+                </button>
+            </div>
+
+            <div class="license-info">
+                <span>Lisans anahtarınız yoksa yöneticinizle iletişime geçin.</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- OTOMATİK GÜNCELLEME MODALI -->
+    <div class="update-modal" id="updateModal" style="display:none">
+        <div class="update-card">
+            <div class="update-badge">🚀 YENİ GÜNCELLEME MEVCUT</div>
+            <div class="update-version-tag">
+                <div class="ver-box current">
+                    <span class="ver-label">MEVCUT SÜRÜM</span>
+                    <span class="ver-value" id="currentVerTag">v5.0.0</span>
+                </div>
+                <div class="ver-arrow-box">
+                    <span class="ver-arrow">➔</span>
+                </div>
+                <div class="ver-box next">
+                    <span class="ver-label">YENİ SÜRÜM</span>
+                    <span class="ver-value" id="newVerTag">v5.0.2</span>
+                </div>
+            </div>
+            <p class="update-description" id="modalUpdateDesc">
+                Uygulamanın yeni sürümü yayınlandı. Aşağıdaki yeni özellikleri kullanabilmek için hemen güncelleyebilirsiniz.
+            </p>
+
+            <!-- Güncellemedeki Yenilikler Listesi -->
+            <div class="update-changelog-box" id="updateChangelogBox">
+                <div class="changelog-header">
+                    <span class="changelog-title" id="changelogVersionTitle">✨ YENİ SÜRÜMDE NELER YAPILDI?</span>
+                </div>
+                <ul class="changelog-list" id="modalChangelogList">
+                    <!-- Dinamik olarak doldurulur -->
+                </ul>
+            </div>
+
+            <!-- İndirme İlerleme Alanı -->
+            <div class="update-progress-box" id="updateProgressBox" style="display:none">
+                <div class="update-progress-track">
+                    <div class="update-progress-bar" id="updateProgressBar"></div>
+                </div>
+                <div class="update-progress-stats">
+                    <span id="updatePercent">0%</span>
+                    <span id="updateMbStat">0.0 MB / 0.0 MB</span>
+                </div>
+                <div class="update-status-msg" id="updateStatusMsg">İndirme başlatılıyor...</div>
+            </div>
+
+            <!-- Butonlar -->
+            <div class="update-btn-group" id="updateBtnGroup">
+                <button class="btn-update-now" id="btnUpdateNow" onclick="guncellemeBaslat()">
+                    ⚡ Şimdi Güncelle
+                </button>
+                <button class="btn-update-later" id="btnUpdateLater" onclick="updateModalKapat()" style="display:none">
+                    Daha Sonra
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="installing-overlay" id="installingOverlay" style="display:none" aria-live="polite">
+        <div class="installing-brand"><span>Tik</span>MnG</div>
+        <div class="installing-spinner" aria-hidden="true"></div>
+        <h2>Güncelleniyor</h2>
+        <p id="installingMessage">Yeni sürüm hazırlanıyor. Uygulama kısa süre sonra yeniden açılacak.</p>
+        <div class="installing-track"><i></i></div>
+    </div>
+
+
+    <!-- HEDİYE TASARIM MODALI -->
+    <div id="giftDesignerModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:9000;overflow-y:auto;padding:20px;box-sizing:border-box;">
+        <div style="max-width:900px;margin:0 auto;background:#0f172a;border:1px solid rgba(139,92,246,0.3);border-radius:16px;padding:24px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+                <h2 style="color:#a78bfa;margin:0;">🎨 Hediye Tasarım Oluştur (PNG)</h2>
+                <button onclick="document.getElementById('giftDesignerModal').style.display='none'" style="background:rgba(255,255,255,0.1);border:none;color:#fff;font-size:20px;cursor:pointer;border-radius:8px;padding:4px 10px;">✕</button>
+            </div>
+            <div style="display:flex;gap:20px;flex-wrap:wrap;">
+                <!-- Sol: Hediye Slotları -->
+                <div style="flex:1;min-width:280px;">
+                    <div style="margin-bottom:12px;">
+                        <label style="color:#94a3b8;font-size:12px;display:block;margin-bottom:6px;">GÖRSEL DÜZENİ</label>
+                        <select id="designLayout" onchange="designerRender()" style="width:100%;padding:8px;background:#1e293b;border:1px solid rgba(255,255,255,0.15);border-radius:8px;color:#fff;">
+                            <option value="row">Yatay (yan yana)</option>
+                            <option value="leftColumn">Soldan dikey</option>
+                            <option value="rightColumn">Sağdan dikey</option>
+                        </select>
+                    </div>
+                    <div id="designSlots" style="display:flex;flex-direction:column;gap:10px;max-height:400px;overflow-y:auto;padding-right:4px;"></div>
+                    <button onclick="designerAddSlot()" style="width:100%;margin-top:10px;padding:10px;background:rgba(139,92,246,0.2);border:1px solid rgba(139,92,246,0.4);color:#a78bfa;border-radius:8px;cursor:pointer;font-size:13px;">+ Hediye Ekle</button>
+                </div>
+                <!-- Orta: Ayarlar -->
+                <div style="width:200px;flex-shrink:0;">
+                    <div style="display:flex;flex-direction:column;gap:12px;">
+                        <div>
+                            <label style="color:#94a3b8;font-size:11px;display:block;margin-bottom:4px;">ARKA PLAN</label>
+                            <input type="color" id="designBg" value="#1a1a2e" onchange="designerRender()" style="width:100%;height:36px;border:none;border-radius:6px;cursor:pointer;background:none;">
+                        </div>
+                        <div>
+                            <label style="color:#94a3b8;font-size:11px;display:block;margin-bottom:4px;">METİN RENGİ</label>
+                            <input type="color" id="designTextColor" value="#ffffff" onchange="designerRender()" style="width:100%;height:36px;border:none;border-radius:6px;cursor:pointer;background:none;">
+                        </div>
+                        <div>
+                            <label style="color:#94a3b8;font-size:11px;display:block;margin-bottom:4px;">FONT BOYUTU</label>
+                            <input type="range" id="designFontSize" min="8" max="28" value="14" oninput="designerRender()" style="width:100%;">
+                        </div>
+                        <div>
+                            <label style="color:#94a3b8;font-size:11px;display:block;margin-bottom:4px;">HEDİYE BOYUTU</label>
+                            <input type="range" id="designImgSize" min="40" max="160" value="80" oninput="designerRender()" style="width:100%;">
+                        </div>
+                        <div>
+                            <label style="color:#94a3b8;font-size:11px;display:block;margin-bottom:4px;">KÖŞE YUVARLAMA</label>
+                            <input type="range" id="designRadius" min="0" max="40" value="12" oninput="designerRender()" style="width:100%;">
+                        </div>
+                        <div>
+                            <label style="color:#94a3b8;font-size:11px;display:block;margin-bottom:4px;">GÖLGELİ METİN</label>
+                            <input type="checkbox" id="designShadow" onchange="designerRender()" checked style="transform:scale(1.3);accent-color:#a78bfa;">
+                        </div>
+                        <button onclick="designerDownload()" style="width:100%;padding:12px;background:linear-gradient(135deg,#7c3aed,#6d28d9);border:none;color:#fff;border-radius:10px;cursor:pointer;font-weight:700;font-size:14px;margin-top:6px;">📥 PNG İndir</button>
+                    </div>
+                </div>
+                <!-- Sağ: Önizleme -->
+                <div style="flex:1;min-width:240px;display:flex;flex-direction:column;gap:10px;">
+                    <label style="color:#94a3b8;font-size:12px;">ÖNİZLEME</label>
+                    <div style="background:#0a0a1a;border-radius:10px;padding:10px;border:1px solid rgba(255,255,255,0.08);display:flex;align-items:center;justify-content:center;min-height:200px;">
+                        <canvas id="designCanvas" style="max-width:100%;border-radius:8px;"></canvas>
+                    </div>
+                </div>
+            </div>
+            <!-- Hediye Seçici Popup -->
+            <div id="designGiftPicker" style="display:none;position:absolute;background:#1e293b;border:1px solid rgba(139,92,246,0.4);border-radius:12px;z-index:9999;padding:12px;width:340px;max-height:400px;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,0.8);">
+                <input id="designGiftSearch" type="text" placeholder="Hediye ara..." style="width:100%;padding:8px;background:#0f172a;border:1px solid rgba(255,255,255,0.15);border-radius:8px;color:#fff;margin-bottom:8px;box-sizing:border-box;" oninput="designerFilterGifts(this.value)">
+                <div id="designGiftGrid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="giftDesignerV2" style="display:none;position:fixed;inset:0;z-index:12000;background:#040a12;">
+        <iframe src="gift-designer.html?launcher=1" title="MNG Hediye Tasarımcısı" style="width:100%;height:100%;border:0;display:block;"></iframe>
+    </div>
+
+    <script src="app.js"></script>
+    <script src="vendor/lucide.js"></script>
+    <script src="workspace.js"></script>
+    <script>
+    // ============================
+    // PNG HEDİYE TASARIM SİSTEMİ
+    // ============================
+    let designSlots = [];
+    let designGiftCatalog = [];
+    let designPickingSlot = null;
+
+    function hediyeTasarimiAc() {
+        document.getElementById('giftDesignerModal').style.display = 'block';
+        if (!designSlots.length) { designerAddSlot(); designerAddSlot(); designerAddSlot(); }
+        designerLoadCatalog();
+    }
+
+    async function designerLoadCatalog() {
+        if (designGiftCatalog.length) return;
+        try {
+            if (window.mngAPI && window.mngAPI.orbitHediyeKatalogu) {
+                const list = await window.mngAPI.orbitHediyeKatalogu();
+                if (Array.isArray(list) && list.length) {
+                    designGiftCatalog = list;
+                    designerFilterGifts('');
+                    return;
+                }
+            }
+        } catch (e) { console.warn("orbitHediyeKatalogu err:", e); }
+        try {
+            const r = await fetch('http://localhost:3000/api/gift-catalog');
+            const data = await r.json();
+            if (Array.isArray(data) && data.length) {
+                designGiftCatalog = data.map(g => ({
+                    id: String(g.id || ''),
+                    name: String(g.trName || g.name || 'Hediye'),
+                    coins: Number(g.coins) || 0,
+                    image: g.file ? `mng-bg://gift/${g.file}` : (g.image || '')
+                }));
+                designerFilterGifts('');
+                return;
+            }
+        } catch {}
+    }
+
+    function designerAddSlot() {
+        designSlots.push({ gift: null, label: '' });
+        designerRenderSlots();
+        designerRender();
+    }
+
+    function designerRenderSlots() {
+        const c = document.getElementById('designSlots');
+        if (!c) return;
+        c.innerHTML = '';
+        designSlots.forEach((slot, i) => {
+            const d = document.createElement('div');
+            d.style.cssText = 'display:flex;gap:8px;align-items:center;background:#1e293b;border-radius:10px;padding:8px;border:1px solid rgba(255,255,255,0.08);';
+            d.innerHTML = `
+                <img src="${slot.gift && slot.gift.image ? slot.gift.image : ''}" style="width:40px;height:40px;object-fit:contain;border-radius:6px;background:#0f172a;border:1px solid rgba(255,255,255,0.1);cursor:pointer;" onclick="designerOpenPicker(${i})" onerror="this.onerror=null;this.style.opacity='0.25';">
+                <div style="flex:1;">
+                    <div style="font-size:11px;color:#64748b;margin-bottom:3px;">${slot.gift ? slot.gift.name : 'Hediye seçilmedi'}</div>
+                    <input type="text" placeholder="Alt yazı..." value="${slot.label}" style="width:100%;padding:5px 8px;background:#0f172a;border:1px solid rgba(255,255,255,0.1);border-radius:6px;color:#fff;font-size:12px;box-sizing:border-box;" oninput="designSlots[${i}].label=this.value;designerRender()">
+                </div>
+                <button onclick="designSlots.splice(${i},1);designerRenderSlots();designerRender();" style="background:rgba(239,68,68,0.2);border:none;color:#ef4444;border-radius:6px;padding:4px 8px;cursor:pointer;font-size:16px;">🗑</button>`;
+            d.querySelector('img').addEventListener('click', () => designerOpenPicker(i));
+            c.appendChild(d);
+        });
+    }
+
+    async function designerOpenPicker(slotIdx) {
+        designPickingSlot = slotIdx;
+        const picker = document.getElementById('designGiftPicker');
+        picker.style.display = 'block';
+        if (!designGiftCatalog.length) {
+            await designerLoadCatalog();
+        }
+        designerFilterGifts('');
+    }
+
+    function designerFilterGifts(q) {
+        const grid = document.getElementById('designGiftGrid');
+        if (!grid) return;
+        const filtered = q ? designGiftCatalog.filter(g => g.name.toLowerCase().includes(q.toLowerCase()) || String(g.coins).includes(q)) : designGiftCatalog;
+        grid.innerHTML = '';
+        filtered.slice(0, 99).forEach(gift => {
+            const d = document.createElement('div');
+            d.style.cssText = 'cursor:pointer;text-align:center;padding:6px;border-radius:8px;background:#0f172a;border:1px solid rgba(255,255,255,0.08);';
+            d.innerHTML = `<img src="${gift.image}" style="width:36px;height:36px;object-fit:contain;background:#0b1120;border-radius:6px;" onerror="this.onerror=null;this.style.opacity='0.25';"><div style="font-size:9px;color:#94a3b8;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${gift.name}</div><div style="font-size:9px;color:#fbbf24;">${gift.coins}c</div>`;
+            d.addEventListener('click', () => {
+                if (designPickingSlot !== null) { designSlots[designPickingSlot].gift = gift; }
+                document.getElementById('designGiftPicker').style.display = 'none';
+                designerRenderSlots(); designerRender();
+            });
+            d.addEventListener('mouseenter', () => d.style.background = '#1e293b');
+            d.addEventListener('mouseleave', () => d.style.background = '#0f172a');
+            grid.appendChild(d);
+        });
+    }
+
+    document.addEventListener('click', e => {
+        const picker = document.getElementById('designGiftPicker');
+        if (picker && !picker.contains(e.target) && !e.target.closest('#designSlots')) {
+            picker.style.display = 'none';
+        }
+    });
+
+    function designerRender() {
+        const canvas = document.getElementById('designCanvas');
+        if (!canvas) return;
+        const layout = (document.getElementById('designLayout') || {}).value || 'row';
+        const bg = (document.getElementById('designBg') || {}).value || '#1a1a2e';
+        const textColor = (document.getElementById('designTextColor') || {}).value || '#ffffff';
+        const fontSize = parseInt((document.getElementById('designFontSize') || {}).value || 14);
+        const imgSize = parseInt((document.getElementById('designImgSize') || {}).value || 80);
+        const radius = parseInt((document.getElementById('designRadius') || {}).value || 12);
+        const shadow = (document.getElementById('designShadow') || {}).checked !== false;
+        const padding = 16;
+        const gapX = 12, gapY = 12;
+        const cellW = imgSize + padding * 2;
+        const cellH = imgSize + fontSize + padding * 2 + 8;
+        const vertical = layout === 'leftColumn' || layout === 'rightColumn';
+        const cols = vertical ? 1 : (designSlots.length || 1);
+        const rows = vertical ? (designSlots.length || 1) : 1;
+        const W = vertical ? Math.max(260, cellW + padding * 2) : cols * cellW + (cols - 1) * gapX + padding * 2;
+        const H = rows * cellH + (rows - 1) * gapY + padding * 2;
+        canvas.width = Math.max(W, 120); canvas.height = Math.max(H, 80);
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = bg; ctx.beginPath();
+        ctx.roundRect(0, 0, canvas.width, canvas.height, radius);
+        ctx.fill();
+        const drawSlot = (slot, x, y) => {
+            ctx.fillStyle = 'rgba(255,255,255,0.05)';
+            ctx.beginPath(); ctx.roundRect(x, y, cellW, cellH, radius * 0.7); ctx.fill();
+            if (slot.gift && slot.gift.image) {
+                const img = new Image();
+                img.onload = () => {
+                    ctx.drawImage(img, x + padding, y + padding, imgSize, imgSize);
+                    drawLabel();
+                };
+                img.onerror = drawLabel;
+                img.src = slot.gift.image;
+            } else { drawLabel(); }
+            function drawLabel() {
+                const label = slot.label || (slot.gift ? slot.gift.name : '');
+                if (!label) return;
+                ctx.font = `${fontSize}px sans-serif`;
+                ctx.fillStyle = textColor;
+                ctx.textAlign = 'center';
+                if (shadow) { ctx.shadowColor = 'rgba(0,0,0,0.8)'; ctx.shadowBlur = 4; }
+                ctx.fillText(label, x + cellW / 2, y + padding + imgSize + fontSize + 2, cellW - 4);
+                ctx.shadowBlur = 0;
+            }
+        };
+        designSlots.forEach((slot, i) => {
+            const col = vertical ? 0 : i, row = vertical ? i : 0;
+            const x = layout === 'rightColumn' ? W - padding - cellW : padding + col * (cellW + gapX);
+            const y = padding + row * (cellH + gapY);
+            drawSlot(slot, x, y);
+        });
+    }
+
+    function designerDownload() {
+        designerRender();
+        setTimeout(() => {
+            const canvas = document.getElementById('designCanvas');
+            const link = document.createElement('a');
+            link.download = 'mng-hediye-tasarim.png';
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        }, 300);
+    }
+    </script>
+    <script>
+    window.hediyeTasarimiAc = function () {
+        document.getElementById('giftDesignerV2').style.display = 'block';
+    };
+    window.addEventListener('message', function (event) {
+        if (event.data && event.data.type === 'mng-close-gift-designer') {
+            document.getElementById('giftDesignerV2').style.display = 'none';
+        }
+    });
+    </script>
+</body>
+</html>

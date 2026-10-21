@@ -1,0 +1,312 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>TikMnG - En Büyük Hediye Widget</title>
+<style>
+:root { --widget-accent: #25f4ee; --widget-accent-soft: rgba(37,244,238,0.28); }
+* { box-sizing: border-box; }
+html, body {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  background: transparent;
+  overflow: hidden;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  color: #fff;
+  user-select: none;
+}
+.widget {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-height: 240px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+.halo {
+  position: absolute;
+  width: min(80%, 300px);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--widget-accent-soft) 0%, rgba(254,44,85,0.18) 42%, transparent 70%);
+  filter: blur(14px);
+  animation: haloPulse 3s ease-in-out infinite;
+  pointer-events: none;
+}
+.content {
+  position: relative;
+  z-index: 2;
+  width: min(340px, 94%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+.header-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 14px;
+  background: rgba(10, 16, 28, 0.85);
+  border: 1px solid var(--widget-accent);
+  border-radius: 20px;
+  box-shadow: 0 4px 18px rgba(0,0,0,0.6), 0 0 12px rgba(37,244,238,0.2);
+  margin-bottom: 8px;
+}
+.header-badge span {
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  background: linear-gradient(90deg, var(--widget-accent), #ffffff 50%, #fe2c55);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.gift-stage {
+  position: relative;
+  width: min(150px, 38vh);
+  height: min(150px, 38vh);
+  min-width: 90px;
+  min-height: 90px;
+  margin: 6px 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.gift-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 10px 20px rgba(0, 0, 0, 0.9)) drop-shadow(0 0 14px rgba(254, 44, 85, 0.35));
+  animation: giftFloat 3.5s ease-in-out infinite;
+}
+.avatar-anchor {
+  position: absolute;
+  left: -10px;
+  bottom: 0px;
+  width: clamp(48px, 13vh, 58px);
+  height: clamp(48px, 13vh, 58px);
+  border-radius: 50%;
+  padding: 3px;
+  background: linear-gradient(135deg, var(--widget-accent), #ffffff 40%, #fe2c55);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.85), 0 0 12px rgba(37, 244, 238, 0.4);
+}
+.avatar-anchor img, .avatar-fallback {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+  background: #111a2e;
+}
+.avatar-fallback {
+  display: grid;
+  place-items: center;
+  font-size: 20px;
+  font-weight: 900;
+  color: #fff;
+}
+.gift-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 4px;
+  padding: 6px 16px;
+  background: rgba(12, 20, 36, 0.9);
+  border: 1px solid rgba(255, 215, 0, 0.55);
+  border-radius: 14px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.7), 0 0 15px rgba(255, 215, 0, 0.25);
+}
+.gift-count-name {
+  font-size: clamp(15px, 4.8vh, 19px);
+  font-weight: 1000;
+  color: #ffffff;
+  text-shadow: 0 2px 8px rgba(0,0,0,0.8);
+}
+.gift-coins {
+  font-size: clamp(14px, 4.4vh, 18px);
+  font-weight: 1000;
+  color: #ffd700;
+  text-shadow: 0 2px 10px rgba(255, 215, 0, 0.4);
+}
+.user-card {
+  margin-top: 8px;
+  padding: 5px 18px;
+  background: linear-gradient(90deg, rgba(8, 14, 26, 0.92), rgba(18, 30, 52, 0.92));
+  border: 1px solid var(--widget-accent);
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 96%;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.7);
+}
+.user-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: clamp(14px, 4.2vh, 17px);
+  font-weight: 900;
+  color: #e6f7ff;
+  letter-spacing: 0.3px;
+  text-shadow: 0 2px 8px rgba(0,0,0,0.9);
+}
+.verified-icon {
+  width: 15px;
+  height: 15px;
+  fill: var(--widget-accent);
+  flex-shrink: 0;
+}
+.empty-box {
+  width: 110px;
+  height: 110px;
+  margin: 14px 0;
+  display: grid;
+  place-items: center;
+  border: 2px dashed rgba(255, 255, 255, 0.35);
+  border-radius: 50%;
+  font-size: 38px;
+  color: var(--widget-accent);
+  animation: haloPulse 2.5s infinite;
+}
+.empty-text {
+  font-size: 14px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.65);
+  margin-top: 6px;
+}
+@keyframes giftFloat {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50% { transform: translateY(-6px) scale(1.03); }
+}
+@keyframes haloPulse {
+  0%, 100% { transform: scale(0.95); opacity: 0.65; }
+  50% { transform: scale(1.08); opacity: 0.95; }
+}
+@keyframes giftEnter {
+  0% { opacity: 0; transform: translateY(20px) scale(0.7) rotate(-8deg); }
+  60% { transform: translateY(-4px) scale(1.06) rotate(2deg); }
+  100% { opacity: 1; transform: translateY(0) scale(1) rotate(0); }
+}
+.animate-in {
+  animation: giftEnter 0.65s cubic-bezier(0.18, 0.89, 0.32, 1.28) both;
+}
+</style>
+</head>
+<body>
+<main class="widget">
+  <div class="halo"></div>
+  <section class="content">
+    <div class="header-badge">
+      <span>EN BÜYÜK HEDİYE</span>
+    </div>
+    <div id="emptyBox" class="empty-box">✦</div>
+    <div id="emptyText" class="empty-text">En büyük hediye bekleniyor</div>
+    <div id="stage" class="gift-stage" style="display:none;">
+      <img class="gift-img" id="giftImg" alt="Hediye">
+      <div class="avatar-anchor">
+        <img id="avatarImg" alt="Profil">
+        <div class="avatar-fallback" id="avatarFallback">?</div>
+      </div>
+    </div>
+    <div class="gift-pill" id="giftPill" style="display:none;">
+      <span class="gift-count-name" id="giftCountName">1x Hediye</span>
+      <span class="gift-coins" id="giftCoins">1 Coin</span>
+    </div>
+    <div class="user-card" id="userCard" style="display:none;">
+      <svg class="verified-icon" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+      <span class="user-name" id="userName">@izleyici</span>
+    </div>
+  </section>
+</main>
+<script>
+const widgetParams = new URLSearchParams(location.search);
+const widgetAccent = widgetParams.get('accent');
+if (widgetAccent && /^#[0-9a-f]{6}$/i.test(widgetAccent)) {
+  document.documentElement.style.setProperty('--widget-accent', widgetAccent);
+  document.documentElement.style.setProperty('--widget-accent-soft', widgetAccent + '48');
+}
+const cleanUrl = value => { try { return new URL(String(value || ''), location.href).href; } catch { return ''; } };
+let lastStamp = 0;
+function setImage(img, fallback, url) {
+  if (!url) {
+    img.removeAttribute('src');
+    img.style.display = 'none';
+    if (fallback) fallback.style.display = 'grid';
+    return;
+  }
+  img.onload = () => { img.style.display = 'block'; if (fallback) fallback.style.display = 'none'; };
+  img.onerror = () => { img.style.display = 'none'; if (fallback) fallback.style.display = 'grid'; };
+  img.src = cleanUrl(url);
+}
+
+async function refresh() {
+  try {
+    const key = widgetParams.get('key') || '';
+    const channel = widgetParams.get('channel') || '';
+    const res = await fetch('/widget/top-gift/state?key=' + encodeURIComponent(key) + '&channel=' + encodeURIComponent(channel) + '&t=' + Date.now(), { cache: 'no-store' });
+    const data = await res.json();
+    const top = data.top;
+    const stage = document.getElementById('stage');
+    const emptyBox = document.getElementById('emptyBox');
+    const emptyText = document.getElementById('emptyText');
+    const giftPill = document.getElementById('giftPill');
+    const userCard = document.getElementById('userCard');
+    const giftCountName = document.getElementById('giftCountName');
+    const giftCoins = document.getElementById('giftCoins');
+    const userName = document.getElementById('userName');
+    const giftImg = document.getElementById('giftImg');
+    const avatarImg = document.getElementById('avatarImg');
+    const avatarFallback = document.getElementById('avatarFallback');
+
+    if (!top) {
+      stage.style.display = 'none';
+      giftPill.style.display = 'none';
+      userCard.style.display = 'none';
+      emptyBox.style.display = 'grid';
+      emptyText.style.display = 'block';
+      return;
+    }
+
+    emptyBox.style.display = 'none';
+    emptyText.style.display = 'none';
+    stage.style.display = 'flex';
+    giftPill.style.display = 'inline-flex';
+    userCard.style.display = 'inline-flex';
+
+    const count = Number(top.count || top.repeatCount || 1);
+    const giftName = top.giftName || 'Hediye';
+    giftCountName.textContent = `${count}x ${giftName}`;
+
+    const coinsVal = Number(top.coins || top.totalCoins || 0);
+    giftCoins.textContent = `${coinsVal.toLocaleString('tr-TR')} Coin`;
+
+    userName.textContent = '@' + String(top.username || 'izleyici');
+    avatarFallback.textContent = String(top.nickname || top.username || '?').slice(0, 1).toLocaleUpperCase('tr-TR');
+
+    setImage(avatarImg, avatarFallback, top.avatar);
+    setImage(giftImg, null, top.giftImage);
+
+    if (lastStamp !== top.updatedAt) {
+      stage.classList.remove('animate-in');
+      giftPill.classList.remove('animate-in');
+      userCard.classList.remove('animate-in');
+      void stage.offsetWidth;
+      stage.classList.add('animate-in');
+      giftPill.classList.add('animate-in');
+      userCard.classList.add('animate-in');
+      lastStamp = top.updatedAt;
+    }
+  } catch (err) {}
+}
+
+refresh();
+setInterval(refresh, 800);
+</script>
+</body>
+</html>

@@ -1,0 +1,12 @@
+{
+  "extends": null,
+  "appId": "com.mng.tiktokgame.preview",
+  "productName": "TikMnG Test",
+  "electronVersion": "31.7.7",
+  "asar": true,
+  "directories": { "output": "D:/TikMnG-Test-6.5.17" },
+  "files": ["main.js", "preload.js", "lib/**/*", "license-server.txt", "renderer/**/*", "!renderer/assets/game-covers/orbit-v3.png", "!renderer/assets/game-covers/crowd-control-v3.png", "!renderer/assets/game-covers/vs-v3.png", "!renderer/assets/game-covers/puanlama-v3.png", "!renderer/assets/game-covers/tightrope-balance-v3.png"],
+  "extraResources": [{ "from": "tools/tikmng-preview.json", "to": "tikmng-preview.json" }],
+  "win": { "icon": "renderer/assets/icon-v3.ico", "signAndEditExecutable": true, "target": "dir" },
+  "publish": null
+}
