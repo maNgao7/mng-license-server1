@@ -6,6 +6,7 @@
 - Quiet, dense operational layout: charcoal navigation, neutral workspace, teal commands, restrained status colors.
 - Expandable agency rows expose registered devices, administrator-assigned publisher labels, first recorded login, last license check and login count.
 - Public site keeps its existing artwork, demos, download and contact flows. Typography, navigation and mobile spacing were refined.
+- Follow-up: the hero artwork now occupies almost the entire first viewport without an overlaid demo panel. Demos remain playable in their own unframed section below it. A persistent upper-right admin entry is visible on desktop and mobile without opening a menu.
 - No launcher/game files or existing runtime license databases were changed.
 
 ## Agency Keys and Compatibility
@@ -30,7 +31,7 @@
 
 Run `npm run test:licenses` for ten API/integration scenarios, covering 20-seat limits, duplicate entry, concurrent registrations, every member's subsequent check, per-device tokens, capacity changes, labels, blocking, restart persistence, validation, legacy keys, signed receipt recovery, expiration/revocation, storage-write failure and admin authorization.
 
-Run `tests/admin-browser-check.cjs` with `PLAYWRIGHT_MODULE` pointing to Playwright and optional `BROWSER_EXECUTABLE` pointing to an installed Chromium browser. Eighteen browser checkpoints include desktop/mobile overflow, agency creation/expansion, saving labels/capacity, block/unblock, backup export/import, individual keys, stored-XSS escaping, search, error recovery, public navigation and end-to-end inquiry submission to admin.
+Run `tests/admin-browser-check.cjs` with `PLAYWRIGHT_MODULE` pointing to Playwright and optional `BROWSER_EXECUTABLE` pointing to an installed Chromium browser. Twenty-one browser checkpoints include desktop/mobile overflow, agency creation/expansion, saving labels/capacity, block/unblock, backup export/import, individual keys, stored-XSS escaping, search, error recovery, public navigation and end-to-end inquiry submission to admin. The admin entry and hero layout are checked at 2560, 1920, 1366, 390 and 320 pixels wide, and a canvas-pixel check verifies the relocated demo remains rendered.
 
 All checks use isolated temporary databases, generated test secrets, disabled external backups and loopback listeners. Browser artifacts are written to `qa/admin-2026-10-21/` and contain only disposable demo data.
 

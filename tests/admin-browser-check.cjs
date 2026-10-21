@@ -129,7 +129,37 @@ async function main() {
         const demoBox = await page.locator('#sim').boundingBox();
         const navBox = await page.locator('.nav-header').boundingBox();
         assert.ok(demoBox.y >= navBox.y + navBox.height, 'Demo must not overlap fixed navigation');
+        assert.equal(await page.locator('.hero #sim').count(), 0);
+        assert.ok(demoBox.y >= (await page.locator('.hero').boundingBox()).height, 'Demo belongs below the hero artwork');
+        assert.equal(await page.locator('#adminEntry').getAttribute('href'), '/admin/');
+        assert.ok(await page.locator('#heroCanvas').evaluate(canvas => {
+            const pixels = canvas.getContext('2d').getImageData(0, 0, canvas.width, canvas.height).data;
+            let lit = 0;
+            for (let i = 0; i < pixels.length; i += 64) if (pixels[i] > 70 || pixels[i + 1] > 70 || pixels[i + 2] > 70) lit++;
+            return lit > 20;
+        }), 'Relocated demo still paints its active game');
         await page.screenshot({ path: path.join(out, 'website-desktop.png') });
+        for (const viewport of [{ width: 2560, height: 1280 }, { width: 1920, height: 1080 }, { width: 1366, height: 768 }, { width: 390, height: 844 }, { width: 320, height: 568 }]) {
+            await page.setViewportSize(viewport);
+            const entry = await page.locator('#adminEntry').boundingBox();
+            const logo = await page.locator('.brand-logo').first().boundingBox();
+            assert.ok(await page.locator('#adminEntry').isVisible(), 'Admin entry remains visible at ' + viewport.width);
+            assert.ok(entry.x >= logo.x + logo.width, 'Admin entry must not collide with the logo');
+            assert.ok(entry.x + entry.width <= viewport.width && entry.y >= 0, 'Admin entry remains in the viewport');
+            assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
+            const hero = await page.locator('.hero').boundingBox();
+            assert.ok(hero.height >= viewport.height - 35, 'Artwork fills the first viewport');
+            assert.ok(hero.height < viewport.height, 'The next section stays visible at ' + viewport.width + ' pixels');
+            const imageLoaded = await page.evaluate(async () => {
+                const image = new Image();
+                image.src = '/portal-hero-v2.png';
+                await image.decode();
+                return image.naturalWidth > 1000;
+            });
+            assert.ok(imageLoaded);
+            if (viewport.width === 2560) await page.screenshot({ path: path.join(out, 'website-wide.png') });
+        }
+        console.log('Visible admin entry, full-height artwork and non-overlap passed at five viewport sizes');
         await page.setViewportSize({ width: 390, height: 844 });
         await page.screenshot({ path: path.join(out, 'website-mobile.png') });
         assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
@@ -149,8 +179,16 @@ async function main() {
         await page.getByRole('button', { name: 'Lisans hazırla', exact: true }).click();
         assert.equal(await page.locator('#licenseNote').inputValue(), 'Test Yayinci (test@example.invalid)');
         console.log('Public mobile menu, inquiry form and admin request-to-license flow passed');
+        const guest = await browser.newContext({ viewport: { width: 390, height: 844 } });
+        const guestPage = await guest.newPage();
+        await guestPage.goto(base + '/');
+        await guestPage.locator('.nav-header').getByRole('link', { name: 'Yönetici Girişi', exact: true }).click();
+        await guestPage.locator('#loginPage').waitFor({ state: 'visible' });
+        assert.equal(await guestPage.locator('#adminPassword').isVisible(), true);
+        await guest.close();
+        console.log('Public admin entry opens the protected login screen');
         assert.deepEqual(errors, []);
-        fs.writeFileSync(path.join(out, 'browser-result.json'), JSON.stringify({ checkedAt: new Date().toISOString(), errors, checks: ['admin login', '25-character agency key naming', 'agency expansion', 'member rename', 'capacity save', 'desktop overflow', 'mobile overflow', 'individual legacy format', 'member block and unblock', 'backup export and import', 'XSS escaping', 'search', 'empty state', 'connection recovery', 'public navigation framing', 'public mobile menu', 'public inquiry form', 'admin request-to-license flow'] }, null, 2));
+        fs.writeFileSync(path.join(out, 'browser-result.json'), JSON.stringify({ checkedAt: new Date().toISOString(), errors, checks: ['admin login', '25-character agency key naming', 'agency expansion', 'member rename', 'capacity save', 'desktop overflow', 'mobile overflow', 'individual legacy format', 'member block and unblock', 'backup export and import', 'XSS escaping', 'search', 'empty state', 'connection recovery', 'public navigation framing', 'public mobile menu', 'public inquiry form', 'admin request-to-license flow', 'visible admin entry across five viewport sizes', 'full-height artwork and active demo below hero', 'guest admin entry opens protected login'] }, null, 2));
         console.log('Browser checks passed. Screenshots: ' + out);
     } finally {
         if (browser) await browser.close();

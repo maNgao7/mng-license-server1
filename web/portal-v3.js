@@ -15,5 +15,5 @@ document.addEventListener("DOMContentLoaded", () => {
     document.addEventListener("click", event => {
         if (!navigation.contains(event.target) && !button.contains(event.target)) close();
     });
-    window.matchMedia("(min-width:1101px)").addEventListener("change", close);
+    window.matchMedia("(min-width:1281px)").addEventListener("change", close);
 });
