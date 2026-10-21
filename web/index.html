@@ -973,6 +973,8 @@
         }
     </style>
     <link rel="stylesheet" href="/portal-v2.css?v=601">
+    <link rel="stylesheet" href="/portal-v3.css?v=20261021">
+    <script src="/portal-v3.js?v=20261021" defer></script>
 </head>
 <body>
 
@@ -986,7 +988,8 @@
                 <div class="brand-title"><span>TIK</span>MNG</div>
             </a>
 
-            <ul class="nav-links">
+            <button type="button" class="portal-menu-toggle" id="portalMenu" aria-expanded="false" aria-controls="primaryNavigation">Menü</button>
+            <ul class="nav-links" id="primaryNavigation">
                 <li><a href="#sim">🎮 Oyun Demoları</a></li>
                 <li><a href="#games">Oyunlarımız</a></li>
                 <li><a href="/hediye-tasarimi">Hediye Tasarla</a></li>
@@ -1013,16 +1016,15 @@
             <div class="hero-content">
                 <div class="hero-badge-pill">
                     <span class="dot"></span>
-                    EN GÜNCEL SÜRÜM HAZIR
+                    CANLI YAYIN OYUNLARI
                 </div>
 
                 <h1 class="hero-title">
-                    CANLI YAYININI <br>
-                    <span class="gradient-text">ARENAYA ÇEVİR</span>
+                    TikMnG
                 </h1>
 
                 <p class="hero-desc">
-                    TikTok canlı yayınlarında izleyicilerinizi pasif seyircilerden kurtarın. Hediyeler, beğeniler ve takiplerle anında ekranda canlanan interaktif oyunlar ile etkileşiminizi ve gelirinizi 10 katına çıkarın!
+                    Yayının bir parçası olsunlar. TikTok hediyeleri, beğenileri ve takipleriyle şekillenen oyunlar; bireysel yayıncılar ve ajanslar için tek launcher'da.
                 </p>
 
                 <div class="hero-cta-group">
@@ -1048,9 +1050,9 @@
                 </div>
 
                 <div class="hero-version-tag">
-                    <div><span>✓</span> Otomatik TikTok Bağlantısı</div>
-                    <div><span>✓</span> 0 ms Ses Gecikmesi</div>
-                    <div><span>✓</span> Tek Tık Kurulum</div>
+                    <div><span>✓</span> Canlı yayın bağlantısı</div>
+                    <div><span>✓</span> Ajans lisansları</div>
+                    <div><span>✓</span> Windows 10 / 11</div>
                 </div>
             </div>
 
@@ -1311,7 +1313,7 @@
                         <div>
                             <label class="form-label" for="tur">Talep / İleti Türü *</label>
                             <select class="form-select" id="tur" name="tur">
-                                <option value="öneri">💡 Yeni Oyun / Özellik Önerisi</option>
+                                <option value="oneri">💡 Yeni Oyun / Özellik Önerisi</option>
                                 <option value="soru">❓ Soru / Yardım Talebi</option>
                                 <option value="lisans">🔑 Lisans Satın Alma / Aktivasyon</option>
                                 <option value="hata">🐛 Hata Bildirimi</option>
@@ -1334,7 +1336,7 @@
                         </button>
                     </div>
 
-                    <div class="form-status" id="talepStatus"></div>
+                    <div class="form-status" id="talepStatus" role="status"></div>
                 </form>
             </div>
         </div>
@@ -2062,25 +2064,26 @@
             };
 
             try {
-                const res = await fetch('/api/talep', {
+                const res = await fetch('/api/talep-gonder', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)
                 });
                 const data = await res.json();
 
-                if (res.ok && data.success) {
+                if (res.ok && data.basarili) {
                     talepStatus.textContent = '✓ Harika! Talebiniz başarıyla alındı ve yönetim panelimize iletildi. En kısa sürede dönüş yapacağız.';
                     talepStatus.className = 'form-status success';
                     talepForm.reset();
                 } else {
-                    talepStatus.textContent = '✕ Hata: ' + (data.message || 'Talep gönderilemedi. Lütfen tekrar deneyin.');
+                    talepStatus.textContent = '✕ Hata: ' + (data.error || data.message || 'Talep gönderilemedi. Lütfen tekrar deneyin.');
                     talepStatus.className = 'form-status error';
                 }
             } catch (err) {
                 talepStatus.textContent = '✕ Sunucuya bağlanırken bir sorun oluştu. Lütfen internetinizi kontrol edin.';
                 talepStatus.className = 'form-status error';
             } finally {
+                talepStatus.style.display = 'block';
                 submitBtn.disabled = false;
                 submitBtn.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg> Talebi Gönder';
             }
