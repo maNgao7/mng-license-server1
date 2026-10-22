@@ -5,6 +5,8 @@ import os from "node:os";
 import path from "node:path";
 import net from "node:net";
 import crypto from "node:crypto";
+import { once } from "node:events";
+import { WebSocket } from "ws";
 import { spawn } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { agencySlug, createAgencyKey, parseAgencyKey, validCapacity } from "../agency-licenses.js";
@@ -81,6 +83,34 @@ test("agency key fits the deployed launcher, uses the entered name and rejects t
     assert.deepEqual(parseAgencyKey(key, secret), { tip: "ajans", recordRequired: true });
     for (const altered of [key.replace("TREND", "OTHER"), key.slice(0, -1) + (key.endsWith("0") ? "1" : "0")]) assert.equal(parseAgencyKey(altered, secret), null);
     for (const invalid of [0, -1, 1001, 1.5, "20x", "", null, {}, true]) assert.equal(validCapacity(invalid), false);
+});
+
+test('deployed server mounts authenticated overlay sessions and WebSocket relay without activating new seats', async t => {
+    const f=await fixture(t);const code=await f.create({max_yayinci:2});
+    const health=await fetch(f.base+'/api/overlay/health');
+    assert.equal(health.status,200);assert.deepEqual(await health.json(),{available:true,protocolVersion:1});
+    const body={licenseCode:code,deviceId:'overlay-device',installationId:'synthetic-installation',channel:'synthetic-channel'};
+    const session=()=>fetch(f.base+'/api/overlay/session',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    assert.equal((await session()).status,403);
+    assert.equal((await detail(f,code)).data.kullanilan,0,'Overlay creation cannot consume an agency seat');
+    assert.equal((await verify(f,code,'overlay-device')).data.valid,true);
+    const response=await session();assert.equal(response.status,200);const data=await response.json();
+    assert.ok(!Buffer.from(data.ticket.split('.')[0],'base64url').toString().includes(code));
+    assert.equal((await fetch(f.base+data.path+'/widget/state')).status,503);
+    const ws=new WebSocket(f.base.replace('http:','ws:')+'/api/overlay/bridge',{headers:{Authorization:'Bearer '+data.ticket}});
+    ws.on('error',()=>{});t.after(()=>ws.terminate());await once(ws,'open');
+    ws.on('message',raw=>{
+        const message=JSON.parse(raw);if(message.type!=='request')return;
+        assert.equal(new URL(message.path,f.base).searchParams.get('channel'),'synthetic-channel');
+        assert.equal(message.path.includes('caller-key'),false);
+        ws.send(JSON.stringify({type:'headers',id:message.id,status:200,headers:{'content-type':'application/json'}}));
+        ws.send(JSON.stringify({type:'chunk',id:message.id,data:Buffer.from('{"ready":true}').toString('base64')}));
+        ws.send(JSON.stringify({type:'end',id:message.id}));
+    });
+    const publicResponse=await fetch(f.base+data.path+'/widget/state?key=caller-key',{headers:{Origin:'null'}});
+    assert.equal(publicResponse.status,200);assert.deepEqual(await publicResponse.json(),{ready:true});
+    assert.equal(publicResponse.headers.get('access-control-allow-origin'),'*');
+    assert.equal((await detail(f,code)).data.kullanilan,1);
 });
 
 test("20 seats admit exactly 20 different devices, not 21; every device passes later checks", async t => {
