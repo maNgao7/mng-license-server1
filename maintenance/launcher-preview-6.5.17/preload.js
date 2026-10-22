@@ -7,11 +7,11 @@ const { contextBridge, ipcRenderer } = require("electron");
 contextBridge.exposeInMainWorld("mngAPI", {
     workspace: (action, data) => {
         const allowed = ['snapshot', 'refresh', 'install', 'cancel', 'remove', 'folder', 'media-import', 'media-folder', 'media-save', 'media-remove', 'media-test', 'media-status', 'media-remote', 'media-duplicate', 'source', 'tts', 'speech-status', 'speech-synthesize', 'speech-cancel', 'speech-configure'];
-        if (!allowed.includes(action)) return Promise.reject(new Error('Geçersiz işlem.'));
+        if (!allowed.includes(action) && !['overlay-status', 'overlay-reconnect'].includes(action)) return Promise.reject(new Error('Geçersiz işlem.'));
         return ipcRenderer.invoke('workspace-' + action, data);
     },
     workspaceListen: (name, callback) => {
-        if (!['progress', 'catalog', 'chat', 'media-event'].includes(name)) return () => {};
+        if (!['progress', 'catalog', 'chat', 'media-event', 'overlay', 'live'].includes(name)) return () => {};
         const channel = 'workspace-' + name;
         const listener = (_event, data) => callback(data);
         ipcRenderer.on(channel, listener);

@@ -14,17 +14,30 @@ const output=process.env.MNG_QA_OUTPUT||'D:/TikMnG-Launcher-Test-Raporu';fs.mkdi
 const values=new Map();const store={get:(key,fallback)=>values.get(key)??fallback,set:(key,value)=>values.set(key,structuredClone(value))};
 const events=[];let activeGame='';const studio=createMediaStudio({store,root:path.join(temporary,'media'),accessKey:'synthetic-workspace-qa-key',getChannel:()=> 'qa',getActiveGame:()=>activeGame,onEvent:event=>events.push(event)});
 const catalog=require('../lib/catalog-defaults.json');
-const calls=[];let origin,browser,server,speechAudio;
+const calls=[];let origin,browser,server,speechAudio,overlayMode='legacy';
 const speechVoices=[{name:'QA Ahmet',lang:'tr-TR',voiceURI:'azure:qa-male',gender:'male',age:'unknown',provider:'azure',neural:true},{name:'QA Emel',lang:'tr-TR',voiceURI:'azure:qa-female',gender:'female',age:'unknown',provider:'azure',neural:true}];
 const games=catalog.games.map((g,index)=>({id:g.id,ad:g.title,installed:index<4,installedVersion:index<4?'6.5.16':null,availableVersion:g.version,boyut:g.bytes?Math.round(g.bytes/1048576)+' MB':'',requirements:g.requirements||'Windows 10/11',resources:g.resources,description:'',updateAvailable:false}));
 const gifts=JSON.parse(fs.readFileSync(path.join(renderer,'gift-assets/katalog_tam.json'),'utf8')).map(g=>({id:String(g.id),name:g.trName||g.name,coins:g.coins,image:'/gift-assets/'+g.file}));
-function snapshot(){return{games:games.map(game=>({...game,overlayUrl:origin+'/tikmng/media?key=synthetic-workspace-qa-key&channel=qa&game='+game.id})),media:studio.list().map(item=>({...item,overlayUrl:origin+item.previewUrl})),remoteMedia:[],overlayUrl:origin+'/tikmng/media?key=synthetic-workspace-qa-key&channel=qa',version:'6.5.17',preview:true,tts:values.get('tts')||{...TTS_DEFAULTS},source:'direct',tikfinityUrl:'ws://127.0.0.1:21213/',libraryRoot:'D:/Isolated-QA/Games',mediaRoot:'D:/Isolated-QA/Media'};}
+function broadcastFields(local){
+    if(overlayMode==='legacy')return {};
+    const url=new URL(local);url.searchParams.delete('key');url.searchParams.delete('channel');
+    return {broadcastUrl:overlayMode==='ready'?'https://overlay.invalid/overlays/'+'a'.repeat(43)+url.pathname+url.search:''};
+}
+function snapshot(){
+    const overlayUrl=origin+'/tikmng/media?key=synthetic-workspace-qa-key&channel=qa';
+    return{games:games.map(game=>{const url=overlayUrl+'&game='+game.id;return{...game,overlayUrl:url,...broadcastFields(url)};}),
+        media:studio.list().map(item=>({...item,overlayUrl:origin+item.previewUrl,...broadcastFields(origin+item.previewUrl)})),
+        remoteMedia:[],overlayUrl,...broadcastFields(overlayUrl),
+        ...(overlayMode==='legacy'?{}:{overlayTransport:{ready:overlayMode==='ready',status:overlayMode==='ready'?'connected':'retrying',message:overlayMode==='ready'?'HTTPS hazır':'Yayın servisi bekleniyor'}}),
+        version:'6.5.17',preview:true,tts:values.get('tts')||{...TTS_DEFAULTS},source:'direct',tikfinityUrl:'ws://127.0.0.1:21213/',libraryRoot:'D:/Isolated-QA/Games',mediaRoot:'D:/Isolated-QA/Media'};
+}
 async function api(action,data={}){
     calls.push([action,data]);
     if(action==='speech-status')return{voices:speechVoices,profiles:[],providers:{azure:{available:true,configured:true},windows:{available:false}}};
     if(action==='speech-synthesize'){const voice=speechVoices.find(v=>v.voiceURI===data.voiceURI)||speechVoices.find(v=>data.voicePreset==='natural'||v.gender===data.voicePreset);assert.ok(voice);return{audioBase64:speechAudio,mimeType:'audio/wav',voice,fallbackUsed:false};}
     if(action==='speech-cancel')return{ok:true};
     if(action==='media-status')return studio.status(data.gameId);
+    if(action==='overlay-status')return {...studio.status(data.gameId),transport:snapshot().overlayTransport,url:broadcastFields(snapshot().overlayUrl+(data.gameId?'&game='+data.gameId:'')).broadcastUrl};
     if(action==='media-save'){studio.save(data);return snapshot();}
     if(action==='media-test'){studio.test(data.id);return{ok:true};}
     if(action==='media-remove'){studio.remove(data.id);return snapshot();}
@@ -139,6 +152,22 @@ async function main(){
     await page.locator('[name="audience"]').selectOption('gift');await page.locator('#speechForm [name="giftId"]').selectOption('7934');await page.locator('#speechForm [type="submit"]').click();
     assert.equal(values.get('tts').audience,'gift');assert.equal(values.get('tts').giftId,'7934');assert.equal(values.get('tts').voicePreset,'female');
     await page.screenshot({path:path.join(output,'sesli-yorum-ayarlari.png')});
+    overlayMode='waiting';await page.evaluate(()=>window.__qaListeners.catalog({}));
+    await page.locator('[data-workspace-view="media"]').click();
+    await page.waitForFunction(()=>document.getElementById('allMediaLink')?.value==='');
+    assert.equal(await page.locator('#allMediaLink').locator('..').locator('[data-copy]').isDisabled(),true);
+    assert.equal(await page.locator('[data-media-id] [data-copy]').first().isDisabled(),true);
+    overlayMode='ready';await page.evaluate(()=>window.__qaListeners.overlay({ready:true,status:'connected',message:'HTTPS hazır'}));
+    await page.waitForFunction(()=>document.getElementById('allMediaLink')?.value.startsWith('https://overlay.invalid/'));
+    assert.equal(await page.locator('#allMediaLink').locator('..').locator('[data-copy]').isDisabled(),false);
+    assert.ok(!(await page.locator('#allMediaLink').inputValue()).includes('synthetic-workspace-qa-key'));
+    await page.locator('[data-edit-media]').first().click();await page.locator('#mediaEditor[open]').waitFor();
+    assert.ok(!(await page.locator('#mediaEditor').innerHTML()).includes('data-copy="http://127.0.0.1:'));
+    await page.locator('#mediaEditor header [data-action="close-media"]').click();
+    await page.evaluate(()=>window.__qaListeners.live({status:'waiting',username:'qa',message:'Yayın henüz açık değil.'}));
+    assert.match(await page.locator('#workspaceLive').innerText(),/Yayın bekleniyor/);
+    await page.evaluate(()=>window.__qaListeners.live({status:'connected',username:'qa',message:'Gerçek oda doğrulandı.'}));
+    assert.match(await page.locator('#workspaceLive').innerText(),/Canlı/);
     await page.locator('[data-workspace-view="games"]').click();await page.locator('#librarySearch').fill('');await page.locator('[data-category="all"]').click();
     for(const width of [1920,960,390]){
         await page.setViewportSize({width,height:width===390?844:1080});

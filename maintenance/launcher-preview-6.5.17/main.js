@@ -19,6 +19,7 @@ if (process.env.MNG_TEST_PROFILE) {
 }
 let platform = null;
 let appUpdates = null;
+let overlayBridge = null;
 
 let TikTokLiveConnection = null;
 let WebcastEvent = {};
@@ -29,7 +30,7 @@ async function widgetTikTokModulunuYukle() {
         widgetTikTokModulePromise = import("tiktok-live-connector")
             .then(module => {
                 TikTokLiveConnection = module.TikTokLiveConnection;
-                WebcastEvent = module.WebcastEvent || {};
+                Object.assign(WebcastEvent, module.WebcastEvent || {});
                 return Boolean(TikTokLiveConnection);
             })
             .catch(error => {
@@ -84,9 +85,7 @@ const ARKA_PLAN_PAKET_SURUMU = "6.5.5";
 const GELENE_GECENE_SURUMU = "6.5.0";
 const GELENE_GECENE_PAKET_REVIZYONU = "650.0";
 let widgetServer = null;
-let widgetTikTokConnection = null;
-let widgetTikTokGeneration = 0;
-let widgetReconnectTimer = null;
+let widgetLiveSession = null;
 let widgetLiveStatus = { status: "disconnected", username: "", message: "Yayıncı hesabı bekleniyor." };
 const widgetRecentEvents = new Map();
 const widgetKanaliniTemizle = value => String(value || "varsayilan").replace(/^@/, "").trim().toLocaleLowerCase("tr-TR").replace(/[^a-z0-9._-]/g, "_") || "varsayilan";
@@ -136,6 +135,7 @@ function widgetHavuzlariniKaydet() {
 function widgetKanaliniDegistir(channel) {
     widgetHavuzlariniKaydet();
     widgetChannel = widgetKanaliniTemizle(channel);
+    overlayBridge?.start(widgetChannel);
     widgetPool = store.get(widgetStoreKey("widget_top_gifts"), {});
     widgetLikePool = store.get(widgetStoreKey("widget_top_likes"), {});
     widgetLeaderboardPool = store.get(widgetStoreKey("widget_leaderboard"), {});
@@ -435,15 +435,17 @@ function widgetBirlesikDurum(channel = widgetChannel) {
 }
 
 function widgetEulerAnahtariniBul() {
+    const environmentKey = String(process.env.EULER_API_KEY || '').trim();
+    if (environmentKey && environmentKey !== 'undefined') return environmentKey;
     const candidates = [
-        process.env.EULER_API_KEY,
         path.join(__dirname, "..", "apps", "tiktok-vs", "euler-api-key.txt"),
         path.join(process.resourcesPath || "", "apps", "tiktok-vs", "euler-api-key.txt")
     ];
-    for (const candidate of candidates) {
+    for (const file of candidates) {
         try {
-            const value = candidate && fs.existsSync(candidate) ? fs.readFileSync(candidate, "utf8").trim() : String(candidate || "").trim();
-            if (value && !value.includes("undefined")) return value;
+            if (!fs.existsSync(file)) continue;
+            const value = fs.readFileSync(file, 'utf8').trim();
+            if (value && value !== 'undefined') return value;
         } catch {}
     }
     return "";
@@ -476,83 +478,43 @@ function widgetTikTokHediyesiniOku(data = {}) {
     };
 }
 
-function widgetTikTokYenidenBaglan(username, generation) {
-    clearTimeout(widgetReconnectTimer);
-    if (!username || generation !== widgetTikTokGeneration || app.isQuiting) return;
-    widgetReconnectTimer = setTimeout(() => {
-        if (generation === widgetTikTokGeneration) widgetTikTokBagla(username).catch(() => {});
-    }, 30000);
+function widgetTikTokYenidenBaglan(username) {
+    if (app.isQuiting) return Promise.resolve(widgetLiveStatus);
+    if (!widgetLiveSession) widgetLiveSession = require('./lib/live-session.cjs').createLiveSession({
+        events: WebcastEvent,
+        createConnection: async clean => {
+            if (!await widgetTikTokModulunuYukle()) throw new Error('TikTok module unavailable');
+            const options = { processInitialData: false, enableExtendedGiftInfo: false };
+            const signApiKey = widgetEulerAnahtariniBul();
+            if (signApiKey) options.signApiKey = signApiKey;
+            return new TikTokLiveConnection(clean, options);
+        },
+        onStatus: status => {
+            widgetLiveStatus = status;
+            mainWindow?.webContents.send('workspace-live', status);
+        },
+        onEvent: (type, data) => {
+            const profile = widgetTikTokProfiliniOku(data), eventId = data.msgId || data.logId || '';
+            if (type === 'gift') widgetGenelOlayEkle(type, { ...profile, ...widgetTikTokHediyesiniOku(data) });
+            else if (type === 'like') widgetGenelOlayEkle(type, { ...profile, likeCount: Math.max(1, Number(data.likeCount || data.count || 1)), eventId });
+            else if (type === 'chat') widgetGenelOlayEkle(type, { ...profile, message: data.comment || data.message || '', eventId });
+            else if (type === 'viewer') widgetGenelOlayEkle(type, { viewerCount: Math.max(0, Number(data.viewerCount || data.viewer_count || 0)), eventId });
+            else widgetGenelOlayEkle(type, { ...profile, eventId });
+        }
+    });
+    return widgetLiveSession.start(username);
 }
 
 async function widgetTikTokBaglantisiniKapat(message = "Bağlantı kapatıldı.") {
-    widgetTikTokGeneration++;
-    clearTimeout(widgetReconnectTimer);
-    widgetReconnectTimer = null;
-    const old = widgetTikTokConnection;
-    widgetTikTokConnection = null;
-    try { await old?.disconnect(); } catch {}
-    widgetLiveStatus = { status: "disconnected", username: "", message };
+    widgetLiveSession?.stop();
+    widgetLiveStatus = { status: 'disconnected', username: '', message, nextRetryAt: null };
+    mainWindow?.webContents.send('workspace-live', widgetLiveStatus);
 }
 
 async function widgetTikTokBagla(username) {
-    const clean = String(username || "").replace(/^@/, "").trim();
-    await widgetTikTokBaglantisiniKapat(clean ? "Canlı yayın aranıyor." : "Yayıncı hesabı bekleniyor.");
-    if (!clean || !await widgetTikTokModulunuYukle()) return;
-    const generation = ++widgetTikTokGeneration;
-    widgetLiveStatus = { status: "connecting", username: clean, message: `@${clean} yayını aranıyor.` };
-    const options = { processInitialData: false, enableExtendedGiftInfo: false };
-    const signApiKey = widgetEulerAnahtariniBul();
-    if (signApiKey) options.signApiKey = signApiKey;
-    const connection = new TikTokLiveConnection(clean, options);
-    widgetTikTokConnection = connection;
-    const guard = handler => data => { if (generation === widgetTikTokGeneration) handler(data || {}); };
-    const on = (event, handler) => { if (event) connection.on(event, guard(handler)); };
-    connection.on("error", guard(error => {
-        widgetLiveStatus = { status: "error", username: clean, message: error?.message || "TikTok bağlantı hatası." };
-    }));
-    on(WebcastEvent.GIFT, data => {
-        if (data.giftType === 1 && !data.repeatEnd) return;
-        widgetGenelOlayEkle("gift", { ...widgetTikTokProfiliniOku(data), ...widgetTikTokHediyesiniOku(data) });
-    });
-    on(WebcastEvent.LIKE, data => widgetGenelOlayEkle("like", { ...widgetTikTokProfiliniOku(data), likeCount: Math.max(1, Number(data.likeCount || data.count || 1)), eventId: data.msgId || data.logId || "" }));
-    on(WebcastEvent.FOLLOW, data => widgetGenelOlayEkle("follow", { ...widgetTikTokProfiliniOku(data), eventId: data.msgId || data.logId || "" }));
-    on(WebcastEvent.SHARE, data => widgetGenelOlayEkle("share", { ...widgetTikTokProfiliniOku(data), eventId: data.msgId || data.logId || "" }));
-    on(WebcastEvent.CHAT, data => widgetGenelOlayEkle("chat", { ...widgetTikTokProfiliniOku(data), message: data.comment || data.message || "", eventId: data.msgId || data.logId || "" }));
-    on(WebcastEvent.MEMBER, data => widgetGenelOlayEkle("member", { ...widgetTikTokProfiliniOku(data), eventId: data.msgId || data.logId || "" }));
-    on(WebcastEvent.SUBSCRIBE, data => widgetGenelOlayEkle("subscribe", { ...widgetTikTokProfiliniOku(data), eventId: data.msgId || data.logId || "" }));
-    on(WebcastEvent.ROOM_USER, data => widgetGenelOlayEkle("viewer", { viewerCount: Number(data.viewerCount || data.viewer_count || 0), eventId: data.msgId || "room-user" }));
-    on(WebcastEvent.SOCIAL, data => {
-        const label = String(data.label || data.displayType || data.event || "");
-        if (/share|payla/i.test(label)) widgetGenelOlayEkle("share", { ...widgetTikTokProfiliniOku(data), eventId: data.msgId || data.logId || "" });
-        else if (/follow|takip/i.test(label)) widgetGenelOlayEkle("follow", { ...widgetTikTokProfiliniOku(data), eventId: data.msgId || data.logId || "" });
-    });
-    const disconnected = () => {
-        if (generation !== widgetTikTokGeneration) return;
-        widgetTikTokConnection = null;
-        widgetLiveStatus = { status: "disconnected", username: clean, message: "Yayın bağlantısı kesildi. Yeniden bağlanmak için Bağlan'a basın." };
-        widgetTikTokYenidenBaglan(clean, generation);
-    };
-    on(WebcastEvent.DISCONNECTED || "disconnected", disconnected);
-    on(WebcastEvent.STREAM_END || "streamEnd", disconnected);
-    let timeout;
-    try {
-        const state = await Promise.race([
-            connection.connect(),
-            new Promise((_, reject) => { timeout = setTimeout(() => reject(new Error("TikTok bağlantısı zaman aşımına uğradı.")), 25000); })
-        ]);
-        if (generation !== widgetTikTokGeneration) { try { await connection.disconnect(); } catch {} return; }
-        widgetLiveStatus = { status: "connected", username: clean, roomId: state?.roomId || "", message: `@${clean} yayınına bağlı.` };
-    } catch (error) {
-        if (generation !== widgetTikTokGeneration) return;
-        widgetTikTokConnection = null;
-        const raw = error?.message || String(error || "");
-        const offline = /isn't online|not online|LIVE has ended|offline/i.test(raw);
-        widgetLiveStatus = { status: offline ? "offline" : "error", username: clean, message: offline ? `@${clean} şu anda canlı yayında değil.` : (raw || "TikTok yayınına bağlanılamadı.") };
-        try { await connection.disconnect(); } catch {}
-        widgetTikTokYenidenBaglan(clean, generation);
-    } finally {
-        clearTimeout(timeout);
-    }
+    const clean = String(username || '').replace(/^@/, '').trim();
+    if (!clean) return widgetTikTokBaglantisiniKapat('Yayıncı hesabı bekleniyor.');
+    return widgetTikTokYenidenBaglan(clean);
 }
 
 function widgetSunucusunuBaslat() {
@@ -1597,6 +1559,7 @@ ipcMain.handle("lisans-dogrula", async (event, { kod }) => {
             lisansYedegiKaydet();
 
             lisansKorumasiBaslat();
+            overlayBridge?.start(widgetChannel);
 
             return {
                 gecerli: true,
@@ -1813,6 +1776,7 @@ ipcMain.handle("tiktok-baglantiyi-kes", async () => {
     return { basarili: true };
 });
 ipcMain.handle("widget-bilgisi", async () => ({
+    overlayTransport: overlayBridge?.status(),
     url: widgetYerelUrl("/widget-top-gift.html"),
     topGiftUrl: widgetYerelUrl("/widget-top-gift.html"),
     topLikesUrl: widgetYerelUrl("/widget-top-likes.html"),
@@ -1830,6 +1794,7 @@ ipcMain.handle("widget-bilgisi", async () => ({
     widgets: WIDGET_DEFINITIONS.map(item => ({
         ...item,
         url: widgetKatmanUrl(item.id),
+        broadcastUrl: overlayBridge?.urlFor(widgetKatmanUrl(item.id)) || '',
         previewUrl: widgetKatmanUrl(item.id, "127.0.0.1")
     })),
     widgetId: WIDGET_ACCESS_KEY.slice(0, 8),
@@ -2764,11 +2729,19 @@ ipcMain.handle("arka-plan-videolari", async () => {
 // =====================================================================
 app.whenReady().then(() => {
     lisansYedeginiGeriYukle();
+    overlayBridge = require('./lib/overlay-bridge.cjs').createOverlayBridge({
+        store, serverURL: lisansSunucuUrlBul, port: WIDGET_PORT, accessKey: WIDGET_ACCESS_KEY,
+        namespace: app.isTikMNGPreview ? 'preview' : 'stable', getChannel: () => widgetChannel,
+        getCredentials: () => ({ licenseCode: store.get('lisans_kod', ''), deviceId: CIHAZ_KIMLIK }),
+        onStatus: status => mainWindow?.webContents.send('workspace-overlay', status)
+    });
     appUpdates = require('./lib/app-updates.cjs').createAppUpdates({ app, notify: (name, data) => mainWindow?.webContents.send(name, data) });
     platform = require('./lib/platform.cjs').createPlatform({
         app, ipcMain, store, dialog, definitions: OYUN_TANIMLARI, getWindow: () => mainWindow,
         speechCredentials: require('./lib/speech-credentials.cjs').createSpeechCredentials({ store, safeStorage }),
         serverURL: lisansSunucuUrlBul, accessKey: WIDGET_ACCESS_KEY, port: WIDGET_PORT,
+        getOverlayStatus: () => overlayBridge.status(), broadcastURL: url => overlayBridge.urlFor(url),
+        reconnectOverlay: () => { overlayBridge.stop(); return overlayBridge.start(widgetChannel); },
         getChannel: () => widgetChannel, getActiveGame: () => aktifOyun || '', event: widgetGenelOlayEkle,
         profile: widgetTikTokProfiliniOku, gift: widgetTikTokHediyesiniOku,
         setLiveStatus: status => { widgetLiveStatus = status; }, closeDirect: widgetTikTokBaglantisiniKapat,
@@ -2778,6 +2751,7 @@ app.whenReady().then(() => {
         isRunning: id => Boolean(aktifOyun === id || minecraftProcesses.has(id) || (id === 'zombie-war' && zombieWarProcess))
     });
     widgetSunucusunuBaslat();
+    overlayBridge.start(widgetChannel);
     // Özel dosya protokolünü kaydet (mng-bg://video/bg01.mp4)
     try {
         protocol.registerFileProtocol("mng-bg", (request, callback) => {
@@ -2833,6 +2807,8 @@ app.on("activate", () => {
 app.on("before-quit", () => {
     app.isQuiting = true;
     platform?.close();
+    overlayBridge?.close();
+    widgetLiveSession?.close();
     sunucuyuDurdur();
     widgetTikTokBaglantisiniKapat("Uygulama kapatılıyor.").catch(() => {});
     try { widgetServer?.close(); } catch {}

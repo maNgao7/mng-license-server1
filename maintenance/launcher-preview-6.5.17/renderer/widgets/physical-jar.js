@@ -4,6 +4,7 @@
   let imageCache = new Map(), nextDrop = 0;
   const width = 300, height = 360;
   function image(url) {
+    url = window.widgetImageURL ? window.widgetImageURL(url) : url;
     if (!url) return null;
     if (!imageCache.has(url)) { const img = new Image(); img.src = url; imageCache.set(url, img); }
     return imageCache.get(url);

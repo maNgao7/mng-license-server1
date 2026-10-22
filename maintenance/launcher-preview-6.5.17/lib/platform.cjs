@@ -58,7 +58,8 @@ function createPlatform(ctx) {
             : { ...profile, ...data, message: data.comment || data.message || '', eventId: data.msgId || data.logId || '' });
     });
     function mediaURL(id = '', gameId = '') { return `http://127.0.0.1:${ctx.port}/tikmng/media${id ? '/' + encodeURIComponent(id) : ''}?key=${ctx.accessKey}&channel=${encodeURIComponent(ctx.getChannel())}${gameId ? '&game=' + encodeURIComponent(gameId) : ''}`; }
-    function items() { return studio.list().map(item => ({ ...item, overlayUrl: mediaURL(item.id, item.gameId) })); }
+    function items() { return studio.list().map(item => ({ ...item, overlayUrl: mediaURL(item.id, item.gameId),
+        ...(ctx.broadcastURL ? { broadcastUrl: ctx.broadcastURL(mediaURL(item.id, item.gameId)) } : {}) })); }
     function statuses() {
         const result = {};
         for (const [id, def] of Object.entries(definitions)) {
@@ -66,7 +67,8 @@ function createPlatform(ctx) {
             const state = library.state(id);
             result[id] = { ...state, id, kurulu: state.installed, ad: gameData(id)?.title || def.ad, boyut: def.boyut,
                 description: gameData(id)?.description || '', requirements: gameData(id)?.requirements || (def.minecraft ? 'Windows 10/11 64 bit, 8 GB RAM, en az 3 GB boş disk' : 'Windows 10/11 64 bit'),
-                resources: gameData(id)?.resources || [], overlayUrl: mediaURL('', id) };
+                resources: gameData(id)?.resources || [], overlayUrl: mediaURL('', id),
+                ...(ctx.broadcastURL ? { broadcastUrl: ctx.broadcastURL(mediaURL('', id)) } : {}) };
         }
         result.crowdControl = result['crowd-control'];
         return result;
@@ -84,6 +86,7 @@ function createPlatform(ctx) {
         return { games: Object.values(statuses()).filter((game, index, all) => all.findIndex(g => g.id === game.id) === index),
             libraryRoot: store.get('library_root_v1', root), mediaRoot: store.get('media_root_v1', mediaRoot), media: items(),
             remoteMedia: catalog?.media || [], catalogRevision: catalog?.revision || 0, catalogError, catalogStatus, overlayUrl: mediaURL(),
+            ...(ctx.broadcastURL ? { broadcastUrl: ctx.broadcastURL(mediaURL()), overlayTransport: ctx.getOverlayStatus?.() } : {}),
             source: store.get('live_source_v1', 'direct'), tikfinityUrl: store.get('tikfinity_url_v1', 'ws://127.0.0.1:21213/'), activeGame: ctx.getActiveGame?.() || '',
             tts: { ...TTS_DEFAULTS, ...store.get('tts_settings_v1', {}) }, version: app.getVersion(), preview: Boolean(app.isTikMNGPreview) };
     }
@@ -110,6 +113,9 @@ function createPlatform(ctx) {
     }
     handle('snapshot', snapshot);
     handle('refresh', refreshCatalog);
+    handle('overlay-status', ({ gameId = '' } = {}) => ({ transport: ctx.getOverlayStatus?.(),
+        url: ctx.broadcastURL?.(mediaURL('', validGame(gameId))) || '', ...studio.status(validGame(gameId)) }));
+    handle('overlay-reconnect', () => { ctx.reconnectOverlay?.(); return snapshot(); });
     handle('install', ({ id, repair }) => install(id, { repair: Boolean(repair) }));
     handle('cancel', ({ id }) => { controllers.get(id)?.abort(); return { ok: true }; });
     handle('remove', async ({ id }) => { if (controllers.has(id)) throw new Error('Önce indirmeyi durdurun.'); await library.remove(id); return { ok: true }; });

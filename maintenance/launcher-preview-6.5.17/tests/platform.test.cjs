@@ -500,3 +500,28 @@ test('speech IPC forwards only supported voice settings and never returns saved 
     f.context.speechCredentials.read=()=>{throw new Error('private-sensitive-failure');};f.restart();
     const recovered=await f.invoke('speech-status');assert.ok(recovered.credentialError);assert.ok(!recovered.credentialError.includes('sensitive'));
 });
+
+test('broadcast links stay empty until HTTPS publisher is ready and never expose the local key', options, async t => {
+    const f = fixture(t);let ready=false,retries=0;
+    f.context.getOverlayStatus=()=>({ready,status:ready?'connected':'retrying'});
+    f.context.broadcastURL=local=>{
+        if(!ready)return '';
+        const url=new URL(local);url.searchParams.delete('key');url.searchParams.delete('channel');
+        return 'https://overlay.invalid/overlays/'+'a'.repeat(43)+url.pathname+url.search;
+    };
+    f.context.reconnectOverlay=()=>{retries++;};f.restart();
+    f.select(f.write('input/clip.mp4','synthetic bytes'));await f.invoke('media-import');
+    let snapshot=f.platform.snapshot();
+    assert.equal(snapshot.broadcastUrl,'');assert.equal(snapshot.games[0].broadcastUrl,'');
+    assert.equal(snapshot.media[0].broadcastUrl,'');assert.equal(snapshot.overlayTransport.ready,false);
+    assert.ok(snapshot.overlayUrl.includes(KEY),'Internal preview keeps its protected local URL');
+    ready=true;snapshot=f.platform.snapshot();
+    for(const url of [snapshot.broadcastUrl,...snapshot.games.map(game=>game.broadcastUrl),snapshot.media[0].broadcastUrl]){
+        assert.ok(url.startsWith('https://overlay.invalid/overlays/'));assert.ok(!url.includes(KEY));
+        assert.equal(new URL(url).searchParams.has('channel'),false);
+    }
+    assert.equal(new URL(snapshot.games[0].broadcastUrl).searchParams.get('game'),'alpha');
+    const status=await f.invoke('overlay-status',{gameId:'alpha'});
+    assert.equal(status.transport.ready,true);assert.equal(status.url,snapshot.games[0].broadcastUrl);
+    await f.invoke('overlay-reconnect');assert.equal(retries,1);
+});

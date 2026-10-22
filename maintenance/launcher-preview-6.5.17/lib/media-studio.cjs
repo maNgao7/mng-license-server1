@@ -8,13 +8,14 @@ const STORE_KEY = 'media_studio_v1';
 const BASE = '/tikmng/media';
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
 const GAME = /^[a-z0-9][a-z0-9-]{0,63}$/;
+const OVERLAY_BASE = /^\/overlays\/[A-Za-z0-9_-]{43}$/;
 const TYPES = Object.freeze({
     '.mp4': ['video', 'video/mp4'], '.webm': ['video', 'video/webm'],
     '.mp3': ['audio', 'audio/mpeg'], '.wav': ['audio', 'audio/wav'], '.ogg': ['audio', 'audio/ogg'],
     '.gif': ['image', 'image/gif'], '.png': ['image', 'image/png'],
     '.jpg': ['image', 'image/jpeg'], '.jpeg': ['image', 'image/jpeg'], '.webp': ['image', 'image/webp']
 });
-const LIMITS = Object.freeze({ items: 1000, clients: 50, events: 100, dedupe: 4096, listeners: 50 });
+const LIMITS = Object.freeze({ items: 1000, clients: 50, pollClients: 100, events: 100, dedupe: 4096, listeners: 50 });
 const ASSETS = path.join(__dirname, '..', 'renderer', 'studio');
 const DEFAULTS = Object.freeze({ trigger: 'gift', giftId: '', likeThreshold: 100,
     startSeconds: 0, endSeconds: null, volume: 1, cooldownSeconds: 0, enabled: true,
@@ -103,6 +104,13 @@ function validateSettings(input, previous) {
  * - importFiles(paths) is asynchronous; other methods, including handleRequest, are sync.
  * - handleRequest(req, res, WHATWG_URL) returns true iff it owns the route, including
  *   rejected requests. Mount before generic static routes; retain parent's loopback gate.
+ * - Public relay strips /overlays/<43 base64url characters>, forces local key/channel,
+ *   and overwrites x-tikmng-overlay-base with that exact prefix. Only this validated
+ *   header prefixes HTML assets; embedded item URLs retain the local protected form.
+ *   Include GET /tikmng/media/poll in the relay allowlist. It takes client:UUID,
+ *   cursor?:UUID and the same game/item/preview scope as SSE, returning {cursor,events}.
+ *   Missing/unknown cursors start at the current tail without replay. Poll clients
+ *   count toward status for 5 seconds, capped at 100 independently of local SSE.
  * - list returns redacted current-channel records. previewUrl and mediaUrl are
  *   origin-relative protected URLs including key/channel. url is the HTTPS source
  *   for remote items, otherwise ''. save({title,url,...}) without id creates a remote
@@ -127,8 +135,9 @@ function validateSettings(input, previous) {
  *   UUID and shared owned asset (or HTTPS source). Only editable settings are patched;
  *   callers cannot replace source, id, channel, file or asset ownership through patch.
  *   Shared assets survive removal of either mapping and service restart.
- * - No event history or offline queue is stored. close() before recreating for a new
- *   root/key or shutting down. Runtime dedupe/remainders/cooldowns reset on restart.
+ * - Event history is memory-only (256 entries, 90 seconds); no offline queue is
+ *   persisted. close() before recreating for a new root/key or shutting down.
+ *   Runtime dedupe/remainders/cooldowns reset on restart.
  */
 function createMediaStudio({ store, root, accessKey, getChannel = () => 'varsayilan', getActiveGame = () => '', onEvent } = {}) {
     if (!store || typeof store.get !== 'function' || typeof store.set !== 'function') throw new TypeError('store.get/set required');
@@ -139,7 +148,10 @@ function createMediaStudio({ store, root, accessKey, getChannel = () => 'varsayi
     const mediaRoot = path.resolve(root);
     const keyHash = crypto.createHash('sha256').update(accessKey).digest();
     const clients = new Set();
+    const pollClients = new Map();
     const deliveryHistory = [];
+    // An empty tail still needs a cursor so its first future event can be delivered.
+    let historyStart = crypto.randomUUID();
     const listeners = new Set();
     const recent = new Map();
     const cooldowns = new Map();
@@ -188,6 +200,17 @@ function createMediaStudio({ store, root, accessKey, getChannel = () => 'varsayi
             mediaUrl: protectedUrl(`${BASE}/file/${item.id}`, item.channel)
         };
     }
+    function relayItem(item) {
+        const result = { ...item };
+        for (const field of ['mediaUrl', 'previewUrl']) {
+            if (!result[field]) continue;
+            const url = new URL(result[field], 'http://127.0.0.1');
+            url.searchParams.delete('key');
+            result[field] = url.pathname + url.search;
+        }
+        return result;
+    }
+    const relayEvent = event => ({ ...event, item: relayItem(event.item) });
     function commit(next) {
         store.set(STORE_KEY, { version: 1, items: next.map(item => ({ ...item })) });
         items = next;
@@ -299,14 +322,27 @@ function createMediaStudio({ store, root, accessKey, getChannel = () => 'varsayi
             if (client.res.destroyed || client.res.writableEnded || !client.res.write(frame)) disconnect(client);
         } catch { disconnect(client); }
     }
+    function pruneHistory() {
+        while (deliveryHistory.length > 256 || deliveryHistory[0]?.event.createdAt < Date.now() - 90000) {
+            deliveryHistory.shift();
+            historyStart = null;
+        }
+        if (!deliveryHistory.length && !historyStart) historyStart = crypto.randomUUID();
+    }
+    function prunePollClients() {
+        const cutoff = Date.now() - 5000;
+        for (const [id, client] of pollClients) if (client.lastSeen <= cutoff) pollClients.delete(id);
+    }
     function emit(item, trigger, isTest = false) {
+        pruneHistory();
         const event = { type: 'studio:play', id: crypto.randomUUID(), channel: item.channel,
             createdAt: Date.now(), test: isTest, item: publicItem(item), trigger };
         const frame = `event: studio:play\nid: ${event.id}\ndata: ${JSON.stringify(event)}\n\n`;
         deliveryHistory.push({ event, frame });
-        while (deliveryHistory.length > 256 || deliveryHistory[0]?.event.createdAt < Date.now() - 90000) deliveryHistory.shift();
+        pruneHistory();
         for (const client of clients) {
-            if (client.channel === item.channel && client.gameId === item.gameId && (!client.itemId || client.itemId === item.id)) write(client, frame);
+            if (client.channel === item.channel && client.gameId === item.gameId && (!client.itemId || client.itemId === item.id)) write(client,
+                client.relay ? `event: studio:play\nid: ${event.id}\ndata: ${JSON.stringify(relayEvent(event))}\n\n` : frame);
         }
         for (const listener of listeners) {
             try {
@@ -321,8 +357,9 @@ function createMediaStudio({ store, root, accessKey, getChannel = () => 'varsayi
         return emit(requireItem(id), { type: 'test', eventId: '', giftId: '', count: 1 }, true);
     }
     function status(gameId = '', itemId = '') {
+        prunePollClients();
         const channel = currentChannel();
-        const scoped = [...clients].filter(client => client.channel === channel && client.gameId === gameId && (!itemId || !client.itemId || client.itemId === itemId));
+        const scoped = [...clients, ...pollClients.values()].filter(client => client.channel === channel && client.gameId === gameId && (!itemId || !client.itemId || client.itemId === itemId));
         return { receivers: scoped.filter(client => !client.preview).length, previews: scoped.filter(client => client.preview).length,
             configured: items.filter(item => item.channel === channel && item.gameId === gameId && active(item)).length,
             gameId, activeGame: getActiveGame() || '' };
@@ -456,6 +493,8 @@ function createMediaStudio({ store, root, accessKey, getChannel = () => 'varsayi
             reply(req, res, 400, 'text/plain; charset=utf-8', 'Invalid game scope'); return true;
         }
         const route = url.pathname.slice(BASE.length);
+        const baseHeader = req.headers['x-tikmng-overlay-base'];
+        const overlayBase = typeof baseHeader === 'string' && baseHeader === baseHeader.trim() && OVERLAY_BASE.test(baseHeader) ? baseHeader : '';
         if (route.startsWith('/file/')) {
             const item = find(route.slice(6), channel);
             if (item) stream(req, res, item);
@@ -468,14 +507,38 @@ function createMediaStudio({ store, root, accessKey, getChannel = () => 'varsayi
             catch { reply(req, res, 404, 'text/plain; charset=utf-8', 'Asset unavailable'); }
             return true;
         }
-        if (route === '/events') {
+        if (route === '/events' || route === '/poll') {
             const itemId = url.searchParams.get('item') || '';
             if (itemId && find(itemId, channel)?.gameId !== gameId) { reply(req, res, 404, 'text/plain; charset=utf-8', 'Unknown media item'); return true; }
+            if (route === '/poll') {
+                const clientId = url.searchParams.get('client') || '';
+                const cursor = url.searchParams.get('cursor') || '';
+                if (clientId.length !== 36 || !UUID.test(clientId) || (cursor && (cursor.length !== 36 || !UUID.test(cursor))) ||
+                    ['client', 'cursor', 'item', 'preview'].some(name => url.searchParams.getAll(name).length > 1)) {
+                    reply(req, res, 400, 'text/plain; charset=utf-8', 'Invalid poll scope'); return true;
+                }
+                prunePollClients();
+                if (req.method === 'GET') {
+                    if (!pollClients.has(clientId) && pollClients.size >= LIMITS.pollClients) {
+                        reply(req, res, 503, 'text/plain; charset=utf-8', 'Too many media poll clients'); return true;
+                    }
+                    pollClients.set(clientId, { channel, itemId, gameId, preview: url.searchParams.get('preview') === '1', lastSeen: Date.now() });
+                }
+                pruneHistory();
+                const previous = deliveryHistory.findIndex(entry => entry.event.id === cursor);
+                const start = cursor === historyStart ? 0 : previous >= 0 ? previous + 1 : deliveryHistory.length;
+                const events = deliveryHistory.slice(start).map(entry => entry.event)
+                    .filter(event => event.channel === channel && event.item.gameId === gameId && (!itemId || event.item.id === itemId));
+                reply(req, res, 200, 'application/json; charset=utf-8', JSON.stringify({
+                    cursor: deliveryHistory.at(-1)?.event.id || historyStart, events: overlayBase ? events.map(relayEvent) : events
+                }));
+                return true;
+            }
             if (req.method === 'HEAD') { reply(req, res, 200, 'text/event-stream'); return true; }
             if (clients.size >= LIMITS.clients) { reply(req, res, 503, 'text/plain; charset=utf-8', 'Too many media clients'); return true; }
             res.writeHead(200, { 'Content-Type': 'text/event-stream; charset=utf-8', Connection: 'keep-alive', 'X-Accel-Buffering': 'no' });
             res.flushHeaders?.();
-            const client = { res, channel, itemId, gameId, preview: url.searchParams.get('preview') === '1' };
+            const client = { res, channel, itemId, gameId, preview: url.searchParams.get('preview') === '1', relay: Boolean(overlayBase) };
             clients.add(client);
             res.once('close', () => clients.delete(client));
             res.once('error', () => disconnect(client));
@@ -486,7 +549,8 @@ function createMediaStudio({ store, root, accessKey, getChannel = () => 'varsayi
             const previous = deliveryHistory.findIndex(entry => entry.event.id === lastId);
             if (previous >= 0) for (const entry of deliveryHistory.slice(previous + 1)) {
                 const event = entry.event;
-                if (event.createdAt >= Date.now() - 90000 && event.channel === channel && event.item.gameId === gameId && (!itemId || event.item.id === itemId)) write(client, entry.frame);
+                if (event.createdAt >= Date.now() - 90000 && event.channel === channel && event.item.gameId === gameId && (!itemId || event.item.id === itemId)) write(client,
+                    client.relay ? `event: studio:play\nid: ${event.id}\ndata: ${JSON.stringify(relayEvent(event))}\n\n` : entry.frame);
             }
             return true;
         }
@@ -494,15 +558,16 @@ function createMediaStudio({ store, root, accessKey, getChannel = () => 'varsayi
         const selectedItem = itemId ? find(itemId, channel) : null;
         if (route && (!selectedItem || selectedItem.gameId !== gameId)) { reply(req, res, 404, 'text/plain; charset=utf-8', 'Unknown media item'); return true; }
         try {
-            const scriptUrl = protectedUrl(`${BASE}/client.js`, channel);
-            const cssUrl = protectedUrl(`${BASE}/client.css`, channel);
+            const assetUrl = route => overlayBase ? `${overlayBase}${route}?${new URLSearchParams({ channel })}` : protectedUrl(route, channel);
+            const scriptUrl = assetUrl(`${BASE}/client.js`);
+            const cssUrl = assetUrl(`${BASE}/client.css`);
             const nonce = crypto.randomBytes(18).toString('base64');
             res.setHeader('Content-Security-Policy', `default-src 'none'; script-src 'nonce-${nonce}'; style-src 'self'; media-src 'self' https:; img-src 'self' https:; connect-src 'self'; base-uri 'none'; frame-ancestors 'self' file: http://127.0.0.1:* http://localhost:* http://tikmng.localhost:*`);
             const attribute = value => value.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
             const html = fs.readFileSync(path.join(ASSETS, 'overlay.html'), 'utf8')
                 .replaceAll('{{NONCE}}', attribute(nonce)).replace('{{CLIENT_CSS}}', attribute(cssUrl)).replace('{{CLIENT_JS}}', attribute(scriptUrl))
                 .replace('{{CHANNEL}}', attribute(channel)).replace('{{ITEM}}', attribute(itemId)).replace('{{GAME}}', attribute(gameId))
-                .replace('{{MEDIA}}', attribute(selectedItem ? JSON.stringify(publicItem(selectedItem)) : ''));
+                .replace('{{MEDIA}}', attribute(selectedItem ? JSON.stringify(overlayBase ? relayItem(publicItem(selectedItem)) : publicItem(selectedItem)) : ''));
             reply(req, res, 200, 'text/html; charset=utf-8', html);
         } catch { reply(req, res, 500, 'text/plain; charset=utf-8', 'Overlay unavailable'); }
         return true;
@@ -517,6 +582,7 @@ function createMediaStudio({ store, root, accessKey, getChannel = () => 'varsayi
         closed = true;
         clearInterval(heartbeat);
         for (const client of clients) disconnect(client);
+        pollClients.clear();
         listeners.clear(); recent.clear(); cooldowns.clear(); remainders.clear(); playCounts.clear();
         deliveryHistory.length = 0;
     }

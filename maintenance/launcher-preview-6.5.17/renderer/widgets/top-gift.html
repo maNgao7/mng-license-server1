@@ -225,13 +225,32 @@ html, body {
   </section>
 </main>
 <script>
+const overlayBase=location.pathname.match(/^\/overlays\/[A-Za-z0-9_-]{43}(?=\/)/)?.[0]||'';
+function prefixURL(value){
+ if(!overlayBase||typeof value!=='string'||!/^\/(?!\/)/.test(value)||/[\\\u0000-\u0020]/.test(value))return value;
+ try{
+  const url=new URL(value,location.origin),path=url.pathname.startsWith(overlayBase+'/')?url.pathname.slice(overlayBase.length):url.pathname;
+  if(url.origin!==location.origin||!/^(?:\/(?:api\/)?widget\/(?:state|(?:top-gift|top-likes|leaderboard|activity)\/state)|\/widget\/(?:vendor\/matter\.js|physical-jar\.js)|\/widget\/gift-assets\/[A-Za-z0-9_-][A-Za-z0-9_.%-]*\.(?:png|gif|webp|jpe?g)|\/assets\/widgets\/glass-gift-jar\.png)$/.test(path))return value;
+  url.searchParams.delete('key');
+  return overlayBase+path+url.search+url.hash;
+ }catch{return value}
+}
+function widgetImageURL(value){
+ if(!overlayBase||typeof value!=='string')return value;
+ if(value.startsWith('/'))return prefixURL(value);
+ try{
+  const url=new URL(value);
+  if(!url.username&&!url.password&&/^https?:$/.test(url.protocol)&&(url.origin===location.origin||['127.0.0.1','localhost','[::1]'].includes(url.hostname))&&url.pathname.startsWith('/widget/gift-assets/')){const path=prefixURL(url.pathname+url.search+url.hash);if(path.startsWith(overlayBase+'/widget/gift-assets/'))return path}
+ }catch{}
+ return value;
+}
 const widgetParams = new URLSearchParams(location.search);
 const widgetAccent = widgetParams.get('accent');
 if (widgetAccent && /^#[0-9a-f]{6}$/i.test(widgetAccent)) {
   document.documentElement.style.setProperty('--widget-accent', widgetAccent);
   document.documentElement.style.setProperty('--widget-accent-soft', widgetAccent + '48');
 }
-const cleanUrl = value => { try { return new URL(String(value || ''), location.href).href; } catch { return ''; } };
+const cleanUrl = value => { try { return new URL(widgetImageURL(String(value || '')), location.href).href; } catch { return ''; } };
 let lastStamp = 0;
 function setImage(img, fallback, url) {
   if (!url) {
@@ -249,7 +268,7 @@ async function refresh() {
   try {
     const key = widgetParams.get('key') || '';
     const channel = widgetParams.get('channel') || '';
-    const res = await fetch('/widget/top-gift/state?key=' + encodeURIComponent(key) + '&channel=' + encodeURIComponent(channel) + '&t=' + Date.now(), { cache: 'no-store' });
+    const res = await fetch(prefixURL('/widget/top-gift/state?key=' + encodeURIComponent(key) + '&channel=' + encodeURIComponent(channel) + '&t=' + Date.now()), { cache: 'no-store' });
     const data = await res.json();
     const top = data.top;
     const stage = document.getElementById('stage');

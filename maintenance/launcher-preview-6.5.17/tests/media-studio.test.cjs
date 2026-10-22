@@ -13,6 +13,7 @@ const { createMediaStudio } = require('../lib/media-studio.cjs');
 
 const KEY = '0123456789abcdef0123456789abcdef';
 const BASE = '/tikmng/media';
+const PUBLIC_BASE = `/overlays/${'A'.repeat(43)}`;
 const options = { timeout: 10000 };
 
 function fixture(t, { disk = false, activeGame = '' } = {}) {
@@ -61,9 +62,17 @@ async function mapped(f, settings = {}, source) {
     return f.studio.save({ id: item.id, giftId: '5655', ...settings });
 }
 
-async function startServer(t, studio) {
+async function startServer(t, studio, { relay = false, onRequest } = {}) {
     const server = http.createServer((req, res) => {
-        if (!studio.handleRequest(req, res, new URL(req.url, 'http://127.0.0.1'))) {
+        const url = new URL(req.url, 'http://127.0.0.1');
+        onRequest?.(url, req);
+        if (relay && url.pathname.startsWith(PUBLIC_BASE + BASE)) {
+            url.pathname = url.pathname.slice(PUBLIC_BASE.length);
+            url.searchParams.set('key', KEY);
+            url.searchParams.set('channel', 'alice');
+            req.headers['x-tikmng-overlay-base'] = PUBLIC_BASE;
+        }
+        if (!studio.handleRequest(req, res, url)) {
             res.writeHead(404);
             res.end('Not found');
         }
@@ -108,6 +117,12 @@ function fakeRequest(studio, route, { channel = 'alice', key = KEY, backpressure
     url.searchParams.set('channel', channel);
     const handled = studio.handleRequest({ method: 'GET', headers, socket: { setTimeout() {} } }, res, url);
     return { handled, res, events: () => res.frames.filter(frame => frame.startsWith('event:')).map(frame => JSON.parse(frame.split('\ndata: ')[1])) };
+}
+
+function poll(studio, { cursor, client = crypto.randomUUID(), game = '', item = '', preview = false, ...auth } = {}) {
+    const query = new URLSearchParams({ client, game, item, ...(cursor === undefined ? {} : { cursor }), ...(preview ? { preview: '1' } : {}) });
+    const { res } = fakeRequest(studio, `${BASE}/poll?${query}`, auth);
+    return { status: res.status, ...(res.status === 200 ? JSON.parse(res.body) : {}) };
 }
 
 test('imports copy all supported types, preserve sources and redact paths', options, async t => {
@@ -353,7 +368,7 @@ test('HTTP protects every route and asset, serves overlays, isolates channels an
     const f = fixture(t);
     const item = await mapped(f);
     const base = await startServer(t, f.studio);
-    for (const route of [BASE, `${BASE}/${item.id}`, `${BASE}/events`, `${BASE}/file/${item.id}`, `${BASE}/client.js`, `${BASE}/client.css`]) {
+    for (const route of [BASE, `${BASE}/${item.id}`, `${BASE}/events`, `${BASE}/poll`, `${BASE}/file/${item.id}`, `${BASE}/client.js`, `${BASE}/client.css`]) {
         for (const key of [null, 'bad', 'x'.repeat(KEY.length), '\u0131'.repeat(KEY.length)]) {
             assert.equal((await request(base, route, { key })).status, 403, route);
         }
@@ -701,11 +716,15 @@ test('play limits are per action/session, gift repetitions bounded, and tests do
     assert.equal(restarted.ingest('gift', { giftId: '5655', repeatCount: 9 }).filter(event => event.item.id === cool.id).length, 1);
 });
 
-function overlayHarness({ mode = '', item = null, game = item?.gameId || '', extraQuery = '' } = {}) {
+function overlayHarness({ mode = '', item = null, game = item?.gameId || '', extraQuery = '',
+    origin = 'http://127.0.0.1:1234', pathname = BASE, key = KEY,
+    fetcher = async () => ({ ok: true, json: async () => ({ cursor: crypto.randomUUID(), events: [] }) }) } = {}) {
     const elements = [];
     const timeouts = new Map();
     const messages = [];
     const windowHandlers = new Map();
+    const documentHandlers = new Map();
+    const polls = [];
     let timerId = 0;
     let now = 0;
     let receive;
@@ -733,19 +752,24 @@ function overlayHarness({ mode = '', item = null, game = item?.gameId || '', ext
         remove() { this.removed = true; if (stage.children[0] === this) stage.children = []; }
     }
     const context = {
-        document: { getElementById: () => stage, body: { dataset: { channel: 'alice', item: item?.id || '', game, media: item ? JSON.stringify(item) : '' }, classList: bodyClasses }, createElement: kind => new Element(kind) },
-        location: { origin: 'http://127.0.0.1:1234', search: `?key=${KEY}&channel=alice${mode?'&'+mode+'=1':''}${game?'&game='+game:''}${extraQuery}` },
-        URL, URLSearchParams, queueMicrotask,
+        document: { hidden: false, addEventListener(name, fn) { documentHandlers.set(name, fn); },
+            getElementById: () => stage, body: { dataset: { channel: 'alice', item: item?.id || '', game, media: item ? JSON.stringify(item) : '' }, classList: bodyClasses }, createElement: kind => new Element(kind) },
+        location: { origin, pathname, search: `?${key === null ? '' : 'key='+key+'&'}channel=alice${mode?'&'+mode+'=1':''}${game?'&game='+game:''}${extraQuery}` },
+        URL, URLSearchParams, queueMicrotask, crypto, AbortController,
+        fetch(url, options) { polls.push({ url, options, at: now }); return fetcher(url, options); },
         setTimeout(fn, ms) { const id = ++timerId; timeouts.set(id, { fn, at: now + ms }); return id; }, clearTimeout(id) { timeouts.delete(id); },
         EventSource: class { constructor(url) { eventsUrl = url; } addEventListener(name, fn) { assert.equal(name, 'studio:play'); receive = fn; } close() { sourceClosed = true; } },
         window: { parent, addEventListener(name, fn) { windowHandlers.set(name, fn); } }
     };
     vm.runInNewContext(fs.readFileSync(path.join(__dirname, '../renderer/studio/overlay.js'), 'utf8'), context);
-    return { elements, timeouts, stage, messages, bodyClasses, eventsUrl, parent,
+    const settle = async () => { for (let index = 0; index < 12; index++) await Promise.resolve(); };
+    return { elements, timeouts, stage, messages, bodyClasses, eventsUrl, parent, polls, settle,
         send(event) { receive({ data: JSON.stringify(event) }); },
         message(data, source = parent) { windowHandlers.get('message')?.({ source, data }); },
         hide() { windowHandlers.get('pagehide')(); }, isClosed: () => sourceClosed,
+        visibility(hidden) { context.document.hidden = hidden; documentHandlers.get('visibilitychange')?.(); },
         async advance(ms) {
+            await settle();
             const target = now + ms;
             for (;;) {
                 const next = [...timeouts.entries()].filter(([, timer]) => timer.at <= target).sort((a, b) => a[1].at - b[1].at)[0];
@@ -754,7 +778,7 @@ function overlayHarness({ mode = '', item = null, game = item?.gameId || '', ext
                 now = timer.at;
                 timeouts.delete(id);
                 timer.fn();
-                await Promise.resolve();
+                await settle();
             }
             now = target;
         } };
@@ -829,4 +853,314 @@ test('overlay rejects unsafe URLs/channels and bounds pending playback', options
     }
     assert.equal(h.elements.length, 65);
     h.hide();
+});
+
+test('only a strict trusted prefix changes HTML assets; it never bypasses authentication', options, async t => {
+    const f = fixture(t);
+    const item = await mapped(f);
+    const headers = { 'x-tikmng-overlay-base': PUBLIC_BASE };
+    const html = fakeRequest(f.studio, `${BASE}/${item.id}`, { headers }).res.body;
+    for (const asset of ['client.js', 'client.css']) assert.ok(html.includes(`${PUBLIC_BASE}${BASE}/${asset}?channel=alice`));
+    assert.ok(html.includes(`${BASE}/file/${item.id}?channel=alice`));
+    assert.ok(!html.includes(KEY), 'Public HTML must not expose the private local access key');
+    assert.ok(!html.includes(`${PUBLIC_BASE}${BASE}/file/`));
+    for (const prefix of [PUBLIC_BASE + '/', PUBLIC_BASE + '\n', PUBLIC_BASE + '?x', PUBLIC_BASE.slice(0, -1), PUBLIC_BASE + 'B',
+        `https://evil.invalid${PUBLIC_BASE}`, '//evil.invalid', '/overlays/' + '.'.repeat(43), [PUBLIC_BASE, PUBLIC_BASE]]) {
+        const response = fakeRequest(f.studio, BASE, { headers: { 'x-tikmng-overlay-base': prefix } }).res;
+        assert.equal(response.status, 200);
+        assert.ok(!response.body.includes('/overlays/'), String(prefix));
+        assert.ok(response.body.includes(`${BASE}/client.js?key=${KEY}`));
+    }
+    const base = await startServer(t, f.studio);
+    assert.equal((await request(base, BASE, { key: null, headers })).status, 403);
+    assert.equal(fakeRequest(f.studio, `${BASE}/events`, { key: '', headers }).res.status, 403);
+    assert.equal(fakeRequest(f.studio, `${BASE}/events`, { key: 'wrong', headers }).res.status, 403);
+});
+
+test('keyless HTTP browser requests receive prefixed assets, files and events through relay injection', options, async t => {
+    const f = fixture(t);
+    const video = await mapped(f);
+    const png = await mapped(f, {}, f.source('relay.png'));
+    const gif = await mapped(f, {}, f.source('relay.gif'));
+    const observed = [];
+    const base = await startServer(t, f.studio, { relay: true, onRequest: url => observed.push(new URL(url)) });
+    const get = (route, extra = {}) => request(base, PUBLIC_BASE + route, { key: null, channel: null, ...extra });
+    const html = await get(`${BASE}/${video.id}?preview=1`);
+    assert.equal(html.status, 200);
+    assert.match(html.headers['content-security-policy'], /frame-ancestors 'self' file:/);
+    for (const match of html.body.matchAll(/(?:src|href)="([^"]+)"/g)) {
+        const asset = match[1].replaceAll('&amp;', '&');
+        assert.ok(asset.startsWith(PUBLIC_BASE + BASE));
+        assert.equal(new URL(asset, base).searchParams.has('key'), false);
+        assert.equal((await request(base, asset, { key: null, channel: null })).status, 200);
+    }
+    const range = await get(`${BASE}/file/${video.id}`, { headers: { Range: 'bytes=2-5' } });
+    assert.equal(range.status, 206);
+    assert.equal(range.body, '2345');
+    for (const [item, mime] of [[png, 'image/png'], [gif, 'image/gif']]) {
+        assert.equal((await get(`${BASE}/file/${item.id}`)).headers['content-type'], mime);
+    }
+    const route = `${BASE}/poll?client=${crypto.randomUUID()}`;
+    const initial = JSON.parse((await get(route)).body);
+    const event = f.studio.test(video.id);
+    const next = JSON.parse((await get(`${route}&cursor=${initial.cursor}&channel=bob`)).body);
+    const expected=structuredClone(event);
+    for(const field of ['mediaUrl','previewUrl']){const url=new URL(expected.item[field],'http://127.0.0.1');url.searchParams.delete('key');expected.item[field]=url.pathname+url.search;}
+    assert.deepEqual(next.events, [expected]);
+    assert.ok(!JSON.stringify(next).includes(KEY));
+    assert.ok(observed.every(url => !url.searchParams.has('key')));
+    assert.equal((await request(base, BASE, { key: null })).status, 403);
+    assert.equal((await request(base, `${BASE}/events`, { key: null })).status, 403);
+    const local = fakeRequest(f.studio, `${BASE}/events`);
+    const played = f.studio.test(video.id);
+    assert.deepEqual(local.events(), [played]);
+});
+
+test('poll starts at the tail without replay, including gifts racing the first request and empty histories', options, async t => {
+    const f = fixture(t);
+    const item = await mapped(f);
+    const client = crypto.randomUUID();
+    const empty = poll(f.studio, { client });
+    assert.equal(empty.status, 200);
+    assert.match(empty.cursor, /^[a-f0-9-]{36}$/);
+    assert.deepEqual(empty.events, []);
+    assert.equal(poll(f.studio, { client }).cursor, empty.cursor);
+    const first = f.studio.test(item.id);
+    assert.deepEqual(poll(f.studio, { client, cursor: empty.cursor }).events, [first]);
+    assert.deepEqual(poll(f.studio, { client }).events, []);
+    assert.equal(poll(f.studio, { client }).cursor, first.id);
+    const racing = f.studio.test(item.id);
+    const initial = poll(f.studio);
+    assert.equal(initial.cursor, racing.id);
+    assert.deepEqual(initial.events, []);
+    const newest = f.studio.test(item.id);
+    const next = poll(f.studio, { client, cursor: initial.cursor });
+    assert.deepEqual(next.events, [newest]);
+    assert.deepEqual(poll(f.studio, { client, cursor: next.cursor }).events, []);
+    const reset = poll(f.studio, { client, cursor: crypto.randomUUID() });
+    assert.equal(reset.cursor, newest.id);
+    assert.deepEqual(reset.events, []);
+});
+
+test('poll applies SSE channel/game/item scopes and validates all request identifiers', options, async t => {
+    const f = fixture(t);
+    const item = await mapped(f);
+    const other = f.studio.duplicate(item.id);
+    const game = f.studio.duplicate(item.id, { gameId: 'race' });
+    f.setChannel('bob');
+    const bob = await mapped(f);
+    f.setChannel('alice');
+    const { cursor } = poll(f.studio);
+    const events = [item, other, game].map(value => f.studio.test(value.id));
+    f.setChannel('bob');
+    const bobEvent = f.studio.test(bob.id);
+    f.setChannel('alice');
+    assert.deepEqual(poll(f.studio, { cursor }).events, events.slice(0, 2));
+    assert.deepEqual(poll(f.studio, { cursor, item: item.id, preview: true }).events, [events[0]]);
+    assert.deepEqual(poll(f.studio, { cursor, game: 'race' }).events, [events[2]]);
+    assert.deepEqual(poll(f.studio, { cursor, channel: 'bob' }).events, [bobEvent]);
+    assert.equal(poll(f.studio, { cursor }).cursor, bobEvent.id);
+    for (const scope of [{ item: game.id }, { game: 'race', item: item.id }, { item: bob.id }, { item: '../escape' }]) {
+        assert.equal(poll(f.studio, scope).status, 404);
+    }
+    for (const scope of [{ client: '' }, { client: 'bad' }, { client: crypto.randomUUID() + '\n' },
+        { cursor: crypto.randomUUID() + '\n' }, { cursor: '../escape' }, { cursor: 'x'.repeat(9000) }, { game: 'Race' }]) {
+        assert.equal(poll(f.studio, scope).status, 400);
+    }
+    for (const extra of ['client=x', 'cursor=', 'item=', 'game=', 'preview=1']) {
+        assert.equal(fakeRequest(f.studio, `${BASE}/poll?client=${crypto.randomUUID()}&cursor=&item=&game=&preview=0&${extra}`).res.status, 400);
+    }
+    const base = await startServer(t, f.studio);
+    assert.equal((await request(base, `${BASE}/poll?client=${crypto.randomUUID()}`, { method: 'POST' })).status, 405);
+    const count = f.studio.status().receivers;
+    assert.equal((await request(base, `${BASE}/poll?client=${crypto.randomUUID()}`, { method: 'HEAD' })).status, 200);
+    assert.equal(f.studio.status().receivers, count);
+});
+
+test('poll history is bounded to 256 events and 90 seconds, and stale cursors reset without replay', options, async t => {
+    const f = fixture(t);
+    const item = await mapped(f);
+    t.mock.timers.enable({ apis: ['Date'], now: Date.now() });
+    const events = Array.from({ length: 258 }, () => f.studio.test(item.id));
+    assert.deepEqual(poll(f.studio, { cursor: events[0].id }).events, []);
+    assert.deepEqual(poll(f.studio, { cursor: events[1].id }).events, []);
+    assert.equal(poll(f.studio, { cursor: events[2].id }).events.length, 255);
+    assert.deepEqual(poll(f.studio, { cursor: events[255].id }).events, events.slice(256));
+    t.mock.timers.tick(90001);
+    const expired = poll(f.studio, { cursor: events.at(-1).id });
+    assert.deepEqual(expired.events, []);
+    assert.notEqual(expired.cursor, events.at(-1).id);
+    const next = f.studio.test(item.id);
+    assert.deepEqual(poll(f.studio, { cursor: events.at(-1).id }).events, []);
+    assert.deepEqual(poll(f.studio, { cursor: expired.cursor }).events, [next]);
+});
+
+test('poll clients expire after five seconds, cap at 100, and join scoped SSE status', options, async t => {
+    const f = fixture(t);
+    const item = await mapped(f);
+    const game = f.studio.duplicate(item.id, { gameId: 'race' });
+    t.mock.timers.enable({ apis: ['Date'], now: Date.now() });
+    const sse = fakeRequest(f.studio, `${BASE}/events`);
+    const ids = Array.from({ length: 100 }, () => crypto.randomUUID());
+    for (const [index, client] of ids.entries()) assert.equal(poll(f.studio, { client, preview: index >= 70 }).status, 200);
+    assert.equal(f.studio.status().receivers, 71);
+    assert.equal(f.studio.status().previews, 30);
+    assert.equal(f.studio.status('race').receivers, 0);
+    assert.equal(poll(f.studio).status, 503);
+    assert.equal(poll(f.studio, { client: ids[0], game: 'race', item: game.id }).status, 200);
+    assert.equal(f.studio.status('race', game.id).receivers, 1);
+    t.mock.timers.tick(4000);
+    assert.equal(poll(f.studio, { client: ids[0], item: item.id, preview: true }).status, 200);
+    t.mock.timers.tick(1000);
+    assert.equal(f.studio.status().receivers, 1);
+    assert.equal(f.studio.status().previews, 1);
+    assert.equal(poll(f.studio).status, 200);
+    sse.res.destroy();
+    f.studio.close();
+    assert.equal(f.studio.status().receivers, 0);
+    assert.equal(f.studio.status().previews, 0);
+    assert.equal(poll(f.studio).status, 503);
+});
+
+test('HTTPS public previews need no key and canonicalize only the original local media route', options, async t => {
+    const f = fixture(t);
+    const item = await mapped(f, { gameId: 'race' });
+    const origin = 'https://relay.example';
+    const h = overlayHarness({ origin, pathname: `${PUBLIC_BASE}${BASE}/${item.id}`, key: null, item, mode: 'preview' });
+    await h.settle();
+    assert.equal(h.eventsUrl, undefined);
+    assert.equal(h.elements.length, 1);
+    assert.equal(h.elements[0].src, `${origin}${PUBLIC_BASE}${BASE}/file/${item.id}?channel=alice`);
+    const url = new URL(h.polls[0].url);
+    assert.equal(url.pathname, `${PUBLIC_BASE}${BASE}/poll`);
+    assert.equal(url.searchParams.has('key'), false);
+    assert.equal(url.searchParams.get('game'), 'race');
+    assert.equal(url.searchParams.get('item'), item.id);
+    assert.equal(url.searchParams.get('preview'), '1');
+    assert.match(url.searchParams.get('client'), /^[a-f0-9-]{36}$/);
+    h.hide();
+    assert.equal(h.timeouts.size, 0);
+    for (const mediaUrl of [`${BASE}/file/${item.id}?channel=alice&key=${KEY}`, `${BASE}/file/${item.id}?channel=alice`]) {
+        const preview = overlayHarness({ origin, pathname: `${PUBLIC_BASE}${BASE}`, key: null, item: { ...item, mediaUrl }, mode: 'poster' });
+        assert.equal(preview.elements.length, 1);
+        assert.equal(preview.polls.length, 0);
+        assert.equal(new URL(preview.elements[0].src).searchParams.has('key'), false);
+        preview.hide();
+    }
+    for (const mediaUrl of ['https://evil.invalid/file.mp4', `${origin}${item.mediaUrl}`, `//evil.invalid${item.mediaUrl}`,
+        `${PUBLIC_BASE}${item.mediaUrl}`, `${BASE}/file/../file/${item.id}?channel=alice`, `${item.mediaUrl}#fragment`,
+        `${item.mediaUrl}&extra=1`, `${item.mediaUrl}&key=other`, `${item.mediaUrl}&channel=bob`, item.mediaUrl.replace('channel=alice', 'channel=bob')]) {
+        const preview = overlayHarness({ origin, pathname: `${PUBLIC_BASE}${BASE}`, key: null, item: { ...item, mediaUrl }, mode: 'poster' });
+        assert.equal(preview.elements.length, 0, mediaUrl);
+        preview.hide();
+    }
+    for (const pathname of [`/overlays/${'A'.repeat(42)}${BASE}`, `${PUBLIC_BASE}B${BASE}`, `${PUBLIC_BASE}/other`, `${PUBLIC_BASE}${BASE}-other`]) {
+        const invalid = overlayHarness({ origin, pathname, key: null, item, mode: 'poster' });
+        assert.equal(invalid.elements.length, 0);
+        assert.equal(invalid.polls.length, 0);
+        invalid.hide();
+    }
+});
+
+test('public polling delivers the existing queue, image durations, dedupe and interrupt behavior', options, async t => {
+    const f = fixture(t);
+    const png = await mapped(f, { displaySeconds: 2 }, f.source('still.png'));
+    const gif = await mapped(f, { displaySeconds: 2, interrupt: true }, f.source('animated.gif'));
+    const pending = [];
+    let cursor = crypto.randomUUID();
+    const h = overlayHarness({ origin: 'https://relay.example', pathname: `${PUBLIC_BASE}${BASE}`, key: null,
+        fetcher: async () => {
+            const events = pending.splice(0);
+            cursor = events.at(-1)?.id || cursor;
+            return { ok: true, json: async () => ({ cursor, events }) };
+        } });
+    await h.settle();
+    const event = f.studio.test(png.id);
+    pending.push(event, event, f.studio.test(png.id));
+    await h.advance(800);
+    assert.equal(h.elements.length, 1);
+    assert.equal(h.elements[0].kind, 'img');
+    h.elements[0].dispatch('load');
+    await h.advance(800);
+    assert.equal(h.elements.length, 1);
+    const interrupt = f.studio.test(gif.id);
+    pending.push(interrupt);
+    await h.advance(800);
+    assert.equal(h.elements[0].removed, true);
+    assert.equal(h.elements.length, 2);
+    assert.equal(h.elements[1].src, `https://relay.example${PUBLIC_BASE}${BASE}/file/${gif.id}?channel=alice`);
+    h.elements[1].dispatch('load');
+    await h.advance(2000);
+    assert.equal(h.elements[1].removed, true);
+    assert.equal(h.elements.length, 2);
+    assert.equal(h.stage.children.length, 0);
+    const clients = h.polls.map(entry => new URL(entry.url).searchParams.get('client'));
+    assert.equal(new Set(clients).size, 1);
+    assert.equal(new URL(h.polls[1].url).searchParams.has('cursor'), true);
+    h.hide();
+    assert.equal(h.timeouts.size, 0);
+});
+
+test('public polling aborts at five seconds, never overlaps and retries up to five seconds', options, async () => {
+    const pending = [];
+    const h = overlayHarness({ origin: 'https://relay.example', pathname: `${PUBLIC_BASE}${BASE}`, key: null,
+        fetcher: (url, { signal }) => new Promise((resolve, reject) => {
+            pending.push({ resolve, reject });
+            signal.addEventListener('abort', () => reject(new Error('aborted')), { once: true });
+        }) });
+    await h.advance(4999);
+    assert.equal(h.polls.length, 1);
+    assert.equal(h.polls[0].options.signal.aborted, false);
+    await h.advance(1);
+    assert.equal(h.polls[0].options.signal.aborted, true);
+    await h.advance(1599);
+    assert.equal(h.polls.length, 1);
+    await h.advance(1);
+    assert.equal(h.polls.length, 2);
+    pending[1].reject(new Error('offline'));
+    await h.settle();
+    await h.advance(3200);
+    assert.equal(h.polls.length, 3);
+    pending[2].resolve({ ok: false });
+    await h.settle();
+    await h.advance(5000);
+    assert.equal(h.polls.length, 4);
+    pending[3].resolve({ ok: true, json: async () => ({ cursor: 'invalid', events: [] }) });
+    await h.settle();
+    await h.advance(4999);
+    assert.equal(h.polls.length, 4);
+    await h.advance(1);
+    assert.equal(h.polls.length, 5);
+    const cursor = crypto.randomUUID();
+    pending[4].resolve({ ok: true, json: async () => ({ cursor, events: [] }) });
+    await h.settle();
+    await h.advance(800);
+    assert.equal(h.polls.length, 6);
+    assert.equal(new URL(h.polls[5].url).searchParams.get('cursor'), cursor);
+    h.hide();
+    await h.settle();
+    assert.equal(h.polls[5].options.signal.aborted, true);
+    assert.equal(h.timeouts.size, 0);
+    await h.advance(30000);
+    assert.equal(h.polls.length, 6);
+});
+
+test('visibility changes stop polling and resume from a fresh tail without hidden-page gifts', options, async () => {
+    const h = overlayHarness({ origin: 'https://relay.example', pathname: `${PUBLIC_BASE}${BASE}`, key: null });
+    await h.settle();
+    h.visibility(true);
+    await h.advance(30000);
+    assert.equal(h.polls.length, 1);
+    assert.equal(h.timeouts.size, 0);
+    h.visibility(false);
+    await h.settle();
+    assert.equal(h.polls.length, 2);
+    assert.equal(new URL(h.polls[1].url).searchParams.has('cursor'), false);
+    await h.advance(800);
+    assert.equal(h.polls.length, 3);
+    h.hide();
+    h.visibility(false);
+    await h.advance(30000);
+    assert.equal(h.polls.length, 3);
+    assert.equal(h.timeouts.size, 0);
 });

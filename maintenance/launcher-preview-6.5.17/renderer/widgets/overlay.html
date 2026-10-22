@@ -147,10 +147,29 @@ body{padding:12px}.stage{min-width:0;min-height:0}.stage *{letter-spacing:0}
 </style>
 </head>
 <body><main id="stage" class="stage"></main>
-<script src="/widget/vendor/matter.js"></script>
-<script src="/widget/physical-jar.js"></script>
 <script>
+const overlayBase=location.pathname.match(/^\/overlays\/[A-Za-z0-9_-]{43}(?=\/)/)?.[0]||'';
+function prefixURL(value){
+ if(!overlayBase||typeof value!=='string'||!/^\/(?!\/)/.test(value)||/[\\\u0000-\u0020]/.test(value))return value;
+ try{
+  const url=new URL(value,location.origin),path=url.pathname.startsWith(overlayBase+'/')?url.pathname.slice(overlayBase.length):url.pathname;
+  if(url.origin!==location.origin||!/^(?:\/(?:api\/)?widget\/(?:state|(?:top-gift|top-likes|leaderboard|activity)\/state)|\/widget\/(?:vendor\/matter\.js|physical-jar\.js)|\/widget\/gift-assets\/[A-Za-z0-9_-][A-Za-z0-9_.%-]*\.(?:png|gif|webp|jpe?g)|\/assets\/widgets\/glass-gift-jar\.png)$/.test(path))return value;
+  url.searchParams.delete('key');
+  return overlayBase+path+url.search+url.hash;
+ }catch{return value}
+}
+function widgetImageURL(value){
+ if(!overlayBase||typeof value!=='string')return value;
+ if(value.startsWith('/'))return prefixURL(value);
+ try{
+  const url=new URL(value);
+  if(!url.username&&!url.password&&/^https?:$/.test(url.protocol)&&(url.origin===location.origin||['127.0.0.1','localhost','[::1]'].includes(url.hostname))&&url.pathname.startsWith('/widget/gift-assets/')){const path=prefixURL(url.pathname+url.search+url.hash);if(path.startsWith(overlayBase+'/widget/gift-assets/'))return path}
+ }catch{}
+ return value;
+}
 const params=new URLSearchParams(location.search),type=params.get('type')||'myactions',preview=params.get('preview')==='1',items=Math.max(3,Math.min(13,Number(params.get('items'))||6));document.body.classList.toggle('preview-mode',preview);
+function loadWidgetScript(path){return new Promise((resolve,reject)=>{const script=document.createElement('script');script.src=prefixURL(path);script.onload=resolve;script.onerror=()=>reject(new Error('Widget script unavailable'));document.head.append(script)})}
+const jarReady=type==='coinjar'?loadWidgetScript('/widget/vendor/matter.js').then(()=>loadWidgetScript('/widget/physical-jar.js')):Promise.resolve();
 const accent=/^#[0-9a-f]{6}$/i.test(params.get('accent')||'')?params.get('accent'):'#36eee4';document.documentElement.style.setProperty('--accent',accent);document.body.dataset.widget=type;
 const clamp=(key,min,max,fallback)=>Math.max(min,Math.min(max,Number(params.get(key))||fallback));
 const stage=document.getElementById('stage');let lastSignature='',lastEventId='',timerStarted=Date.now(),effectTimer,lastJarEvent='';
@@ -162,9 +181,9 @@ const speed=clamp('speed',40,250,100)/100,particleCount=clamp('particles',4,100,
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const sampleGiftImage=`/widget/gift-assets/5655.png?key=${encodeURIComponent(params.get('key')||'')}&channel=${encodeURIComponent(params.get('channel')||'')}`;
 const sample={channel:'mngcanli',stats:{totalLikes:4860,totalCoins:1280,totalGifts:74,totalShares:32,followers:18,subscribers:4,viewerCount:128,topStreak:{username:'mng_destekci',nickname:'MNG Destekçi',giftName:'Gül',count:12}},topGift:{username:'mng_destekci',nickname:'MNG Destekçi',giftName:'Gül',count:5,coins:125,giftImage:sampleGiftImage},topLikes:[['kalp_yagmuru',2450],['yayin_dostu',1980],['oyun_sever',1640],['neon_kral',1220]].map(([username,totalLikes])=>({username,nickname:username.replaceAll('_',' '),totalLikes})),topGifters:[['mng_destekci',1280],['yildiz_destekci',940],['gece_kartali',610],['oyun_sever',420]].map(([username,totalCoins])=>({username,nickname:username.replaceAll('_',' '),totalCoins,giftCount:8})),activities:[{id:'a1',type:'gift',username:'mng_destekci',nickname:'MNG Destekçi',giftName:'Gül',giftImage:sampleGiftImage,count:5,coins:5,message:''},{id:'a2',type:'like',username:'kalp_yagmuru',nickname:'Kalp Yağmuru',count:240,message:''},{id:'a3',type:'follow',username:'yeni_takipci',nickname:'Yeni Takipçi',count:1,message:''},{id:'a4',type:'chat',username:'yayin_dostu',nickname:'Yayın Dostu',message:'Harika yayın! ❤️🔥👏',count:1},{id:'a5',type:'chat',username:'muzik_sever',nickname:'Müzik Sever',message:'!play En sevdiğim şarkı',count:1}],ranking:[]};sample.jarGifts=Array.from({length:74},(_,i)=>({...sample.activities[0],id:`preview-${i}`,count:1,coins:i===0?2000:i===1?1000:1,giftImage:i%9===0?`/widget/gift-assets/6064.png?key=${encodeURIComponent(params.get('key')||'')}&channel=${encodeURIComponent(params.get('channel')||'')}`:sampleGiftImage}));sample.ranking=sample.topGifters.map((x,i)=>({...x,totalLikes:sample.topLikes[i]?.totalLikes||0,score:x.totalCoins*2+Math.floor((sample.topLikes[i]?.totalLikes||0)/50)}));
-function avatar(x,size=''){const name=esc(x?.nickname||x?.username||'İzleyici'),style=size?` style="width:${size}px;height:${size}px"`:'';return `<span class="avatar"${style}>${x?.avatar?`<img src="${esc(x.avatar)}" alt="" onerror="this.remove()">`:esc(name[0]||'İ')}</span>`}
-function giftAsset(id){return `/widget/gift-assets/${id}.png?key=${encodeURIComponent(params.get('key')||'')}&channel=${encodeURIComponent(params.get('channel')||'')}`}
-function giftImage(x){return x?.giftImage?`<img class="gift-img" src="${esc(x.giftImage)}" alt="" onerror="this.hidden=true">`:'<span class="gift-img" aria-hidden="true"></span>'}
+function avatar(x,size=''){const name=esc(x?.nickname||x?.username||'İzleyici'),style=size?` style="width:${size}px;height:${size}px"`:'';return `<span class="avatar"${style}>${x?.avatar?`<img src="${esc(widgetImageURL(x.avatar))}" alt="" onerror="this.remove()">`:esc(name[0]||'İ')}</span>`}
+function giftAsset(id){return prefixURL(`/widget/gift-assets/${id}.png?key=${encodeURIComponent(params.get('key')||'')}&channel=${encodeURIComponent(params.get('channel')||'')}`)}
+function giftImage(x){return x?.giftImage?`<img class="gift-img" src="${esc(widgetImageURL(x.giftImage))}" alt="" onerror="this.hidden=true">`:'<span class="gift-img" aria-hidden="true"></span>'}
 function artwork(id){return giftImage({giftImage:giftAsset(id)})}
 function activityText(x){return x.type==='gift'?`${x.giftName||'Hediye'} ×${x.count||1} · ${x.coins||0} coin`:x.type==='like'?`${x.count||1} beğeni`:x.type==='follow'?'Takip etti':x.type==='share'?`${x.count||1} paylaşım`:x.type==='member'?'Yayına katıldı':x.message||'Yeni etkinlik'}
 function list(entries,value){return `<div class="stack rank">${entries.slice(0,items).map(x=>`<div class="item glass">${avatar(x)}<span><b>@${esc(x.username||x.nickname)}</b><small>${esc(x.nickname||'Canlı destekçi')}</small></span><strong class="value">${esc(value(x))}</strong></div>`).join('')||'<div class="empty glass">Veri bekleniyor</div>'}</div>`}
@@ -253,8 +272,9 @@ async function poll(){
  if(polling)return;
  polling=true;
  try{
+  await jarReady;
   const url=new URL('/api/widget/state',location.origin);url.search=params.toString();
-  const response=await fetch(url,{cache:'no-store'});
+  const response=await fetch(prefixURL(url.pathname+url.search),{cache:'no-store'});
   if(!response.ok)throw new Error('Widget state unavailable');
   const data=await response.json();
   const hasPreviewData=(data.activities||[]).length||(data.jarGifts||[]).length||data.topGift||(data.topGifters||[]).length||(data.topLikes||[]).length||(data.ranking||[]).length||(type==='viewercount'&&Object.prototype.hasOwnProperty.call(data.stats||{},'viewerCount'));

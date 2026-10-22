@@ -363,7 +363,9 @@ function widgetGalerisiniOlustur(widgets){
     const collection=document.getElementById("widgetCollection");
     collection.innerHTML=widgets.map((item,index)=>{
         const previewId=`widgetPreview${index}`,urlId=`widgetUrl${index}`,tone=widgetKindColors[item.kind]||"cyan";
-        return `<section class="widget-row" data-widget data-kind="${item.kind}" data-search="${(item.name+' '+item.description+' '+item.kind).toLocaleLowerCase('tr-TR')}"><div class="widget-visual"><iframe id="${previewId}" data-widget-id="${item.id}" title="${item.name} ön izlemesi" loading="lazy"></iframe><span class="widget-live-badge">● CANLI ÖN İZLEME</span></div><div class="widget-info"><div class="widget-title-line"><span class="widget-kind ${tone}">${item.kind}</span><span class="widget-local-badge">LOCALHOST HAZIR</span></div><b>${item.name.toLocaleUpperCase('tr-TR')}</b><small>${item.description}</small><label>TikTok LIVE Studio bağlantısı</label><div class="widget-url-row"><input id="${urlId}" value="${item.url}" readonly><button type="button" data-widget-copy="${urlId}" data-widget-id="${item.id}">KOPYALA</button></div><div class="widget-actions"><button class="settings-primary" type="button" data-widget-settings="${item.id}" data-preview="${previewId}">AYRINTILI AYARLAR</button><button class="secondary" type="button" data-widget-test="${item.id}" data-preview="${previewId}">CANLI TEST</button><button class="danger" type="button" data-widget-reset="${item.id}" data-preview="${previewId}">VERİYİ SIFIRLA</button></div><p class="widget-link-note">Launcher açıkken bu yerel bağlantı TikTok LIVE Studio ve OBS bağlantı kaynağında çalışır.</p></div><span class="widget-preview-source" data-preview-url="${item.previewUrl}" data-preview-id="${previewId}" data-widget-id="${item.id}"></span></section>`;
+        const broadcast = item.broadcastUrl ?? item.url;
+        const transportMessage = widgetGalleryInfo?.overlayTransport?.message || 'Yayın bağlantısı kontrol ediliyor.';
+        return `<section class="widget-row" data-widget data-kind="${item.kind}" data-search="${(item.name+' '+item.description+' '+item.kind).toLocaleLowerCase('tr-TR')}"><div class="widget-visual"><iframe id="${previewId}" data-widget-id="${item.id}" title="${item.name} ön izlemesi" loading="lazy"></iframe><span class="widget-live-badge">● CANLI ÖN İZLEME</span></div><div class="widget-info"><div class="widget-title-line"><span class="widget-kind ${tone}">${item.kind}</span><span class="widget-local-badge">${broadcast ? 'YAYIN BAĞLANTISI HAZIR' : 'YAYIN SERVİSİ BEKLENİYOR'}</span></div><b>${item.name.toLocaleUpperCase('tr-TR')}</b><small>${item.description}</small><label>TikTok LIVE Studio bağlantısı</label><div class="widget-url-row"><input id="${urlId}" value="${broadcast || ''}" readonly><button type="button" data-widget-copy="${urlId}" data-widget-id="${item.id}" ${broadcast ? '' : 'disabled'}>KOPYALA</button></div><div class="widget-actions"><button class="settings-primary" type="button" data-widget-settings="${item.id}" data-preview="${previewId}">AYRINTILI AYARLAR</button><button class="secondary" type="button" data-widget-test="${item.id}" data-preview="${previewId}">CANLI TEST</button><button class="danger" type="button" data-widget-reset="${item.id}" data-preview="${previewId}">VERİYİ SIFIRLA</button></div><p class="widget-link-note">${transportMessage}</p></div><span class="widget-preview-source" data-preview-url="${item.previewUrl}" data-preview-id="${previewId}" data-widget-id="${item.id}"></span></section>`;
     }).join("");
     collection.querySelectorAll("[data-widget-copy]").forEach(button=>button.onclick=()=>widgetBaglantiKopyala(button.dataset.widgetCopy,button.dataset.widgetId));
     collection.querySelectorAll("[data-widget-settings]").forEach(button=>button.onclick=()=>widgetAyarPanelAc(button.dataset.widgetSettings,button.dataset.preview));
@@ -380,6 +382,7 @@ function widgetGalerisiniOlustur(widgets){
     widgetGalerisiniFiltrele("");
 }
 function widgetOzellestirilmisUrl(raw, id, settings = widgetAyarlariniOku(id)) {
+    if (!raw) return '';
     const url = new URL(raw);
     for (const [key,value] of Object.entries(settings)) url.searchParams.set(key, String(value));
     return url.href;
@@ -387,8 +390,9 @@ function widgetOzellestirilmisUrl(raw, id, settings = widgetAyarlariniOku(id)) {
 function widgetBaglantilariGuncelle(){
     document.querySelectorAll("#widgetCollection [data-widget-copy]").forEach(button=>{
         const input=document.getElementById(button.dataset.widgetCopy);
-        const original=widgetGalleryInfo?.widgets?.find(item=>item.id===button.dataset.widgetId)?.url;
-        if(input&&original)input.value=widgetOzellestirilmisUrl(original,button.dataset.widgetId);
+        const item=widgetGalleryInfo?.widgets?.find(item=>item.id===button.dataset.widgetId);
+        const original=item?.broadcastUrl ?? item?.url;
+        if(input){input.value=original?widgetOzellestirilmisUrl(original,button.dataset.widgetId):'';input.placeholder=original?'':'HTTPS yayın servisi henüz hazır değil';button.disabled=!original;}
     });
 }
 function widgetOnIzlemeUrl(raw,id,settings){
@@ -399,6 +403,7 @@ function widgetOnIzlemeUrl(raw,id,settings){
 }
 async function widgetBaglantiKopyala(inputId,widgetId){
     const input = document.getElementById(inputId);
+    if(!input?.value)return hataGoster('HTTPS yayın bağlantısı henüz hazır değil. Ayarlar bölümünden bağlantı durumunu kontrol edin.');
     await copyToClipboardSafe(widgetOzellestirilmisUrl(input.value,widgetId), "Widget bağlantısı kopyalandı.");
 }
 function widgetOnIzlemeyiYenile(el) {

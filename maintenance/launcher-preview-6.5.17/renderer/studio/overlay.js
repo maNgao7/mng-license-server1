@@ -4,6 +4,7 @@
     const stage = document.getElementById('stage');
     const parameters = new URLSearchParams(location.search);
     const key = parameters.get('key');
+    const overlayBase = /^(\/overlays\/[A-Za-z0-9_-]{43})(?=\/tikmng\/media(?:\/|$))/.exec(location.pathname || '')?.[1] || '';
     const channel = document.body.dataset.channel;
     const itemId = document.body.dataset.item;
     const gameId = document.body.dataset.game || '';
@@ -23,13 +24,21 @@
     let source = null;
     let disposed = false;
     let hoverLoops = 0;
+    let stopPolling = () => {};
 
     function mediaUrl(item) {
         if (!idPattern.test(item.id) || typeof item.mediaUrl !== 'string') return null;
-        const expected = new URL(`/tikmng/media/file/${item.id}`, location.origin);
-        expected.search = new URLSearchParams({ key, channel }).toString();
+        const pathname = `/tikmng/media/file/${item.id}`;
+        // Validate the original local route before translating it to the public relay.
+        if (item.mediaUrl.split('?')[0] !== pathname || /[\x00-\x20\x7f\\#]/.test(item.mediaUrl)) return null;
         const supplied = new URL(item.mediaUrl, location.origin);
-        return supplied.href === expected.href ? expected.href : null;
+        if (supplied.pathname !== pathname || supplied.searchParams.getAll('channel').length !== 1 ||
+            supplied.searchParams.get('channel') !== channel || supplied.searchParams.getAll('key').length > 1 ||
+            [...supplied.searchParams.keys()].some(name => !['key', 'channel'].includes(name)) ||
+            (!overlayBase && (!key || supplied.searchParams.get('key') !== key))) return null;
+        const expected = new URL(`${overlayBase}${pathname}`, location.origin);
+        expected.search = new URLSearchParams({ ...(!overlayBase ? { key } : {}), channel }).toString();
+        return expected.href;
     }
 
     function normalizeItem(value) {
@@ -269,7 +278,7 @@
 
     if (poster || preview || hover) document.body.classList.add(poster ? 'poster' : 'preview');
     const validScope = !gameId || gamePattern.test(gameId);
-    if ((poster || preview || hover) && key && channel && stage && validScope) {
+    if ((poster || preview || hover) && (key || overlayBase) && channel && stage && validScope) {
         try {
             selectedMedia = normalizeItem(JSON.parse(document.body.dataset.media));
             if (selectedMedia && selectedMedia.id === itemId) {
@@ -287,15 +296,59 @@
         if (!playing && !staticPreview) showPreview();
         (playing || staticPreview)?.trim(data);
     });
-    if (!poster && !hover && key && channel && stage && validScope) {
-        const eventsUrl = new URL('/tikmng/media/events', location.origin);
-        eventsUrl.search = new URLSearchParams({ key, channel, ...(preview ? { preview: '1' } : {}), ...(gameId ? { game: gameId } : {}), ...(itemId ? { item: itemId } : {}) }).toString();
-        source = new EventSource(eventsUrl.href);
-        source.addEventListener('studio:play', receive);
+    if (!poster && !hover && (key || overlayBase) && channel && stage && validScope) {
+        const scope = { channel, ...(preview ? { preview: '1' } : {}), ...(gameId ? { game: gameId } : {}), ...(itemId ? { item: itemId } : {}) };
+        if (overlayBase) {
+            const client = crypto.randomUUID();
+            let cursor = '';
+            let timer;
+            let request = null;
+            let delay = 800;
+            stopPolling = () => {
+                clearTimeout(timer);
+                request?.abort();
+                cursor = '';
+            };
+            const poll = async () => {
+                if (disposed || document.hidden || request) return;
+                const controller = new AbortController();
+                request = controller;
+                const timeout = setTimeout(() => controller.abort(), 5000);
+                try {
+                    const url = new URL(`${overlayBase}/tikmng/media/poll`, location.origin);
+                    url.search = new URLSearchParams({ ...scope, client, ...(cursor ? { cursor } : {}) }).toString();
+                    const response = await fetch(url.href, { signal: controller.signal, cache: 'no-store', credentials: 'same-origin', redirect: 'error' });
+                    if (!response.ok) throw new Error('Media poll failed');
+                    const data = await response.json();
+                    if (disposed || document.hidden || controller.signal.aborted) return;
+                    if (!data || !idPattern.test(data.cursor) || !Array.isArray(data.events) || data.events.length > 256) throw new Error('Invalid media poll');
+                    cursor = data.cursor;
+                    for (const event of data.events) receive({ data: JSON.stringify(event) });
+                    delay = 800;
+                } catch {
+                    delay = Math.min(delay * 2, 5000);
+                } finally {
+                    clearTimeout(timeout);
+                    request = null;
+                    if (!disposed && !document.hidden) timer = setTimeout(poll, delay);
+                }
+            };
+            document.addEventListener('visibilitychange', () => {
+                stopPolling();
+                if (!document.hidden) { delay = 800; poll(); }
+            });
+            poll();
+        } else {
+            const eventsUrl = new URL('/tikmng/media/events', location.origin);
+            eventsUrl.search = new URLSearchParams({ key, ...scope }).toString();
+            source = new EventSource(eventsUrl.href);
+            source.addEventListener('studio:play', receive);
+        }
     }
     window.addEventListener('pagehide', () => {
         disposed = true;
         source?.close();
+        stopPolling();
         queue.length = 0;
         playing?.cancel();
         staticPreview?.cancel();
