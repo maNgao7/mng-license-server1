@@ -11,7 +11,7 @@ const { createSpeechService, SPEECH_STYLE_IDS } = require('./speech-service.cjs'
 const { loadContentCatalog } = require('./content-catalog.cjs');
 const bundledCatalog = require('./catalog-defaults.json');
 
-const TTS_DEFAULTS = { enabled: false, names: true, volume: 0.7, rate: 1, pitch: 1, voiceURI: '', voicePreset: 'natural', provider: '', allowOfflineFallback: false, audience: 'all', giftId: '7934', maxLength: 180, cooldownSeconds: 3, blockedWords: '' };
+const TTS_DEFAULTS = { enabled: false, names: true, volume: 0.7, rate: 1, pitch: 1, voiceURI: '', voicePreset: 'natural', provider: '', allowOfflineFallback: false, audience: 'all', allowedUsers: '', giftId: '7934', maxLength: 180, cooldownSeconds: 3, blockedWords: '' };
 const httpsURL = value => { const url = new URL(value); if (url.protocol !== 'https:' || url.username || url.password) throw new Error('Güvenli HTTPS adresi gerekli.'); return url.href; };
 
 function createPlatform(ctx) {
@@ -22,10 +22,17 @@ function createPlatform(ctx) {
     let catalogStatus = { source: catalog ? 'cache' : 'bundled', message: 'Kayıtlı içerikler kullanılıyor.', remoteAvailable: false };
     const controllers = new Map();
     const speechAudience = createSpeechAudience();
+    speechAudience.configure({ ...TTS_DEFAULTS, ...store.get('tts_settings_v1', {}) });
     let credentialError = '';
     let savedSpeech;
     try { savedSpeech = ctx.speechCredentials?.read(); } catch { credentialError = 'Kayıtlı ses hesabı açılamadı. Doğal ses hesabını yeniden bağlayın.'; }
-    const speech = ctx.speechService || createSpeechService({ azure: savedSpeech || undefined });
+    const voicePacks = ctx.voicePacks || require('./voice-pack-manager.cjs').createVoicePackManager({
+        root: path.join(app.getPath('userData'), 'voices', 'v1'),
+        bundledFrontend: path.join(__dirname, 'voice-assets', 'okur-frontend.wasm'),
+        onProgress: progress => ctx.getWindow()?.webContents.send('workspace-voice-progress', progress)
+    });
+    const central = ctx.getSpeechCredentials ? require('./central-speech.cjs').createCentralSpeech({ serverURL: ctx.serverURL, getCredentials: ctx.getSpeechCredentials }) : undefined;
+    const speech = ctx.speechService || createSpeechService({ azure: savedSpeech || undefined, voicePacks, central });
     let library;
     const send = (name, data) => ctx.getWindow()?.webContents.send(name, data);
     const known = id => Object.hasOwn(definitions, id) && id !== 'crowdControl';
@@ -103,7 +110,7 @@ function createPlatform(ctx) {
     });
     function speechError(error) {
         return ({ VOICE_UNAVAILABLE: 'Seçilen Türkçe ses bu sistemde yok. Kullanılabilir bir ses seçin.',
-            WINDOWS_UNAVAILABLE: 'Windows Türkçe konuşma sesi kullanılamıyor.', AZURE_NOT_CONFIGURED: 'Doğal sesler için Azure Speech hesabınızı bağlayın.',
+            WINDOWS_UNAVAILABLE: 'Windows Türkçe konuşma sesi kullanılamıyor.', OFFLINE_UNAVAILABLE: 'Çevrimdışı ses üretilemedi. Ses paketini yeniden indirin.', VOICE_PACK_REQUIRED: 'Önce çevrimdışı ses paketini indirin.', AZURE_NOT_CONFIGURED: 'Doğal sesler için Azure Speech hesabınızı bağlayın.',
             AZURE_CONFIGURATION: 'Ses hesabı ayarlarını kontrol edin.', AZURE_AUTH: 'Ses hesabının anahtarı veya bölgesi doğrulanamadı.',
             AZURE_LIMIT: 'Ses hesabının kullanım kotası doldu. Hesap limitini kontrol edin.', AZURE_UNAVAILABLE: 'Doğal ses hizmetine ulaşılamadı.',
             INVALID_AUDIO: 'Ses hizmetinden geçerli bir kayıt alınamadı.', SPEECH_CANCELLED: 'Ses durduruldu.',
@@ -164,10 +171,12 @@ function createPlatform(ctx) {
         return snapshot();
     });
     async function importArchive(directory) {
+        const channel = ctx.getChannel();
         const files = await readMediaArchive(directory, progress => send('workspace-progress', {
             oyun: 'media', ...progress, message: `Arşiv doğrulanıyor: ${progress.completed}/${progress.total}`
         }));
         for (let start = 0; start < files.length; start += 64) {
+            if (ctx.getChannel() !== channel) throw new Error('Arşiv eklenirken yayın hesabı değişti. Yeni hesapta tekrar deneyin.');
             const batch = files.slice(start, start + 64);
             await studio.importFiles(batch.map(file => file.path), batch.map(({ title, category }) => ({ title, category })));
             send('workspace-progress', { oyun: 'media', phase: 'importing', completed: Math.min(start + 64, files.length), total: files.length,
@@ -217,13 +226,18 @@ function createPlatform(ctx) {
             pitch: Math.max(0.5, Math.min(2, Number(settings.pitch) || 1)), maxLength: Math.max(20, Math.min(500, Number(settings.maxLength) || 180)),
             cooldownSeconds: Math.max(1, Math.min(60, Number(settings.cooldownSeconds) || 3)), blockedWords: String(settings.blockedWords || '').slice(0, 2000),
             audience: SPEECH_AUDIENCES.has(settings.audience) ? settings.audience : 'all',
+            allowedUsers: String(settings.allowedUsers || '').slice(0, 4000),
             giftId: /^\d{1,20}$/.test(String(settings.giftId || '')) ? String(settings.giftId) : '7934',
             voicePreset: [...SPEECH_STYLE_IDS, 'child'].includes(settings.voicePreset) ? settings.voicePreset : 'natural',
-            provider: ['', 'windows', 'azure'].includes(settings.provider) ? settings.provider : '', allowOfflineFallback: settings.allowOfflineFallback === true };
+            provider: ['', 'windows', 'azure', 'offline', 'tikmng'].includes(settings.provider) ? settings.provider : '', allowOfflineFallback: settings.allowOfflineFallback === true };
+        speechAudience.configure(result);
         store.set('tts_settings_v1', result);
         return snapshot();
     });
     handle('speech-status', async data => ({ ...await speech.status({ refresh: data.refresh === true }), credentialError }));
+    handle('speech-pack-install', async ({ id }) => { await voicePacks.install(id); return speech.status({ refresh: true }); });
+    handle('speech-pack-remove', async ({ id }) => { speech.cancel(); await voicePacks.remove(id); return speech.status({ refresh: true }); });
+    handle('speech-pack-cancel', ({ id }) => voicePacks.cancel(id));
     handle('speech-synthesize', data => speech.synthesize({ text: data.text, voiceURI: data.voiceURI, voicePreset: data.voicePreset,
         provider: data.provider, rate: data.rate, allowOfflineFallback: data.allowOfflineFallback === true }));
     handle('speech-cancel', () => { speech.cancel(); return { ok: true }; });
@@ -245,6 +259,6 @@ function createPlatform(ctx) {
         handleRequest: (...args) => studio.handleRequest(...args),
         connectTikfinity(username) { bridge.connect(store.get('tikfinity_url_v1', 'ws://127.0.0.1:21213/'), username); },
         source: () => store.get('live_source_v1', 'direct'), disconnect: () => bridge.close(),
-        close() { clearInterval(timer); bridge.close(); speech.cancel(); for (const controller of controllers.values()) controller.abort(); studio.close?.(); } };
+        close() { clearInterval(timer); bridge.close(); speech.cancel(); voicePacks.close(); for (const controller of controllers.values()) controller.abort(); studio.close?.(); } };
 }
 module.exports = { createPlatform, TTS_DEFAULTS };

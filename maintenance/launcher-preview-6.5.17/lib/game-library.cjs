@@ -7,8 +7,9 @@ const crypto = require("node:crypto");
 const { createRequire } = require("node:module");
 const {
     downloadFile, assertSafePath, safeRelativePath, assertSafeTree, ensureDirectory,
-    checkDiskSpace, hashFile, failure, throwIfAborted, numericSize, emit
+    checkDiskSpace, hashFile, failure, throwIfAborted, emit
 } = require("./download.cjs");
+const { manifestFiles, contentDescriptor, parseContentManifest, containsPath } = require("./game-content.cjs");
 
 function versionIsNewer(available, installed) {
     if (!available || available === installed) return false;
@@ -330,77 +331,98 @@ function createGameLibrary(options) {
         }
         throw failure("EPACKAGE", "Package is missing required game files");
     }
-    function manifestFor(files) {
-        if (!Array.isArray(files) || !files.length) throw failure("EMANIFEST", "Manifest must contain files");
-        const seen = new Map();
-        const result = files.map(file => {
-            const relative = safeRelativePath(file.path);
-            const key = relative.normalize("NFC").toLowerCase();
-            if (key === ".tikmng-package.json" || seen.has(key)) throw failure("EMANIFEST", "Duplicate or reserved manifest path");
-            const sha256 = typeof file.sha256 === "string" ? file.sha256.toLowerCase() : "";
-            const bytes = numericSize(file.bytes);
-            if (!/^[a-f0-9]{64}$/.test(sha256) || bytes === null) {
-                throw failure("EMANIFEST", "Every manifest file requires SHA-256 and bytes");
-            }
-            seen.set(key, relative);
-            return { ...file, path: relative, sha256, bytes };
-        });
-        const parents = new Map();
-        for (const file of result) {
-            const parts = file.path.split("/");
-            for (let i = 1; i < parts.length; i++) {
-                const parent = parts.slice(0, i).join("/");
-                const key = parent.normalize("NFC").toLowerCase();
-                if (seen.has(key) || (parents.has(key) && parents.get(key) !== parent)) {
-                    throw failure("EMANIFEST", "Conflicting manifest paths");
-                }
-                parents.set(key, parent);
-            }
+    async function matches(file, descriptor, signal) {
+        assertSafePath(file);
+        let stat;
+        try { stat = await fsp.stat(file); } catch (error) {
+            if (["ENOENT", "ENOTDIR"].includes(error.code)) return false;
+            throw error;
         }
-        return result;
+        return stat.isFile() && stat.size === descriptor.bytes && await hashFile(file, signal) === descriptor.sha256;
     }
-    async function installManifest(record, pkg, source, candidate, downloads, signal, repair) {
-        const files = manifestFor(pkg.files);
-        const total = files.reduce((sum, file) => sum + file.bytes, 0);
-        if (!Number.isSafeInteger(total)) throw failure("EMANIFEST", "Manifest is too large");
-        const sourceBytes = source ? await assertSafeTree(source, signal) : 0;
-        await checkDiskSpace(record.directory, total + sourceBytes);
-        if (source) await copyTree(source, candidate, signal);
-        const changed = [];
-        progress(record.id, "verifying", repair ? "Checking repair files" : "Checking existing file hashes");
-        for (const file of files) {
-            throwIfAborted(signal);
-            const target = assertSafePath(path.join(candidate, file.path));
-            let same = false;
-            if (fs.existsSync(target) && fs.statSync(target).isFile() && fs.statSync(target).size === file.bytes) {
-                same = await hashFile(target, signal) === file.sha256;
+    async function cachedDownload(descriptor, cached, signal, onProgress) {
+        if (await matches(cached, descriptor, signal)) return;
+        await downloadFile(descriptor.url, cached, { sha256: descriptor.sha256, bytes: descriptor.bytes, signal, onProgress });
+    }
+    async function installManifest(record, pkg, source, candidate, downloads, paths, signal, repair) {
+        let files = manifestFiles(pkg.files, { allowControl: true });
+        const control = contentDescriptor(files);
+        if (control) {
+            const cached = path.join(downloads, `${control.sha256}.manifest`);
+            progress(record.id, "checking", "Checking content manifest");
+            await cachedDownload(control, cached, signal);
+            let manifest;
+            try { manifest = JSON.parse(await fsp.readFile(cached, "utf8")); } catch {
+                throw failure("EMANIFEST", "Invalid content manifest JSON");
             }
-            if (!same) {
-                if (typeof file.url !== "string" || !file.url) throw failure("EMANIFEST", `No URL for missing/changed file: ${file.path}`);
-                changed.push(file);
-            }
+            files = parseContentManifest(manifest, { packageId: record.key, version: pkg.version });
         }
-        const transferTotal = changed.reduce((sum, file) => sum + file.bytes, 0);
-        let completed = 0;
-        for (const file of changed) {
+        const preserved = source ? paths.filter(relative => fs.existsSync(assertSafePath(path.join(source, relative)))) : [];
+        // Existing mutable subtrees replace defaults in their entirety. Never fetch
+        // a publisher's settings only to overwrite them with the user's settings.
+        const managed = files.filter(file => !preserved.some(relative => containsPath(relative, file.path)));
+        if (managed.some(file => preserved.some(relative => containsPath(file.path, relative)))) {
+            throw failure("EMANIFEST", "Package file conflicts with preserved data");
+        }
+        const total = files.reduce((sum, file) => sum + file.bytes, 0);
+        const sourceBytes = source && !control ? await assertSafeTree(source, signal) : 0;
+        await checkDiskSpace(record.directory, total + sourceBytes);
+        // Complete manifests build an exact new package, dropping obsolete code.
+        // Legacy inline lists remain additive patches for catalog compatibility.
+        if (source && !control) await copyTree(source, candidate, signal);
+        const plan = [];
+        const missing = new Map();
+        let reusedBytes = 0;
+        progress(record.id, "verifying", repair ? "Checking repair files" : "Checking existing file hashes");
+        for (const file of managed) {
             throwIfAborted(signal);
-            const target = assertSafePath(path.join(candidate, file.path));
-            if (fs.existsSync(target) && fs.statSync(target).isDirectory()) {
-                await assertSafeTree(target, signal);
-                await fsp.rm(target, { recursive: true, force: true });
+            const from = control && source ? assertSafePath(path.join(source, file.path)) : path.join(candidate, file.path);
+            const cached = path.join(downloads, `${file.sha256}.file`);
+            let reuse;
+            if (await matches(from, file, signal)) reuse = from;
+            else if (await matches(cached, file, signal)) reuse = cached;
+            if (reuse) reusedBytes += file.bytes;
+            else {
+                if (typeof file.url !== "string" || !file.url) throw failure("EMANIFEST", `No URL for missing/changed file: ${file.path}`);
+                const previous = missing.get(file.sha256);
+                if (previous && previous.bytes !== file.bytes) throw failure("EMANIFEST", "Conflicting sizes for one content hash");
+                missing.set(file.sha256, previous || file);
             }
+            plan.push({ file, from: reuse || cached });
+        }
+        const transferTotal = [...missing.values()].reduce((sum, file) => sum + file.bytes, 0);
+        const metrics = { updateMode: control ? "content" : "files", packageBytes: total, reusedBytes,
+            changedFiles: missing.size, totalBytes: transferTotal };
+        let completed = 0;
+        progress(record.id, "downloading", "Downloading changed game content", { ...metrics,
+            percent: transferTotal === 0 ? 100 : 0 });
+        for (const file of missing.values()) {
+            throwIfAborted(signal);
             const cached = path.join(downloads, `${file.sha256}.file`);
             await downloadFile(file.url, cached, { sha256: file.sha256, bytes: file.bytes, signal,
-                onProgress: metrics => progress(record.id, "downloading", `Downloading ${file.path}`, {
-                    ...metrics, transferredBytes: completed + metrics.transferredBytes, totalBytes: transferTotal,
-                    percent: transferTotal === 0 ? 100 : (completed + metrics.transferredBytes) / transferTotal * 100,
-                    etaSeconds: metrics.speedBps > 0 ? (transferTotal - completed - metrics.transferredBytes) / metrics.speedBps : null
+                onProgress: downloadMetrics => progress(record.id, "downloading", `Downloading ${file.path}`, {
+                    ...metrics, ...downloadMetrics, transferredBytes: completed + downloadMetrics.transferredBytes, totalBytes: transferTotal,
+                    percent: transferTotal === 0 ? 100 : (completed + downloadMetrics.transferredBytes) / transferTotal * 100,
+                    etaSeconds: downloadMetrics.speedBps > 0 ? (transferTotal - completed - downloadMetrics.transferredBytes) / downloadMetrics.speedBps : null
                 }) });
-            ensureDirectory(path.dirname(target));
-            await fsp.copyFile(cached, target);
             completed += file.bytes;
         }
-        return candidate;
+        progress(record.id, "verifying", "Preparing verified game content", { ...metrics, transferredBytes: completed });
+        for (const { file, from } of plan) {
+            throwIfAborted(signal);
+            const target = assertSafePath(path.join(candidate, file.path));
+            if (from !== target) {
+                if (fs.existsSync(target) && fs.statSync(target).isDirectory()) {
+                    await assertSafeTree(target, signal);
+                    await fsp.rm(target, { recursive: true, force: true });
+                }
+                ensureDirectory(path.dirname(target));
+                // A reflink is copy-on-write; no hardlinks to writable old versions/cache.
+                await fsp.copyFile(from, target, fs.constants.COPYFILE_FICLONE);
+            }
+            if (!await matches(target, file, signal)) throw failure("EHASH", `Staged content changed: ${file.path}`);
+        }
+        return { candidate, metrics: { ...metrics, transferredBytes: completed } };
     }
     async function performInstall(record, { repair = false, signal } = {}) {
         let staging;
@@ -430,8 +452,9 @@ function createGameLibrary(options) {
             staging = path.join(stagingParent, nonce);
             ensureDirectory(staging);
             let candidate;
+            let transferMetrics = {};
             if (pkg.files !== undefined) {
-                candidate = await installManifest(record, pkg, source?.path, staging, downloads, signal, repair);
+                ({ candidate, metrics: transferMetrics } = await installManifest(record, pkg, source?.path, staging, downloads, paths, signal, repair));
             } else {
                 const identity = crypto.createHash("sha256").update(JSON.stringify([pkg.version, pkg.url, pkg.sha256, pkg.bytes])).digest("hex");
                 const zip = path.join(downloads, `${identity}.zip`);
@@ -475,7 +498,7 @@ function createGameLibrary(options) {
             await atomicJson(record.pointer, { schema: 1, directory: nonce, version: pkg.version,
                 previous: previous?.directory ? { directory: previous.directory, version: previous.version } : null }, signal);
             activated = true;
-            progress(record.id, "complete", "Game installation complete", { percent: 100 });
+            progress(record.id, "complete", "Game installation complete", { ...transferMetrics, percent: 100 });
             return { installed: true, installedVersion: pkg.version, availableVersion: pkg.version,
                 updateAvailable: false, path: finalPath };
         } catch (error) {

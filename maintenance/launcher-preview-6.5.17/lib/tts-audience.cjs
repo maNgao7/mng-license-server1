@@ -1,16 +1,22 @@
 'use strict';
 
 const username = value => String(value || '').trim().replace(/^@/, '').toLowerCase();
-const MODES = new Set(['all', 'gift', 'follow', 'gift-or-follow']);
+const MODES = new Set(['all', 'gift', 'follow', 'gift-or-follow', 'selected']);
 
 function createSpeechAudience({ limit = 10000 } = {}) {
     let channel = '';
     const viewers = new Map();
+    let selectedGift = null;
     function select(value) {
         const next = username(value);
         if (next !== channel) { channel = next; viewers.clear(); }
     }
     return {
+        configure(settings = {}) {
+            const next = String(settings.giftId || '7934');
+            if (selectedGift !== null && next !== selectedGift) for (const record of viewers.values()) record.gifts.clear();
+            selectedGift = next;
+        },
         observe(type, payload = {}, activeChannel = '') {
             select(activeChannel);
             if (type !== 'gift' && type !== 'follow') return;
@@ -32,6 +38,7 @@ function createSpeechAudience({ limit = 10000 } = {}) {
             const mode = MODES.has(settings.audience) ? settings.audience : 'all';
             if (mode === 'all') return true;
             const user = username(payload.username || payload.uniqueId);
+            if (mode === 'selected') return Boolean(user) && String(settings.allowedUsers || '').split(/[\s,;]+/).map(username).includes(user);
             const record = viewers.get(user);
             const gifted = Boolean(record?.gifts.has(String(settings.giftId || '')));
             return mode === 'gift' ? gifted : mode === 'follow' ? Boolean(record?.followed) : gifted || Boolean(record?.followed);

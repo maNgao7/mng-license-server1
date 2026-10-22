@@ -165,7 +165,7 @@ function profilesFor(voices) {
     });
 }
 
-function createSpeechService({ env = process.env, azure, fetchImpl = globalThis.fetch, windowsRunner = runWindows, cacheMs = 30000 } = {}) {
+function createSpeechService({ env = process.env, azure, fetchImpl = globalThis.fetch, windowsRunner = runWindows, voicePacks, central, offlineRunner = require('./offline-speech.cjs').runOffline, cacheMs = 30000 } = {}) {
     let credentials = { key: env.MNG_AZURE_SPEECH_KEY || '', region: env.MNG_AZURE_SPEECH_REGION || '' };
     if (azure) credentials = { key: azure.key || '', region: azure.region || '' };
     credentials = { key: String(credentials.key).trim(), region: String(credentials.region).trim().toLowerCase() };
@@ -214,6 +214,16 @@ function createSpeechService({ env = process.env, azure, fetchImpl = globalThis.
         if (!refresh && cached && Date.now() < expires) return structuredClone(cached);
         const currentRevision = revision;
         const voices = []; const providers = {};
+        if (central) {
+            const status = await central.listVoices({ refresh });
+            voices.push(...status.voices);providers.tikmng = { available: status.available, reason: status.reason };
+        }
+        const packs = voicePacks?.list() || [];
+        for (const pack of packs.filter(pack => pack.installed)) {
+            voices.push({ voiceURI: pack.voiceURI, id: pack.id, name: pack.name, lang: pack.language,
+                gender: pack.gender, age: 'unknown', provider: 'offline', neural: true, localService: true });
+        }
+        providers.offline = { available: voices.length > 0, reason: voices.length ? null : 'VOICE_PACK_REQUIRED' };
         try {
             const installed = await windowsRunner('list');
             for (const voice of Array.isArray(installed) ? installed : [installed]) {
@@ -221,22 +231,24 @@ function createSpeechService({ env = process.env, azure, fetchImpl = globalThis.
                 voices.push({ voiceURI: `windows:${voice.id}`, id: voice.id, name: voice.name, lang: voice.lang,
                     gender: genderOf(voice.gender), age: String(voice.age || 'unknown').toLowerCase(), provider: 'windows', neural: false, localService: true });
             }
-            providers.windows = { available: voices.length > 0, reason: voices.length ? null : 'VOICE_UNAVAILABLE' };
+            const available = voices.some(voice => voice.provider === 'windows');
+            providers.windows = { available, reason: available ? null : 'VOICE_UNAVAILABLE' };
         } catch { providers.windows = { available: false, reason: 'WINDOWS_UNAVAILABLE' }; }
         try {
             configuration();
             const items = JSON.parse((await azureRequest('voices/list')).toString('utf8'));
             if (!Array.isArray(items)) throw failure('AZURE_UNAVAILABLE');
             for (const voice of items) {
-                if (!turkish(voice.Locale) || !voice.ShortName || voice.VoiceType !== 'Neural') continue;
+                const multilingual = !turkish(voice.Locale) && Array.isArray(voice.SecondaryLocaleList) && voice.SecondaryLocaleList.some(turkish);
+                if ((!turkish(voice.Locale) && !multilingual) || !voice.ShortName || voice.VoiceType !== 'Neural') continue;
                 voices.push({ voiceURI: `azure:${voice.ShortName}`, id: voice.ShortName, name: voice.LocalName || voice.DisplayName || voice.ShortName,
-                    lang: voice.Locale, gender: genderOf(voice.Gender), age: 'unknown', provider: 'azure', neural: true, localService: false });
+                    lang: 'tr-TR', nativeLang: voice.Locale, multilingual, gender: genderOf(voice.Gender), age: 'unknown', provider: 'azure', neural: true, localService: false });
             }
             providers.azure = { available: voices.some(voice => voice.provider === 'azure'), configured: true };
         } catch (error) { providers.azure = { available: false, configured: Boolean(credentials.key && credentials.region), reason: error.code || 'AZURE_UNAVAILABLE' }; }
         const unique = [...new Map(voices.map(voice => [voice.voiceURI, voice])).values()]
             .sort((a, b) => Number(b.neural) - Number(a.neural));
-        const result = { voices: unique, profiles: profilesFor(unique), providers };
+        const result = { voices: unique, profiles: profilesFor(unique), providers, packs };
         if (currentRevision === revision) { cached = result; expires = Date.now() + cacheMs; }
         else return listVoices({ refresh: true });
         return structuredClone(result);
@@ -248,7 +260,7 @@ function createSpeechService({ env = process.env, azure, fetchImpl = globalThis.
         const checkCancelled = () => { if (controller.signal.aborted) throw failure('SPEECH_CANCELLED'); };
         try {
             const { voices, providers } = await listVoices(); checkCancelled();
-            const provider = settings.provider || (settings.voiceURI ? settings.voiceURI.split(':')[0] : credentials.key && credentials.region ? 'azure' : 'windows');
+            const provider = settings.provider || (settings.voiceURI ? settings.voiceURI.split(':')[0] : providers.tikmng?.available ? 'tikmng' : providers.offline.available ? 'offline' : credentials.key && credentials.region ? 'azure' : 'windows');
             const preset = LEGACY_STYLES[settings.voicePreset] || settings.voicePreset || 'natural';
             const style = SPEECH_STYLES[preset];
             if (!style) throw failure('VOICE_UNAVAILABLE');
@@ -258,12 +270,21 @@ function createSpeechService({ env = process.env, azure, fetchImpl = globalThis.
             async function produce(voice, fallbackUsed) {
                 checkCancelled();
                 let audio;
-                if (voice.provider === 'windows') {
+                if (voice.provider === 'tikmng') {
+                    audio = await central.synthesize({ text, voiceURI: voice.voiceURI, rate }, controller.signal);
+                } else if (voice.provider === 'offline') {
+                    const root = voicePacks?.verify ? await voicePacks.verify(voice.id, controller.signal) : voicePacks?.resolve(voice.id);
+                    if (!root) throw Object.assign(new Error('Önce ses paketini indirin.'), { code: 'VOICE_PACK_REQUIRED' });
+                    const pitchFactor = 1 + pitch / 100;
+                    audio = require('./offline-speech.cjs').applyPitch(await offlineRunner(root, { text, rate, pitchFactor }, { signal: controller.signal,
+                        worker: path.join(__dirname, 'vendor', voice.id === 'ema-tr-v1' ? 'ema-worker.cjs' : 'okur-worker.cjs') }), pitchFactor);
+                } else if (voice.provider === 'windows') {
                     const ssml = `<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xml:lang="tr-TR"><voice name="${xml(voice.name)}"><prosody rate="${Math.round((rate - 1) * 100)}%" pitch="${pitch >= 0 ? '+' : ''}${pitch}%">${xml(text)}</prosody></voice></speak>`;
                     try { audio = Buffer.from(await windowsRunner('synthesize', { id: voice.id, text, ssml, speed: rate, rate: Math.round(Math.log2(rate) * 5) }, { signal: controller.signal }), 'base64'); }
                     catch { checkCancelled(); throw failure('WINDOWS_UNAVAILABLE'); }
                 } else {
-                    const ssml = `<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xml:lang="tr-TR"><voice name="${xml(voice.id)}"><prosody rate="${Math.round((rate - 1) * 100)}%" pitch="${pitch >= 0 ? '+' : ''}${pitch}%">${xml(text)}</prosody></voice></speak>`;
+                    const content = voice.multilingual ? `<lang xml:lang="tr-TR">${xml(text)}</lang>` : xml(text);
+                    const ssml = `<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xml:lang="tr-TR"><voice name="${xml(voice.id)}"><prosody rate="${Math.round((rate - 1) * 100)}%" pitch="${pitch >= 0 ? '+' : ''}${pitch}%">${content}</prosody></voice></speak>`;
                     audio = await azureRequest('v1', ssml, controller.signal);
                 }
                 checkCancelled();
@@ -271,6 +292,7 @@ function createSpeechService({ env = process.env, azure, fetchImpl = globalThis.
                 return { audioBase64: audio.toString('base64'), mimeType: 'audio/wav', voice: { ...voice, style: preset, styleLabel: style.label }, fallbackUsed };
             }
             try {
+                if (provider === 'tikmng' && !providers.tikmng?.available) throw Object.assign(new Error('TikMnG merkezi ses hizmeti hazır değil.'), { code: providers.tikmng?.reason || 'CENTRAL_UNAVAILABLE' });
                 if (provider === 'azure' && !providers.azure.available) throw failure(providers.azure.reason || 'VOICE_UNAVAILABLE');
                 return await produce(selectVoice(voices, { ...settings, provider }), false);
             } catch (error) {

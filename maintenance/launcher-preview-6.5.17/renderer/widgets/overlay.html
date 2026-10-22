@@ -144,6 +144,59 @@ body{padding:12px}.stage{min-width:0;min-height:0}.stage *{letter-spacing:0}
 @media(prefers-reduced-motion:reduce){.flip-award,.flip-surface,.leader-list.unified .item,.animal-buddy,.alert,.social,.fountain-label,.coin-banner{animation:none}.heart,.coin{animation-duration:12s}.wheel{animation-duration:.01ms}.wheel-result{animation-delay:0s}}
 @media(max-width:340px){.hero-main{grid-template-columns:44px minmax(0,1fr);gap:12px}.hero h1{font-size:16px}.hero-score{position:absolute;right:12px;bottom:12px}.hero .muted{padding-right:30px}}
 @media(prefers-reduced-motion:reduce){.hero,.viewer{animation:none}}
+.leader-board{background:rgba(15,18,20,.9);border-top:3px solid var(--accent);padding:16px;width:min(460px,100%);border-radius:0;box-shadow:none}.leader-heading{border-bottom:1px solid #ffffff35;color:#f5f8f8;padding-bottom:13px}.leader-list.unified{gap:0;padding:0}.leader-list.unified .item,.leader-list.unified .item.champion{border:0;border-bottom:1px solid #ffffff20;border-radius:0;box-shadow:none;background:transparent;min-height:62px}.leader-list.unified .item.champion{background:#ffffff08}.leader-list .place{background:transparent!important;border:0!important;border-radius:0!important;color:#d9e7e7!important;box-shadow:none!important}.leader-list .champion .place{color:var(--accent)!important}.leader-list .value{color:#fff}.leader-list .value small{color:#a6c6c5}.leader-list.unified .avatar{box-shadow:none;border-color:#ffffff60}.leader-list .champion .avatar{border-color:var(--accent)}
+</style>
+<style id="topgift-premium">
+/* The award is a transparent broadcast emblem; all rules stay inside topgift. */
+body[data-widget="topgift"]{--award-coral:#ff6b79;--award-white:#f5ffff}
+body[data-widget="topgift"] .flip-award{
+ --award-size:min(216px,calc(100vw - 88px),calc(100vh - 172px));
+ --frame-light:var(--accent);--frame-hot:var(--award-coral);
+ width:min(370px,100%);height:auto;max-height:100%;padding:0;gap:8px;
+ display:grid;justify-items:center;align-content:center;border:0;border-radius:0;
+ background:none;box-shadow:none;animation:none;color:var(--award-white);
+ text-align:center;text-shadow:0 2px 4px #000c,0 1px 12px #0008;
+}
+body[data-widget="topgift"] .flip-award::before,body[data-widget="topgift"] .flip-award::after{display:none}
+body[data-widget="topgift"] .award-heading{justify-content:center;gap:9px;max-width:100%;font-size:10px;font-weight:800;color:var(--award-white)}
+body[data-widget="topgift"] .award-heading::before,body[data-widget="topgift"] .award-heading::after{content:'';width:20px;height:2px;background:var(--frame-light);box-shadow:0 0 7px var(--frame-light)}
+body[data-widget="topgift"] .award-heading::after{background:var(--frame-hot);box-shadow:0 0 7px var(--frame-hot)}
+body[data-widget="topgift"] .award-emblem{position:relative;display:grid;place-items:center;width:calc(var(--award-size) + 36px);height:calc(var(--award-size) + 36px);isolation:isolate}
+body[data-widget="topgift"] .award-frame{position:absolute;inset:10px;border:2px solid var(--frame-light);border-radius:50%;box-shadow:0 0 12px color-mix(in srgb,var(--frame-light) 28%,transparent),inset 0 0 8px #ffffff20;pointer-events:none}
+body[data-widget="topgift"] .award-frame::after{content:'';position:absolute;inset:4px;border:1px solid #f5ffff99;border-radius:50%}
+body[data-widget="topgift"] .award-orbit{position:absolute;inset:4px;border-radius:50%;background:conic-gradient(from 0deg,transparent 0 13%,var(--frame-light) 17% 27%,transparent 32% 62%,var(--frame-hot) 67% 77%,transparent 82%);mask:radial-gradient(circle,transparent calc(70% - 3px),#000 calc(70% - 2px));animation:viral-frame-orbit 14s linear infinite;pointer-events:none}
+body[data-widget="topgift"] .flip-scene{position:relative;width:var(--award-size);height:var(--award-size);perspective:900px}
+body[data-widget="topgift"] .flip-surface{position:absolute;inset:0;width:100%;height:100%;display:block;transform-style:preserve-3d;animation:viral-portrait-turn 10s cubic-bezier(.45,0,.25,1) infinite;will-change:transform}
+body[data-widget="topgift"] .flip-face{position:absolute;inset:0;width:100%;height:100%;display:grid;place-items:center;gap:0;border-radius:50%;overflow:hidden;backface-visibility:hidden;-webkit-backface-visibility:hidden}
+body[data-widget="topgift"] .profile-face{transform:rotateY(0deg)}
+body[data-widget="topgift"] .profile-face .avatar{width:100%!important;height:100%!important;border:0;border-radius:50%;box-shadow:none;background:#ffffff15;font-size:48px}
+body[data-widget="topgift"] .profile-face .avatar img{width:100%;height:100%;object-fit:cover;image-rendering:auto}
+body[data-widget="topgift"] .gift-face{transform:rotateY(180deg);background:radial-gradient(circle,color-mix(in srgb,var(--accent) 12%,transparent),transparent 72%)}
+body[data-widget="topgift"] .gift-face .gift-img{width:calc(var(--award-size)*.79);height:calc(var(--award-size)*.79);filter:drop-shadow(0 4px 6px #0006)}
+body[data-widget="topgift"] .award-username{display:block;width:100%;max-width:100%;margin:0;padding:0 7px;font-size:17px;line-height:1.3;font-weight:800;overflow:visible;white-space:normal;overflow-wrap:anywhere;text-overflow:clip}
+body[data-widget="topgift"] .award-footer{display:grid;justify-content:center;justify-items:center;gap:4px;width:100%;padding:0;border:0;text-align:center}
+body[data-widget="topgift"] .award-gift-label{max-width:100%;font-size:12px;line-height:1.3;color:#e5f0f1;overflow-wrap:anywhere}
+body[data-widget="topgift"] .award-gift-label b{margin-left:4px;color:var(--award-coral);font-weight:800}
+body[data-widget="topgift"] .flip-coins{color:var(--award-white);font-size:27px;line-height:1.1;font-weight:850;font-variant-numeric:tabular-nums;text-shadow:inherit}
+body[data-widget="topgift"] .flip-coins span{font-size:10px;font-weight:750;color:var(--frame-light)}
+body[data-widget="topgift"] .award-flair{position:absolute;inset:0;pointer-events:none;z-index:-1}
+body[data-widget="topgift"] .award-flame{position:absolute;left:50%;top:50%;width:9px;height:26px;transform:translate(-50%,-50%) rotate(var(--angle)) translateY(calc(var(--award-size)/-2 - 7px))}
+body[data-widget="topgift"] .award-flame::before{content:'';display:block;width:100%;height:100%;border-radius:80% 10% 60% 40%;background:linear-gradient(0deg,var(--frame-hot),var(--frame-light) 54%,#fff 85%,transparent);filter:drop-shadow(0 0 4px var(--frame-hot));transform-origin:50% 100%;animation:viral-flame 1.45s ease-in-out infinite alternate;animation-delay:calc(var(--i)*-127ms)}
+body[data-widget="topgift"] .award-spark{position:absolute;left:50%;top:50%;width:3px;height:5px;border-radius:1px;background:var(--frame-light);box-shadow:0 0 5px var(--frame-light);animation:viral-ember 2.8s ease-out infinite;animation-delay:calc(var(--i)*-211ms)}
+body[data-widget="topgift"] .award-spark:nth-child(2n){background:var(--frame-hot);box-shadow:0 0 5px var(--frame-hot)}
+body[data-widget="topgift"] .tier-2 .award-frame{border-width:3px}
+body[data-widget="topgift"] .tier-3 .award-frame,body[data-widget="topgift"] .tier-4 .award-frame{border-width:3px;box-shadow:0 0 15px color-mix(in srgb,var(--frame-hot) 45%,transparent),inset 0 0 10px color-mix(in srgb,var(--frame-light) 22%,transparent)}
+body[data-widget="topgift"] .tier-4{--frame-light:#d8ffff;--frame-hot:#ff637a}
+body[data-widget="topgift"] .tier-4 .award-orbit{inset:0;animation-duration:9s}
+body[data-widget="topgift"] .tier-4 .award-flame{width:12px;height:29px}
+body[data-widget="topgift"] .empty{background:none;border:0;box-shadow:none;color:#e5f0f1;font-size:12px;text-shadow:0 2px 4px #000}
+@keyframes viral-portrait-turn{0%,34%{transform:rotateY(0deg)}44%,80%{transform:rotateY(180deg)}90%,100%{transform:rotateY(360deg)}}
+@keyframes viral-frame-orbit{to{transform:rotate(360deg)}}
+@keyframes viral-flame{from{opacity:.55;transform:scale(.65,.65) rotate(-12deg)}to{opacity:1;transform:scale(1,1.1) rotate(9deg)}}
+@keyframes viral-ember{0%{opacity:0;transform:translate(-50%,-50%) rotate(var(--angle)) translateY(calc(var(--award-size)/-2 - 7px)) scale(.4)}20%{opacity:.9}100%{opacity:0;transform:translate(-50%,-50%) rotate(var(--angle)) translateY(calc(var(--award-size)/-2 - 28px)) scale(.2)}}
+@media(max-width:340px){body[data-widget="topgift"] .award-username{font-size:14px}body[data-widget="topgift"] .flip-coins{font-size:24px}body[data-widget="topgift"] .award-gift-label{font-size:11px}}
+@media(max-height:280px){body[data-widget="topgift"] .flip-award{gap:5px}body[data-widget="topgift"] .award-username{font-size:13px}body[data-widget="topgift"] .flip-coins{font-size:21px}body[data-widget="topgift"] .award-heading{font-size:9px}body[data-widget="topgift"] .award-gift-label{font-size:10px}}
+@media(prefers-reduced-motion:reduce){body[data-widget="topgift"] .flip-surface,body[data-widget="topgift"] .award-orbit,body[data-widget="topgift"] .award-flame::before,body[data-widget="topgift"] .award-spark{animation:none}body[data-widget="topgift"] .award-flame::before{opacity:.6}body[data-widget="topgift"] .award-spark{display:none}body[data-widget="topgift"] .gift-face{inset:auto -7px -4px auto;width:39%;height:39%;transform:none;backface-visibility:visible;overflow:visible;filter:drop-shadow(0 2px 3px #0008)}body[data-widget="topgift"] .gift-face .gift-img{width:100%;height:100%}}
 </style>
 </head>
 <body><main id="stage" class="stage"></main>
@@ -168,6 +221,7 @@ function widgetImageURL(value){
  return value;
 }
 const params=new URLSearchParams(location.search),type=params.get('type')||'myactions',preview=params.get('preview')==='1',items=Math.max(3,Math.min(13,Number(params.get('items'))||6));document.body.classList.toggle('preview-mode',preview);
+if(preview)document.body.style.background='#000';
 function loadWidgetScript(path){return new Promise((resolve,reject)=>{const script=document.createElement('script');script.src=prefixURL(path);script.onload=resolve;script.onerror=()=>reject(new Error('Widget script unavailable'));document.head.append(script)})}
 const jarReady=type==='coinjar'?loadWidgetScript('/widget/vendor/matter.js').then(()=>loadWidgetScript('/widget/physical-jar.js')):Promise.resolve();
 const accent=/^#[0-9a-f]{6}$/i.test(params.get('accent')||'')?params.get('accent'):'#36eee4';document.documentElement.style.setProperty('--accent',accent);document.body.dataset.widget=type;
@@ -181,7 +235,7 @@ const speed=clamp('speed',40,250,100)/100,particleCount=clamp('particles',4,100,
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const sampleGiftImage=`/widget/gift-assets/5655.png?key=${encodeURIComponent(params.get('key')||'')}&channel=${encodeURIComponent(params.get('channel')||'')}`;
 const sample={channel:'mngcanli',stats:{totalLikes:4860,totalCoins:1280,totalGifts:74,totalShares:32,followers:18,subscribers:4,viewerCount:128,topStreak:{username:'mng_destekci',nickname:'MNG Destekçi',giftName:'Gül',count:12}},topGift:{username:'mng_destekci',nickname:'MNG Destekçi',giftName:'Gül',count:5,coins:125,giftImage:sampleGiftImage},topLikes:[['kalp_yagmuru',2450],['yayin_dostu',1980],['oyun_sever',1640],['neon_kral',1220]].map(([username,totalLikes])=>({username,nickname:username.replaceAll('_',' '),totalLikes})),topGifters:[['mng_destekci',1280],['yildiz_destekci',940],['gece_kartali',610],['oyun_sever',420]].map(([username,totalCoins])=>({username,nickname:username.replaceAll('_',' '),totalCoins,giftCount:8})),activities:[{id:'a1',type:'gift',username:'mng_destekci',nickname:'MNG Destekçi',giftName:'Gül',giftImage:sampleGiftImage,count:5,coins:5,message:''},{id:'a2',type:'like',username:'kalp_yagmuru',nickname:'Kalp Yağmuru',count:240,message:''},{id:'a3',type:'follow',username:'yeni_takipci',nickname:'Yeni Takipçi',count:1,message:''},{id:'a4',type:'chat',username:'yayin_dostu',nickname:'Yayın Dostu',message:'Harika yayın! ❤️🔥👏',count:1},{id:'a5',type:'chat',username:'muzik_sever',nickname:'Müzik Sever',message:'!play En sevdiğim şarkı',count:1}],ranking:[]};sample.jarGifts=Array.from({length:74},(_,i)=>({...sample.activities[0],id:`preview-${i}`,count:1,coins:i===0?2000:i===1?1000:1,giftImage:i%9===0?`/widget/gift-assets/6064.png?key=${encodeURIComponent(params.get('key')||'')}&channel=${encodeURIComponent(params.get('channel')||'')}`:sampleGiftImage}));sample.ranking=sample.topGifters.map((x,i)=>({...x,totalLikes:sample.topLikes[i]?.totalLikes||0,score:x.totalCoins*2+Math.floor((sample.topLikes[i]?.totalLikes||0)/50)}));
-function avatar(x,size=''){const name=esc(x?.nickname||x?.username||'İzleyici'),style=size?` style="width:${size}px;height:${size}px"`:'';return `<span class="avatar"${style}>${x?.avatar?`<img src="${esc(widgetImageURL(x.avatar))}" alt="" onerror="this.remove()">`:esc(name[0]||'İ')}</span>`}
+function avatar(x,size=''){const name=String(x?.nickname||x?.username||'İzleyici'),style=size?` style="width:${size}px;height:${size}px"`:'';return `<span class="avatar"${style}>${x?.avatar?`<img src="${esc(widgetImageURL(x.avatar))}" alt="${esc(name[0]||'İ')}" onerror="this.parentElement.textContent=this.alt">`:esc(name[0]||'İ')}</span>`}
 function giftAsset(id){return prefixURL(`/widget/gift-assets/${id}.png?key=${encodeURIComponent(params.get('key')||'')}&channel=${encodeURIComponent(params.get('channel')||'')}`)}
 function giftImage(x){return x?.giftImage?`<img class="gift-img" src="${esc(widgetImageURL(x.giftImage))}" alt="" onerror="this.hidden=true">`:'<span class="gift-img" aria-hidden="true"></span>'}
 function artwork(id){return giftImage({giftImage:giftAsset(id)})}
@@ -200,7 +254,19 @@ function render(data){const a=data.activities||[],latest=a[0]||(preview?sample.a
  if(type==='gifts'){stage.innerHTML=`<div class="stack">${gifts.slice(0,items).map(x=>`<div class="item glass">${avatar(x)}<span><b>@${esc(x.username)}</b><small>${esc(x.giftName)} ×${x.count||1}</small></span>${giftImage(x)}</div>`).join('')||'<div class="empty glass">Hediye bekleniyor</div>'}</div>`;return}
  if(type==='transactionviewer'){const gift=recent('gift');stage.innerHTML=gift?`<div class="hero glass"><div class="hero-main">${avatar(gift)}<span><span class="eyebrow">YENİ KATKI</span><h1>@${esc(gift.username)}</h1></span><strong class="hero-score">+${gift.coins||gift.count||1}</strong></div></div>`:'';return}
  if(type==='userinfo'){stage.innerHTML=latest.username?`<div class="hero glass"><div class="hero-main">${avatar(latest)}<span><span class="eyebrow">YAYININ BİR PARÇASI</span><h1>@${esc(latest.username)}</h1><span class="user-nickname">${esc(latest.nickname||'')}</span><small class="muted">${esc(activityText(latest))}</small></span><strong class="hero-score">${latest.type==='gift'?giftImage(latest):artwork(5502)}</strong></div></div>`:'<div class="empty glass">İzleyici bekleniyor</div>';return}
- if(type==='topgift'){const best=data.topGift;if(!best){stage.innerHTML=preview?'<div class="empty glass">Hediye bekleniyor</div>':'';return}const stamp=JSON.stringify(best);if(stage.dataset.flipStamp===stamp)return;stage.dataset.flipStamp=stamp;stage.innerHTML=`<div class="flip-award"><div class="award-heading">${artwork(5502)}<div class="viral-kicker">GECENİN YILDIZI<small>EN BÜYÜK HEDİYE</small></div><span class="medal">1</span></div><div class="flip-scene"><div class="flip-surface"><div class="flip-face profile-face">${avatar(best,112)}<b title="@${esc(best.username||best.nickname)}">@${esc(best.username||best.nickname)}</b></div><div class="flip-face gift-face">${giftImage(best)}<b>${esc(best.giftName)} ×${Number(best.count||1)}</b></div></div></div><div class="award-footer"><small>TOPLAM KATKI</small><strong class="flip-coins">${Number(best.coins||0).toLocaleString('tr-TR')} <span>COIN</span></strong></div></div>`;return}
+ if(type==='topgift'){
+  const best=data.topGift;
+  if(!best){delete stage.dataset.flipStamp;stage.innerHTML=preview?'<div class="empty">Hediye bekleniyor</div>':'';return}
+  const coins=Math.max(0,Math.floor(Number(best.coins)||0)),count=Math.max(1,Math.floor(Number(best.count)||1));
+  const tier=coins>=10000?4:coins>=1000?3:coins>=100?2:1;
+  const stamp=JSON.stringify([best.id,best.username||best.nickname,best.giftId||best.giftName,count,coins]);
+  if(stage.dataset.flipStamp===stamp)return;
+  stage.dataset.flipStamp=stamp;
+  const sparks=tier>1?Array.from({length:Math.min(particleCount,tier===4?18:12)},(_,i)=>`<i class="award-spark" style="--i:${i};--angle:${i*137.5}deg"></i>`).join(''):'';
+  const flames=tier>=3?Array.from({length:12},(_,i)=>`<i class="award-flame" style="--i:${i};--angle:${i*30}deg"></i>`).join(''):'';
+  stage.innerHTML=`<section class="flip-award tier-${tier}" data-tier="${tier}" data-coins="${coins}" aria-label="Viral Benim"><div class="award-heading">VİRAL BENİM</div><div class="award-emblem"><div class="award-flair" aria-hidden="true">${flames}${sparks}</div><div class="award-frame" aria-hidden="true"></div><div class="award-orbit" aria-hidden="true"></div><div class="flip-scene"><div class="flip-surface"><div class="flip-face profile-face">${avatar(best)}</div><div class="flip-face gift-face">${giftImage(best)}</div></div></div></div><b class="award-username">@${esc(best.username||best.nickname||'İzleyici')}</b><div class="award-footer"><div class="award-gift-label">${esc(best.giftName||'Hediye')} <b>×${count.toLocaleString('tr-TR')}</b></div><strong class="flip-coins award-amount">${coins.toLocaleString('tr-TR')} <span>COIN</span></strong></div></section>`;
+  return;
+ }
  if(type==='commandinfo'){const cmd=chats.find(x=>String(x.message||'').startsWith('!'))||latest;stage.innerHTML=`<div class="alert glass">${avatar(cmd)}<span><span class="eyebrow">KOMUT SONUCU</span><h2>${esc(cmd.message||'!puan')}</h2><small class="muted">@${esc(cmd.username)} için hazırlandı</small></span><i class="pulse"></i></div>`;return}
  if(type==='myactions'){stage.innerHTML=(preview||Date.now()-Number(latest.createdAt||0)<6500)?`<div class="alert glass">${avatar(latest)}<span><span class="eyebrow">CANLI ETKİNLİK</span><h2>@${esc(latest.username)}</h2><small class="muted">${esc(activityText(latest))}</small></span>${latest.type==='gift'?giftImage(latest):'<i class="pulse"></i>'}</div>`:'';return}
  if(type==='carousel'){const entries=(a.length?a:(preview?sample.activities:[])).slice(0,8),track=entries.map(x=>`<span>${avatar(x,28)} ${x.type==='gift'?giftImage(x):''} @${esc(x.username)} <strong class="ticker-amount">${esc(activityText(x))}</strong></span>`).join('');stage.innerHTML=entries.length?`<div class="ticker"><small class="ticker-label">YAYININ NABZI</small><div class="ticker-track">${track}${track}</div></div>`:'';return}
@@ -277,7 +343,8 @@ async function poll(){
   const response=await fetch(prefixURL(url.pathname+url.search),{cache:'no-store'});
   if(!response.ok)throw new Error('Widget state unavailable');
   const data=await response.json();
-  const hasPreviewData=(data.activities||[]).length||(data.jarGifts||[]).length||data.topGift||(data.topGifters||[]).length||(data.topLikes||[]).length||(data.ranking||[]).length||(type==='viewercount'&&Object.prototype.hasOwnProperty.call(data.stats||{},'viewerCount'));
+  const input=widgetInput(data);
+  const hasPreviewData=type==='coinjar'?(data.jarGifts||[]).length:typeof input==='number'?input>0:Array.isArray(input)?input.length>0:Boolean(input);
   updateWidget(preview&&!hasPreviewData?sample:data);
  }catch{if(preview&&!lastSignature)updateWidget(sample)}
  finally{polling=false}

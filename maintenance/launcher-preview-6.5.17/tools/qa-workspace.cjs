@@ -34,7 +34,7 @@ function snapshot(){
 async function api(action,data={}){
     calls.push([action,data]);
     if(action==='speech-status')return{voices:speechVoices,profiles:[],providers:{azure:{available:true,configured:true},windows:{available:false}}};
-    if(action==='speech-synthesize'){const voice=speechVoices.find(v=>v.voiceURI===data.voiceURI)||speechVoices.find(v=>data.voicePreset==='natural'||v.gender===data.voicePreset);assert.ok(voice);return{audioBase64:speechAudio,mimeType:'audio/wav',voice,fallbackUsed:false};}
+    if(action==='speech-synthesize'){const voice=speechVoices.find(v=>v.voiceURI===data.voiceURI);assert.ok(voice,'Synthesis must request an actual catalog voiceURI');assert.equal(data.voicePreset,'natural','Speaker changes must not use pitch presets');return{audioBase64:speechAudio,mimeType:'audio/wav',voice,fallbackUsed:false};}
     if(action==='speech-cancel')return{ok:true};
     if(action==='media-status')return studio.status(data.gameId);
     if(action==='overlay-status')return {...studio.status(data.gameId),transport:snapshot().overlayTransport,url:broadcastFields(snapshot().overlayUrl+(data.gameId?'&game='+data.gameId:'')).broadcastUrl};
@@ -50,7 +50,7 @@ async function api(action,data={}){
 }
 async function main(){
     const clip=path.join(temporary,'sample.mp4');
-    execFileSync(process.env.FFMPEG_PATH||'C:/Users/User/AppData/Local/Microsoft/WinGet/Links/ffmpeg.exe',['-hide_banner','-loglevel','error','-f','lavfi','-i','testsrc2=size=640x360:rate=24','-t','5','-an','-c:v','libx264','-pix_fmt','yuv420p',clip],{windowsHide:true});
+    execFileSync(process.env.FFMPEG_PATH||'C:/Users/User/AppData/Local/Microsoft/WinGet/Links/ffmpeg.exe',['-hide_banner','-loglevel','error','-f','lavfi','-i','testsrc2=size=640x360:rate=24','-f','lavfi','-i','sine=frequency=330:sample_rate=44100','-t','5','-c:a','aac','-c:v','libx264','-pix_fmt','yuv420p',clip],{windowsHide:true});
     const wav=path.join(temporary,'speech.wav');execFileSync(process.env.FFMPEG_PATH||'C:/Users/User/AppData/Local/Microsoft/WinGet/Links/ffmpeg.exe',['-hide_banner','-loglevel','error','-f','lavfi','-i','sine=frequency=440:sample_rate=24000','-t','0.15',wav],{windowsHide:true});speechAudio=fs.readFileSync(wav).toString('base64');
     for(let index=0;index<26;index++){
         const [item]=await studio.importFiles([clip],[{title:index===0?'Racon · Deneme Videosu':'Yayın Videosu '+(index+1),category:index<13?'Racon':'Takım Videoları'}]);
@@ -65,7 +65,7 @@ async function main(){
         res.setHeader('Content-Type',({'.css':'text/css','.js':'text/javascript','.png':'image/png','.svg':'image/svg+xml','.jpg':'image/jpeg'})[path.extname(file)]||'application/octet-stream');fs.createReadStream(file).pipe(res);
     });
     await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));origin='http://127.0.0.1:'+server.address().port;
-    browser=await chromium.launch({headless:true,executablePath:process.env.BROWSER_EXECUTABLE||'C:/Program Files/Google/Chrome/Application/chrome.exe'});
+    browser=await chromium.launch({headless:true,executablePath:process.env.BROWSER_EXECUTABLE||'C:/Program Files/Google/Chrome/Application/chrome.exe',args:['--autoplay-policy=no-user-gesture-required']});
     const page=await browser.newPage({viewport:{width:1440,height:960},reducedMotion:'reduce'});
     const errors=[];page.on('pageerror',error=>errors.push(error.message));
     await page.exposeFunction('__qaCall',api);
@@ -135,9 +135,15 @@ async function main(){
     await page.screenshot({path:path.join(output,'gorsel-medya-katalogu-tumu.png')});
     await page.locator('[data-asset-category="Racon"]').click();assert.equal(await page.locator('#assetChoices [data-asset]').count(),13);
     await page.locator('#assetSearch').fill('Deneme');await page.locator('[data-asset]').first().hover();
-    await page.waitForFunction(()=>{const v=document.querySelector('#assetChoices iframe').contentDocument?.querySelector('video');return v&&!v.paused&&v.muted&&v.currentTime>0;});
+    assert.match(await page.locator('#assetChoices iframe').first().getAttribute('allow'),/autoplay/);
+    await page.waitForFunction(()=>{const v=document.querySelector('#assetChoices iframe').contentDocument?.querySelector('video');return v&&!v.paused&&!v.muted&&v.volume>0&&v.currentTime>0.2;});
+    const hoverAudio=await page.frameLocator('#assetChoices iframe').first().locator('video').evaluate(v=>{const stream=v.captureStream();const tracks=stream.getAudioTracks();const result={audioTracks:tracks.length,audioDecodedBytes:v.webkitAudioDecodedByteCount||0,volume:v.volume,muted:v.muted};stream.getTracks().forEach(track=>track.stop());return result;});
+    assert.ok(hoverAudio.audioTracks>0,'Hover fixture must have a decoded audio track');assert.ok(hoverAudio.audioDecodedBytes>0,'Hover must decode AAC samples');assert.equal(hoverAudio.muted,false);
     assert.equal(studio.status().receivers,0,'Catalog hover must not subscribe as a broadcast receiver');
     await page.screenshot({path:path.join(output,'gorsel-medya-katalogu.png')});
+    await page.locator('#assetSearch').hover();
+    await page.waitForFunction(()=>{const frame=document.querySelector('#assetChoices iframe'),v=frame.contentDocument?.querySelector('video');return new URL(frame.src).searchParams.get('poster')==='1'&&v?.paused&&v.muted;});
+    assert.equal(studio.status().receivers,0,'Leaving hover must keep the catalog outside broadcast subscriptions');
     await page.locator('[data-asset]').first().click();
     await page.locator('#mediaEditor[open]').waitFor();await page.locator('[data-action="choose-gift"]').click();await page.locator('#giftSearch').fill('GG');await page.locator('[data-gift-choice="6064"]').click();
     await page.locator('[name="enabled"]').check();await page.locator('#mediaEditor [type="submit"]').click();await page.locator('#mediaEditor[open]').waitFor({state:'hidden'});
@@ -145,12 +151,51 @@ async function main(){
     await page.screenshot({path:path.join(output,'oyuna-ozel-medya.png'),fullPage:true});
     await page.locator('[data-workspace-view="media"]').click();await page.locator('#mediaSearch').fill('Deneme');assert.equal(await page.locator('#mediaLibrary .media-row').count(),1);
     await page.locator('[data-workspace-view="speech"]').click();await page.locator('input[name="names"]').uncheck();await page.locator('#speechForm [type="submit"]').click();assert.equal(values.get('tts').names,false);
-    for(const profile of ['male','female']){await page.locator('[name="voicePreset"]').selectOption(profile);await page.locator('[name="voiceURI"]').selectOption('azure:qa-'+profile);await page.locator('[data-action="speech-test"]').click();await page.waitForFunction(()=>document.getElementById('speechStatus').textContent==='0 yorum sırada');}
-    const spoken=calls.filter(([action])=>action==='speech-synthesize');assert.equal(spoken.length,2);assert.equal(spoken[0][1].voiceURI,'azure:qa-male');assert.equal(spoken[1][1].voiceURI,'azure:qa-female');
-    for(const style of ['natural','deep','male','female','warm','energetic','girl','boy','tiny','storybook']){await page.locator('[name="voicePreset"]').selectOption(style);assert.equal(await page.locator('[data-action="speech-test"]').isDisabled(),false);assert.match(await page.locator('#speechAvailability').innerText(),/hazır/);}
-    await page.locator('[name="voicePreset"]').selectOption('female');
-    await page.locator('[name="audience"]').selectOption('gift');await page.locator('#speechForm [name="giftId"]').selectOption('7934');await page.locator('#speechForm [type="submit"]').click();
-    assert.equal(values.get('tts').audience,'gift');assert.equal(values.get('tts').giftId,'7934');assert.equal(values.get('tts').voicePreset,'female');
+    assert.equal(await page.locator('#speechForm select[name="voicePreset"]').count(),0,'Pitch styles must not masquerade as speakers');
+    assert.equal(await page.locator('#speechForm input[type="hidden"][name="voicePreset"]').inputValue(),'natural');
+    assert.equal(await page.locator('#speechForm [name="voiceURI"] option[value="girl"]').count(),0);
+    await page.locator('[name="provider"]').selectOption('azure');
+    for(const voice of speechVoices){
+        await page.locator('[name="voiceURI"]').selectOption(voice.voiceURI);
+        assert.equal(await page.locator('[data-action="speech-test"]').isDisabled(),false);
+        assert.ok((await page.locator('#speechAvailability').innerText()).includes(voice.name));
+        const before=calls.filter(([action])=>action==='speech-synthesize').length;
+        await page.locator('[data-action="speech-test"]').click();
+        await page.waitForFunction(()=>document.getElementById('speechStatus').textContent==='0 yorum sırada');
+        assert.equal(calls.filter(([action])=>action==='speech-synthesize').length,before+1,'Each selected speaker must reach the synth bridge');
+    }
+    const spoken=calls.filter(([action])=>action==='speech-synthesize');assert.equal(spoken.length,2);
+    assert.deepEqual(spoken.map(([,request])=>({voiceURI:request.voiceURI,voicePreset:request.voicePreset,provider:request.provider})),speechVoices.map(voice=>({voiceURI:voice.voiceURI,voicePreset:'natural',provider:'azure'})));
+    assert.equal(new Set(spoken.map(([,request])=>request.voiceURI)).size,2);
+    await page.locator('[name="provider"]').selectOption('windows');
+    assert.equal(await page.locator('[data-action="speech-test"]').isDisabled(),true,'An unavailable voice cannot be tested');
+    await page.locator('[name="provider"]').selectOption('azure');await page.locator('[name="voiceURI"]').selectOption('azure:qa-female');
+    await page.locator('[name="audience"]').selectOption('gift');
+    assert.equal(await page.locator('#speechForm select[name="giftId"]').count(),0);
+    assert.equal(await page.locator('#speechForm input[type="hidden"][name="giftId"]').count(),1);
+    await page.locator('#speechGift').click();await page.locator('#giftPicker[open]').waitFor();
+    assert.equal(await page.locator('#giftPicker').getAttribute('data-target'),'speech');
+    assert.equal(await page.locator('#giftChoices [data-gift-choice=""]').count(),0,'Speech picker must require a real gift');
+    const sortedGifts=[...gifts].sort((a,b)=>Number(a.coins||0)-Number(b.coins||0)||String(a.name).localeCompare(String(b.name),'tr'));
+    for(let offset=0;offset<sortedGifts.length;offset+=60){
+        const choices=await page.locator('#giftChoices [data-gift-choice]').evaluateAll(nodes=>nodes.map(node=>({id:node.dataset.giftChoice,coins:Number(node.dataset.coins),image:!!node.querySelector('img'),label:node.querySelector('span')?.textContent})));
+        assert.deepEqual(choices.map(({id,coins})=>({id,coins})),sortedGifts.slice(offset,offset+60).map(g=>({id:String(g.id),coins:Number(g.coins||0)})),'Visual speech gifts must be sorted across every 60-item page');
+        assert.ok(choices.every(choice=>choice.image&&choice.label),'Every gift must show artwork and a name');
+        assert.ok(choices.length<=60);
+        if(offset+60<sortedGifts.length)await page.locator('#giftPicker [data-gift-page="'+(offset/60+1)+'"]').click();
+    }
+    await page.locator('#giftSearch').fill('5655');await page.locator('[data-gift-choice="5655"]').click();
+    assert.equal(await page.locator('#speechForm [name="giftId"]').inputValue(),'5655');
+    await page.locator('#speechGift').click();await page.locator('#giftSearch').fill('7934');
+    const speechGift=page.locator('#giftChoices [data-gift-choice="7934"]');await speechGift.scrollIntoViewIfNeeded();
+    await speechGift.locator('img').evaluate(img=>img.decode());
+    assert.ok(await speechGift.locator('img').evaluate(img=>img.naturalWidth>0&&img.getBoundingClientRect().height>0),'Speech gift artwork must render');
+    await speechGift.click();await page.locator('#giftPicker[open]').waitFor({state:'hidden'});
+    assert.equal(await page.locator('#speechForm [name="giftId"]').inputValue(),'7934');
+    assert.ok((await page.locator('#speechGift').innerText()).includes(gifts.find(g=>g.id==='7934').name));
+    assert.equal(studio.list().find(item=>item.title.startsWith('Racon')).giftId,'6064','Shared picker must not overwrite a media gift');
+    await page.locator('#speechForm [type="submit"]').click();
+    assert.equal(values.get('tts').audience,'gift');assert.equal(values.get('tts').giftId,'7934');assert.equal(values.get('tts').voicePreset,'natural');assert.equal(values.get('tts').voiceURI,'azure:qa-female');
     await page.screenshot({path:path.join(output,'sesli-yorum-ayarlari.png')});
     overlayMode='waiting';await page.evaluate(()=>window.__qaListeners.catalog({}));
     await page.locator('[data-workspace-view="media"]').click();
@@ -175,7 +220,7 @@ async function main(){
         const overflow=await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1);assert.equal(overflow,false,'Horizontal overflow at '+width);
     }
     assert.deepEqual(errors,[]);
-    fs.writeFileSync(path.join(output,'ui-test-sonucu.json'),JSON.stringify({passed:true,gameCovers:14,mediaPagination:true,realVideoDecoding:true,giftMapping:true,syntheticGiftToPlayback:true,responsiveWidths:[1920,1440,960,390],liveTikTokTest:false,errors},null,2));
+    fs.writeFileSync(path.join(output,'ui-test-sonucu.json'),JSON.stringify({passed:true,gameCovers:14,mediaPagination:true,realVideoDecoding:true,audibleHover:{...hoverAudio,stopsOnLeave:true},giftMapping:true,visualSpeechGiftPicker:{coinAscending:true,pageSize:60,total:gifts.length,selectedGiftId:'7934'},explicitVoiceRequests:spoken.map(([,request])=>({voiceURI:request.voiceURI,voicePreset:request.voicePreset})),noFakeStyleDropdown:true,syntheticGiftToPlayback:true,responsiveWidths:[1920,1440,960,390],liveTikTokTest:false,errors},null,2));
     console.log('UI QA passed: 14 covers, installed-first, details, install/play controls, real MP4 preview, gift selection, exact gift playback, pagination, saved TTS, four widths.');
 }
 main().catch(error=>{console.error(error);process.exitCode=1;}).finally(async()=>{await browser?.close();studio.close();server?.closeAllConnections();if(server)await new Promise(resolve=>server.close(resolve));if(path.dirname(temporary)===path.resolve(os.tmpdir()))fs.rmSync(temporary,{recursive:true,force:true});});

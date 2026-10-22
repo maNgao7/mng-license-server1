@@ -33,3 +33,16 @@ test('combined eligibility and bounded viewer records stay isolated', () => {
     assert.equal(audience.allows({ username: 'first' }, rule, 'host'), false);
     assert.equal(audience.allows({ username: 'anyone' }, { audience: 'all' }, 'host'), true);
 });
+
+test('gift entitlement lasts for the session and is revoked when the configured gift changes', () => {
+    const audience = createSpeechAudience(), rule = { audience: 'gift', giftId: '7934' };
+    audience.configure(rule);
+    audience.observe('gift', { username: 'viewer', giftId: '7934' }, 'host');
+    for (let index = 0; index < 20; index++) assert.equal(audience.allows({ username: 'viewer' }, rule, 'host'), true);
+    audience.configure({ ...rule, giftId: '5655' });
+    assert.equal(audience.allows({ username: 'viewer' }, { ...rule, giftId: '5655' }, 'host'), false);
+    audience.configure(rule);
+    assert.equal(audience.allows({ username: 'viewer' }, rule, 'host'), false);
+    audience.observe('gift', { username: 'viewer', giftId: '7934' }, 'host');
+    assert.equal(audience.allows({ username: 'viewer' }, rule, 'host'), true);
+});

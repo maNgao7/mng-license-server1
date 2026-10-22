@@ -260,11 +260,23 @@ function createMediaStudio({ store, root, accessKey, getChannel = () => 'varsayi
             for (const source of sources) {
                 assertOpen();
                 const id = crypto.randomUUID();
-                const file = id + source.extension;
+                const previous = items.find(item => item.filename === source.filename && item.bytes === source.bytes && item.file && !item.sourceUrl);
+                let shared = null;
+                if (previous) {
+                    const asset = path.join(mediaRoot, previous.file);
+                    try {
+                        const { hashFile } = require('./download.cjs');
+                        if (await hashFile(asset) === await hashFile(source.source)) shared = previous;
+                    } catch { /* Missing old assets are copied again. */ }
+                }
+                const file = shared ? shared.file : id + source.extension;
                 const destination = path.join(mediaRoot, file);
-                await fs.promises.copyFile(source.source, destination, fs.constants.COPYFILE_EXCL);
-                copies.push(destination);
+                if (!shared) {
+                    await fs.promises.copyFile(source.source, destination, fs.constants.COPYFILE_EXCL);
+                    copies.push(destination);
+                }
                 added.push({ id, file, channel, filename: source.filename, bytes: source.bytes, createdAt: Date.now(),
+                    ...(shared ? { assetId: shared.assetId || shared.id } : {}),
                     ...source.settings });
             }
             assertOpen();

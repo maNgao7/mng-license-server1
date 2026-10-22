@@ -65,6 +65,26 @@ test('Azure uses documented authenticated REST, real catalog IDs and escaped SSM
     assert.equal(manuallySelected.voice.style, 'female');
 });
 
+test('actual multilingual speakers advertising Turkish are offered and selected by exact voice ID', async () => {
+    const bodies = [];
+    const service = createSpeechService({ env: {}, azure: { key: 'hidden', region: 'westeurope' }, windowsRunner,
+        fetchImpl: async (url, options) => url.endsWith('/voices/list') ? Response.json([
+            ...remote,
+            { ShortName: 'en-US-AvaMultilingualNeural', DisplayName: 'Ava', Locale: 'en-US', SecondaryLocaleList: ['tr-TR', 'de-DE'], Gender: 'Female', VoiceType: 'Neural' },
+            { ShortName: 'en-US-OnlyEnglishNeural', Locale: 'en-US', VoiceType: 'Neural' }
+        ]) : (bodies.push(options.body), new Response(wav())) });
+    const catalog = await service.listVoices();
+    const ava = catalog.voices.find(v => v.id === 'en-US-AvaMultilingualNeural');
+    assert.equal(ava.multilingual, true);assert.equal(ava.lang, 'tr-TR');
+    assert.equal(catalog.voices.some(v => v.id === 'en-US-OnlyEnglishNeural'), false);
+    for (const id of ['tr-TR-AhmetNeural', 'tr-TR-EmelNeural', ava.id]) {
+        const result = await service.synthesize({ text: 'Merhaba', provider: 'azure', voiceURI: 'azure:' + id, voicePreset: 'natural' });
+        assert.equal(result.voice.id, id);assert.equal(result.fallbackUsed, false);
+    }
+    assert.match(bodies[2], /<lang xml:lang="tr-TR">Merhaba<\/lang>/);
+    assert.equal(new Set(bodies).size, 3);
+});
+
 test('Azure HTTP failures are sanitized; there are no retries or fallback voices', async () => {
     for (const [status, code] of [[401, 'AZURE_AUTH'], [403, 'AZURE_AUTH'], [429, 'AZURE_LIMIT'], [500, 'AZURE_UNAVAILABLE']]) {
         const service = createSpeechService({ env: {}, azure: { key: 'hidden', region: 'westeurope' }, windowsRunner,

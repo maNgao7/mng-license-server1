@@ -12,6 +12,7 @@ import { assertLicenseEditable, editLicense, renewLicense } from "./license-mana
 import { registerContentRoutes } from "./content-management.js";
 import { registerOverlayRelay } from "./overlay-relay.js";
 import { createOverlayAuthorization } from "./overlay-authorization.js";
+import { registerSpeechRelay } from "./speech-relay.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -334,6 +335,7 @@ app.use(cors({
 }));
 
 app.use("/api/admin/lisanslar-senkronize", adminKontrol, express.json({ limit: "8mb" }));
+registerSpeechRelay(app, { authorize: overlayAuthorize });
 app.use(express.json({ limit: "64kb" }));
 registerContentRoutes(app, { dataDir: DATA_DIR, adminKontrol });
 app.get("/admin/lucide.js", (req, res) => {

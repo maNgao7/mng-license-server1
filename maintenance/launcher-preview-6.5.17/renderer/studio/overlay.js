@@ -208,7 +208,7 @@
             element.playsInline = true;
             element.controls = preview && !hover;
             element.volume = settings.volume;
-            element.muted = poster || hover || parameters.get('mute') === '1';
+            element.muted = poster || parameters.get('mute') === '1';
         } else element.draggable = false;
         for (const [name, listener] of handlers) element.addEventListener(name, listener);
         stage.replaceChildren(element);

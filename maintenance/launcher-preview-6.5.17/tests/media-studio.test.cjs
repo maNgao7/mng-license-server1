@@ -62,6 +62,20 @@ async function mapped(f, settings = {}, source) {
     return f.studio.save({ id: item.id, giftId: '5655', ...settings });
 }
 
+test('importing the same asset for another channel shares bytes but keeps assignments isolated', async t => {
+    const f = fixture(t, { disk: true });
+    const source = f.source();
+    const [first] = await f.studio.importFiles([source]);
+    f.studio.save({ id: first.id, giftId: '5655' });
+    f.setChannel('bob');
+    const [second] = await f.studio.importFiles([source]);
+    assert.notEqual(second.id, first.id);
+    assert.equal(second.giftId, '');
+    assert.equal(fs.readdirSync(f.root).length, 1);
+    const reopened = f.make();assert.equal(reopened.list()[0].id, second.id);
+    assert.equal(reopened.ingest('gift', { giftId: '5655', eventId: 'qa' }).length, 0);
+});
+
 async function startServer(t, studio, { relay = false, onRequest } = {}) {
     const server = http.createServer((req, res) => {
         const url = new URL(req.url, 'http://127.0.0.1');
@@ -791,6 +805,55 @@ test('poster previews load authenticated clips without a live-event subscription
     assert.equal(h.elements[0].controls,false);assert.equal(h.elements[0].played,undefined);
     h.elements[0].dispatch('loadedmetadata');assert.equal(h.elements[0].currentTime,2.1);
     h.hide();assert.equal(h.elements[0].paused,true);assert.equal(h.isClosed(),false);
+});
+
+test('hover previews play the chosen clip with audible volume and release it on frame leave', options, async t => {
+    const f = fixture(t);
+    const item = await mapped(f, { startSeconds: 2, endSeconds: 5, volume: 0.4 });
+    const h = overlayHarness({ mode: 'hover', item });
+    const video = h.elements[0];
+    assert.equal(h.elements.length, 1);
+    assert.equal(video.muted, false);
+    assert.equal(video.volume, 0.4);
+    assert.equal(video.controls, false);
+    assert.equal(video.preload, 'auto');
+    assert.equal(h.eventsUrl, undefined, 'Hover must never subscribe to gift events');
+    assert.equal(h.polls.length, 0);
+    video.dispatch('loadedmetadata');
+    assert.equal(video.currentTime, 2);
+    video.dispatch('seeked');
+    video.dispatch('playing');
+    assert.equal(video.played, true);
+    assert.equal(video.paused, false);
+    assert.equal(h.messages.length, 0, 'Hover is not an editor metadata session');
+    h.hide();
+    assert.equal(video.paused, true);
+    assert.equal(video.removed, true);
+    assert.equal(video.src, undefined);
+    assert.equal(video.handlers.size, 0);
+    assert.equal(h.timeouts.size, 0);
+    await h.advance(2000);
+    assert.equal(h.elements.length, 1, 'An unloaded hover frame must never restart audio');
+    assert.equal(f.studio.status().receivers, 0);
+});
+
+test('hover explicit mute and poster precedence keep previews silent when requested', options, async t => {
+    const f = fixture(t);
+    const item = await mapped(f, { volume: 0.55 });
+    for (const extraQuery of ['&mute=1', '&poster=1']) {
+        const h = overlayHarness({ mode: 'hover', item, extraQuery });
+        const video = h.elements[0];
+        assert.equal(video.muted, true);
+        assert.equal(video.volume, 0.55);
+        video.dispatch('loadedmetadata');video.dispatch('seeked');
+        if (extraQuery === '&poster=1') assert.equal(video.played, undefined);
+        else assert.equal(video.played, true);
+        assert.equal(h.eventsUrl, undefined);
+        assert.equal(h.polls.length, 0);
+        h.hide();
+        assert.equal(video.paused, true);
+        assert.equal(h.timeouts.size, 0);
+    }
 });
 
 test('editor previews expose playback controls and still accept gift-triggered playback', options, async t => {

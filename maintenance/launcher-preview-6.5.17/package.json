@@ -24,9 +24,13 @@
       "preload.js",
       "lib/**/*",
       "license-server.txt",
-      "renderer/**/*"
+      "renderer/**/*",
+      "!node_modules/onnxruntime-node/bin/napi-v6/darwin/**/*",
+      "!node_modules/onnxruntime-node/bin/napi-v6/linux/**/*",
+      "!node_modules/onnxruntime-node/bin/napi-v6/win32/arm64/**/*"
     ],
     "extraResources": [],
+    "asarUnpack": ["node_modules/onnxruntime-node/bin/**/*", "lib/vendor/*-worker.cjs"],
     "win": {
       "target": [
         {
@@ -42,7 +46,7 @@
           ]
         }
       ],
-      "icon": "renderer/assets/icon-v3.ico",
+      "icon": "renderer/assets/icon-v4.ico",
       "signAndEditExecutable": true
     },
     "nsis": {
@@ -52,16 +56,22 @@
       "allowElevation": true,
       "allowToChangeInstallationDirectory": true,
       "runAfterFinish": true,
-      "installerIcon": "renderer/assets/icon-v3.ico",
-      "uninstallerIcon": "renderer/assets/icon-v3.ico",
-      "installerHeaderIcon": "renderer/assets/icon-v3.ico",
+      "installerIcon": "renderer/assets/icon-v4.ico",
+      "uninstallerIcon": "renderer/assets/icon-v4.ico",
+      "installerHeaderIcon": "renderer/assets/icon-v4.ico",
       "createDesktopShortcut": "always",
       "createStartMenuShortcut": true,
       "shortcutName": "TikMnG",
       "differentialPackage": true,
       "preCompressedFileExtensions": []
     },
-    "publish": [{ "provider": "github", "owner": "maNgao7", "repo": "mng-license-server1" }]
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "maNgao7",
+        "repo": "mng-license-server1"
+      }
+    ]
   },
   "dependencies": {
     "electron-store": "^8.1.0",
@@ -69,11 +79,13 @@
     "extract-zip": "2.0.1",
     "lucide": "0.468.0",
     "matter-js": "^0.20.0",
+    "onnxruntime-node": "1.23.2",
     "tiktok-live-connector": "2.4.4",
     "ws": "8.22.0"
   },
   "devDependencies": {
     "electron": "31.7.7",
-    "electron-builder": "^24.13.3"
+    "electron-builder": "^24.13.3",
+    "esbuild": "^0.25.11"
   }
 }

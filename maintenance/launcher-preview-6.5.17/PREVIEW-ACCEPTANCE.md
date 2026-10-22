@@ -1,5 +1,8 @@
 # TikMnG 6.5.17 Private Preview
 
+Latest management-preview status: see DELIVERY-2026-10-22.md. The historical
+results below describe earlier preview candidates, not current service status.
+
 This is a local test build, not a published stable update.
 
 ## Verified

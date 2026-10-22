@@ -1,0 +1,133 @@
+{
+  "source": "brand-v4.svg",
+  "png": "icon-v4.png",
+  "ico": "icon-v4.ico",
+  "preview": "brand-v4-preview.png",
+  "sha256": "f129a07a0dd4fefdf0bfd6b6a561a7858615003f718e2c5e74d93518f6f56d26",
+  "frames": [
+    {
+      "size": 16,
+      "bytes": 488,
+      "sha256": "890a5b2268e61e02b62ebfc021ae5d8de303ecb88f54331de544159416d96bf7",
+      "colors": {
+        "blue": 7,
+        "black": 11,
+        "red": 7,
+        "transparent": 4
+      }
+    },
+    {
+      "size": 20,
+      "bytes": 591,
+      "sha256": "57ec526c592ff0bed3203a98a2b55dad2837bd28deec2f084cad2e4d90518104",
+      "colors": {
+        "blue": 15,
+        "black": 19,
+        "red": 13,
+        "transparent": 4
+      }
+    },
+    {
+      "size": 24,
+      "bytes": 741,
+      "sha256": "25c83af3f7d304b9450074f97b58d840643cb7818b9bb5ac0d0ddeda532928d5",
+      "colors": {
+        "blue": 25,
+        "black": 26,
+        "red": 21,
+        "transparent": 12
+      }
+    },
+    {
+      "size": 32,
+      "bytes": 884,
+      "sha256": "6d166cbd8abe9345fbfe1416f1bb4d1e0885f5c754d960e5f92296f7f967bac1",
+      "colors": {
+        "blue": 46,
+        "black": 44,
+        "red": 47,
+        "transparent": 24
+      }
+    },
+    {
+      "size": 40,
+      "bytes": 1180,
+      "sha256": "9c4cf85ac219b84d06bbfab00e7a04d84b38a501e6e1eea9d7831ec6441afb97",
+      "colors": {
+        "blue": 80,
+        "black": 82,
+        "red": 74,
+        "transparent": 48
+      }
+    },
+    {
+      "size": 48,
+      "bytes": 1299,
+      "sha256": "4492415e368137a62eacb85ce63a98c76b191f84552f996d2bcb7618a9d1395b",
+      "colors": {
+        "blue": 115,
+        "black": 118,
+        "red": 112,
+        "transparent": 76
+      }
+    },
+    {
+      "size": 64,
+      "bytes": 1579,
+      "sha256": "de3f1aee2cb98ef31c0683ae92c24c2929a705da2c7769ad0cf554646a4aeaee",
+      "colors": {
+        "blue": 208,
+        "black": 256,
+        "red": 202,
+        "transparent": 320
+      }
+    },
+    {
+      "size": 96,
+      "bytes": 2456,
+      "sha256": "15cc52a83f0cbf3a0503af245733839bae64520274cd782bbe877473cb298347",
+      "colors": {
+        "blue": 483,
+        "black": 610,
+        "red": 453,
+        "transparent": 608
+      }
+    },
+    {
+      "size": 128,
+      "bytes": 3039,
+      "sha256": "f7536515bf6f0f9baff220090021f9c736c4972cbb34dcf570a73f41a9f7e2cf",
+      "colors": {
+        "blue": 867,
+        "black": 1126,
+        "red": 834,
+        "transparent": 1328
+      }
+    },
+    {
+      "size": 256,
+      "bytes": 6351,
+      "sha256": "1181407ec522e53c6c410c9393a666d849a02efc44479cbf063523e534958b55",
+      "colors": {
+        "blue": 3643,
+        "black": 4800,
+        "red": 3471,
+        "transparent": 6144
+      }
+    }
+  ],
+  "preserved": [
+    {
+      "name": "brand-v3.svg",
+      "sha256": "da57b775b2457fe5f3c04339358e82475e06378af78fe642d963ad2baefbdfa3"
+    },
+    {
+      "name": "logo-v3.png",
+      "sha256": "cdca65b6316cb408f55bd8bdb4f7fd83ad15dd7c6a5855c326fb13154c868d19"
+    },
+    {
+      "name": "icon-v3.ico",
+      "sha256": "612fbeed6b481e0a739c0b22206226ebcad912db3218cd444330cb353c8e0112"
+    }
+  ]
+}

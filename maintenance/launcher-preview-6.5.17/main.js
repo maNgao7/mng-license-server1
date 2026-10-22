@@ -20,6 +20,13 @@ if (process.env.MNG_TEST_PROFILE) {
 let platform = null;
 let appUpdates = null;
 let overlayBridge = null;
+const primaryInstance = app.requestSingleInstanceLock();
+if (!primaryInstance) app.quit();
+app.on('second-instance', () => {
+    if (!mainWindow || mainWindow.isDestroyed()) return;
+    if (mainWindow.isMinimized()) mainWindow.restore();
+    mainWindow.show();mainWindow.focus();
+});
 
 let TikTokLiveConnection = null;
 let WebcastEvent = {};
@@ -113,8 +120,8 @@ const WIDGET_DEFINITIONS = [
     { id: "topgift", name: "Viral Benim", kind: "HEDİYE", description: "Yayının en değerli hediyesini; gönderenin dönen büyük profili, hediye görseli ve coin değeriyle gösterir." },
     { id: "carousel", name: "Etkileşim Şeridi", kind: "TANITIM", description: "Canlı yayın etkinliklerini ve hediye görevlerini kayan şeritte gösterir." },
     { id: "wheel", name: "Şans Çarkı", kind: "OYUN", description: "Tetiklendiğinde renkli çarkı döndürür ve sonucu yayında gösterir." },
-    { id: "topgifter", name: "Coin Sıralaması", kind: "SIRALAMA", description: "İlk üç destekçiyi büyük profil kürsüsünde, diğerlerini kalıcı coin listesinde gösterir." },
-    { id: "topliker", name: "Beğeni Sıralaması", kind: "SIRALAMA", description: "İlk üç beğeniciyi büyük profil kürsüsünde, diğerlerini kalıcı beğeni listesinde gösterir." },
+    { id: "topgifter", name: "Coin Sıralaması", kind: "SIRALAMA", description: "Destekçileri profil, kullanıcı adı ve toplam coin ile tek bir sıralamada gösterir." },
+    { id: "topliker", name: "Beğeni Sıralaması", kind: "SIRALAMA", description: "Beğenileri anlık güncellenen profil ve puan listesinde gösterir." },
     { id: "coindrop", name: "Coin Yağmuru", kind: "ANİMASYON", description: "Hediye geldiğinde ekrana toplanabilir görünen coinler yağdırır." },
     { id: "timer", name: "Yayın Sayacı", kind: "SAYAÇ", description: "Yayında kullanılabilen temiz ve özelleştirilebilir geri sayım gösterir." },
     { id: "viewercount", name: "İzleyici Sayısı", kind: "CANLI", description: "Anlık izleyici sayısını sade ve okunaklı biçimde gösterir." },
@@ -145,6 +152,7 @@ function widgetKanaliniDegistir(channel) {
         totalLikes: 0, totalCoins: 0, totalGifts: 0, totalShares: 0,
         followers: 0, subscribers: 0, viewerCount: 0, topStreak: null
     });
+    onIzlemeArsiviniHazirla();
 }
 
 function widgetKanalHavuzu(base, channel, livePool) {
@@ -273,8 +281,6 @@ function widgetKaydiEkle(payload = {}) {
         };
     }
     store.set(widgetStoreKey("widget_meta"), widgetMetaPool);
-    const current = Object.values(widgetPool)[0] || null;
-    if (current && coins <= Number(current.coins || current.totalCoins || 0)) return current;
     const next = {
         username,
         nickname: String(payload.nickname || username),
@@ -282,18 +288,20 @@ function widgetKaydiEkle(payload = {}) {
         repeatCount: count,
         coins,
         totalCoins: coins,
+        giftId: String(payload.giftId || ''),
         giftName: String(payload.giftName || "Hediye"),
         giftImage: widgetHediyeGorseliBul(payload.giftName, payload.giftId) || widgetGorselAdresiniDuzelt(payload.giftImage),
         avatar: String(payload.avatar || payload.profilePictureUrl || ""),
         updatedAt: Date.now()
     };
-    widgetPool = { champion: next };
+    widgetPool = require('./lib/top-gift.cjs').recordTopGift(widgetPool, { ...next, giftType: payload.giftType, repeatEnd: payload.repeatEnd });
     store.set(widgetStoreKey("widget_top_gifts"), widgetPool);
-    return next;
+    return widgetPool.champion;
 }
 
 function widgetDurumu(pool = widgetPool) {
-    const entries = Object.values(pool).map(entry => ({ ...entry, giftImage: widgetGorselAdresiniDuzelt(entry.giftImage) })).sort((a, b) => (b.coins || b.totalCoins || 0) - (a.coins || a.totalCoins || 0));
+    const top = require('./lib/top-gift.cjs').topGiftState(pool).champion;
+    const entries = top ? [{ ...top, giftImage: widgetGorselAdresiniDuzelt(top.giftImage) }] : [];
     return { top: entries[0] || null, entries };
 }
 
@@ -1505,15 +1513,17 @@ function anaEkraniOlustur() {
         minHeight: 560,
         frame: true,
         resizable: true,
-        title: preview.enabled ? "TikMnG Test Launcher" : "TikMnG",
-        icon: path.join(__dirname, "renderer", "assets", "icon-v3.ico"),
+        title: preview.enabled ? "TikMnG Yönetici Ön İzleme" : "TikMnG",
+        icon: path.join(__dirname, "renderer", "assets", "icon-v4.ico"),
         backgroundColor: "#111315",
         webPreferences: {
             preload: path.join(__dirname, "preload.js"),
             contextIsolation: true,
             nodeIntegration: false,
             sandbox: false,
-            webSecurity: true
+            webSecurity: true,
+            autoplayPolicy: 'no-user-gesture-required',
+            backgroundThrottling: false
         }
     });
 
@@ -2433,7 +2443,7 @@ async function uygulamayiAc({ uygulama, tiktokUser, orbitSettings, orbitTest, or
             height: 900,
             show: false,
             title: gameTitle,
-            icon: path.join(__dirname, "renderer", "assets", "icon-v3.ico"),
+            icon: path.join(__dirname, "renderer", "assets", "icon-v4.ico"),
             backgroundColor: "#000000",
             webPreferences: {
                 nodeIntegration: false,
@@ -2727,7 +2737,22 @@ ipcMain.handle("arka-plan-videolari", async () => {
 // =====================================================================
 // UYGULAMA BAŞLANGICI
 // =====================================================================
+let previewArchiveTask = null;
+function onIzlemeArsiviniHazirla() {
+    const archive = 'D:/TikMNG-Medya-Arsivi-2026-10-21';
+    if (!preview.enabled || !platform || previewArchiveTask || !fs.existsSync(path.join(archive, 'manifest.json')) || platform.snapshot().media.length > 0) return;
+    const channel = widgetChannel;
+    previewArchiveTask = platform.importArchive(archive).then(() => {
+        mainWindow?.webContents.send('workspace-catalog', {});
+    }).catch(() => {
+        if (channel === widgetChannel) mainWindow?.webContents.send('durum', { tip: 'hata', mesaj: 'Video arşivi eklenemedi. Video Stüdyosu içinden Arşiv ekle ile yeniden seçebilirsiniz.' });
+    }).finally(() => {
+        previewArchiveTask = null;
+        if (channel !== widgetChannel) onIzlemeArsiviniHazirla();
+    });
+}
 app.whenReady().then(() => {
+    if (!primaryInstance) return;
     lisansYedeginiGeriYukle();
     overlayBridge = require('./lib/overlay-bridge.cjs').createOverlayBridge({
         store, serverURL: lisansSunucuUrlBul, port: WIDGET_PORT, accessKey: WIDGET_ACCESS_KEY,
@@ -2739,6 +2764,7 @@ app.whenReady().then(() => {
     platform = require('./lib/platform.cjs').createPlatform({
         app, ipcMain, store, dialog, definitions: OYUN_TANIMLARI, getWindow: () => mainWindow,
         speechCredentials: require('./lib/speech-credentials.cjs').createSpeechCredentials({ store, safeStorage }),
+        getSpeechCredentials: () => ({ licenseCode: store.get('lisans_kod', ''), deviceId: CIHAZ_KIMLIK }),
         serverURL: lisansSunucuUrlBul, accessKey: WIDGET_ACCESS_KEY, port: WIDGET_PORT,
         getOverlayStatus: () => overlayBridge.status(), broadcastURL: url => overlayBridge.urlFor(url),
         reconnectOverlay: () => { overlayBridge.stop(); return overlayBridge.start(widgetChannel); },
@@ -2781,13 +2807,7 @@ app.whenReady().then(() => {
     }
 
     anaEkraniOlustur();
-    const previewArchive = 'D:/TikMNG-Medya-Arsivi-2026-10-21';
-    if (preview.enabled && !store.get('preview_archive_seeded_v1', false) && fs.existsSync(path.join(previewArchive, 'manifest.json'))) {
-        platform.importArchive(previewArchive).then(() => {
-            store.set('preview_archive_seeded_v1', true);
-            mainWindow?.webContents.send('workspace-catalog', {});
-        }).catch(() => mainWindow?.webContents.send('durum', { tip: 'hata', mesaj: 'Test video arşivi eklenemedi. Video Stüdyosu içinden Arşiv ekle ile yeniden seçebilirsiniz.' }));
-    }
+    onIzlemeArsiviniHazirla();
     platform.refreshCatalog().catch(() => {});
 });
 
