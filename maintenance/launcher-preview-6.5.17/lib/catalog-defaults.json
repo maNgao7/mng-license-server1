@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "revision": 0,
+  "publishedAt": null,
+  "games": [
+    { "id": "battle-royale", "title": "Minecraft, PUBG", "description": "", "version": "6.5.16", "url": "https://github.com/maNgao7/mng-license-server1/releases/download/v6.5.16/battle-royale.zip", "sha256": "c867e05148c5b921bd75edb29c12611bdb73f53dc1a834c888fee98c738d5168", "bytes": 998922210, "requirements": "", "resources": [] },
+    { "id": "snow-war", "title": "Minecraft Kartopu Savaşı", "description": "", "version": "6.5.16", "url": "https://github.com/maNgao7/mng-license-server1/releases/download/v6.5.16/snow-war.zip", "sha256": "fe4bdc56612308daa61254f7ea42f4cb2b46650bd3670fa23616bd7c1c8c7790", "bytes": 1006436941, "requirements": "", "resources": [] },
+    { "id": "vs", "title": "TikTok VS Profil", "description": "", "version": "6.5.7", "url": "https://mng-license-server1.onrender.com/download/game/tiktok-vs.zip", "sha256": null, "bytes": null, "requirements": "", "resources": [] },
+    { "id": "puanlama", "title": "Profil Puanlama", "description": "", "version": "6.5.7", "url": "https://mng-license-server1.onrender.com/download/game/tiktok-vs.zip", "sha256": null, "bytes": null, "requirements": "", "resources": [] },
+    { "id": "orbit", "title": "MNG Orbit", "description": "", "version": "6.5.16", "url": "https://github.com/maNgao7/mng-license-server1/releases/download/v6.5.16/mng-orbit.zip", "sha256": "be2617dd590826d3996f12ec4b5ab038da50ba5374da7852b69883b58db83d8d", "bytes": 416199515, "requirements": "", "resources": [] },
+    { "id": "crowd-control", "title": "MNG Crowd Control", "description": "", "version": "6.5.5", "url": "https://mng-license-server1.onrender.com/download/game/crowd-control.zip", "sha256": null, "bytes": null, "requirements": "", "resources": [] },
+    { "id": "battle-game", "title": "Şövalye Savaşı", "description": "", "version": "6.5.5", "url": "https://mng-license-server1.onrender.com/download/game/battle-game.zip", "sha256": null, "bytes": null, "requirements": "", "resources": [] },
+    { "id": "gelene-gecene", "title": "Gelene Geçene", "description": "", "version": "6.1.2", "url": "https://mng-license-server1.onrender.com/download/game/gelene-gecene.zip", "sha256": null, "bytes": null, "requirements": "Steam ve Unturned (App ID: 304930) kurulumu gereklidir.", "resources": [] },
+    { "id": "duck-hunt", "title": "MNG Dodge Hunter", "description": "", "version": "6.5.5", "url": "https://mng-license-server1.onrender.com/download/game/duck-hunt.zip", "sha256": null, "bytes": null, "requirements": "", "resources": [] },
+    { "id": "pony-life", "title": "Pony Katırı", "description": "", "version": "6.5.5", "url": "https://mng-license-server1.onrender.com/download/game/pony-life.zip", "sha256": null, "bytes": null, "requirements": "", "resources": [] },
+    { "id": "frog-river", "title": "Vak Vak Jump", "description": "", "version": "6.5.5", "url": "https://mng-license-server1.onrender.com/download/game/frog-river.zip", "sha256": null, "bytes": null, "requirements": "", "resources": [] },
+    { "id": "penalty-kick", "title": "Süper Lig (Penaltı)", "description": "", "version": "6.5.10", "url": "https://github.com/maNgao7/mng-license-server1/releases/download/v6.5.10/penalty-kick.zip", "sha256": "81e0f23fd0ddb290d20c884043dc0eefccf33e15780e80266ebc8a7aeec99039", "bytes": 93293252, "requirements": "", "resources": [] },
+    { "id": "tightrope-balance", "title": "Dengesiz Yayıncı", "description": "", "version": "6.5.10", "url": "https://github.com/maNgao7/mng-license-server1/releases/download/v6.5.10/tightrope-balance.zip", "sha256": "4cfb2f5374944da6cc8906085bb3d977a5a04f3e02e92e68e4e917b5cee026a0", "bytes": 58639241, "requirements": "", "resources": [] },
+    { "id": "zombie-war", "title": "Zombie War", "description": "", "version": "6.5.17", "url": "https://github.com/maNgao7/mng-license-server1/releases/download/zombie-war-6.5.17/zombie-war.zip", "sha256": "9d2d641f05d2bec905522202d0f523e64bd5b4868e45f03148bfe37ece466749", "bytes": 947576508, "requirements": "", "resources": [{ "title": "Hazır hediye görseli (PNG)", "url": "https://github.com/maNgao7/mng-license-server1/releases/download/zombie-war-6.5.17/TikMnG-Zombie-War-Hediye-Listesi.png" }] }
+  ],
+  "media": []
+}
