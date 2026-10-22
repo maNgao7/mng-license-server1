@@ -165,13 +165,13 @@ function profilesFor(voices) {
     });
 }
 
-function createSpeechService({ env = process.env, azure, fetchImpl = globalThis.fetch, windowsRunner = runWindows, voicePacks, central, offlineRunner = require('./offline-speech.cjs').runOffline, cacheMs = 30000 } = {}) {
+function createSpeechService({ env = process.env, azure, fetchImpl = globalThis.fetch, windowsRunner = runWindows, voicePacks, central, chatterbox, offlineRunner = require('./offline-speech.cjs').runOffline, cacheMs = 30000 } = {}) {
     let credentials = { key: env.MNG_AZURE_SPEECH_KEY || '', region: env.MNG_AZURE_SPEECH_REGION || '' };
     if (azure) credentials = { key: azure.key || '', region: azure.region || '' };
     credentials = { key: String(credentials.key).trim(), region: String(credentials.region).trim().toLowerCase() };
     let cached = null; let expires = 0; let revision = 0;
     const pending = new Set();
-    function cancel() { for (const controller of pending) controller.abort(); }
+    function cancel() { for (const controller of pending) controller.abort();chatterbox?.cancel(); }
     function configureAzure(config = {}) {
         cancel();
         credentials = { key: String(config.key || '').trim(), region: String(config.region || '').trim().toLowerCase() };
@@ -223,7 +223,15 @@ function createSpeechService({ env = process.env, azure, fetchImpl = globalThis.
             voices.push({ voiceURI: pack.voiceURI, id: pack.id, name: pack.name, lang: pack.language,
                 gender: pack.gender, age: 'unknown', provider: 'offline', neural: true, localService: true });
         }
-        providers.offline = { available: voices.length > 0, reason: voices.length ? null : 'VOICE_PACK_REQUIRED' };
+        const localAvailable = voices.some(voice => voice.provider === 'offline');
+        providers.offline = { available: localAvailable, reason: localAvailable ? null : 'VOICE_PACK_REQUIRED' };
+        if (chatterbox) {
+            const status = await chatterbox.status();
+            const available = status.available === true && Array.isArray(status.voices) && status.voices.length > 0;
+            if (available) voices.push(...status.voices);
+            providers.chatterbox = { available, reason: available ? null : status.reason || 'CHATTERBOX_NOT_INSTALLED', speakers: available ? status.voices.length : 0,
+                ...(available ? { installBytes: status.installBytes, performance: status.performance } : {}) };
+        }
         try {
             const installed = await windowsRunner('list');
             for (const voice of Array.isArray(installed) ? installed : [installed]) {
@@ -248,7 +256,8 @@ function createSpeechService({ env = process.env, azure, fetchImpl = globalThis.
         } catch (error) { providers.azure = { available: false, configured: Boolean(credentials.key && credentials.region), reason: error.code || 'AZURE_UNAVAILABLE' }; }
         const unique = [...new Map(voices.map(voice => [voice.voiceURI, voice])).values()]
             .sort((a, b) => Number(b.neural) - Number(a.neural));
-        const result = { voices: unique, profiles: profilesFor(unique), providers, packs };
+        const result = { voices: unique, profiles: profilesFor(unique), providers, packs,
+            voiceLibrary: require('./chatterbox-voices.json').map(voice => ({ ...voice, voiceURI: 'chatterbox:' + voice.id, provider: 'chatterbox', lang: 'tr-TR' })) };
         if (currentRevision === revision) { cached = result; expires = Date.now() + cacheMs; }
         else return listVoices({ refresh: true });
         return structuredClone(result);
@@ -272,6 +281,8 @@ function createSpeechService({ env = process.env, azure, fetchImpl = globalThis.
                 let audio;
                 if (voice.provider === 'tikmng') {
                     audio = await central.synthesize({ text, voiceURI: voice.voiceURI, rate }, controller.signal);
+                } else if (voice.provider === 'chatterbox') {
+                    audio = await chatterbox.synthesize({ text, voiceURI: voice.voiceURI, rate: 1 }, { signal: controller.signal });
                 } else if (voice.provider === 'offline') {
                     const root = voicePacks?.verify ? await voicePacks.verify(voice.id, controller.signal) : voicePacks?.resolve(voice.id);
                     if (!root) throw Object.assign(new Error('Önce ses paketini indirin.'), { code: 'VOICE_PACK_REQUIRED' });
@@ -289,10 +300,12 @@ function createSpeechService({ env = process.env, azure, fetchImpl = globalThis.
                 }
                 checkCancelled();
                 if (audio.length < 44 || audio.toString('ascii', 0, 4) !== 'RIFF' || audio.toString('ascii', 8, 12) !== 'WAVE') throw failure('INVALID_AUDIO');
-                return { audioBase64: audio.toString('base64'), mimeType: 'audio/wav', voice: { ...voice, style: preset, styleLabel: style.label }, fallbackUsed };
+                return { audioBase64: audio.toString('base64'), mimeType: 'audio/wav', voice: { ...voice, style: preset, styleLabel: style.label }, fallbackUsed,
+                    ...(voice.provider === 'chatterbox' ? { playbackRate: requestedRate } : {}) };
             }
             try {
                 if (provider === 'tikmng' && !providers.tikmng?.available) throw Object.assign(new Error('TikMnG merkezi ses hizmeti hazır değil.'), { code: providers.tikmng?.reason || 'CENTRAL_UNAVAILABLE' });
+                if (provider === 'chatterbox' && !providers.chatterbox?.available) throw Object.assign(new Error('Doğal Türkçe ses paketi kurulu değil.'), { code: 'CHATTERBOX_NOT_INSTALLED' });
                 if (provider === 'azure' && !providers.azure.available) throw failure(providers.azure.reason || 'VOICE_UNAVAILABLE');
                 return await produce(selectVoice(voices, { ...settings, provider }), false);
             } catch (error) {

@@ -162,7 +162,7 @@ function createLiveSession({ createConnection, events = {}, onStatus, onEvent,
         function forward(type, payload) {
             if (state.status !== 'connected' || !payload || typeof payload !== 'object' || Array.isArray(payload)) return;
             if (type === 'gift') {
-                const giftType = payload.giftType ?? payload.giftDetails?.giftType ?? payload.extendedGiftInfo?.giftType;
+                const giftType = payload.giftType ?? payload.gift?.type ?? payload.gift?.giftType ?? payload.giftDetails?.giftType ?? payload.extendedGiftInfo?.giftType ?? payload.extendedGiftInfo?.type;
                 if (Number(giftType) === 1 && ![true, 1, '1', 'true'].includes(payload.repeatEnd)) return;
             }
             publish({ lastEventAt: now() });

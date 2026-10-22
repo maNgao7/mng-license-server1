@@ -51,6 +51,11 @@
                     const raw = scope.atob(result.audioBase64);
                     task.url = scope.URL.createObjectURL(new scope.Blob([Uint8Array.from(raw, char => char.charCodeAt(0))], { type: result.mimeType }));
                     task.audio = new scope.Audio(task.url);
+                    if (result.voice?.provider === 'chatterbox') {
+                        const rate = Number(result.playbackRate);
+                        task.audio.preservesPitch = true;
+                        task.audio.playbackRate = Number.isFinite(rate) ? Math.max(0.5, Math.min(2, rate)) : 1;
+                    }
                     const volume = Number(settings.volume ?? 1);
                     task.audio.volume = Number.isFinite(volume) ? Math.max(0, Math.min(1, volume)) : 1;
                     task.audio.onended = () => task.finish(null, { voice: result.voice, fallbackUsed: Boolean(result.fallbackUsed) });

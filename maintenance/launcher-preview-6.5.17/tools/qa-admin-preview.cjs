@@ -9,8 +9,37 @@ let app;
     fs.mkdirSync(output, { recursive: true });
     const env = { ...process.env };delete env.ELECTRON_RUN_AS_NODE;delete env.MNG_TEST_PROFILE;
     app = await _electron.launch({ executablePath: process.env.MNG_QA_EXE || path.resolve(__dirname, '../dist-admin-preview/win-unpacked/TikMnG Test.exe'), env });
+    app.process().on('exit', (code, signal) => console.log('Preview process exited:', code, signal || ''));
     const page = await app.firstWindow();
+    page.on('crash', () => console.error('Preview renderer crashed'));
     await page.waitForSelector('.library-card', { timeout: 30000 });
+    const guides = await page.evaluate(async () => (await window.mngAPI.workspace('snapshot')).games.filter(game => game.giftGuide).map(game => ({ id: game.id, ...game.giftGuide })));
+    assert.equal(guides.length, 8);
+    const guideOutput = path.join(output, 'gift-guides');fs.mkdirSync(guideOutput, { recursive: true });
+    for (const guide of guides) {
+        const target = path.join(guideOutput, guide.filename);
+        await app.evaluate(({ dialog }, target) => { globalThis.qaSaveDialog = dialog.showSaveDialog;dialog.showSaveDialog = async () => ({ canceled: false, filePath: target });return true; }, target);
+        try {
+            const saved = await page.evaluate(id => window.mngAPI.workspace('gift-guide-save', { id }), guide.id);
+            assert.equal(saved.saved, true, saved.error);
+            assert.equal(require('node:crypto').createHash('sha256').update(fs.readFileSync(target)).digest('hex'), guide.sha256);
+        } finally { await app.evaluate(({ dialog }) => { dialog.showSaveDialog = globalThis.qaSaveDialog;delete globalThis.qaSaveDialog;return true; }); }
+    }
+    if (process.env.MNG_QA_CHATTERBOX_ROOT) {
+        await app.evaluate(({ dialog }, root) => {
+            globalThis.qaOriginalOpenDialog = dialog.showOpenDialog;
+            dialog.showOpenDialog = async () => ({ canceled: false, filePaths: [root] });
+            return true;
+        }, path.resolve(process.env.MNG_QA_CHATTERBOX_ROOT));
+        try {
+            const selected = await page.evaluate(() => window.mngAPI.workspace('speech-local-select'));
+            assert.equal(selected.error, undefined, selected.error);
+            assert.equal(selected.providers.chatterbox?.speakers, 10);
+            console.log('Natural Turkish pack verified:', selected.providers.chatterbox.speakers);
+        } finally {
+            await app.evaluate(({ dialog }) => { dialog.showOpenDialog = globalThis.qaOriginalOpenDialog;delete globalThis.qaOriginalOpenDialog;return true; });
+        }
+    }
     await page.evaluate(async () => {
         await window.mngAPI.tiktokHesapKaydet('mlbb_gossipgirl');
         await window.mngAPI.tiktokBaglan('mlbb_gossipgirl');
@@ -37,12 +66,40 @@ let app;
         return { voices: status.voices.length, installedOffline: status.packs.filter(p => p.installed).length, audioOutputs: hashes.length };
     });
     assert.equal(count.installedOffline, 2);assert.equal(count.audioOutputs, 2);
+    const naturalAudio = [];
+    const naturalVoices = await page.evaluate(async () => (await window.mngAPI.workspace('speech-status')).voices.filter(v => v.provider === 'chatterbox'));
+    if (process.env.MNG_QA_CHATTERBOX_ROOT) assert.equal(naturalVoices.length, 10);
+    for (const voice of naturalVoices) {
+        const started = Date.now();
+        const result = await page.evaluate(voice => window.mngAPI.workspace('speech-synthesize', {
+            text: 'Merhaba, yayına hoş geldiniz.', voiceURI: voice.voiceURI, provider: 'chatterbox', voicePreset: 'natural', rate: 1
+        }), voice);
+        assert.equal(result.error, undefined, `${voice.name}: ${result.error}`);
+        assert.equal(result.voice.voiceURI, voice.voiceURI);
+        const audio = Buffer.from(result.audioBase64, 'base64');
+        assert.equal(audio.toString('ascii', 0, 4), 'RIFF');
+        fs.writeFileSync(path.join(output, 'voice-' + voice.id + '.wav'), audio);
+        naturalAudio.push({ name: voice.name, voiceURI: voice.voiceURI, bytes: audio.length,
+            sha256: require('node:crypto').createHash('sha256').update(audio).digest('hex'), elapsedMs: Date.now() - started });
+        console.log('Natural voice verified:', voice.name, Date.now() - started, 'ms');
+    }
+    assert.equal(new Set(naturalAudio.map(audio => audio.sha256)).size, naturalVoices.length);
     await page.locator('[data-workspace-view="speech"]').click();
     await page.locator('[data-action="speech-refresh"]').click();
-    await page.waitForSelector('[data-voice-test]');
-    await page.locator('[name="provider"]').selectOption('offline');
-    assert.equal(await page.locator('[data-voice-test]').count(), 2);
+    await page.waitForFunction(expected => document.querySelectorAll('[data-voice-test]').length === expected, count.voices);
+    assert.equal(await page.locator('[name="provider"]').isVisible(), false);
+    assert.equal(await page.locator('.speech-account').count(), 0);
+    assert.equal(await page.locator('[data-voice-test^="offline:"]').count(), 2);
     assert.equal(await page.locator('select[name="voicePreset"]').count(), 0);
+    if (naturalVoices.length) {
+        await page.locator('[data-voice-select="chatterbox:d2-00331"]').click();
+        assert.equal(await page.locator('[name="voiceURI"] option:not([disabled])').count(), 10);
+        assert.equal(await page.locator('[data-voice-test^="chatterbox:"]').count(), 10);
+        await page.screenshot({ path: path.join(output, 'ten-natural-speakers.png'), fullPage: true });
+    }
+    await page.locator('[name="audience"]').selectOption('fanclub');
+    assert.equal(await page.locator('#speechGift').isVisible(), false);
+    await page.screenshot({ path: path.join(output, 'fanclub-filter.png'), fullPage: true });
     await page.locator('[name="audience"]').selectOption('gift');
     await page.locator('#speechGift').click();
     const coins = await page.locator('#giftChoices [data-coins]').evaluateAll(items => items.map(item => Number(item.dataset.coins)));
@@ -124,7 +181,8 @@ let app;
     }
     await widgetPage.close();
     const live = await page.evaluate(async () => { const info = await window.mngAPI.widgetBilgisi();return { status: info.liveStatus?.status, roomVerified: Boolean(info.liveStatus?.roomId) }; });
-    const result = { passed: true, ...count, localLinksChecked: checked, publicHttpsLinksChecked: publicChecked, widgetScreenshots: widgetURLs.length, live, liveStudioAcceptance: false };
+    const result = { passed: true, ...count, giftGuidesSaved: guides.length, naturalSpeakers: naturalVoices.length, naturalAudio, fanclubUI: true,
+        localLinksChecked: checked, publicHttpsLinksChecked: publicChecked, widgetScreenshots: widgetURLs.length, live, liveStudioAcceptance: false };
     fs.writeFileSync(path.join(output, 'result.json'), JSON.stringify(result, null, 2));
     console.log(JSON.stringify(result));
 })().catch(error => { console.error(error);process.exitCode = 1; }).finally(async () => { await app?.close(); });

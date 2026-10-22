@@ -1,0 +1,21 @@
+.speech-layout { grid-template-columns:minmax(0,1fr) minmax(360px,440px); }
+#speechForm .speech-availability { min-height:48px;padding:14px 16px;background:#19302d;border:1px solid #39665d;border-radius:6px;color:#c3f9e7;font-size:15px;font-weight:600; }
+#speechForm .speech-availability.unavailable { background:#30291a;border-color:#776237;color:#f4d58a; }
+.speech-voice-library { min-width:0; }
+.speech-voice-group { padding:20px 0;border-top:1px solid #35403f; }
+.speech-voice-group:first-child { padding-top:0;border-top:0; }
+.speech-voice-group h3 { font-size:14px;font-weight:650;margin-bottom:12px!important; }
+.speech-voice-group .band-heading { margin-bottom:4px; }
+.speech-voice-group .band-heading h3 { margin-bottom:0!important; }
+.speech-voice-group .detail-commands { margin-top:14px; }
+.speech-voice-row { display:flex;align-items:center;gap:8px;border-bottom:1px solid #2b3435;padding:7px 8px;min-height:68px;background:transparent;border-radius:4px; }
+.speech-voice-row.chosen { background:#1c3430;box-shadow:inset 3px 0 #50ddba; }
+.speech-voice-choice { display:flex;align-items:center;gap:11px;flex:1;min-width:0;padding:5px 0;color:#ecf4f1;background:transparent;border:0;text-align:left; }
+.speech-voice-choice>span:nth-child(2) { min-width:0;flex:1; }
+.speech-voice-choice strong { display:block;font-size:15px;font-weight:650;overflow-wrap:anywhere; }
+.speech-voice-choice small { display:block;font-size:11px;color:#a0bcb2;margin-top:5px; }
+.voice-monogram { display:grid;place-items:center;width:38px;height:38px;flex:none;border:1px solid #4a625b;border-radius:50%;color:#9eead0;background:#24342f;font-size:17px;font-weight:650; }
+.voice-latency { font-size:11px;line-height:1.7;color:#d3bc89;margin:12px 0!important; }
+.voice-download-status { color:#8ce9d5;font-size:12px; }
+.voice-download-status:empty { display:none; }
+@media(max-width:1150px) { .speech-layout { grid-template-columns:minmax(0,1fr); } }

@@ -226,10 +226,10 @@ function widgetHediyeGorseliBul(giftName, giftId) {
             widgetGiftCatalogCache = { root, list };
         }
         const wanted = String(giftName || "").trim().toLocaleLowerCase("tr-TR");
-        const gift = widgetGiftCatalogCache.list.find(item =>
-            (giftId && String(item.id) === String(giftId)) ||
-            [item.name, item.trName, ...(item.keywords || [])].some(name => String(name || "").trim().toLocaleLowerCase("tr-TR") === wanted)
-        );
+        const gift = (giftId && widgetGiftCatalogCache.list.find(item => String(item.id) === String(giftId))) ||
+            widgetGiftCatalogCache.list.find(item =>
+                [item.name, item.trName, ...(item.keywords || [])].some(name => String(name || "").trim().toLocaleLowerCase("tr-TR") === wanted)
+            );
         return gift?.file ? widgetYerelUrl(`/widget/gift-assets/${encodeURIComponent(gift.file)}`) : "";
     } catch {
         return "";
@@ -361,25 +361,32 @@ function widgetEtkinlikDurumu(pool = widgetActivityPool) {
 }
 
 function widgetOlayParmakIzi(type, payload = {}) {
-    const directId = payload.eventId || payload.msgId || payload.logId || payload.id;
-    if (directId) return `${type}:${directId}`;
+    const directId = payload.eventId || payload.msgId || payload.common?.msgId || payload.logId || payload.id;
+    if (directId) return JSON.stringify([widgetChannel, type, 'id', String(directId)]);
     const username = String(payload.username || payload.uniqueId || payload.nickname || "").toLocaleLowerCase("tr-TR");
     const subject = String(payload.giftId || payload.giftName || payload.message || payload.comment || "").toLocaleLowerCase("tr-TR");
     const amount = Number(payload.coins ?? payload.totalCoins ?? payload.likeCount ?? payload.count ?? 0) || 0;
-    return `${type}:${username}:${subject}:${amount}:${Math.floor(Date.now() / 1800)}`;
+    return JSON.stringify([widgetChannel, type, 'fallback', username, subject, amount, Math.floor(Date.now() / 1800)]);
 }
 
 function widgetOlayTekrariMi(type, payload = {}) {
     const now = Date.now();
     const fingerprint = widgetOlayParmakIzi(type, payload);
-    const previous = widgetRecentEvents.get(fingerprint) || 0;
+    const previous = widgetRecentEvents.get(fingerprint);
+    const identified = Boolean(payload.eventId || payload.msgId || payload.common?.msgId || payload.logId || payload.id);
+    // Match media replay retention; ID-less compatibility events use a short debounce.
+    if (previous !== undefined && now - previous < (identified ? 300000 : 2600)) return true;
+    widgetRecentEvents.delete(fingerprint);
     widgetRecentEvents.set(fingerprint, now);
-    for (const [key, createdAt] of widgetRecentEvents) if (now - createdAt > 8000) widgetRecentEvents.delete(key);
-    return now - previous < 2600;
+    for (const [key, createdAt] of widgetRecentEvents) if (now - createdAt >= 300000) widgetRecentEvents.delete(key);
+    while (widgetRecentEvents.size > 4096) widgetRecentEvents.delete(widgetRecentEvents.keys().next().value);
+    return false;
 }
 
 function widgetGenelOlayEkle(type, payload = {}) {
     const normalized = String(type || payload.type || payload.event || "action").toLocaleLowerCase("tr-TR");
+    const giftType = payload.giftType ?? payload.gift?.type ?? payload.gift?.giftType ?? payload.giftDetails?.giftType ?? payload.extendedGiftInfo?.giftType ?? payload.extendedGiftInfo?.type;
+    if (normalized === 'gift' && Number(giftType) === 1 && ![true, 1, '1', 'true'].includes(payload.repeatEnd)) return null;
     if (widgetOlayTekrariMi(normalized, payload)) return null;
     platform?.ingest(normalized, payload, widgetChannel);
     if (normalized === "gift") return widgetKaydiEkle(payload);
@@ -461,13 +468,14 @@ function widgetEulerAnahtariniBul() {
 
 function widgetTikTokProfiliniOku(data = {}) {
     const user = data.user || data.userInfo || data;
-    const username = String(user.uniqueId || data.uniqueId || user.nickname || data.nickname || "izleyici").replace(/^@/, "").trim();
+    const username = String(user.uniqueId || user.displayId || user.username || data.uniqueId || data.displayId || data.username || user.nickname || data.nickname || "izleyici").replace(/^@/, "").trim();
     const avatarLists = [
         user.profilePictureUrls, data.profilePictureUrls, user.avatarThumb?.urlList, user.avatar_thumb?.url_list,
         user.avatarMedium?.urlList, user.avatar_medium?.url_list, user.avatarLarge?.urlList, user.avatar_large?.url_list
     ];
-    const avatar = avatarLists.flatMap(value => Array.isArray(value) ? value : []).find(Boolean) || String(user.profilePictureUrl || data.profilePictureUrl || "");
-    return { username, nickname: String(user.nickname || data.nickname || username), avatar };
+    const avatar = avatarLists.flatMap(value => Array.isArray(value) ? value : []).find(Boolean) || String(user.avatar || data.avatar || user.profilePictureUrl || data.profilePictureUrl || "");
+    return { username, nickname: String(user.nickname || data.nickname || username), avatar,
+        fanClubLevel: require('./lib/tts-audience.cjs').extractFanClubLevel(data) };
 }
 
 function widgetTikTokHediyesiniOku(data = {}) {
@@ -482,7 +490,7 @@ function widgetTikTokHediyesiniOku(data = {}) {
         repeatCount,
         count: repeatCount,
         coins: diamondCount * repeatCount,
-        eventId: data.msgId || data.logId || ""
+        eventId: data.eventId || data.msgId || data.common?.msgId || data.logId || ""
     };
 }
 
@@ -502,11 +510,11 @@ function widgetTikTokYenidenBaglan(username) {
             mainWindow?.webContents.send('workspace-live', status);
         },
         onEvent: (type, data) => {
-            const profile = widgetTikTokProfiliniOku(data), eventId = data.msgId || data.logId || '';
+            const profile = widgetTikTokProfiliniOku(data), eventId = data.eventId || data.msgId || data.common?.msgId || data.logId || '';
             if (type === 'gift') widgetGenelOlayEkle(type, { ...profile, ...widgetTikTokHediyesiniOku(data) });
             else if (type === 'like') widgetGenelOlayEkle(type, { ...profile, likeCount: Math.max(1, Number(data.likeCount || data.count || 1)), eventId });
-            else if (type === 'chat') widgetGenelOlayEkle(type, { ...profile, message: data.comment || data.message || '', eventId });
-            else if (type === 'viewer') widgetGenelOlayEkle(type, { viewerCount: Math.max(0, Number(data.viewerCount || data.viewer_count || 0)), eventId });
+            else if (type === 'chat') widgetGenelOlayEkle(type, { ...profile, message: data.content ?? data.comment ?? data.message ?? '', eventId });
+            else if (type === 'viewer') widgetGenelOlayEkle(type, { viewerCount: Math.max(0, Number(data.viewerCount ?? data.viewer_count ?? data.total ?? 0)), eventId });
             else widgetGenelOlayEkle(type, { ...profile, eventId });
         }
     });

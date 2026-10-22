@@ -38,10 +38,12 @@ global Python replacement. Dependency checks passed on the recorded environment.
 4. Run benchmark.py --model <model-v3> --batch <references/manifest.json>
    --output <sample-folder> --limit 10. Do not treat synthesis as listening QA.
 
-Inference uses local checkpoints and disables Hugging Face hub network calls.
-Upstream initializes a Chinese tokenizer even for Turkish. Its optional pkuseg
-segmenter makes a first-use download unless its cache is present; this happened
-in the lab. Therefore a clean-machine fully offline installer is NOT verified.
+The launcher now uses lib/vendor/chatterbox-worker.py with pinned local weights.
+Its Turkish-only initialization disables the upstream eager Chinese segmenter;
+all worker socket connections are blocked, not merely Hugging Face downloads.
+The standalone runtime imports were verified after relocation with networking
+blocked. Actual synthesis passed through both the worker and packaged Electron.
+A clean second PC has not yet been accepted.
 
 ## Measurements, 22 October 2026
 
@@ -73,7 +75,8 @@ correct pronunciation or adequate separation between every pair of speakers.
 - Current CPU latency is too high to call this real-time live-comment speech.
 - Test supported GPU acceleration and performance during an actual game/broadcast.
   No drivers or global GPU settings were changed by this experiment.
-- Build a bounded persistent worker, cancellation/queue controls, verified model
-  installer and clean-machine acceptance before connecting it to customer chat.
+- The bounded resident worker, cancellation, queue, idle unload and pinned pack
+  installer are implemented and tested. The optional 10-speaker pack is separate
+  from launcher updates. Clean-machine acceptance is still required.
 - No API character quota is involved in this local experiment; hardware, storage
   and electrical cost still exist. Do not call a hosted service unlimited/free.

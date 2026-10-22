@@ -14,9 +14,10 @@ const output=process.env.MNG_QA_OUTPUT||'D:/TikMnG-Launcher-Test-Raporu';fs.mkdi
 const values=new Map();const store={get:(key,fallback)=>values.get(key)??fallback,set:(key,value)=>values.set(key,structuredClone(value))};
 const events=[];let activeGame='';const studio=createMediaStudio({store,root:path.join(temporary,'media'),accessKey:'synthetic-workspace-qa-key',getChannel:()=> 'qa',getActiveGame:()=>activeGame,onEvent:event=>events.push(event)});
 const catalog=require('../lib/catalog-defaults.json');
-const calls=[];let origin,browser,server,speechAudio,overlayMode='legacy';
-const speechVoices=[{name:'QA Ahmet',lang:'tr-TR',voiceURI:'azure:qa-male',gender:'male',age:'unknown',provider:'azure',neural:true},{name:'QA Emel',lang:'tr-TR',voiceURI:'azure:qa-female',gender:'female',age:'unknown',provider:'azure',neural:true}];
-const games=catalog.games.map((g,index)=>({id:g.id,ad:g.title,installed:index<4,installedVersion:index<4?'6.5.16':null,availableVersion:g.version,boyut:g.bytes?Math.round(g.bytes/1048576)+' MB':'',requirements:g.requirements||'Windows 10/11',resources:g.resources,description:'',updateAvailable:false}));
+const gameResources=require('../lib/game-resources.cjs');
+const calls=[];let origin,browser,server,speechAudio,overlayMode='legacy',naturalReady=true,fastReady=true;
+const speechVoices=[...require('../lib/voice-pack-manager.cjs').CATALOG.map(pack=>({...pack,provider:'offline',lang:'tr-TR',neural:true})),...require('../lib/chatterbox-voices.json').map(voice=>({...voice,voiceURI:'chatterbox:'+voice.id,provider:'chatterbox',lang:'tr-TR',neural:true})),{name:'QA Windows',voiceURI:'windows:qa-voice',provider:'windows',lang:'tr-TR',gender:'male'}];
+const games=catalog.games.map((g,index)=>({id:g.id,ad:g.title,installed:index<4,installedVersion:index<4?'6.5.16':null,availableVersion:g.version,boyut:g.bytes?Math.round(g.bytes/1048576)+' MB':'',requirements:g.requirements||'Windows 10/11',resources:g.resources,giftGuide:gameResources.getGuide(g.id),description:'',updateAvailable:false}));
 const gifts=JSON.parse(fs.readFileSync(path.join(renderer,'gift-assets/katalog_tam.json'),'utf8')).map(g=>({id:String(g.id),name:g.trName||g.name,coins:g.coins,image:'/gift-assets/'+g.file}));
 function broadcastFields(local){
     if(overlayMode==='legacy')return {};
@@ -33,9 +34,12 @@ function snapshot(){
 }
 async function api(action,data={}){
     calls.push([action,data]);
-    if(action==='speech-status')return{voices:speechVoices,profiles:[],providers:{azure:{available:true,configured:true},windows:{available:false}}};
+    if(action==='speech-status')return{voices:speechVoices.filter(voice=>voice.provider==='chatterbox'?naturalReady:voice.provider==='offline'?fastReady:true),profiles:[],providers:{chatterbox:{available:naturalReady,speakers:naturalReady?10:0},offline:{available:fastReady},windows:{available:true}},packs:require('../lib/voice-pack-manager.cjs').CATALOG.map(pack=>({...pack,installed:fastReady})),voiceLibrary:speechVoices.filter(voice=>voice.provider==='chatterbox'),downloadPack:{downloadReady:true,downloadBytes:3676920620}};
+    if(action==='speech-natural-install'){naturalReady=true;return api('speech-status');}
+    if(action==='speech-pack-install'){fastReady=true;return api('speech-status');}
     if(action==='speech-synthesize'){const voice=speechVoices.find(v=>v.voiceURI===data.voiceURI);assert.ok(voice,'Synthesis must request an actual catalog voiceURI');assert.equal(data.voicePreset,'natural','Speaker changes must not use pitch presets');return{audioBase64:speechAudio,mimeType:'audio/wav',voice,fallbackUsed:false};}
     if(action==='speech-cancel')return{ok:true};
+    if(action==='gift-guide-save')return{saved:true};
     if(action==='media-status')return studio.status(data.gameId);
     if(action==='overlay-status')return {...studio.status(data.gameId),transport:snapshot().overlayTransport,url:broadcastFields(snapshot().overlayUrl+(data.gameId?'&game='+data.gameId:'')).broadcastUrl};
     if(action==='media-save'){studio.save(data);return snapshot();}
@@ -59,7 +63,7 @@ async function main(){
     server=http.createServer((req,res)=>{
         const url=new URL(req.url,'http://127.0.0.1');
         if(studio.handleRequest(req,res,url))return;
-        if(url.pathname==='/'){res.setHeader('Content-Type','text/html; charset=utf-8');res.end('<!doctype html><html lang="tr"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="/style.css"><link rel="stylesheet" href="/workspace-v3.css"><body><div class="launcher"><main class="main"></main></div><script src="/vendor/lucide.js"></script><script src="/speech-engine.js"></script><script src="/workspace.js"></script></body></html>');return;}
+        if(url.pathname==='/'){res.setHeader('Content-Type','text/html; charset=utf-8');res.end('<!doctype html><html lang="tr"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="/style.css"><link rel="stylesheet" href="/workspace-v3.css"><link rel="stylesheet" href="/gift-guide.css"><link rel="stylesheet" href="/speech-library.css"><body><div class="launcher"><main class="main"></main></div><script src="/vendor/lucide.js"></script><script src="/speech-engine.js"></script><script src="/workspace.js"></script></body></html>');return;}
         const file=path.resolve(renderer,'.'+decodeURIComponent(url.pathname));
         if(!file.startsWith(renderer+path.sep)||!fs.existsSync(file)||!fs.statSync(file).isFile()){res.writeHead(404);res.end();return;}
         res.setHeader('Content-Type',({'.css':'text/css','.js':'text/javascript','.png':'image/png','.svg':'image/svg+xml','.jpg':'image/jpeg'})[path.extname(file)]||'application/octet-stream');fs.createReadStream(file).pipe(res);
@@ -91,6 +95,15 @@ async function main(){
     await page.locator('[data-back]').click();await page.locator('[data-category="minecraft"]').click();assert.equal(await page.locator('.library-card').count(),3);
     await page.locator('#librarySearch').fill('kartopu');assert.equal(await page.locator('.library-card').count(),1);
     await page.locator('[data-open="snow-war"]').click();await page.locator('[data-install="snow-war"]').click();await page.locator('[data-play="snow-war"]').waitFor();
+    const guide=page.locator('[data-gift-guide="snow-war"]');
+    assert.ok((await guide.innerText()).includes('Hazır hediye görselini indir'));
+    await page.emulateMedia({reducedMotion:'no-preference'});
+    assert.equal(await guide.evaluate(button=>getComputedStyle(button).animationName),'guide-border-shift');
+    assert.ok(await guide.evaluate(button=>button.scrollWidth<=button.clientWidth));
+    await page.screenshot({path:path.join(output,'hazir-hediye-gorseli-indir.png')});
+    await guide.click();assert.equal(calls.at(-1)[0],'gift-guide-save');
+    await page.emulateMedia({reducedMotion:'reduce'});
+    assert.equal(await guide.evaluate(button=>getComputedStyle(button).animationName),'none');
     await page.locator('[data-workspace-view="media"]').click();assert.equal(await page.locator('#mediaLibrary .media-row').count(),24);
     assert.equal(await page.locator('#mediaCategory').count(),0);
     await page.locator('[data-media-category="Racon"]').click();assert.equal(await page.locator('#mediaLibrary .media-row').count(),13);
@@ -154,9 +167,11 @@ async function main(){
     assert.equal(await page.locator('#speechForm select[name="voicePreset"]').count(),0,'Pitch styles must not masquerade as speakers');
     assert.equal(await page.locator('#speechForm input[type="hidden"][name="voicePreset"]').inputValue(),'natural');
     assert.equal(await page.locator('#speechForm [name="voiceURI"] option[value="girl"]').count(),0);
-    await page.locator('[name="provider"]').selectOption('azure');
+    assert.equal(await page.locator('[name="provider"]').isVisible(),false);
+    assert.equal(await page.locator('.speech-account').count(),0);
+    assert.equal(await page.locator('.speech-voice-row').count(),speechVoices.length);
     for(const voice of speechVoices){
-        await page.locator('[name="voiceURI"]').selectOption(voice.voiceURI);
+        await page.locator(`[data-voice-select="${voice.voiceURI}"]`).click();
         assert.equal(await page.locator('[data-action="speech-test"]').isDisabled(),false);
         assert.ok((await page.locator('#speechAvailability').innerText()).includes(voice.name));
         const before=calls.filter(([action])=>action==='speech-synthesize').length;
@@ -164,12 +179,10 @@ async function main(){
         await page.waitForFunction(()=>document.getElementById('speechStatus').textContent==='0 yorum sırada');
         assert.equal(calls.filter(([action])=>action==='speech-synthesize').length,before+1,'Each selected speaker must reach the synth bridge');
     }
-    const spoken=calls.filter(([action])=>action==='speech-synthesize');assert.equal(spoken.length,2);
-    assert.deepEqual(spoken.map(([,request])=>({voiceURI:request.voiceURI,voicePreset:request.voicePreset,provider:request.provider})),speechVoices.map(voice=>({voiceURI:voice.voiceURI,voicePreset:'natural',provider:'azure'})));
-    assert.equal(new Set(spoken.map(([,request])=>request.voiceURI)).size,2);
-    await page.locator('[name="provider"]').selectOption('windows');
-    assert.equal(await page.locator('[data-action="speech-test"]').isDisabled(),true,'An unavailable voice cannot be tested');
-    await page.locator('[name="provider"]').selectOption('azure');await page.locator('[name="voiceURI"]').selectOption('azure:qa-female');
+    const spoken=calls.filter(([action])=>action==='speech-synthesize');assert.equal(spoken.length,speechVoices.length);
+    assert.deepEqual(spoken.map(([,request])=>({voiceURI:request.voiceURI,voicePreset:request.voicePreset,provider:request.provider})),speechVoices.map(voice=>({voiceURI:voice.voiceURI,voicePreset:'natural',provider:voice.provider})));
+    assert.equal(new Set(spoken.map(([,request])=>request.voiceURI)).size,speechVoices.length);
+    await page.locator('[data-voice-select="chatterbox:d2-00331"]').click();
     await page.locator('[name="audience"]').selectOption('gift');
     assert.equal(await page.locator('#speechForm select[name="giftId"]').count(),0);
     assert.equal(await page.locator('#speechForm input[type="hidden"][name="giftId"]').count(),1);
@@ -195,8 +208,27 @@ async function main(){
     assert.ok((await page.locator('#speechGift').innerText()).includes(gifts.find(g=>g.id==='7934').name));
     assert.equal(studio.list().find(item=>item.title.startsWith('Racon')).giftId,'6064','Shared picker must not overwrite a media gift');
     await page.locator('#speechForm [type="submit"]').click();
-    assert.equal(values.get('tts').audience,'gift');assert.equal(values.get('tts').giftId,'7934');assert.equal(values.get('tts').voicePreset,'natural');assert.equal(values.get('tts').voiceURI,'azure:qa-female');
+    assert.equal(values.get('tts').audience,'gift');assert.equal(values.get('tts').giftId,'7934');assert.equal(values.get('tts').voicePreset,'natural');assert.equal(values.get('tts').voiceURI,'chatterbox:d2-00331');
     await page.screenshot({path:path.join(output,'sesli-yorum-ayarlari.png')});
+    await page.locator('#speechForm [name="audience"]').selectOption('fanclub');
+    assert.equal(await page.locator('#speechGift').isVisible(),false);
+    assert.equal(await page.locator('#speechForm [name="allowedUsers"]').isVisible(),false);
+    assert.match(await page.locator('#audienceNote').innerText(),/Üyelik bilgisi bulunmayan/);
+    await page.locator('#speechForm [type="submit"]').click();
+    assert.equal(values.get('tts').audience,'fanclub');
+    await page.screenshot({path:path.join(output,'hayran-kulubu-ses-filtresi.png')});
+    naturalReady=false;fastReady=false;
+    await page.locator('[data-action="speech-refresh"]').click();
+    await page.waitForFunction(()=>document.querySelectorAll('[data-voice-test]').length===1);
+    assert.equal(await page.locator('.speech-voice-row').count(),13,'Missing packs remain visible');
+    assert.equal(await page.locator('[data-voice-select^="chatterbox:"]:disabled').count(),10);
+    assert.equal(await page.locator('[data-action="speech-natural-install"]').isDisabled(),false);
+    assert.equal(await page.locator('[data-voice-install="okur-tr-v1"]').isDisabled(),false);
+    await page.screenshot({path:path.join(output,'indirilebilir-ses-paketleri.png'),fullPage:true});
+    await page.locator('[data-action="speech-natural-install"]').click();
+    await page.waitForFunction(()=>document.querySelectorAll('[data-voice-test^="chatterbox:"]').length===10);
+    await page.locator('[data-voice-install="okur-tr-v1"]').click();
+    await page.waitForFunction(()=>document.querySelectorAll('[data-voice-test]').length===13);
     overlayMode='waiting';await page.evaluate(()=>window.__qaListeners.catalog({}));
     await page.locator('[data-workspace-view="media"]').click();
     await page.waitForFunction(()=>document.getElementById('allMediaLink')?.value==='');
@@ -218,6 +250,10 @@ async function main(){
         await page.setViewportSize({width,height:width===390?844:1080});
         await page.screenshot({path:path.join(output,'oyun-kutuphanesi-'+width+'.png'),fullPage:true});
         const overflow=await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1);assert.equal(overflow,false,'Horizontal overflow at '+width);
+        await page.locator('[data-open="snow-war"]').click();
+        assert.ok(await page.locator('[data-gift-guide]').evaluate(button=>button.scrollWidth<=button.clientWidth));
+        assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1),false,'Gift guide button overflow at '+width);
+        await page.locator('[data-back]').click();
     }
     assert.deepEqual(errors,[]);
     fs.writeFileSync(path.join(output,'ui-test-sonucu.json'),JSON.stringify({passed:true,gameCovers:14,mediaPagination:true,realVideoDecoding:true,audibleHover:{...hoverAudio,stopsOnLeave:true},giftMapping:true,visualSpeechGiftPicker:{coinAscending:true,pageSize:60,total:gifts.length,selectedGiftId:'7934'},explicitVoiceRequests:spoken.map(([,request])=>({voiceURI:request.voiceURI,voicePreset:request.voicePreset})),noFakeStyleDropdown:true,syntheticGiftToPlayback:true,responsiveWidths:[1920,1440,960,390],liveTikTokTest:false,errors},null,2));

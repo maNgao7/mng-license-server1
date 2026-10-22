@@ -5,11 +5,11 @@ const source=path.resolve(__dirname,'..');
 const repository=path.resolve(source,'../license-server');
 const destination=path.join(repository,'maintenance','launcher-preview-6.5.17');
 if(!fs.existsSync(path.join(repository,'.git')))throw new Error('Expected source repository is missing');
-if(fs.existsSync(destination))throw new Error('Snapshot already exists; inspect it before replacing');
+if(fs.existsSync(destination)&&!process.argv.includes('--update'))throw new Error('Snapshot already exists; inspect it before replacing');
 fs.mkdirSync(destination,{recursive:true});
-for(const name of ['main.js','preload.js','package.json','package-lock.json','license-server.txt','AGENTS.md','PREVIEW-ACCEPTANCE.md','build-preview.json','lib','renderer','tests','tools','scripts']){
+for(const name of ['main.js','preload.js','package.json','package-lock.json','license-server.txt','AGENTS.md','PREVIEW-ACCEPTANCE.md','DELIVERY-2026-10-22.md','QA-ROUTING-2026-10-22.md','build-preview.json','lib','renderer','tests','tools','scripts']){
     const from=path.join(source,name);
-    if(fs.existsSync(from))fs.cpSync(from,path.join(destination,name),{recursive:true,errorOnExist:true,force:false});
+    if(fs.existsSync(from))fs.cpSync(from,path.join(destination,name),{recursive:true,errorOnExist:false,force:true});
 }
 const forbidden=[];
 function audit(directory){for(const entry of fs.readdirSync(directory,{withFileTypes:true})){

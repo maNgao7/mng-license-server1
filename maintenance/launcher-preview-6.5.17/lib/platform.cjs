@@ -21,6 +21,11 @@ function createPlatform(ctx) {
     let catalogError = '';
     let catalogStatus = { source: catalog ? 'cache' : 'bundled', message: 'Kayıtlı içerikler kullanılıyor.', remoteAvailable: false };
     const controllers = new Map();
+    const resources = ctx.gameResources || require('./game-resources.cjs').createGameResources();
+    const guideMetadata = new Map();
+    for (const id of Object.keys(definitions)) {
+        try { guideMetadata.set(id, resources.getGuide(id)); } catch { guideMetadata.set(id, null); }
+    }
     const speechAudience = createSpeechAudience();
     speechAudience.configure({ ...TTS_DEFAULTS, ...store.get('tts_settings_v1', {}) });
     let credentialError = '';
@@ -32,7 +37,14 @@ function createPlatform(ctx) {
         onProgress: progress => ctx.getWindow()?.webContents.send('workspace-voice-progress', progress)
     });
     const central = ctx.getSpeechCredentials ? require('./central-speech.cjs').createCentralSpeech({ serverURL: ctx.serverURL, getCredentials: ctx.getSpeechCredentials }) : undefined;
-    const speech = ctx.speechService || createSpeechService({ azure: savedSpeech || undefined, voicePacks, central });
+    const makeLocalSpeech = ctx.createChatterboxRuntime || require('./chatterbox-runtime.cjs').createChatterboxRuntime;
+    const managedSpeechRoot = path.join(app.getPath('userData'), 'voices', 'chatterbox-v3');
+    let chatterbox = makeLocalSpeech({ root: store.get('chatterbox_root_v1', managedSpeechRoot) });
+    const naturalPack = ctx.chatterboxPacks || require('./chatterbox-pack-manager.cjs').createChatterboxPackManager({ root: managedSpeechRoot,
+        onProgress: progress => ctx.getWindow()?.webContents.send('workspace-voice-progress', progress) });
+    const localSpeech = { status: () => chatterbox.status(), synthesize: (...args) => chatterbox.synthesize(...args), cancel: () => chatterbox.cancel() };
+    const speech = ctx.speechService || createSpeechService({ azure: savedSpeech || undefined, voicePacks, central, chatterbox: localSpeech });
+    const speechStatus = async refresh => ({ ...await speech.status({ refresh }), credentialError, downloadPack: naturalPack.info() });
     let library;
     const send = (name, data) => ctx.getWindow()?.webContents.send(name, data);
     const known = id => Object.hasOwn(definitions, id) && id !== 'crowdControl';
@@ -62,7 +74,7 @@ function createPlatform(ctx) {
     bridge.on('event', (type, data) => {
         const profile = ctx.profile(data);
         ctx.event(type, type === 'gift' ? { ...profile, ...ctx.gift(data) }
-            : { ...profile, ...data, message: data.comment || data.message || '', eventId: data.msgId || data.logId || '' });
+            : { ...data, ...profile, message: data.content ?? data.comment ?? data.message ?? '', eventId: data.eventId || data.msgId || data.common?.msgId || data.logId || '' });
     });
     function mediaURL(id = '', gameId = '') { return `http://127.0.0.1:${ctx.port}/tikmng/media${id ? '/' + encodeURIComponent(id) : ''}?key=${ctx.accessKey}&channel=${encodeURIComponent(ctx.getChannel())}${gameId ? '&game=' + encodeURIComponent(gameId) : ''}`; }
     function items() { return studio.list().map(item => ({ ...item, overlayUrl: mediaURL(item.id, item.gameId),
@@ -74,7 +86,7 @@ function createPlatform(ctx) {
             const state = library.state(id);
             result[id] = { ...state, id, kurulu: state.installed, ad: gameData(id)?.title || def.ad, boyut: def.boyut,
                 description: gameData(id)?.description || '', requirements: gameData(id)?.requirements || (def.minecraft ? 'Windows 10/11 64 bit, 8 GB RAM, en az 3 GB boş disk' : 'Windows 10/11 64 bit'),
-                resources: gameData(id)?.resources || [], overlayUrl: mediaURL('', id),
+                resources: gameData(id)?.resources || [], giftGuide: guideMetadata.get(id) || null, overlayUrl: mediaURL('', id),
                 ...(ctx.broadcastURL ? { broadcastUrl: ctx.broadcastURL(mediaURL('', id)) } : {}) };
         }
         result.crowdControl = result['crowd-control'];
@@ -95,6 +107,7 @@ function createPlatform(ctx) {
             remoteMedia: catalog?.media || [], catalogRevision: catalog?.revision || 0, catalogError, catalogStatus, overlayUrl: mediaURL(),
             ...(ctx.broadcastURL ? { broadcastUrl: ctx.broadcastURL(mediaURL()), overlayTransport: ctx.getOverlayStatus?.() } : {}),
             source: store.get('live_source_v1', 'direct'), tikfinityUrl: store.get('tikfinity_url_v1', 'ws://127.0.0.1:21213/'), activeGame: ctx.getActiveGame?.() || '',
+            voiceLibrary: require('./chatterbox-voices.json').map(voice => ({ ...voice, voiceURI: 'chatterbox:' + voice.id, provider: 'chatterbox', lang: 'tr-TR' })),
             tts: { ...TTS_DEFAULTS, ...store.get('tts_settings_v1', {}) }, version: app.getVersion(), preview: Boolean(app.isTikMNGPreview) };
     }
     async function install(id, options = {}) {
@@ -114,6 +127,14 @@ function createPlatform(ctx) {
             AZURE_CONFIGURATION: 'Ses hesabı ayarlarını kontrol edin.', AZURE_AUTH: 'Ses hesabının anahtarı veya bölgesi doğrulanamadı.',
             AZURE_LIMIT: 'Ses hesabının kullanım kotası doldu. Hesap limitini kontrol edin.', AZURE_UNAVAILABLE: 'Doğal ses hizmetine ulaşılamadı.',
             INVALID_AUDIO: 'Ses hizmetinden geçerli bir kayıt alınamadı.', SPEECH_CANCELLED: 'Ses durduruldu.',
+            CHATTERBOX_PACK_MISSING: 'Doğal Türkçe ses paketinin klasörünü seçin.', CHATTERBOX_NOT_INSTALLED: 'Doğal Türkçe ses paketi henüz kurulu değil.',
+            CHATTERBOX_PACK_INVALID: 'Ses paketi eksik veya doğrulanamadı. Doğrulanmış TikMnG paketini seçin.', CHATTERBOX_RUNTIME_UNTRUSTED: 'Ses motorunun güvenlik doğrulaması başarısız. Paket çalıştırılmadı.',
+            CHATTERBOX_TIMEOUT: 'Yerel ses üretimi zaman aşımına uğradı. Daha kısa bir metin deneyin.', CHATTERBOX_BUSY: 'Yerel ses sırası dolu. Biraz bekleyin.',
+            CHATTERBOX_FAILED: 'Yerel ses üretilemedi.', CHATTERBOX_UNAVAILABLE: 'Yerel ses motoru başlatılamadı.', CHATTERBOX_INVALID_AUDIO: 'Yerel ses kaydı doğrulanamadı.',
+            CHATTERBOX_INSTALL_CANCELLED: 'Ses paketi indirmesi durduruldu.', CHATTERBOX_INSTALL_BUSY: 'Ses paketi zaten indiriliyor.',
+            CHATTERBOX_DOWNLOAD_NOT_READY: 'Ses paketi indirme kaynağı henüz yayımlanmamış.', CHATTERBOX_DISK_SPACE: 'Ses paketi için yeterli disk alanı yok.',
+            CHATTERBOX_TARGET_OCCUPIED: 'Ses paketinin hedef klasörü başka dosyalar içeriyor. Mevcut dosyalar değiştirilmedi.',
+            CHATTERBOX_DOWNLOAD_INTEGRITY: 'Ses paketi doğrulanamadı. İndirmeyi yeniden deneyin.', CHATTERBOX_INSTALL_FAILED: 'Ses paketi indirilemedi. Bağlantıyı kontrol edip yeniden deneyin.',
             CREDENTIALS_UNAVAILABLE: 'Windows güvenli anahtar kaydı kullanılamıyor. Anahtar açık metin olarak kaydedilmedi.',
             CREDENTIALS_INVALID_REGION: 'Geçerli bir Azure Speech bölgesi yazın.', CREDENTIALS_INVALID_KEY: 'Ses hesabı anahtarını kontrol edin.',
             CREDENTIALS_CORRUPT: 'Kayıtlı ses hesabı açılamadı. Hesabı yeniden bağlayın.', CREDENTIALS_DECRYPT_FAILED: 'Ses hesabı bu Windows oturumunda açılamadı. Yeniden bağlayın.' })[error.code] || error.message;
@@ -126,6 +147,15 @@ function createPlatform(ctx) {
     handle('install', ({ id, repair }) => install(id, { repair: Boolean(repair) }));
     handle('cancel', ({ id }) => { controllers.get(id)?.abort(); return { ok: true }; });
     handle('remove', async ({ id }) => { if (controllers.has(id)) throw new Error('Önce indirmeyi durdurun.'); await library.remove(id); return { ok: true }; });
+    handle('gift-guide-save', async ({ id }) => {
+        if (!known(id)) throw new Error('Oyun bulunamadı.');
+        const guide = resources.getGuide(id);
+        if (!guide) throw new Error('Bu oyun için hazır hediye görseli henüz eklenmemiş.');
+        const selection = await dialog.showSaveDialog(ctx.getWindow(), { title: 'Hazır hediye görselini indir',
+            defaultPath: guide.filename, filters: [{ name: 'PNG görsel', extensions: ['png'] }] });
+        if (selection.canceled || !selection.filePath) return { canceled: true };
+        return resources.downloadGuide(id, selection.filePath, { overwrite: true });
+    });
     handle('folder', async ({ kind }) => {
         if (controllers.size) throw new Error('Klasör değiştirmeden önce indirmelerin bitmesini bekleyin.');
         const selection = await dialog.showOpenDialog(ctx.getWindow(), { title: kind === 'media' ? 'Medya klasörü' : 'Yeni oyunlar için klasör', properties: ['openDirectory', 'createDirectory'] });
@@ -229,15 +259,34 @@ function createPlatform(ctx) {
             allowedUsers: String(settings.allowedUsers || '').slice(0, 4000),
             giftId: /^\d{1,20}$/.test(String(settings.giftId || '')) ? String(settings.giftId) : '7934',
             voicePreset: [...SPEECH_STYLE_IDS, 'child'].includes(settings.voicePreset) ? settings.voicePreset : 'natural',
-            provider: ['', 'windows', 'azure', 'offline', 'tikmng'].includes(settings.provider) ? settings.provider : '', allowOfflineFallback: settings.allowOfflineFallback === true };
+            provider: ['', 'windows', 'azure', 'offline', 'tikmng', 'chatterbox'].includes(settings.provider) ? settings.provider : '', allowOfflineFallback: settings.allowOfflineFallback === true };
         speechAudience.configure(result);
         store.set('tts_settings_v1', result);
         return snapshot();
     });
-    handle('speech-status', async data => ({ ...await speech.status({ refresh: data.refresh === true }), credentialError }));
-    handle('speech-pack-install', async ({ id }) => { await voicePacks.install(id); return speech.status({ refresh: true }); });
-    handle('speech-pack-remove', async ({ id }) => { speech.cancel(); await voicePacks.remove(id); return speech.status({ refresh: true }); });
+    handle('speech-status', data => speechStatus(data.refresh === true));
+    handle('speech-pack-install', async ({ id }) => { await voicePacks.install(id); return speechStatus(true); });
+    handle('speech-pack-remove', async ({ id }) => { speech.cancel(); await voicePacks.remove(id); return speechStatus(true); });
     handle('speech-pack-cancel', ({ id }) => voicePacks.cancel(id));
+    handle('speech-natural-install', async () => {
+        const installed = await naturalPack.install();
+        speech.cancel(); chatterbox.close(); chatterbox = makeLocalSpeech({ root: installed.root });
+        store.set('chatterbox_root_v1', installed.root);
+        return speechStatus(true);
+    });
+    handle('speech-natural-cancel', () => naturalPack.cancel());
+    handle('speech-local-select', async () => {
+        const selection = await dialog.showOpenDialog(ctx.getWindow(), { title: 'TikMnG doğal Türkçe ses paketi', properties: ['openDirectory'] });
+        if (selection.canceled || !selection.filePaths[0]) return { canceled: true };
+        const candidate = makeLocalSpeech({ root: selection.filePaths[0] });
+        try {
+            const status = await candidate.status();
+            if (!status.available) throw Object.assign(new Error('Ses paketi doğrulanamadı.'), { code: status.reason });
+            speech.cancel(); chatterbox.close(); chatterbox = candidate;
+            store.set('chatterbox_root_v1', selection.filePaths[0]);
+            return await speechStatus(true);
+        } catch (error) { if (candidate !== chatterbox) candidate.close(); throw error; }
+    });
     handle('speech-synthesize', data => speech.synthesize({ text: data.text, voiceURI: data.voiceURI, voicePreset: data.voicePreset,
         provider: data.provider, rate: data.rate, allowOfflineFallback: data.allowOfflineFallback === true }));
     handle('speech-cancel', () => { speech.cancel(); return { ok: true }; });
@@ -246,7 +295,7 @@ function createPlatform(ctx) {
         const config = ctx.speechCredentials.write({ key: data.key, region: data.region, clear: data.clear === true });
         credentialError = '';
         speech.configure(config || {});
-        return speech.status({ refresh: true });
+        return speechStatus(true);
     });
     const timer = setInterval(refreshCatalog, 5 * 60000); timer.unref();
     return { snapshot, statuses, install, pathFor: id => library.pathFor(id), refreshCatalog, importArchive,
@@ -259,6 +308,6 @@ function createPlatform(ctx) {
         handleRequest: (...args) => studio.handleRequest(...args),
         connectTikfinity(username) { bridge.connect(store.get('tikfinity_url_v1', 'ws://127.0.0.1:21213/'), username); },
         source: () => store.get('live_source_v1', 'direct'), disconnect: () => bridge.close(),
-        close() { clearInterval(timer); bridge.close(); speech.cancel(); voicePacks.close(); for (const controller of controllers.values()) controller.abort(); studio.close?.(); } };
+        close() { clearInterval(timer); bridge.close(); speech.cancel(); chatterbox.close(); naturalPack.close(); voicePacks.close(); for (const controller of controllers.values()) controller.abort(); studio.close?.(); } };
 }
 module.exports = { createPlatform, TTS_DEFAULTS };

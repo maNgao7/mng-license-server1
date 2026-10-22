@@ -14,7 +14,7 @@ const { createPlatform, TTS_DEFAULTS } = require('../lib/platform.cjs');
 const options = { timeout: 10000 };
 const KEY = 'isolated-platform-test-key';
 const STORE_KEYS = new Set(['library_root_v1', 'library_previous_paths_v1', 'media_root_v1',
-    'media_studio_v1', 'content_catalog_v1', 'live_source_v1', 'tikfinity_url_v1', 'tts_settings_v1']);
+    'media_studio_v1', 'content_catalog_v1', 'live_source_v1', 'tikfinity_url_v1', 'tts_settings_v1', 'chatterbox_root_v1']);
 
 // Evaluate only these pure helpers; importing main.js would boot Electron and user settings.
 const mainSource = fs.readFileSync(path.join(__dirname, '..', 'main.js'), 'utf8');
@@ -22,7 +22,9 @@ const helperStart = mainSource.indexOf('function widgetTikTokProfiliniOku(');
 const helperEnd = mainSource.indexOf('function widgetTikTokYenidenBaglan(', helperStart);
 assert.ok(helperStart >= 0 && helperEnd > helperStart, 'main.js profile/gift contracts must be available');
 const mainHelpers = vm.runInNewContext(mainSource.slice(helperStart, helperEnd)
-    + '\n({ profile: widgetTikTokProfiliniOku, gift: widgetTikTokHediyesiniOku })');
+    + '\n({ profile: widgetTikTokProfiliniOku, gift: widgetTikTokHediyesiniOku })', {
+        require(id) { assert.equal(id, './lib/tts-audience.cjs'); return require('../lib/tts-audience.cjs'); }
+    });
 
 function waitFor(emitter, name, predicate = () => true) {
     return new Promise((resolve, reject) => {
@@ -77,7 +79,13 @@ function fixture(t, initial = {}) {
         },
         ipcMain: { handle(name, handler) { assert.equal(handlers.has(name), false); handlers.set(name, handler); } },
         store,
-        dialog: { async showOpenDialog(owner, configuration) {
+        dialog: { async showSaveDialog(owner, configuration) {
+            assert.equal(owner, window);
+            dialogs.push(configuration);
+            assert.ok(selections.length, 'A fake save-dialog selection is required');
+            const selection = selections.shift();
+            return { canceled: selection.canceled, filePath: selection.filePaths[0] };
+        }, async showOpenDialog(owner, configuration) {
             assert.equal(owner, window);
             dialogs.push(configuration);
             assert.ok(selections.length, 'A fake dialog selection is required');
@@ -240,12 +248,60 @@ test('Tikfinity events use main.js profile/gift contracts and forward typed live
     assert.equal(f.events[0].data.username, 'Viewer');
     assert.equal(f.events[0].data.message, 'hello');
     assert.equal(f.events[0].data.avatar, 'https://images.invalid/avatar.png');
-    assert.deepEqual(f.events[1].data, { username: 'Gifter', nickname: 'Gifter', avatar: '', giftId: '5655', giftName: 'Rose', giftImage: '', repeatCount: 3, count: 3, coins: 6, eventId: 'gift-id' });
+    assert.deepEqual(f.events[1].data, { username: 'Gifter', nickname: 'Gifter', avatar: '', fanClubLevel: null, giftId: '5655', giftName: 'Rose', giftImage: '', repeatCount: 3, count: 3, coins: 6, eventId: 'gift-id' });
     assert.equal(typeof f.events[2].data.likeCount, 'number');
     assert.equal(f.events[3].data.eventId, 'follow-id');
     assert.equal(typeof f.events.at(-1).data.viewerCount, 'number');
     assert.equal(f.statuses.at(-1).status, 'connected');
     assert.equal(f.statuses.at(-1).username, 'testhost');
+});
+
+test('fanclub selection survives restart and uses current main-process membership evidence only', options, async t => {
+    const f = fixture(t);
+    await f.invoke('tts', { ...TTS_DEFAULTS, enabled: true, audience: 'fanclub' });
+    f.restart();
+    assert.equal(f.platform.snapshot().tts.audience, 'fanclub');
+    const messages = () => f.notifications.filter(item => item.name === 'workspace-chat');
+    const comment = (user, extra = {}) => ({ ...mainHelpers.profile({ user }), message: 'test', ...extra });
+    const member = { uniqueId: 'club-member', fansClubInfo: { fansLevel: '5', isSleeping: false } };
+    f.platform.ingest('chat', comment(member), 'anotherhost');
+    assert.equal(messages().length, 0);
+    f.platform.ingest('gift', { username: 'outsider', giftId: '7934' }, 'testhost');
+    f.platform.ingest('follow', { username: 'outsider' }, 'testhost');
+    f.platform.ingest('chat', comment({ uniqueId: 'outsider', isSubscriber: true }), 'testhost');
+    f.platform.ingest('chat', comment({ uniqueId: 'sleeping', fansClubInfo: { fansLevel: '9', isSleeping: true } }), 'testhost');
+    f.platform.ingest('chat', comment({ uniqueId: 'inactive', fansClub: { data: { level: 6, userFansClubStatus: 2 } } }), 'testhost');
+    assert.equal(messages().length, 0);
+    f.platform.ingest('chat', comment(member), 'testhost');
+    assert.equal(messages().length, 1);
+    assert.equal(messages()[0].data.fanClubLevel, 5);
+    f.platform.ingest('chat', comment({ uniqueId: member.uniqueId }), 'testhost');
+    assert.equal(messages().length, 1, 'Missing membership cannot reuse an earlier comment grant');
+    assert.equal(f.store.get('tts_settings_v1').audience, 'fanclub');
+});
+
+test('ready gift guides save through a native dialog without installing or exposing file paths', options, async t => {
+    const f = fixture(t);
+    f.context.definitions['zombie-war'] = { id: 'zombie-war', klasor: 'zombie-war', ad: 'Zombie War' };
+    f.restart();
+    const game = f.platform.snapshot().games.find(game => game.id === 'zombie-war');
+    assert.equal(game.installed, false);
+    assert.equal(game.giftGuide.mimeType, 'image/png');
+    assert.equal(game.giftGuide.width, 8091);
+    assert.equal(Object.hasOwn(game.giftGuide, 'path'), false);
+    assert.equal(Object.hasOwn(game.giftGuide, 'source'), false);
+    assert.ok((await f.invoke('gift-guide-save', { id: '../zombie-war' })).error);
+    assert.ok((await f.invoke('gift-guide-save', { id: 'alpha' })).error);
+    f.cancel();
+    assert.deepEqual(await f.invoke('gift-guide-save', { id: 'zombie-war' }), { canceled: true });
+    const destination = path.join(f.temporary, 'ready.png');
+    f.select(destination);
+    const saved = await f.invoke('gift-guide-save', { id: 'zombie-war', destination: 'Z:/ignored.png' });
+    assert.equal(saved.saved, true);
+    assert.equal(fs.statSync(destination).size, game.giftGuide.bytes);
+    assert.equal(crypto.createHash('sha256').update(fs.readFileSync(destination)).digest('hex'), game.giftGuide.sha256);
+    assert.equal(fs.existsSync(f.libraryRoot), false);
+    assert.deepEqual(f.writes, []);
 });
 
 test('archive IPC imports more than one batch while preserving original titles, categories and filenames after restart', options, async t => {
@@ -492,7 +548,11 @@ test('speech IPC forwards only supported voice settings and never returns saved 
     const status={ voices:[{ voiceURI:'azure:tr-TR-EmelNeural', gender:'female' }], providers:{ azure:{ configured:true,available:true } }, profiles:[] };
     f.context.speechService={status:async()=>status,synthesize:async input=>{seen.push(input);return {audioBase64:'synthetic-only',mimeType:'audio/wav'};},configure:config=>seen.push(config),cancel:()=>canceled++};
     f.context.speechCredentials={read:()=>({key:'private-key-only-in-main',region:'testregion'}),write:()=>({key:'replacement-private',region:'testregion'})};f.restart();
-    assert.deepEqual(await f.invoke('speech-status'),{...status,credentialError:''});
+    const catalog = await f.invoke('speech-status');
+    assert.equal(catalog.downloadPack.id,'chatterbox-tr-v1');
+    assert.ok(catalog.downloadPack.downloadBytes>3e9);
+    delete catalog.downloadPack;
+    assert.deepEqual(catalog,{...status,credentialError:''});
     await f.invoke('speech-synthesize',{text:'Merhaba',voiceURI:'azure:tr-TR-EmelNeural',voicePreset:'female',provider:'azure',rate:1,allowOfflineFallback:false,key:'must-not-forward',url:'https://must-not-forward.invalid'});
     assert.equal(seen[0].voicePreset,'female');assert.equal(Object.hasOwn(seen[0],'key'),false);assert.equal(Object.hasOwn(seen[0],'url'),false);
     const configured=await f.invoke('speech-configure',{key:'new-private',region:'testregion'});assert.ok(!JSON.stringify(configured).includes('private'));
@@ -524,4 +584,31 @@ test('broadcast links stay empty until HTTPS publisher is ready and never expose
     const status=await f.invoke('overlay-status',{gameId:'alpha'});
     assert.equal(status.transport.ready,true);assert.equal(status.url,snapshot.games[0].broadcastUrl);
     await f.invoke('overlay-reconnect');assert.equal(retries,1);
+});
+
+test('natural voice pack IPC uses only native-selected or managed roots and preserves audience settings', options, async t => {
+    const f=fixture(t),created=[],closed=[];let installs=0,cancels=0;
+    const managed=path.join(f.temporary,'userData','voices','chatterbox-v3');
+    const chosen=path.join(f.temporary,'approved-native-selection');
+    f.context.createChatterboxRuntime=({root})=>{
+        created.push(root);return{status:async()=>({available:[managed,chosen].includes(root),voices:[],reason:'CHATTERBOX_PACK_INVALID'}),
+            cancel(){},close(){closed.push(root);},synthesize(){assert.fail('No synthesis requested');}};
+    };
+    f.context.chatterboxPacks={info:()=>({id:'chatterbox-tr-v1',downloadBytes:3676920620}),
+        install:async()=>{installs++;return{root:managed};},cancel:()=>{cancels++;return{ok:true};},close(){}};
+    f.context.speechService={status:async()=>({voices:[],providers:{}}),cancel(){}};
+    f.restart();
+    await f.invoke('tts',{...TTS_DEFAULTS,audience:'fanclub',provider:'chatterbox',voiceURI:'chatterbox:d2-00331'});
+    f.select(path.join(f.temporary,'invalid'));
+    const rejected=await f.invoke('speech-local-select',{root:'Z:/ignored.exe'});
+    assert.equal(rejected.code,'CHATTERBOX_PACK_INVALID');
+    assert.equal(f.store.get('chatterbox_root_v1'),undefined);
+    f.select(chosen);await f.invoke('speech-local-select',{url:'https://ignored.invalid'});
+    assert.equal(f.store.get('chatterbox_root_v1'),chosen);
+    await f.invoke('speech-natural-install',{root:'Z:/ignored',url:'https://ignored.invalid'});
+    assert.equal(installs,1);assert.equal(f.store.get('chatterbox_root_v1'),managed);
+    assert.equal(created.includes('Z:/ignored'),false);assert.ok(closed.includes(chosen));
+    await f.invoke('speech-natural-cancel');assert.equal(cancels,1);
+    assert.equal(f.platform.snapshot().tts.audience,'fanclub');
+    assert.equal(f.platform.snapshot().tts.provider,'chatterbox');
 });

@@ -7,7 +7,7 @@ const { contextBridge, ipcRenderer } = require("electron");
 contextBridge.exposeInMainWorld("mngAPI", {
     workspace: (action, data) => {
         const allowed = ['snapshot', 'refresh', 'install', 'cancel', 'remove', 'folder', 'media-import', 'media-folder', 'media-save', 'media-remove', 'media-test', 'media-status', 'media-remote', 'media-duplicate', 'source', 'tts', 'speech-status', 'speech-synthesize', 'speech-cancel', 'speech-configure'];
-        if (!allowed.includes(action) && !['overlay-status', 'overlay-reconnect', 'speech-pack-install', 'speech-pack-remove', 'speech-pack-cancel'].includes(action)) return Promise.reject(new Error('Geçersiz işlem.'));
+        if (!allowed.includes(action) && !['overlay-status', 'overlay-reconnect', 'speech-pack-install', 'speech-pack-remove', 'speech-pack-cancel', 'speech-local-select', 'speech-natural-install', 'speech-natural-cancel', 'gift-guide-save'].includes(action)) return Promise.reject(new Error('Geçersiz işlem.'));
         return ipcRenderer.invoke('workspace-' + action, data);
     },
     workspaceListen: (name, callback) => {
