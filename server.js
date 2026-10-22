@@ -10,6 +10,8 @@ import { agencySlug, validCapacity, validAgencyDuration, createAgencyKey, parseA
     createAgencyReceipt, readAgencyReceipt, agencyMembers, touchAgencyMember, agencySummary } from "./agency-licenses.js";
 import { assertLicenseEditable, editLicense, renewLicense } from "./license-management.js";
 import { registerContentRoutes } from "./content-management.js";
+import { registerOverlayRelay } from "./overlay-relay.js";
+import { createOverlayAuthorization } from "./overlay-authorization.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -307,6 +309,19 @@ app.use(helmet({
     crossOriginResourcePolicy: { policy: "cross-origin" },
     referrerPolicy: { policy: "strict-origin-when-cross-origin" }
 }));
+
+const overlayAuthorize = createOverlayAuthorization({ licenses: () => lisanslarVeritabani, blacklist: () => karaListeVeritabani });
+const overlaySecret = String(process.env.OVERLAY_RELAY_SECRET || '').trim() || (ADMIN_SIFRE.length >= 16
+    ? crypto.createHash('sha256').update('TikMnG-overlay-relay-v1:' + ADMIN_SIFRE).digest('hex') : '');
+const overlayRelay = overlaySecret.length >= 32 ? registerOverlayRelay(app, {
+    secret: overlaySecret, authorize: overlayAuthorize,
+    revalidate: claims => {
+        const license = lisanslarVeritabani.find(item => crypto.createHash('sha256').update('TikMnG-overlay-owner:' + item.kod).digest('hex') === claims.ownerId);
+        return license ? overlayAuthorize({ licenseCode: license.kod, deviceId: claims.deviceId }) : false;
+    }
+}) : null;
+app.get('/api/overlay/health', (_req, res) => res.json({ available: Boolean(overlayRelay), protocolVersion: 1 }));
+if (!overlayRelay) app.post('/api/overlay/session', (_req, res) => res.status(503).json({ error: 'overlay-not-configured' }));
 
 app.use(cors({
     origin(origin, callback) {
@@ -1501,7 +1516,7 @@ function pingBot() {
 setInterval(pingBot, 10 * 60 * 1000);
 
 // Sunucuyu Başlat
-app.listen(PORT, process.env.HOST || "0.0.0.0", () => {
+const webServer = app.listen(PORT, process.env.HOST || "0.0.0.0", () => {
     console.log("");
     console.log("==================================================");
     console.log("  TikMnG — Web Sitesi & Lisans Sunucusu");
@@ -1511,4 +1526,5 @@ app.listen(PORT, process.env.HOST || "0.0.0.0", () => {
     console.log("==================================================");
     console.log("");
 });
+overlayRelay?.attach(webServer);
 
