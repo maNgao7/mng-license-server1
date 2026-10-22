@@ -3,6 +3,21 @@
 const { spawn } = require('node:child_process');
 const path = require('node:path');
 
+const SPEECH_STYLES = Object.freeze({
+    natural: { label: 'Doğal', pitch: 0, rate: 1 },
+    deep: { label: 'Kalın', pitch: -24, rate: 0.9, gender: 'male' },
+    male: { label: 'Erkek', pitch: -10, rate: 1, gender: 'male' },
+    female: { label: 'Kadın tarzı', pitch: 18, rate: 1.04, gender: 'female' },
+    warm: { label: 'Sıcak', pitch: -4, rate: 0.93 },
+    energetic: { label: 'Enerjik', pitch: 12, rate: 1.18 },
+    girl: { label: 'Kız çocuğu tarzı', pitch: 30, rate: 1.12, gender: 'female' },
+    boy: { label: 'Erkek çocuğu tarzı', pitch: 20, rate: 1.08, gender: 'male' },
+    tiny: { label: 'Minik çizgi karakter', pitch: 38, rate: 1.22 },
+    storybook: { label: 'Masalsı anlatıcı', pitch: 8, rate: 0.84 }
+});
+const SPEECH_STYLE_IDS = Object.freeze(Object.keys(SPEECH_STYLES));
+const LEGACY_STYLES = Object.freeze({ child: 'girl' });
+
 // Main-process only. Never expose configureAzure over a general renderer IPC.
 // Bridge contract: listVoices() -> { voices, profiles, providers };
 // synthesize({ text, voiceURI?, voicePreset?, provider?, rate? }) -> WAV base64.
@@ -30,12 +45,11 @@ if ($inputData.action -eq 'synthesize' -and $modernMatch.Count -eq 1) {
     $modern = New-Object Windows.Media.SpeechSynthesis.SpeechSynthesizer
     try {
         $modern.Voice = $modernMatch[0]
-        $modern.Options.SpeakingRate = [double]$inputData.speed
         $asTask = [System.WindowsRuntimeSystemExtensions].GetMethods() | Where-Object {
             $_.Name -eq 'AsTask' -and $_.IsGenericMethod -and $_.GetGenericArguments().Count -eq 1 -and
             $_.GetParameters().Count -eq 1 -and $_.GetParameters()[0].ParameterType.Name.StartsWith('IAsyncOperation')
         } | Select-Object -First 1
-        $operation = $modern.SynthesizeTextToStreamAsync([string]$inputData.text)
+        $operation = $modern.SynthesizeSsmlToStreamAsync([string]$inputData.ssml)
         $task = $asTask.MakeGenericMethod([Windows.Media.SpeechSynthesis.SpeechSynthesisStream]).Invoke($null, @($operation))
         $speechStream = $task.GetAwaiter().GetResult()
         try {
@@ -67,7 +81,7 @@ try {
         $stream = New-Object IO.MemoryStream
         try {
             $synth.SetOutputToWaveStream($stream)
-            $synth.Speak([string]$inputData.text)
+            $synth.SpeakSsml([string]$inputData.ssml)
             $synth.SetOutputToNull()
             [Console]::Write([Convert]::ToBase64String($stream.ToArray()))
         } finally { $stream.Dispose() }
@@ -130,20 +144,23 @@ const genderOf = value => ['female', 'male'].includes(String(value).toLowerCase(
 const xml = value => String(value).replace(/[<>&"']/g, char => ({ '<':'&lt;', '>':'&gt;', '&':'&amp;', '"':'&quot;', "'":'&apos;' })[char]);
 
 function selectVoice(voices, settings = {}) {
-    const preset = settings.voicePreset || 'natural';
-    if (!['natural', 'female', 'male', 'child'].includes(preset)) throw failure('VOICE_UNAVAILABLE');
+    const preset = LEGACY_STYLES[settings.voicePreset] || settings.voicePreset || 'natural';
+    const style = SPEECH_STYLES[preset];
+    if (!style) throw failure('VOICE_UNAVAILABLE');
     let candidates = voices.filter(voice => !settings.provider || voice.provider === settings.provider);
     if (settings.voiceURI) candidates = candidates.filter(voice => voice.voiceURI === settings.voiceURI);
-    if (preset === 'child') candidates = candidates.filter(voice => voice.age === 'child');
-    if (preset === 'male' || preset === 'female') candidates = candidates.filter(voice => voice.gender === preset && voice.age !== 'child');
+    if (!settings.voiceURI && style.gender) {
+        const matchingGender = candidates.filter(voice => voice.gender === style.gender);
+        if (matchingGender.length) candidates = matchingGender;
+    }
     const selected = candidates[0];
     if (!selected) throw failure('VOICE_UNAVAILABLE');
     return selected;
 }
 
 function profilesFor(voices) {
-    return ['natural', 'female', 'male', 'child'].map(id => {
-        try { return { id, available: true, voiceURI: selectVoice(voices, { voicePreset: id }).voiceURI }; }
+    return SPEECH_STYLE_IDS.map(id => {
+        try { return { id, label: SPEECH_STYLES[id].label, available: true, voiceURI: selectVoice(voices, { voicePreset: id }).voiceURI }; }
         catch { return { id, available: false, voiceURI: null, reason: 'VOICE_UNAVAILABLE' }; }
     });
 }
@@ -232,20 +249,26 @@ function createSpeechService({ env = process.env, azure, fetchImpl = globalThis.
         try {
             const { voices, providers } = await listVoices(); checkCancelled();
             const provider = settings.provider || (settings.voiceURI ? settings.voiceURI.split(':')[0] : credentials.key && credentials.region ? 'azure' : 'windows');
-            const rate = Number.isFinite(Number(settings.rate)) ? Math.max(0.5, Math.min(2, Number(settings.rate))) : 1;
+            const preset = LEGACY_STYLES[settings.voicePreset] || settings.voicePreset || 'natural';
+            const style = SPEECH_STYLES[preset];
+            if (!style) throw failure('VOICE_UNAVAILABLE');
+            const requestedRate = Number.isFinite(Number(settings.rate)) ? Math.max(0.5, Math.min(2, Number(settings.rate))) : 1;
+            const rate = Math.max(0.5, Math.min(2, requestedRate * style.rate));
+            const pitch = style.pitch;
             async function produce(voice, fallbackUsed) {
                 checkCancelled();
                 let audio;
                 if (voice.provider === 'windows') {
-                    try { audio = Buffer.from(await windowsRunner('synthesize', { id: voice.id, text, speed: rate, rate: Math.round(Math.log2(rate) * 5) }, { signal: controller.signal }), 'base64'); }
+                    const ssml = `<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xml:lang="tr-TR"><voice name="${xml(voice.name)}"><prosody rate="${Math.round((rate - 1) * 100)}%" pitch="${pitch >= 0 ? '+' : ''}${pitch}%">${xml(text)}</prosody></voice></speak>`;
+                    try { audio = Buffer.from(await windowsRunner('synthesize', { id: voice.id, text, ssml, speed: rate, rate: Math.round(Math.log2(rate) * 5) }, { signal: controller.signal }), 'base64'); }
                     catch { checkCancelled(); throw failure('WINDOWS_UNAVAILABLE'); }
                 } else {
-                    const ssml = `<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xml:lang="tr-TR"><voice name="${xml(voice.id)}"><prosody rate="${Math.round((rate - 1) * 100)}%">${xml(text)}</prosody></voice></speak>`;
+                    const ssml = `<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xml:lang="tr-TR"><voice name="${xml(voice.id)}"><prosody rate="${Math.round((rate - 1) * 100)}%" pitch="${pitch >= 0 ? '+' : ''}${pitch}%">${xml(text)}</prosody></voice></speak>`;
                     audio = await azureRequest('v1', ssml, controller.signal);
                 }
                 checkCancelled();
                 if (audio.length < 44 || audio.toString('ascii', 0, 4) !== 'RIFF' || audio.toString('ascii', 8, 12) !== 'WAVE') throw failure('INVALID_AUDIO');
-                return { audioBase64: audio.toString('base64'), mimeType: 'audio/wav', voice, fallbackUsed };
+                return { audioBase64: audio.toString('base64'), mimeType: 'audio/wav', voice: { ...voice, style: preset, styleLabel: style.label }, fallbackUsed };
             }
             try {
                 if (provider === 'azure' && !providers.azure.available) throw failure(providers.azure.reason || 'VOICE_UNAVAILABLE');
@@ -260,4 +283,4 @@ function createSpeechService({ env = process.env, azure, fetchImpl = globalThis.
     return { status: listVoices, listVoices, synthesize, configureAzure, configure: configureAzure, cancel };
 }
 
-module.exports = { createSpeechService, selectVoice, profilesFor, runWindows };
+module.exports = { createSpeechService, selectVoice, profilesFor, runWindows, SPEECH_STYLES, SPEECH_STYLE_IDS };

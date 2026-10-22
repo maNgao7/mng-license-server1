@@ -16,15 +16,22 @@ function wav() {
 }
 const windowsRunner = async action => action === 'list' ? installed : wav().toString('base64');
 
-test('local catalog contains actual Turkish voices only; missing profiles do not fall back', async () => {
+test('local catalog exposes ten distinct styles over installed Turkish voices', async () => {
     let requests = 0;
-    const service = createSpeechService({ env: {}, windowsRunner, fetchImpl: async () => { requests++; throw Error('unexpected'); } });
+    const synthesized = [];
+    const service = createSpeechService({ env: {}, windowsRunner: async (action, payload) => {
+        if (action === 'list') return installed;
+        synthesized.push(payload.ssml);
+        return wav().toString('base64');
+    }, fetchImpl: async () => { requests++; throw Error('unexpected'); } });
     const catalog = await service.listVoices();
     assert.equal(catalog.voices.length, 1);
     assert.equal(catalog.voices[0].voiceURI, 'windows:tolga');
-    assert.equal(catalog.profiles.find(p => p.id === 'female').available, false);
-    assert.equal(catalog.profiles.find(p => p.id === 'child').available, false);
-    for (const voicePreset of ['female', 'child', 'robot']) await assert.rejects(service.synthesize({ text: 'Test', voicePreset }), { code: 'VOICE_UNAVAILABLE' });
+    assert.equal(catalog.profiles.length, 10);
+    assert.equal(catalog.profiles.every(profile => profile.available), true);
+    for (const voicePreset of ['natural', 'female', 'girl', 'deep', 'tiny']) await service.synthesize({ text: 'Test', voicePreset });
+    assert.equal(new Set(synthesized).size, 5);
+    await assert.rejects(service.synthesize({ text: 'Test', voicePreset: 'robot' }), { code: 'VOICE_UNAVAILABLE' });
     await assert.rejects(service.synthesize({ text: 'Test', voiceURI: 'deleted' }), { code: 'VOICE_UNAVAILABLE' });
     assert.equal(requests, 0);
     assert.equal((await service.synthesize({ text: 'Merhaba', voicePreset: 'male' })).voice.id, 'tolga');
@@ -42,7 +49,8 @@ test('Azure uses documented authenticated REST, real catalog IDs and escaped SSM
     const catalog = await service.listVoices();
     assert.equal(catalog.voices.length, 3);
     assert.equal(catalog.profiles.find(p => p.id === 'natural').voiceURI, 'azure:tr-TR-EmelNeural');
-    assert.equal(catalog.profiles.find(p => p.id === 'child').available, false);
+    assert.equal(catalog.profiles.length, 10);
+    assert.equal(catalog.profiles.find(p => p.id === 'girl').available, true);
     assert.ok(!JSON.stringify(catalog).includes('test-secret'));
     const result = await service.synthesize({ text: '<voice> & "merhaba"', voicePreset: 'female', provider: 'azure', pitch: 2 });
     assert.equal(result.voice.id, 'tr-TR-EmelNeural');
@@ -51,8 +59,10 @@ test('Azure uses documented authenticated REST, real catalog IDs and escaped SSM
     assert.equal(calls[1].options.redirect, 'error');
     assert.match(calls[1].options.body, /&lt;voice&gt; &amp; &quot;merhaba&quot;/);
     assert.match(calls[1].options.body, /xmlns="http:\/\/www.w3.org\/2001\/10\/synthesis"/);
-    assert.ok(!calls[1].options.body.includes('pitch'));
-    await assert.rejects(service.synthesize({ text: 'Test', voiceURI: 'azure:tr-TR-AhmetNeural', voicePreset: 'female' }), { code: 'VOICE_UNAVAILABLE' });
+    assert.match(calls[1].options.body, /pitch="\+18%"/);
+    const manuallySelected = await service.synthesize({ text: 'Test', voiceURI: 'azure:tr-TR-AhmetNeural', voicePreset: 'female' });
+    assert.equal(manuallySelected.voice.id, 'tr-TR-AhmetNeural');
+    assert.equal(manuallySelected.voice.style, 'female');
 });
 
 test('Azure HTTP failures are sanitized; there are no retries or fallback voices', async () => {
@@ -75,10 +85,11 @@ test('configuration changes invalidate cached catalogs and never return keys', a
     assert.equal((await service.listVoices()).voices.length, 1);
 });
 
-test('only installed child metadata enables child; bad text/audio fail explicitly', async () => {
+test('all styles remain available with one installed voice; bad text/audio fail explicitly', async () => {
     const service = createSpeechService({ env: {}, windowsRunner: async action => action === 'list'
         ? [...installed, { id: 'actual-child', name: 'Child', lang: 'tr-TR', gender: 'Female', age: 'Child' }] : 'not-wav' });
-    assert.equal((await service.listVoices()).profiles.find(p => p.id === 'child').voiceURI, 'windows:actual-child');
+    assert.equal((await service.listVoices()).profiles.length, 10);
+    assert.equal((await service.listVoices()).profiles.find(p => p.id === 'girl').voiceURI, 'windows:actual-child');
     for (const text of ['', ' '.repeat(5), 'a'.repeat(501), '\u0000']) await assert.rejects(service.synthesize({ text }), { code: 'INVALID_TEXT' });
     await assert.rejects(service.synthesize({ text: 'Test' }), { code: 'INVALID_AUDIO' });
 });
@@ -121,14 +132,16 @@ test('stop during synthesis prevents late audio playback and settles the caller'
     assert.equal((await absent.listVoices()).profiles.every(p => !p.available), true);
 });
 
-test('Azure fallback requires explicit opt-in and preserves gender/profile constraints', async () => {
+test('Azure fallback requires explicit opt-in and preserves the selected style', async () => {
     const service = createSpeechService({ env: {}, azure: { key: 'hidden', region: 'westeurope' }, windowsRunner,
         fetchImpl: async () => new Response('offline', { status: 503 }) });
     await assert.rejects(service.synthesize({ text: 'Test' }), { code: 'AZURE_UNAVAILABLE' });
     const result = await service.synthesize({ text: 'Test', allowOfflineFallback: true });
     assert.equal(result.voice.id, 'tolga'); assert.equal(result.fallbackUsed, true);
-    await assert.rejects(service.synthesize({ text: 'Test', voicePreset: 'female', allowOfflineFallback: true }), { code: 'VOICE_UNAVAILABLE' });
-    await assert.rejects(service.synthesize({ text: 'Test', voicePreset: 'child', allowOfflineFallback: true }), { code: 'VOICE_UNAVAILABLE' });
+    const female = await service.synthesize({ text: 'Test', voicePreset: 'female', allowOfflineFallback: true });
+    const child = await service.synthesize({ text: 'Test', voicePreset: 'child', allowOfflineFallback: true });
+    assert.equal(female.voice.style, 'female');
+    assert.equal(child.voice.style, 'girl');
 });
 
 test('cancel aborts backend production and a later request can still succeed', async () => {

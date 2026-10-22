@@ -40,7 +40,7 @@ test('downloadable guide is the unmodified user image at full resolution', () =>
     assert.equal(crypto.createHash('sha256').update(png).digest('hex'), '9c8fab556afa507002232f1ef99e0c5b5edde0aaf35e5c74c95fcabf7dce7f52');
 });
 
-test('new catalog points at the independent game update and PNG, not a fake launcher release', () => {
+test('catalog keeps the independent game update while the approved launcher release advances', () => {
     const catalog = JSON.parse(fs.readFileSync(path.join(root, 'content-defaults.json'), 'utf8'));
     const game = catalog.games.find(game => game.id === 'zombie-war');
     assert.equal(game.version, '6.5.17');
@@ -49,5 +49,5 @@ test('new catalog points at the independent game update and PNG, not a fake laun
     assert.equal(game.bytes, 947576508);
     assert.ok(game.resources.some(resource => resource.url.endsWith('/TikMnG-Zombie-War-Hediye-Listesi.png')));
     const source = fs.readFileSync(path.join(root, 'server.js'), 'utf8');
-    assert.match(source, /const EN_GUNCEL_SURUM = "6\.5\.16"/);
+    assert.match(source, /const EN_GUNCEL_SURUM = "6\.5\.17"/);
 });

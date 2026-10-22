@@ -18,7 +18,7 @@
         }
         async function listVoices(options) {
             if (typeof bridge?.listVoices !== 'function') return {
-                voices: [], profiles: ['natural', 'female', 'male', 'child'].map(id => ({ id, available: false, reason: 'SERVICE_UNAVAILABLE' })),
+                voices: [], profiles: ['natural', 'deep', 'male', 'female', 'warm', 'energetic', 'girl', 'boy', 'tiny', 'storybook'].map(id => ({ id, available: false, reason: 'SERVICE_UNAVAILABLE' })),
                 providers: { windows: { available: false, reason: 'SERVICE_UNAVAILABLE' }, azure: { available: false, reason: 'SERVICE_UNAVAILABLE' } }
             };
             return bridge.listVoices({ refresh: Boolean(options?.refresh) });

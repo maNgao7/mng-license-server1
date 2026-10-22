@@ -20,11 +20,15 @@ let application;
         if (voices.error) throw new Error('Speech catalog failed');
         const voice = voices.voices.find(v => v.provider === 'windows');
         if (!voice) throw new Error('Installed Turkish voice is unavailable');
-        const audio = await api.workspace('speech-synthesize', { text: 'Merhaba, TikMnG sesli yorum testi.', voiceURI: voice.voiceURI, voicePreset: 'natural', provider: 'windows', rate: 1 });
-        if (audio.error || audio.mimeType !== 'audio/wav' || atob(audio.audioBase64).slice(0,4) !== 'RIFF') throw new Error('Actual offline speech synthesis failed');
+        const styleHashes=[];
+        for(const profile of voices.profiles){const audio=await api.workspace('speech-synthesize',{text:'Merhaba, TikMnG sesli yorum testi.',voiceURI:voice.voiceURI,voicePreset:profile.id,provider:'windows',rate:1});
+            if(audio.error||audio.mimeType!=='audio/wav'||atob(audio.audioBase64).slice(0,4)!=='RIFF')throw new Error('Actual offline speech synthesis failed: '+profile.id);
+            const raw=Uint8Array.from(atob(audio.audioBase64),char=>char.charCodeAt(0));const digest=await crypto.subtle.digest('SHA-256',raw);styleHashes.push([...new Uint8Array(digest)].map(byte=>byte.toString(16).padStart(2,'0')).join(''));
+        }
+        if(new Set(styleHashes).size!==voices.profiles.length)throw new Error('Speech styles did not produce distinct audio');
         return { links: urls.length, media: snapshot.media.length, games: snapshot.games.length, localVoiceCount: voices.voices.filter(v => v.provider === 'windows').length,
-            naturalVoicesConfigured: Boolean(voices.providers.azure?.configured), realWindowsAudioBytes: atob(audio.audioBase64).length,
-            missingChildExplicit: !voices.profiles.find(p => p.id === 'child')?.available };
+            naturalVoicesConfigured: Boolean(voices.providers.azure?.configured), distinctWindowsStyles: new Set(styleHashes).size,
+            speechStyles: voices.profiles.length, allStylesAvailable: voices.profiles.every(profile => profile.available) };
     });
     const urls = await page.evaluate(async () => { const snapshot = await window.mngAPI.workspace('snapshot'), widgets = await window.mngAPI.widgetBilgisi(); return [snapshot.overlayUrl, ...snapshot.games.map(g => g.overlayUrl), ...snapshot.media.map(m => m.overlayUrl), ...widgets.widgets.map(w => w.url)]; });
     const http = await application.evaluate(async ({ net }, urls) => {
@@ -59,8 +63,10 @@ let application;
     await page.locator('[data-action="close-assets"]').click();
     await page.locator('[data-workspace-view="speech"]').click();
     await page.waitForFunction(() => !document.getElementById('speechAvailability').textContent.includes('kontrol ediliyor'));
-    await page.locator('[name="voicePreset"]').selectOption('child');
-    assert.equal(await page.locator('[data-action="speech-test"]').isDisabled(), true);
+    for (const style of ['natural','deep','male','female','warm','energetic','girl','boy','tiny','storybook']) {
+        await page.locator('[name="voicePreset"]').selectOption(style);
+        assert.equal(await page.locator('[data-action="speech-test"]').isDisabled(), false);
+    }
     await page.locator('[name="voicePreset"]').selectOption('natural');
     await page.screenshot({ path: path.join(output, 'test-gercek-sesler.png') });
     await page.locator('[data-workspace-view="downloads"]').click();

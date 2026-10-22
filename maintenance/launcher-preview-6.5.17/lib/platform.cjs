@@ -7,7 +7,7 @@ const { createMediaStudio } = require('./media-studio.cjs');
 const { TikfinityBridge } = require('./tikfinity.cjs');
 const { readMediaArchive } = require('./media-archive.cjs');
 const { createSpeechAudience, MODES: SPEECH_AUDIENCES } = require('./tts-audience.cjs');
-const { createSpeechService } = require('./speech-service.cjs');
+const { createSpeechService, SPEECH_STYLE_IDS } = require('./speech-service.cjs');
 const { loadContentCatalog } = require('./content-catalog.cjs');
 const bundledCatalog = require('./catalog-defaults.json');
 
@@ -218,7 +218,7 @@ function createPlatform(ctx) {
             cooldownSeconds: Math.max(1, Math.min(60, Number(settings.cooldownSeconds) || 3)), blockedWords: String(settings.blockedWords || '').slice(0, 2000),
             audience: SPEECH_AUDIENCES.has(settings.audience) ? settings.audience : 'all',
             giftId: /^\d{1,20}$/.test(String(settings.giftId || '')) ? String(settings.giftId) : '7934',
-            voicePreset: ['natural', 'male', 'female', 'child'].includes(settings.voicePreset) ? settings.voicePreset : 'natural',
+            voicePreset: [...SPEECH_STYLE_IDS, 'child'].includes(settings.voicePreset) ? settings.voicePreset : 'natural',
             provider: ['', 'windows', 'azure'].includes(settings.provider) ? settings.provider : '', allowOfflineFallback: settings.allowOfflineFallback === true };
         store.set('tts_settings_v1', result);
         return snapshot();

@@ -533,10 +533,10 @@ function logEkle(lisansKod, cihazKimlik, islem, ip) {
 // =====================================================================
 // SÜRÜM BİLGİLERİ & İNDİRME LİNKLERİ
 // =====================================================================
-const EN_GUNCEL_SURUM = "6.5.16";
+const EN_GUNCEL_SURUM = "6.5.17";
 const EN_DUSUK_SURUM = "1.0.0";
-const SETUP_INDIRME_LINKI = "https://github.com/maNgao7/mng-license-server1/releases/download/v6.5.16/TikMnG-Setup-6.5.16.exe";
-const PORTABLE_INDIRME_LINKI = "https://github.com/maNgao7/mng-license-server1/releases/download/v6.5.16/TikMnG-6.5.16-Portable.exe";
+const SETUP_INDIRME_LINKI = "https://github.com/maNgao7/mng-license-server1/releases/download/v6.5.17/TikMnG-Setup-6.5.17.exe";
+const PORTABLE_INDIRME_LINKI = "https://github.com/maNgao7/mng-license-server1/releases/download/v6.5.17/TikMnG-6.5.17-Portable.exe";
 const SETUP_WEB_LINKI = SETUP_INDIRME_LINKI;
 const VARSAYILAN_PAKET_LINKLERI = Object.freeze({
     BACKGROUNDS: "https://drive.usercontent.google.com/download?id=1VHwmK2Lt-DN6jVYB1Gp2sbeW6hU_rgB6&export=download&confirm=t",
@@ -550,6 +550,7 @@ const VARSAYILAN_PAKET_LINKLERI = Object.freeze({
 
 // Her güncellemede eklenen/değişen özellikler listesi
 const SURUM_NOTLARI = [
+    "v6.5.17 — Yenilenen TikMnG launcher; oyun ve widget galerileri, tek HTTPS medya bağlantısı, oyuna özel video/hediye eylemleri, 13 yayın widgetı, canlı yayın yeniden bağlanma, bağımsız oyun güncellemeleri ve 10 yerel Türkçe ses stiliyle yayımlandı. Kurulu oyunlar ve kullanıcı ayarları korunur.",
     "v6.5.16 — Minecraft, PUBG ve Minecraft Kartopu Savaşı launcher'a eklendi. İki oyun gömülü Java oyun motoruyla kurulabilir; yayıncı ayarları güncellemelerde korunur. Orbit karşılaşması ayarlanabilir kişi sayısına ulaştığında başlar; beklerken oyuncular yalnızca hediyelerle büyür. Launcher sürüm kontrolü GitHub sürümünü de doğrular.",
     "v6.5.15 — Widget galerisine TikTok kullanıcı adıyla doğrudan bağlanma, bağlantı durumunu görme ve bağlantıyı kesme eklendi. Tüm widgetlar launcher'ın ortak canlı bağlantısını kullanır; otomatik yayıncı bağlantısı yapılmaz. Oyun paketleri değişmedi.",
     "v6.5.14 — Zombie War: her 100 beğenide 5 zombi, takipte 5 zombi; sabit hediye eylemleri, 15 saniye hasar almadan sonra can yenileme ve daha hızlı zombi üretimi. Diğer oyun paketleri değişmedi.",

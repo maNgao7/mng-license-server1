@@ -21,8 +21,8 @@ This is a local test build, not a published stable update.
   limits, fade and image/GIF support. Existing global mappings remain intact.
 - Username/license entry: server validation still required, account saved and
   connection attempted only after successful activation. Three responsive widths.
-- Actual installed Turkish voice selection; unavailable female/child profiles
-  cannot silently become the same male voice with a different pitch.
+- Ten clearly differentiated local Turkish speech styles use the installed
+  Windows voice with tested rate and pitch transforms.
 - Optional authenticated Azure neural TTS using the account's actual voice
   catalog. Keys stay in the main process, protected by Windows encryption.
   No provider key is bundled and no real Azure request was tested.
