@@ -1,0 +1,182 @@
+[
+  {
+    "id": "caahr",
+    "file": "caahr-v2-500.webp",
+    "bytes": 53332,
+    "sourceSha256": "c9216bfb985d53278feca10c99eca0eda5669b1b3a0948e6e45c4e9001d4c458"
+  },
+  {
+    "id": "caahr",
+    "file": "caahr-v2-1000.webp",
+    "bytes": 151420,
+    "sourceSha256": "c9216bfb985d53278feca10c99eca0eda5669b1b3a0948e6e45c4e9001d4c458"
+  },
+  {
+    "id": "zombie-war",
+    "file": "zombie-war-v3-500.webp",
+    "bytes": 48600,
+    "sourceSha256": "58b9092ef5578b29cfe07ebaef12234a0530c3d339ff0e03d5a9a6ec6d9e8b74"
+  },
+  {
+    "id": "zombie-war",
+    "file": "zombie-war-v3-1000.webp",
+    "bytes": 138542,
+    "sourceSha256": "58b9092ef5578b29cfe07ebaef12234a0530c3d339ff0e03d5a9a6ec6d9e8b74"
+  },
+  {
+    "id": "tightrope-balance",
+    "file": "tightrope-balance-v4-500.webp",
+    "bytes": 64368,
+    "sourceSha256": "612b0f7254c286ce15f406af6fddf204bfa75cbe4a7e17699423815bf345c9db"
+  },
+  {
+    "id": "tightrope-balance",
+    "file": "tightrope-balance-v4-1000.webp",
+    "bytes": 194060,
+    "sourceSha256": "612b0f7254c286ce15f406af6fddf204bfa75cbe4a7e17699423815bf345c9db"
+  },
+  {
+    "id": "battle-royale",
+    "file": "battle-royale-v3-500.webp",
+    "bytes": 56916,
+    "sourceSha256": "4b4543960baee57ed5d3c1c690b136dab23d8af6c3e756675ba159cebfe7f2c1"
+  },
+  {
+    "id": "battle-royale",
+    "file": "battle-royale-v3-1000.webp",
+    "bytes": 167344,
+    "sourceSha256": "4b4543960baee57ed5d3c1c690b136dab23d8af6c3e756675ba159cebfe7f2c1"
+  },
+  {
+    "id": "snow-war",
+    "file": "snow-war-v3-500.webp",
+    "bytes": 68918,
+    "sourceSha256": "ed8518df1aaedfb002c822bfbf849d53582233f3e18d549370906c842e0d40e9"
+  },
+  {
+    "id": "snow-war",
+    "file": "snow-war-v3-1000.webp",
+    "bytes": 190356,
+    "sourceSha256": "ed8518df1aaedfb002c822bfbf849d53582233f3e18d549370906c842e0d40e9"
+  },
+  {
+    "id": "vs",
+    "file": "vs-v4-500.webp",
+    "bytes": 44662,
+    "sourceSha256": "e088779a771f05a805a0e1ca55ed8c62bd1127928aba81360128a7bdc1d437cd"
+  },
+  {
+    "id": "vs",
+    "file": "vs-v4-1000.webp",
+    "bytes": 138710,
+    "sourceSha256": "e088779a771f05a805a0e1ca55ed8c62bd1127928aba81360128a7bdc1d437cd"
+  },
+  {
+    "id": "puanlama",
+    "file": "puanlama-v4-500.webp",
+    "bytes": 34558,
+    "sourceSha256": "e9e2c6a3498247e4fbbb8b21c24ec4795cdee7775c6c03ad39e1f1561bbc3cda"
+  },
+  {
+    "id": "puanlama",
+    "file": "puanlama-v4-1000.webp",
+    "bytes": 105214,
+    "sourceSha256": "e9e2c6a3498247e4fbbb8b21c24ec4795cdee7775c6c03ad39e1f1561bbc3cda"
+  },
+  {
+    "id": "orbit",
+    "file": "orbit-v4-500.webp",
+    "bytes": 39056,
+    "sourceSha256": "22cd3ad82e9641163fbfa7be9cca644cacc68055792b76b0622b33ffad0a4174"
+  },
+  {
+    "id": "orbit",
+    "file": "orbit-v4-1000.webp",
+    "bytes": 113894,
+    "sourceSha256": "22cd3ad82e9641163fbfa7be9cca644cacc68055792b76b0622b33ffad0a4174"
+  },
+  {
+    "id": "crowd-control",
+    "file": "crowd-control-v4-500.webp",
+    "bytes": 42708,
+    "sourceSha256": "f9b0d91896c02de5e87979eb9d382f14ff453128652fbea4e582420c1be5c951"
+  },
+  {
+    "id": "crowd-control",
+    "file": "crowd-control-v4-1000.webp",
+    "bytes": 131768,
+    "sourceSha256": "f9b0d91896c02de5e87979eb9d382f14ff453128652fbea4e582420c1be5c951"
+  },
+  {
+    "id": "battle-game",
+    "file": "battle-game-v3-500.webp",
+    "bytes": 64648,
+    "sourceSha256": "f36a1138784acca3c23061d289cf7838bca51e71da2afd411131189bfa6c2787"
+  },
+  {
+    "id": "battle-game",
+    "file": "battle-game-v3-1000.webp",
+    "bytes": 202936,
+    "sourceSha256": "f36a1138784acca3c23061d289cf7838bca51e71da2afd411131189bfa6c2787"
+  },
+  {
+    "id": "gelene-gecene",
+    "file": "gelene-gecene-v3-500.webp",
+    "bytes": 47932,
+    "sourceSha256": "4ee1ce454811e29584db2d20a5e95da04da048dffdacb51849ab5ef7b0fc8ce7"
+  },
+  {
+    "id": "gelene-gecene",
+    "file": "gelene-gecene-v3-1000.webp",
+    "bytes": 134304,
+    "sourceSha256": "4ee1ce454811e29584db2d20a5e95da04da048dffdacb51849ab5ef7b0fc8ce7"
+  },
+  {
+    "id": "pony-life",
+    "file": "pony-life-v3-500.webp",
+    "bytes": 55938,
+    "sourceSha256": "81d8ad807fbc5d32ddd35a0111613171904d189333aaa2fd8883baa13b12ecf9"
+  },
+  {
+    "id": "pony-life",
+    "file": "pony-life-v3-1000.webp",
+    "bytes": 159830,
+    "sourceSha256": "81d8ad807fbc5d32ddd35a0111613171904d189333aaa2fd8883baa13b12ecf9"
+  },
+  {
+    "id": "duck-hunt",
+    "file": "duck-hunt-v3-500.webp",
+    "bytes": 38514,
+    "sourceSha256": "ab2ad2b305b26406ace29f2369100e9e661c869911803081f137880c973dd0be"
+  },
+  {
+    "id": "duck-hunt",
+    "file": "duck-hunt-v3-1000.webp",
+    "bytes": 93980,
+    "sourceSha256": "ab2ad2b305b26406ace29f2369100e9e661c869911803081f137880c973dd0be"
+  },
+  {
+    "id": "frog-river",
+    "file": "frog-river-v3-500.webp",
+    "bytes": 71702,
+    "sourceSha256": "c3fa94c65727608ede483d7ecbb75389ea0f673d90a39df49d57a04284bbf832"
+  },
+  {
+    "id": "frog-river",
+    "file": "frog-river-v3-1000.webp",
+    "bytes": 209090,
+    "sourceSha256": "c3fa94c65727608ede483d7ecbb75389ea0f673d90a39df49d57a04284bbf832"
+  },
+  {
+    "id": "penalty-kick",
+    "file": "penalty-kick-v3-500.webp",
+    "bytes": 51366,
+    "sourceSha256": "45f0b01defca57964d8f079c1c8d8a7c17252a7a5e81a9da78b0856b4dc1e91c"
+  },
+  {
+    "id": "penalty-kick",
+    "file": "penalty-kick-v3-1000.webp",
+    "bytes": 142782,
+    "sourceSha256": "45f0b01defca57964d8f079c1c8d8a7c17252a7a5e81a9da78b0856b4dc1e91c"
+  }
+]

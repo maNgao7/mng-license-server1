@@ -3,69 +3,84 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Hediye Tasarımcısı | TikMnG</title>
-  <link rel="stylesheet" href="gift-designer.css?v=605">
+  <title>Hediye Tasarımı | TikMnG</title>
+  <link rel="stylesheet" href="gift-designer.css?v=20261023">
 </head>
 <body>
   <header class="appbar">
-    <a class="brand" href="/"><span>MNG</span> TIKTOK GAME</a>
-    <div class="page-title"><strong>Hediye Tasarımcısı</strong><small>Yayın panonu gerçek TikTok hediyeleriyle hazırla</small></div>
-    <div class="header-actions">
-      <button class="btn quiet" id="designsBtn">Tasarımlarım</button>
-      <button class="btn quiet" id="clearBtn">Yeni Tasarım</button>
-      <button class="icon-btn" id="closeDesigner" title="Kapat" aria-label="Kapat">×</button>
-    </div>
+    <a class="brand" href="/" aria-label="TikMnG ana sayfa"><span class="brand-m">m</span><span class="brand-n">N</span><span class="brand-g">g</span><small>Tik</small></a>
+    <span class="app-title">Hediye Tasarımı</span>
+    <nav aria-label="Tasarım işlemleri">
+      <button id="designsBtn" title="Tasarımlarım" aria-label="Tasarımlarım"><i data-lucide="folder-open"></i><span>Tasarımlarım</span></button>
+      <button id="newBtn" title="Yeni tasarım" aria-label="Yeni tasarım"><i data-lucide="plus"></i><span>Yeni tasarım</span></button>
+      <button id="closeDesigner" class="icon" title="Geri dön" aria-label="Geri dön"><i data-lucide="arrow-right"></i></button>
+    </nav>
   </header>
-
-  <main class="editor">
-    <aside class="zones">
-      <div class="section-heading"><div><small>YERLEŞİM</small><h1>Hediye alanları</h1></div><span id="selectedCount">0 hediye</span></div>
-      <section class="zone" data-region="top"><div class="zone-head"><span>01</span><div><b>Üst Hediyeler</b><small>Yayının üst sırasında görünür</small></div></div><div class="zone-list" id="topList"></div><button class="add-gift" data-add="top">＋ Yeni Hediye Ekle</button></section>
-      <section class="zone" data-region="left"><div class="zone-head"><span>02</span><div><b>Sol Hediyeler</b><small>Sol dikey sütunda görünür</small></div></div><div class="zone-list" id="leftList"></div><button class="add-gift" data-add="left">＋ Yeni Hediye Ekle</button></section>
-      <section class="zone" data-region="right"><div class="zone-head"><span>03</span><div><b>Sağ Hediyeler</b><small>Sağ dikey sütunda görünür</small></div></div><div class="zone-list" id="rightList"></div><button class="add-gift" data-add="right">＋ Yeni Hediye Ekle</button></section>
-    </aside>
-
-    <section class="build">
-      <div class="form-top">
-        <label class="field grow"><span>Tasarım Adı</span><input id="designName" value="Yeni Hediye Tasarımım" maxlength="60"></label>
-        <label class="field"><span>Tasarım Tipi</span><select id="layoutType"><option value="classic">Klasik: Üst + Sol + Sağ</option><option value="top">Yalnızca Üst</option><option value="sides">Yalnızca Sol + Sağ</option></select></label>
-        <label class="field"><span>Yazı Tipi</span><select id="fontFamily"><option value="Segoe UI">Modern</option><option value="Arial Black">Kalın</option><option value="Trebuchet MS">Yumuşak</option><option value="Georgia">Klasik</option></select></label>
-      </div>
-      <div class="control-strip">
-        <label><span>Hediye Boyutu</span><input id="giftSize" type="number" min="70" max="260" value="142"></label>
-        <label><span>Hediye Aralığı</span><input id="giftGap" type="number" min="0" max="100" value="22"></label>
-        <label><span>Metin Aralığı</span><input id="textGap" type="number" min="0" max="60" value="10"></label>
-        <label><span>Metin Boyutu</span><input id="textSize" type="number" min="14" max="64" value="28"></label>
-        <label><span>Metin</span><input id="textColor" type="color" value="#ffffff"></label>
-        <label><span>Kenarlık</span><input id="strokeColor" type="color" value="#111827"></label>
-        <label><span>Kalınlık</span><input id="strokeWidth" type="number" min="0" max="12" value="4"></label>
-        <label><span>Gölge</span><input id="shadowBlur" type="number" min="0" max="40" value="12"></label>
-      </div>
-
-      <div class="selected-tools" id="selectedTools" hidden>
-        <div class="selected-name"><small>SEÇİLİ HEDİYE</small><b id="selectedName"></b></div>
-        <label class="field grow"><span>Alt Yazı</span><input id="customCaption" maxlength="54" placeholder="Örn. 3 hızlı koşucu gelir"></label>
-        <label class="field compact"><span>Yazı Rengi</span><input id="captionColor" type="color" value="#ffffff"></label>
-        <label class="upload-btn">Küçük Görsel<input id="badgeUpload" type="file" accept="image/png,image/jpeg,image/webp"></label>
-        <button class="btn quiet" id="removeBadge">Görseli Kaldır</button>
-        <button class="btn danger" id="removeGift">Hediyeyi Sil</button>
-      </div>
-
-      <div class="preview-head"><div><small>CANLI ÖN İZLEME</small><b>Şeffaf yayın panosu</b></div><span>1920 × 1080 PNG</span></div>
-      <div class="preview"><canvas id="designCanvas" width="1920" height="1080"></canvas><div class="empty-preview" id="emptyPreview"><b>İlk hediyeni ekle</b><span>Üst, sol veya sağ alanlardan birini seç.</span></div></div>
-      <footer class="actions"><p>Tasarım yalnızca bu cihazda saklanır.</p><button class="btn quiet" id="saveBtn">Tasarıma Kaydet</button><button class="btn primary" id="downloadBtn">PNG Olarak İndir</button></footer>
-    </section>
-  </main>
-
-  <div class="modal" id="catalogModal" hidden>
-    <div class="catalog-dialog">
-      <div class="catalog-head"><div><small id="catalogTotal">HEDİYE KATALOĞU</small><h2>Hediyeni seç</h2></div><button class="icon-btn" id="closeCatalog" aria-label="Kapat">×</button></div>
-      <div class="catalog-tools"><label class="search"><span>⌕</span><input id="giftSearch" type="search" placeholder="Hediye adı veya coin değeri ara"></label><div class="filters" id="coinFilters"><button class="active" data-range="all">Tümü</button><button data-range="1-99">1–99</button><button data-range="100-999">100–999</button><button data-range="1000+">1000+</button></div><b id="catalogCount">Yükleniyor</b></div>
-      <div class="gift-grid" id="giftGrid"></div>
+  <main>
+    <div class="editor-heading">
+      <div><span class="eyebrow">YAYIN GÖRSELLERİ</span><h1 id="editorTitle">Yeni Hediye Tasarımı</h1></div>
+      <span id="saveState" role="status"></span>
     </div>
-  </div>
-
-  <div class="modal" id="designsModal" hidden><div class="saved-dialog"><div class="catalog-head"><div><small>KAYITLI</small><h2>Tasarımlarım</h2></div><button class="icon-btn" id="closeDesigns">×</button></div><div id="savedList" class="saved-list"></div></div></div>
-  <script src="gift-designer.js?v=605"></script>
+    <div class="editor-layout">
+      <aside class="gift-panel" aria-labelledby="zonesTitle">
+        <div class="panel-heading"><i data-lucide="gift"></i><h2 id="zonesTitle">Hediye alanları</h2></div>
+        <div class="zones" id="zones"></div>
+      </aside>
+      <div class="design-workspace">
+        <section class="preview-section" aria-labelledby="previewTitle">
+          <header><h2 id="previewTitle"><i data-lucide="scan"></i>Ön izleme</h2><span class="live-indicator">Canlı</span></header>
+          <div class="preview-checker">
+            <canvas id="designCanvas" width="1080" height="200" aria-label="Hediye tasarımı ön izlemesi"></canvas>
+            <span id="emptyPreview"><i data-lucide="image"></i>Henüz hediye eklenmedi</span>
+          </div>
+          <div class="preview-meta"><span><i data-lucide="file-image"></i>Şeffaf PNG</span><span id="canvasSize"></span></div>
+        </section>
+        <section class="settings" aria-labelledby="settingsTitle">
+          <div class="panel-heading"><i data-lucide="sliders-horizontal"></i><h2 id="settingsTitle">Tasarım ayarları</h2></div>
+          <div class="identity-fields">
+            <label>Tasarım adı<input id="designName" maxlength="120" placeholder="Örn: Minecraft Hediyeleri" required></label>
+            <label>Yerleşim<select id="layoutType"></select></label>
+            <label>Yazı tipi<select id="fontFamily"></select></label>
+          </div>
+          <div class="numeric-fields" id="numericFields"></div>
+          <div class="color-fields">
+            <label>Yazı rengi<input id="textColor" type="color" value="#ffffff"></label>
+            <label>Kontur rengi<input id="strokeColor" type="color" value="#000000"></label>
+            <label class="check-label"><input id="grayscale" type="checkbox">Gri hediye</label>
+          </div>
+        </section>
+      </div>
+    </div>
+  </main>
+  <footer class="editor-footer">
+    <p id="status" role="status" aria-live="polite"></p>
+    <div>
+      <button id="backBtn" title="Geri dön" aria-label="Geri dön"><i data-lucide="arrow-left"></i><span>Geri dön</span></button>
+      <button id="downloadBtn"><i data-lucide="download"></i>PNG indir</button>
+      <button id="saveBtn" class="primary"><i data-lucide="save"></i>Kaydet</button>
+    </div>
+  </footer>
+  <dialog id="catalogModal" aria-labelledby="catalogTitle">
+    <header><div><h2 id="catalogTitle">Hediye Seç</h2><span id="catalogCount"></span></div><button class="icon" data-close="catalogModal" title="Kapat" aria-label="Hediye kataloğunu kapat"><i data-lucide="x"></i></button></header>
+    <label class="search"><i data-lucide="search"></i><input id="giftSearch" type="search" placeholder="Hediye adı, ID veya coin ara" aria-label="Hediye ara"></label>
+    <div id="giftGrid" class="gift-grid"></div>
+  </dialog>
+  <dialog id="designsModal" aria-labelledby="designsTitle">
+    <header><div><h2 id="designsTitle">Tasarımlarım</h2><span id="savedCount"></span></div><button class="icon" data-close="designsModal" title="Kapat" aria-label="Tasarımları kapat"><i data-lucide="x"></i></button></header>
+    <div class="saved-toolbar"><label class="search"><i data-lucide="search"></i><input id="savedSearch" type="search" placeholder="Tasarım ara" aria-label="Tasarım ara"></label><button id="resetSearch" class="icon" title="Aramayı sıfırla" aria-label="Aramayı sıfırla"><i data-lucide="rotate-ccw"></i></button></div>
+    <div id="savedList"></div><div id="savedPages" class="pagination"></div>
+  </dialog>
+  <dialog id="colorsModal" aria-labelledby="colorsTitle">
+    <header><h2 id="colorsTitle">Satır Renkleri</h2><button class="icon" data-close="colorsModal" title="Kapat" aria-label="Renkleri kapat"><i data-lucide="x"></i></button></header>
+    <div class="color-fields"><label>Yazı rengi<input id="lineColor" type="color"></label><label>Kontur rengi<input id="lineStroke" type="color"></label></div>
+    <button id="resetLineColors">Tasarım renklerini kullan</button>
+  </dialog>
+  <dialog id="confirmModal" aria-labelledby="confirmTitle">
+    <h2 id="confirmTitle">Tasarımdan çıkılsın mı?</h2><p id="confirmMessage"></p>
+    <footer><button id="confirmCancel">Vazgeç</button><button id="confirmAccept" class="danger">Devam et</button></footer>
+  </dialog>
+  <script src="vendor/lucide.js"></script>
+  <script src="gift-design-model.js?v=20261023"></script>
+  <script src="gift-designer.js?v=20261023"></script>
 </body>
 </html>
