@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Hediye Tasarımı | TikMnG</title>
+  <link rel="stylesheet" href="gift-designer.css?v=20261023">
+</head>
+<body>
+  <header class="appbar">
+    <a class="brand" href="/" aria-label="TikMnG ana sayfa"><span class="brand-m">m</span><span class="brand-n">N</span><span class="brand-g">g</span><small>Tik</small></a>
+    <span class="app-title">Hediye Tasarımı</span>
+    <nav aria-label="Tasarım işlemleri">
+      <button id="designsBtn" title="Tasarımlarım" aria-label="Tasarımlarım"><i data-lucide="folder-open"></i><span>Tasarımlarım</span></button>
+      <button id="newBtn" title="Yeni tasarım" aria-label="Yeni tasarım"><i data-lucide="plus"></i><span>Yeni tasarım</span></button>
+      <button id="closeDesigner" class="icon" title="Geri dön" aria-label="Geri dön"><i data-lucide="arrow-right"></i></button>
+    </nav>
+  </header>
+  <main>
+    <div class="editor-heading">
+      <div><span class="eyebrow">YAYIN GÖRSELLERİ</span><h1 id="editorTitle">Yeni Hediye Tasarımı</h1></div>
+      <span id="saveState" role="status"></span>
+    </div>
+    <div class="editor-layout">
+      <aside class="gift-panel" aria-labelledby="zonesTitle">
+        <div class="panel-heading"><i data-lucide="gift"></i><h2 id="zonesTitle">Hediye alanları</h2></div>
+        <div class="zones" id="zones"></div>
+      </aside>
+      <div class="design-workspace">
+        <section class="preview-section" aria-labelledby="previewTitle">
+          <header><h2 id="previewTitle"><i data-lucide="scan"></i>Ön izleme</h2><span class="live-indicator">Canlı</span></header>
+          <div class="preview-checker">
+            <canvas id="designCanvas" width="1080" height="200" aria-label="Hediye tasarımı ön izlemesi"></canvas>
+            <span id="emptyPreview"><i data-lucide="image"></i>Henüz hediye eklenmedi</span>
+          </div>
+          <div class="preview-meta"><span><i data-lucide="file-image"></i>Şeffaf PNG</span><span id="canvasSize"></span></div>
+        </section>
+        <section class="settings" aria-labelledby="settingsTitle">
+          <div class="panel-heading"><i data-lucide="sliders-horizontal"></i><h2 id="settingsTitle">Tasarım ayarları</h2></div>
+          <div class="identity-fields">
+            <label>Tasarım adı<input id="designName" maxlength="120" placeholder="Örn: Minecraft Hediyeleri" required></label>
+            <label>Yerleşim<select id="layoutType"></select></label>
+            <label>Yazı tipi<select id="fontFamily"></select></label>
+          </div>
+          <div class="numeric-fields" id="numericFields"></div>
+          <div class="color-fields">
+            <label>Yazı rengi<input id="textColor" type="color" value="#ffffff"></label>
+            <label>Kontur rengi<input id="strokeColor" type="color" value="#000000"></label>
+            <label class="check-label"><input id="grayscale" type="checkbox">Gri hediye</label>
+          </div>
+        </section>
+      </div>
+    </div>
+  </main>
+  <footer class="editor-footer">
+    <p id="status" role="status" aria-live="polite"></p>
+    <div>
+      <button id="backBtn" title="Geri dön" aria-label="Geri dön"><i data-lucide="arrow-left"></i><span>Geri dön</span></button>
+      <button id="downloadBtn"><i data-lucide="download"></i>PNG indir</button>
+      <button id="saveBtn" class="primary"><i data-lucide="save"></i>Kaydet</button>
+    </div>
+  </footer>
+  <dialog id="catalogModal" aria-labelledby="catalogTitle">
+    <header><div><h2 id="catalogTitle">Hediye Seç</h2><span id="catalogCount"></span></div><button class="icon" data-close="catalogModal" title="Kapat" aria-label="Hediye kataloğunu kapat"><i data-lucide="x"></i></button></header>
+    <label class="search"><i data-lucide="search"></i><input id="giftSearch" type="search" placeholder="Hediye adı, ID veya coin ara" aria-label="Hediye ara"></label>
+    <div id="giftGrid" class="gift-grid"></div>
+  </dialog>
+  <dialog id="designsModal" aria-labelledby="designsTitle">
+    <header><div><h2 id="designsTitle">Tasarımlarım</h2><span id="savedCount"></span></div><button class="icon" data-close="designsModal" title="Kapat" aria-label="Tasarımları kapat"><i data-lucide="x"></i></button></header>
+    <div class="saved-toolbar"><label class="search"><i data-lucide="search"></i><input id="savedSearch" type="search" placeholder="Tasarım ara" aria-label="Tasarım ara"></label><button id="resetSearch" class="icon" title="Aramayı sıfırla" aria-label="Aramayı sıfırla"><i data-lucide="rotate-ccw"></i></button></div>
+    <div id="savedList"></div><div id="savedPages" class="pagination"></div>
+  </dialog>
+  <dialog id="colorsModal" aria-labelledby="colorsTitle">
+    <header><h2 id="colorsTitle">Satır Renkleri</h2><button class="icon" data-close="colorsModal" title="Kapat" aria-label="Renkleri kapat"><i data-lucide="x"></i></button></header>
+    <div class="color-fields"><label>Yazı rengi<input id="lineColor" type="color"></label><label>Kontur rengi<input id="lineStroke" type="color"></label></div>
+    <button id="resetLineColors">Tasarım renklerini kullan</button>
+  </dialog>
+  <dialog id="confirmModal" aria-labelledby="confirmTitle">
+    <h2 id="confirmTitle">Tasarımdan çıkılsın mı?</h2><p id="confirmMessage"></p>
+    <footer><button id="confirmCancel">Vazgeç</button><button id="confirmAccept" class="danger">Devam et</button></footer>
+  </dialog>
+  <script src="vendor/lucide.js"></script>
+  <script src="gift-design-model.js?v=20261023"></script>
+  <script src="gift-designer.js?v=20261023"></script>
+</body>
+</html>

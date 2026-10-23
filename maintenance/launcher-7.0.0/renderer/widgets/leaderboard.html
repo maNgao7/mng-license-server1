@@ -1,0 +1,340 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>TikMnG - Destekçi Sıralaması</title>
+<style>
+:root {
+  --primary-accent: #ffd86b;
+  --cyan: #3de6dd;
+  --pink: #ff6386;
+  --gold: #ffd86b;
+  --ink: #f7f8fa;
+  --muted: #bac0c8;
+  --surface: rgba(20, 22, 27, .91);
+}
+* { box-sizing: border-box; }
+html, body {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+  background: transparent;
+  color: var(--ink);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+  letter-spacing: 0;
+}
+body { padding: 12px; user-select: none; }
+.stage {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  justify-items: center;
+  transform-origin: center;
+}
+.widget {
+  width: min(440px, 100%);
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  container: leaderboard / inline-size;
+}
+.header {
+  flex: none;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  padding: 0 0 11px;
+  border-bottom: 1px solid rgba(255, 255, 255, .23);
+  text-shadow: 0 2px 5px #000;
+}
+.brand { font-size: 11px; font-weight: 800; line-height: 1.4; }
+.brand em { color: var(--cyan); font-style: normal; }
+.brand strong { color: var(--pink); }
+.title {
+  margin: 2px 0 0;
+  font-size: 16px;
+  font-weight: 800;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+.metric-mark {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  color: var(--primary-accent);
+  border: 1px solid currentColor;
+  border-radius: 50%;
+  background: var(--surface);
+}
+.icon { width: 20px; height: 20px; display: block; }
+.ranking-body {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  scrollbar-width: none;
+  overscroll-behavior: contain;
+  padding: 12px 2px 3px;
+}
+.ranking-body::-webkit-scrollbar { display: none; }
+ol { list-style: none; margin: 0; padding: 0; }
+.podium {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.22fr) minmax(0, 1fr);
+  align-items: start;
+  gap: 12px;
+  padding-bottom: 17px;
+}
+.podium-person {
+  --medal: var(--gold);
+  grid-column: 2;
+  grid-row: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  text-shadow: 0 2px 5px #000;
+}
+.podium-person.rank-2 { --medal: var(--cyan); grid-column: 1; padding-top: 59px; }
+.podium-person.rank-3 { --medal: var(--pink); grid-column: 3; padding-top: 59px; }
+.crown { width: 24px; height: 24px; margin-bottom: 7px; color: var(--gold); }
+.profile-ring {
+  position: relative;
+  width: min(100%, 88px);
+  aspect-ratio: 1;
+  flex: none;
+  padding: 4px;
+  border: 2px solid var(--medal);
+  border-radius: 50%;
+  background: rgba(15, 17, 21, .8);
+  box-shadow: 0 5px 14px #0005;
+}
+.rank-1 .profile-ring { width: min(100%, 116px); border-width: 3px; }
+.profile-face {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  border-radius: 50%;
+  background: #2b3037;
+}
+.avatar-fallback {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  color: var(--ink);
+  font-size: 25px;
+  font-weight: 800;
+  background: #2b3037;
+}
+.rank-1 .avatar-fallback { font-size: 34px; }
+.avatar-img { position: relative; display: block; width: 100%; height: 100%; object-fit: cover; }
+.avatar-img[hidden] { display: none; }
+.rank-badge {
+  position: absolute;
+  bottom: -10px;
+  left: 50%;
+  translate: -50% 0;
+  width: 24px;
+  height: 24px;
+  display: grid;
+  place-items: center;
+  border: 2px solid var(--medal);
+  border-radius: 50%;
+  background: #191c22;
+  color: var(--medal);
+  font-size: 11px;
+  font-weight: 900;
+  text-shadow: none;
+}
+.rank-1 .rank-badge { background: var(--gold); color: #30250c; width: 27px; height: 27px; font-size: 13px; }
+.user-info { min-width: 0; }
+.podium-person .user-info { width: 100%; margin-top: 16px; }
+.user-name, .user-sub {
+  display: block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.user-name { font-size: 12px; font-weight: 750; line-height: 1.5; }
+.user-sub { color: var(--muted); font-size: 10px; line-height: 1.5; }
+.score-box { min-width: 0; }
+.podium-person .score-box { width: 100%; margin-top: 5px; }
+.score-value {
+  display: block;
+  color: var(--primary-accent);
+  font-size: 16px;
+  line-height: 1.2;
+  font-weight: 850;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+.rank-1 .score-value { font-size: 21px; }
+.score-label { display: block; margin-top: 2px; color: var(--muted); font-size: 9px; font-weight: 700; line-height: 1.4; }
+.ranking-list { display: grid; gap: 5px; }
+.rank-card {
+  display: grid;
+  grid-template-columns: 22px 32px minmax(0, 1fr) minmax(56px, 31%);
+  align-items: center;
+  gap: 9px;
+  min-height: 51px;
+  padding: 7px 10px;
+  border: 1px solid rgba(255, 255, 255, .13);
+  border-left: 2px solid var(--cyan);
+  border-radius: 6px;
+  background: var(--surface);
+}
+.row-rank { color: var(--muted); font-size: 12px; font-weight: 750; text-align: center; font-variant-numeric: tabular-nums; }
+.rank-card .profile-ring { --medal: #626b76; width: 32px; padding: 0; border-width: 1px; box-shadow: none; }
+.rank-card .avatar-fallback { font-size: 12px; }
+.rank-card .score-box { text-align: right; }
+.rank-card .score-value { font-size: 14px; }
+.rank-card .score-label { font-size: 8px; }
+.empty-state { padding: 28px 12px; color: var(--muted); font-size: 13px; text-align: center; text-shadow: 0 2px 4px #000; }
+[hidden] { display: none !important; }
+@container leaderboard (max-width: 320px) {
+  .title { font-size: 13px; }
+  .header { padding-bottom: 8px; }
+  .podium { gap: 7px; padding-bottom: 12px; }
+  .profile-ring { width: min(100%, 65px); padding: 3px; }
+  .rank-1 .profile-ring { width: min(100%, 90px); }
+  .podium-person.rank-2, .podium-person.rank-3 { padding-top: 51px; }
+  .crown { width: 21px; height: 21px; margin-bottom: 5px; }
+  .user-name { font-size: 10px; }
+  .user-sub { font-size: 9px; }
+  .score-value { font-size: 13px; }
+  .rank-1 .score-value { font-size: 17px; }
+  .rank-card { grid-template-columns: 17px 27px minmax(0, 1fr) minmax(48px, 32%); gap: 6px; padding: 6px; min-height: 44px; }
+  .rank-card .profile-ring { width: 27px; }
+  .rank-card .score-value { font-size: 12px; }
+}
+@media (max-width: 300px), (max-height: 300px) { body { padding: 8px; } }
+</style>
+</head>
+<body>
+<div class="stage" id="stage">
+  <main class="widget" aria-labelledby="titleText">
+    <header class="header">
+      <div>
+        <div class="brand">Tik<em>M</em><strong>nG</strong></div>
+        <h1 class="title" id="titleText">YAYININ DESTEKÇİLERİ</h1>
+      </div>
+      <span class="metric-mark" id="metricMark" aria-hidden="true"></span>
+    </header>
+    <div class="ranking-body" id="rankingBody" tabindex="0" aria-label="Sıralama">
+      <ol class="podium" id="podium" aria-label="İlk üç" hidden></ol>
+      <ol class="ranking-list" id="rankingList" start="4" aria-label="Diğer sıralar" hidden></ol>
+      <div class="empty-state" id="emptyState" role="status">Katkılar bekleniyor</div>
+    </div>
+  </main>
+</div>
+<script>
+const overlayBase=location.pathname.match(/^\/overlays\/[A-Za-z0-9_-]{43}(?=\/)/)?.[0]||'';
+function prefixURL(value){
+ if(!overlayBase||typeof value!=='string'||!/^\/(?!\/)/.test(value)||/[\\\u0000-\u0020]/.test(value))return value;
+ try{
+  const url=new URL(value,location.origin),path=url.pathname.startsWith(overlayBase+'/')?url.pathname.slice(overlayBase.length):url.pathname;
+  if(url.origin!==location.origin||!/^(?:\/(?:api\/)?widget\/(?:state|(?:top-gift|top-likes|leaderboard|activity)\/state)|\/widget\/(?:vendor\/matter\.js|physical-jar\.js)|\/widget\/gift-assets\/[A-Za-z0-9_-][A-Za-z0-9_.%-]*\.(?:png|gif|webp|jpe?g)|\/assets\/widgets\/glass-gift-jar\.png)$/.test(path))return value;
+  url.searchParams.delete('key');
+  return overlayBase+path+url.search+url.hash;
+ }catch{return value}
+}
+function widgetImageURL(value){
+ if(!overlayBase||typeof value!=='string')return value;
+ if(value.startsWith('/'))return prefixURL(value);
+ try{
+  const url=new URL(value);
+  if(!url.username&&!url.password&&/^https?:$/.test(url.protocol)&&(url.origin===location.origin||['127.0.0.1','localhost','[::1]'].includes(url.hostname))&&url.pathname.startsWith('/widget/gift-assets/')){const path=prefixURL(url.pathname+url.search+url.hash);if(path.startsWith(overlayBase+'/widget/gift-assets/'))return path}
+ }catch{}
+ return value;
+}
+const params = new URLSearchParams(location.search);
+const isLikes = params.get('type') === 'topliker' || params.get('metric') === 'likes' || /\/(?:widget\/top-likes(?:\.html)?|widget-top-likes\.html)$/.test(location.pathname);
+const itemCount = Math.max(3, Math.min(10, Math.floor(Number(params.get('items'))) || 6));
+const metric = isLikes ? 'BEĞENİ' : 'COIN';
+const title = params.get('title') || (isLikes ? 'KALP ŞAMPİYONLARI' : 'YAYININ DESTEKÇİLERİ');
+document.getElementById('titleText').textContent = title;
+document.title = 'TikMnG - ' + title;
+document.body.dataset.metric = isLikes ? 'likes' : 'coins';
+const accent = params.get('accent');
+document.documentElement.style.setProperty('--primary-accent', /^#(?:[0-9a-f]{3}|[0-9a-f]{6}|[0-9a-f]{8})$/i.test(accent || '') ? accent : isLikes ? '#ff6386' : '#ffd86b');
+
+// Lucide 0.468.0 icon paths (ISC), inline so relay overlays need no extra assets.
+const iconPaths = {
+  crown: '<path d="M11.562 3.266a.5.5 0 0 1 .876 0L15.39 8.87a1 1 0 0 0 1.516.294L21.183 5.5a.5.5 0 0 1 .798.519l-2.834 10.246a1 1 0 0 1-.956.734H5.81a1 1 0 0 1-.957-.734L2.02 6.02a.5.5 0 0 1 .798-.519l4.276 3.664a1 1 0 0 0 1.516-.294z"/><path d="M5 21h14"/>',
+  coins: '<circle cx="8" cy="8" r="6"/><path d="M18.09 10.37A6 6 0 1 1 10.34 18"/><path d="M7 6h1v4"/><path d="m16.71 13.88.7.71-2.82 2.82"/>',
+  heart: '<path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>'
+};
+const icon = name => `<svg class="icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${iconPaths[name]}</svg>`;
+document.getElementById('metricMark').innerHTML = icon(isLikes ? 'heart' : 'coins');
+const clamp = (key, min, max, fallback) => Math.max(min, Math.min(max, Number(params.get(key)) || fallback));
+const stage = document.getElementById('stage');
+stage.style.transform = `scale(${clamp('scale', 50, 160, 100) / 100})`;
+stage.style.opacity = String(clamp('opacity', 25, 100, 100) / 100);
+stage.style.translate = `${clamp('offsetX', -500, 500, 0)}px ${clamp('offsetY', -500, 500, 0)}px`;
+stage.style.justifyItems = ({ left: 'start', center: 'center', right: 'end' })[params.get('position')] || 'center';
+const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const scoreOf = item => isLikes ? (item.totalLikes ?? 0) : (item.totalCoins ?? item.coins ?? 0);
+const fmt = value => Number(value || 0).toLocaleString('tr-TR');
+const podium = document.getElementById('podium');
+const rankingList = document.getElementById('rankingList');
+const emptyState = document.getElementById('emptyState');
+emptyState.textContent = isLikes ? 'Beğeniler bekleniyor' : 'Hediyeler bekleniyor';
+let lastSignature = '';
+
+function avatar(item, rank) {
+  const initial = Array.from(String(item.nickname || item.username || '?'))[0].toLocaleUpperCase('tr-TR');
+  const source = typeof item.avatar === 'string' && item.avatar ? esc(widgetImageURL(item.avatar)) : '';
+  return `<div class="profile-ring"><div class="profile-face"><span class="avatar-fallback" aria-hidden="true">${esc(initial)}</span>${source ? `<img class="avatar-img" src="${source}" alt="" onerror="this.hidden=true">` : ''}</div>${rank <= 3 ? `<span class="rank-badge" aria-hidden="true">${rank}</span>` : ''}</div>`;
+}
+
+function person(item, index) {
+  const rank = index + 1;
+  const username = String(item.username || item.nickname || 'izleyici');
+  const nickname = String(item.nickname || username);
+  const score = fmt(scoreOf(item));
+  const info = `<div class="user-info"><bdi class="user-name" title="@${esc(username)}">@${esc(username)}</bdi><bdi class="user-sub" title="${esc(nickname)}">${esc(nickname)}</bdi></div>`;
+  const amount = `<div class="score-box"><strong class="score-value">${esc(score)}</strong><span class="score-label">${metric}</span></div>`;
+  const label = esc(`${rank}. @${username}, ${score} ${metric}`);
+  return rank <= 3
+    ? `<li class="podium-person rank-${rank}" data-rank="${rank}" value="${rank}" aria-label="${label}">${rank === 1 ? `<span class="crown">${icon('crown')}</span>` : ''}${avatar(item, rank)}${info}${amount}</li>`
+    : `<li class="rank-card" data-rank="${rank}" value="${rank}" aria-label="${label}"><span class="row-rank" aria-hidden="true">${rank}</span>${avatar(item, rank)}${info}${amount}</li>`;
+}
+
+function render(entries) {
+  // Keep server order: its score and updatedAt tie-breaker also define session rank.
+  const visible = Array.isArray(entries) ? entries.slice(0, itemCount) : [];
+  const signature = JSON.stringify(visible.map(item => [item.username, item.nickname, item.avatar, scoreOf(item)]));
+  if (signature === lastSignature) return;
+  lastSignature = signature;
+  podium.innerHTML = visible.slice(0, 3).map(person).join('');
+  rankingList.innerHTML = visible.slice(3).map((item, index) => person(item, index + 3)).join('');
+  podium.hidden = visible.length === 0;
+  rankingList.hidden = visible.length <= 3;
+  emptyState.hidden = visible.length > 0;
+}
+
+let polling = false;
+async function refresh() {
+  if (polling) return;
+  polling = true;
+  try {
+    const query = new URLSearchParams({ key: params.get('key') || '', channel: params.get('channel') || '', t: Date.now() });
+    const endpoint = isLikes ? '/widget/top-likes/state' : '/widget/leaderboard/state';
+    const response = await fetch(prefixURL(endpoint + '?' + query), { cache: 'no-store' });
+    if (response.ok) render((await response.json()).entries || []);
+  } catch {}
+  finally { polling = false; }
+}
+refresh();
+setInterval(refresh, 1500);
+</script>
+</body>
+</html>

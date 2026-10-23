@@ -1,0 +1,12 @@
+const fs = require('node:fs');
+const path = require('node:path');
+const { execFileSync } = require('node:child_process');
+const root = path.resolve(__dirname, '../..');
+const releaseDir = path.join(root, 'release-v6.5.13');
+const source = path.join(releaseDir, 'staging', 'zombie-war');
+const archive = path.join(releaseDir, 'zombie-war.zip');
+const zip = path.join(__dirname, '../node_modules/7zip-bin/win/x64/7za.exe');
+if (fs.existsSync(archive)) throw Error('Inspect the existing archive before replacing it.');
+execFileSync(zip, ['a', '-tzip', '-mx=3', archive, '.', '-xr!*.log', '-xr!session.lock', '-xr!launch-args.txt', '-xr!verify-args.txt', '-xr!crash-reports', '-xr!logs', '-xr!playerdata', '-xr!stats', '-xr!advancements', '-xr!euler-api-key.txt', '-xr!.env', '-xr!bridge-error.log', '-xr!bridge.log'], { cwd: source, windowsHide: true, stdio: 'inherit' });
+execFileSync(zip, ['t', archive], { windowsHide: true, stdio: 'inherit' });
+console.log(`${archive} ${fs.statSync(archive).size}`);

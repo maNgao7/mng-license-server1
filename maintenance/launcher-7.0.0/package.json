@@ -1,0 +1,104 @@
+{
+  "name": "mng-tiktok-game",
+  "version": "7.0.0",
+  "description": "TikMnG Canlı Yayın Oyun Platformu",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder --win --x64",
+    "build-portable": "electron-builder --win portable",
+    "dist": "electron-builder",
+    "test:packaged-games": "node scripts/smoke-packaged-games.mjs"
+  },
+  "build": {
+    "appId": "com.mng.tiktokgame",
+    "productName": "TikMnG",
+    "electronVersion": "31.7.7",
+    "compression": "maximum",
+    "copyright": "Copyright © 2024 MNG",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "lib/**/*",
+      "license-server.txt",
+      "renderer/**/*",
+      "!node_modules/**/*.map",
+      "!renderer/assets/streamer-entry-v1.png",
+      "!renderer/assets/streamer-entry-v2.png",
+      "!renderer/assets/game-covers/orbit-v3.png",
+      "!renderer/assets/game-covers/crowd-control-v3.png",
+      "!renderer/assets/game-covers/vs-v3.png",
+      "!renderer/assets/game-covers/puanlama-v3.png",
+      "!renderer/assets/game-covers/tightrope-balance-v3.png",
+      "!node_modules/onnxruntime-node/bin/napi-v6/darwin/**/*",
+      "!node_modules/onnxruntime-node/bin/napi-v6/linux/**/*",
+      "!node_modules/onnxruntime-node/bin/napi-v6/win32/arm64/**/*"
+    ],
+    "extraResources": [],
+    "asarUnpack": [
+      "node_modules/onnxruntime-node/bin/**/*",
+      "lib/vendor/*-worker.cjs",
+      "lib/vendor/*-worker.py"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "renderer/assets/icon-v4.ico",
+      "signAndEditExecutable": true
+    },
+    "nsis": {
+      "deleteAppDataOnUninstall": false,
+      "oneClick": true,
+      "perMachine": false,
+      "allowElevation": false,
+      "allowToChangeInstallationDirectory": false,
+      "runAfterFinish": true,
+      "installerIcon": "renderer/assets/icon-v4.ico",
+      "uninstallerIcon": "renderer/assets/icon-v4.ico",
+      "installerHeaderIcon": "renderer/assets/icon-v4.ico",
+      "createDesktopShortcut": "always",
+      "createStartMenuShortcut": true,
+      "shortcutName": "TikMnG",
+      "differentialPackage": true,
+      "preCompressedFileExtensions": []
+    },
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "maNgao7",
+        "repo": "mng-license-server1"
+      }
+    ]
+  },
+  "dependencies": {
+    "electron-store": "^8.1.0",
+    "electron-updater": "6.8.9",
+    "extract-zip": "2.0.1",
+    "lucide": "0.468.0",
+    "matter-js": "^0.20.0",
+    "onnxruntime-node": "1.23.2",
+    "tiktok-live-connector": "2.4.4",
+    "ws": "8.22.0",
+    "yauzl": "2.10.0"
+  },
+  "devDependencies": {
+    "electron": "31.7.7",
+    "electron-builder": "^24.13.3",
+    "esbuild": "^0.25.11"
+  }
+}

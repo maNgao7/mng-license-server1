@@ -23,9 +23,14 @@ const legacyPackages = [
     ["frog-river", "6.5.5", "frog-river"], ["gelene-gecene", "6.1.2", "gelene-gecene"]
 ];
 
-async function fixture(t, downloadOverrides = {}) {
+async function fixture(t, downloadOverrides = {}, { seed = true } = {}) {
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), "tikmng-content-test-"));
     for (const name of licenseFiles) fs.writeFileSync(path.join(dir, `${name}.json`), "[]");
+    if (seed) {
+        const initial = JSON.parse(fs.readFileSync(path.join(root, 'content-defaults.json'), 'utf8'));
+        initial.revision = 0; initial.publishedAt = null; initial.media = [];
+        fs.writeFileSync(path.join(dir, 'content-state.json'), JSON.stringify({draft:initial,published:initial}));
+    }
     const secret = crypto.randomBytes(32).toString("hex");
     let child;
     let base;
@@ -85,14 +90,18 @@ function draftGame() {
 }
 
 test("public defaults use actual legacy download URLs and pinned GitHub package integrity; no launcher feed", async t => {
-    const f = await fixture(t);
+    const f = await fixture(t, {}, {seed:false});
     const response = await f.request("/api/content/catalog", "GET", undefined, false);
     assert.equal(response.status, 200); assert.equal(response.data.schemaVersion, 1);
     assert.equal(response.headers.get("cache-control"), "no-store");
     assert.match(response.headers.get("etag"), /^"[a-f0-9]{64}"$/);
     assert.equal(response.data.launcher, undefined);
     const byId = Object.fromEntries(response.data.games.map(item => [item.id, item]));
-    assert.equal(response.data.games.length, 14);
+    assert.equal(response.data.games.length, 15);
+    assert.equal(response.data.media.length, 285);
+    assert.equal(response.data.revision, 1);
+    assert.equal(byId.caahr.version, '0.6.11');
+    assert.equal(byId.caahr.bytes, 52163999);
     for (const [id, version, folder] of legacyPackages) {
         assert.equal(byId[id].version, version);
         assert.equal(byId[id].url, `https://mng-license-server1.onrender.com/download/game/${folder}.zip`);
@@ -215,7 +224,7 @@ test("controlled fields, bounded lists, duplicate IDs, plain text, integrity and
         d => { d.games[0].title = "<script>alert(1)</script>"; }, d => { d.games[0].title = "x".repeat(121); },
         d => { d.games[0].description = "x".repeat(2001); }, d => { d.games[0].bytes = 100; }, d => { d.games[0].sha256 = "invalid"; },
         d => { d.games[0].version = "v 1"; }, d => { d.games[0].resources = Array(9).fill({ title: "X", url: remote }); },
-        d => { d.games = Array(65).fill(d.games[0]); }, d => { d.media = Array(257).fill({}); },
+        d => { d.games = Array(65).fill(d.games[0]); }, d => { d.media = Array(2001).fill({}); },
         ...["http://example.com/x", "javascript:alert(1)", "data:text/html,test", "https://user:pass@example.com/file", "https://127.0.0.1/video", "https://2130706433/video", "https://10.0.0.1/a", "https://169.254.169.254/latest/meta-data", "https://172.16.0.1/", "https://192.168.0.1/", "https://100.64.0.1/", "https://[::1]/", "https://[::ffff:127.0.0.1]/", "https://localhost/", "https://device.local/x", "//example.com/x", "/content-assets/../server.js", "/content-assets/" + "a".repeat(64) + ".mp4", "https://example.com:444/x"].map(url => d => { d.games[0].url = url; })
     ];
     for (const mutate of cases) {
@@ -224,7 +233,7 @@ test("controlled fields, bounded lists, duplicate IDs, plain text, integrity and
         assert.deepEqual(await f.get(), original);
         assert.ok(!JSON.stringify(result.data).includes(f.dir));
     }
-    const large = draftGame(); large.games = Array.from({ length: 40 }, (_, i) => ({ ...large.games[0], id: `game-${i}`, description: "x".repeat(1800) }));
+    const large = draftGame(); large.media = Array.from({ length: 1200 }, (_, i) => ({id:`media-${i}`,title:'Test',category:'Test',url:'https://93.184.216.34/'+ 'x'.repeat(1800)+'.mp4',sha256:null,bytes:null}));
     assert.equal((await f.save(large)).status, 413);
     assert.deepEqual(await f.get(), original);
 });
@@ -257,6 +266,7 @@ test("per-file patches and optional launcher metadata round-trip without changin
 
 test("MP4 and WebM uploads are immutable, hashed, ranged, private storage paths stay hidden and assets survive restart", async t => {
     const f = await fixture(t);
+    const originalPublic = await f.public();
     for (const [body, name, type] of [[mp4, "movie.mp4", "video/mp4"], [webm, "movie.webm", "video/webm"]]) {
         const result = await f.upload(body, name, type); assert.equal(result.status, 201);
         assert.equal(result.data.sha256, digest(body)); assert.equal(result.data.bytes, body.length);
@@ -279,7 +289,7 @@ test("MP4 and WebM uploads are immutable, hashed, ranged, private storage paths 
     const draft = draftGame(); draft.media = [{ ...upload, title: "Uploaded video", category: "Background" }];
     draft.games[0].files = [{ path: "background.mp4", url: upload.url, sha256: upload.sha256, bytes: upload.bytes }];
     const saved = await f.save(draft); assert.equal(saved.status, 200);
-    assert.equal((await f.public()).media.length, 0);
+    assert.deepEqual((await f.public()).media, originalPublic.media);
     const invalid = structuredClone(saved.data.draft); invalid.media[0].bytes++;
     assert.equal((await f.save(invalid)).status, 400);
     assert.equal((await f.publish(saved.data.draft.revision)).status, 200);

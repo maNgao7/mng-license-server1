@@ -1,0 +1,22 @@
+'use strict';
+const fs=require('node:fs'),path=require('node:path'),assert=require('node:assert/strict');
+const { _electron:electron }=require('C:/Users/User/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright');
+const output='D:/TikMnG-QA-Delivery/7.0.0/packaged';
+fs.mkdirSync(output,{recursive:true});
+const profile=fs.mkdtempSync(path.join(output,'profile-'));
+let app;
+(async()=>{
+  const env={...process.env,MNG_TEST_PROFILE:profile,MNG_WIDGET_PORT:'32975'};delete env.ELECTRON_RUN_AS_NODE;
+  app=await electron.launch({executablePath:'D:/TikMnG-Release-7.0.0-candidate/win-unpacked/TikMnG.exe',env,timeout:60000});
+  const page=await app.firstWindow({timeout:60000}),errors=[];page.on('pageerror',error=>errors.push(error.message));
+  await page.waitForFunction(()=>window.mngAPI&&document.querySelector('#workspaceRoot'),null,{timeout:60000});
+  const data=await page.evaluate(async()=>{await window.mngAPI.workspace('media-background',{enabled:false});const s=await window.mngAPI.workspace('snapshot');return {version:s.version,games:s.games.length,media:s.remoteMedia.length,downloadPause:s.mediaDownloads.enabled,ttsNames:s.tts.names};});
+  assert.deepEqual(data,{version:'7.0.0',games:15,media:285,downloadPause:false,ttsNames:false});
+  await page.screenshot({path:path.join(output,'first-run.png')});
+  const voices=await page.evaluate(()=>window.mngAPI.workspace('speech-status'));
+  assert.ok(voices.providers);
+  const background=await page.evaluate(()=>window.mngAPI.workspace('snapshot').then(s=>s.mediaDownloads));assert.equal(background.enabled,false);
+  assert.deepEqual(errors,[]);
+  fs.writeFileSync(path.join(output,'result.json'),JSON.stringify({passed:true,...data,speechStatus:true,errors},null,2));
+  console.log(JSON.stringify({passed:true,...data}));
+})().catch(error=>{console.error(error);process.exitCode=1;}).finally(async()=>{if(app)await app.close();});

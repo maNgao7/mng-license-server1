@@ -1,0 +1,110 @@
+{
+  "version": 4,
+  "createdAt": "2026-10-21",
+  "policy": "Every current and future catalog game needs its own original concept-based cover, never a gameplay, settings, login or loading screenshot. Preserve historical manifests and versioned assets.",
+  "covers": [
+    {
+      "id": "caahr", "title": "Sesli S\u00fcr\u00fc\u015f", "currentFile": "caahr-v2.png",
+      "concept": "A vivid green compact car with a shocked face on its rear races along a four-lane alpine obstacle course with rotating industrial hammers, ramps and a finish arch in warm daylight.",
+      "source": "built-in image_gen"
+    },
+    {
+      "id": "battle-royale",
+      "title": "Minecraft, PUBG",
+      "currentFile": "battle-royale-v3.png",
+      "concept": "Voxel soldiers take cover beside an airdrop crate while parachutists descend from a cargo plane over an island village inside a closing electric-blue zone.",
+      "source": "built-in image_gen"
+    },
+    {
+      "id": "snow-war",
+      "title": "Minecraft Kartopu Sava\u015f\u0131",
+      "currentFile": "snow-war-v3.png",
+      "concept": "Red and turquoise voxel teams throw bursting snowballs in a festive winter arena beneath a decorated Christmas tree and towering snowman.",
+      "source": "built-in image_gen"
+    },
+    {
+      "id": "vs",
+      "title": "TikTok VS Profil",
+      "currentFile": "vs-v4.png",
+      "concept": "Two realistic creator portraits face off in blue and pink neon profile rings around a metallic PK emblem, audience hearts, gift boxes and a gold winner trophy.",
+      "source": "built-in image_gen"
+    },
+    {
+      "id": "puanlama",
+      "title": "Profil Puanlama",
+      "currentFile": "puanlama-v4.png",
+      "concept": "A featured realistic creator portrait is surrounded by smaller profile medallions, audience likes and hearts, five gold stars and a large gold 9.8 rating.",
+      "source": "built-in image_gen"
+    },
+    {
+      "id": "orbit",
+      "title": "MNG Orbit",
+      "currentFile": "orbit-v4.png",
+      "concept": "Colorful profile discs sweep across a dark pellet-filled arena; a large turquoise portrait consumes a smaller coral rival while equal yellow rivals burst into fragments.",
+      "source": "built-in image_gen"
+    },
+    {
+      "id": "crowd-control",
+      "title": "MNG Crowd Control",
+      "currentFile": "crowd-control-v4.png",
+      "concept": "A small yellow smiley hero fires golden projectiles from a turquoise shield at surrounding red spiked profile discs, including a huge crowned boss, among blue crowd tokens.",
+      "source": "built-in image_gen"
+    },
+    {
+      "id": "battle-game",
+      "title": "\u015e\u00f6valye Sava\u015f\u0131",
+      "currentFile": "battle-game-v3.png",
+      "concept": "Turquoise and crimson knight armies charge across a castle battlefield with swords, shields, mounted fighters, siege engines and parachuting supply chests.",
+      "source": "built-in image_gen"
+    },
+    {
+      "id": "gelene-gecene",
+      "title": "Gelene Ge\u00e7ene",
+      "currentFile": "gelene-gecene-v3.png",
+      "concept": "A low-poly survivor with a green backpack reaches for a rescue terminal's red emergency button as angular monsters pursue through an abandoned mountain forest outpost.",
+      "source": "built-in image_gen"
+    },
+    {
+      "id": "duck-hunt",
+      "title": "MNG Dodge Hunter",
+      "currentFile": "duck-hunt-v3.png",
+      "concept": "Glossy yellow toy ducks move along turquoise rails in a bright carnival shooting gallery; a foreground cork rifle knocks one target back in a burst of paper stars.",
+      "source": "built-in image_gen"
+    },
+    {
+      "id": "pony-life",
+      "title": "Pony Kat\u0131r\u0131",
+      "currentFile": "pony-life-v3.png",
+      "concept": "Three expressive ponies race toward the viewer on a grassy track, led by a chestnut pony in turquoise tack with a white rival, colorful boost trails and packed grandstands.",
+      "source": "built-in image_gen"
+    },
+    {
+      "id": "frog-river",
+      "title": "Vak Vak Jump",
+      "currentFile": "frog-river-v3.png",
+      "concept": "A bright green frog leaps toward the viewer above a rushing turquoise river, following a winding lily-pad route past water lilies, a gift crate and mountain waterfalls.",
+      "source": "built-in image_gen"
+    },
+    {
+      "id": "penalty-kick",
+      "title": "S\u00fcper Lig (Penalt\u0131)",
+      "currentFile": "penalty-kick-v3.png",
+      "concept": "A striker in a turquoise-and-black kit drives a football toward goal while a coral-clad goalkeeper dives across the net in a floodlit stadium filled with confetti.",
+      "source": "built-in image_gen"
+    },
+    {
+      "id": "tightrope-balance",
+      "title": "Dengesiz Yay\u0131nc\u0131",
+      "currentFile": "tightrope-balance-v4.png",
+      "concept": "A realistic mountain adventurer balances on a narrow suspended plank bridge over an alpine canyon, holding a wooden pole with two glass jars carrying unequal audience gift tokens.",
+      "source": "built-in image_gen"
+    },
+    {
+      "id": "zombie-war",
+      "title": "Zombie War",
+      "currentFile": "zombie-war-v3.png",
+      "concept": "A voxel tactical survivor and glowing iron guardian defend a sunlit desert alley against advancing zombies and a giant chained mutant behind the sandstone walls.",
+      "source": "built-in image_gen"
+    }
+  ]
+}

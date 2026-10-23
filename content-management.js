@@ -4,11 +4,13 @@ import path from "node:path";
 import crypto from "node:crypto";
 import net from "node:net";
 import { lookup } from "node:dns/promises";
+import { upgradedBootstrapState } from "./content-bootstrap.js";
 
 export const MAX_UPLOAD_BYTES = 100 * 1024 * 1024;
-const MAX_CATALOG_BYTES = 60 * 1024;
+const MAX_CATALOG_BYTES = 2 * 1024 * 1024;
 const ASSET = /^\/content-assets\/([a-f0-9]{64})\.(mp4|webm)$/;
 const defaults = JSON.parse(fs.readFileSync(new URL("./content-defaults.json", import.meta.url), "utf8"));
+const legacyDefaults = JSON.parse(fs.readFileSync(new URL("./content-bootstrap-6.5.17.json", import.meta.url), "utf8"));
 const clone = value => structuredClone(value);
 const fail = (message, status = 400) => { throw Object.assign(new Error(message), { status }); };
 
@@ -119,7 +121,7 @@ function catalogShape(value, assetsDir) {
         });
     }
     const catalog = { schemaVersion: 1, revision: value.revision, publishedAt: value.publishedAt,
-        games: list(value.games, "games", 64), media: list(value.media, "media", 256) };
+        games: list(value.games, "games", 64), media: list(value.media, "media", 2000) };
     if (value.launcher !== undefined) {
         fields(value.launcher, ["version", "downloadUrl", "sha256", "bytes", "changelog"], "launcher");
         const location = url(value.launcher.downloadUrl, "launcher.downloadUrl");
@@ -128,7 +130,7 @@ function catalogShape(value, assetsDir) {
         catalog.launcher = { version: version(value.launcher.version, "launcher"), downloadUrl: location.url,
             sha256: value.launcher.sha256, bytes: value.launcher.bytes, changelog: text(value.launcher.changelog, 4000, "launcher.changelog", true) };
     }
-    if (Buffer.byteLength(JSON.stringify(catalog)) > MAX_CATALOG_BYTES) fail("Catalog exceeds 60 KB.", 413);
+    if (Buffer.byteLength(JSON.stringify(catalog)) > MAX_CATALOG_BYTES) fail("Catalog exceeds 2 MB.", 413);
     if (hosts.size > 64) fail("Catalog allows at most 64 distinct URL hosts.");
     return { catalog, hosts };
 }
@@ -223,6 +225,12 @@ export function registerContentRoutes(app, { dataDir, adminKontrol }) {
         const initial = catalogShape(defaults, assetsDir).catalog;
         state = { draft: clone(initial), published: clone(initial) };
         atomicWrite(stateFile, JSON.stringify(state));
+    }
+    const upgraded = upgradedBootstrapState(state, catalogShape(legacyDefaults, assetsDir).catalog, catalogShape(defaults, assetsDir).catalog);
+    if (upgraded) {
+        atomicWrite(backupFile, JSON.stringify(state));
+        atomicWrite(stateFile, JSON.stringify(upgraded));
+        state = upgraded;
     }
     let highestRevision = Math.max(state.draft.revision, state.published.revision);
     for (const name of fs.readdirSync(revisionsDir)) {
