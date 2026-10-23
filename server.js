@@ -534,10 +534,10 @@ function logEkle(lisansKod, cihazKimlik, islem, ip) {
 // =====================================================================
 // SÜRÜM BİLGİLERİ & İNDİRME LİNKLERİ
 // =====================================================================
-const EN_GUNCEL_SURUM = "7.0.0";
+const EN_GUNCEL_SURUM = "7.0.1";
 const EN_DUSUK_SURUM = "1.0.0";
-const SETUP_INDIRME_LINKI = "https://github.com/maNgao7/mng-license-server1/releases/download/v7.0.0/TikMnG-Setup-7.0.0.exe";
-const PORTABLE_INDIRME_LINKI = "https://github.com/maNgao7/mng-license-server1/releases/download/v6.5.17/TikMnG-6.5.17-Portable.exe";
+const SETUP_INDIRME_LINKI = "https://github.com/maNgao7/mng-license-server1/releases/download/v7.0.1/TikMnG-Setup-7.0.1.exe";
+const PORTABLE_INDIRME_LINKI = "https://github.com/maNgao7/mng-license-server1/releases/download/v7.0.1/TikMnG-7.0.1-Portable.exe";
 const SETUP_WEB_LINKI = SETUP_INDIRME_LINKI;
 const VARSAYILAN_PAKET_LINKLERI = Object.freeze({
     BACKGROUNDS: "https://drive.usercontent.google.com/download?id=1VHwmK2Lt-DN6jVYB1Gp2sbeW6hU_rgB6&export=download&confirm=t",
@@ -551,6 +551,7 @@ const VARSAYILAN_PAKET_LINKLERI = Object.freeze({
 
 // Her güncellemede eklenen/değişen özellikler listesi
 const SURUM_NOTLARI = [
+    "v7.0.1 — Video ve ses kütüphaneleri ayrıldı. Eklediğim Eylemler sekmesinde hediye eşleştirmeleri, oyun kapsamı ve etkinlik durumu görülebilir. Arka plan indirmeleri açık ön izlemeyi ve aramayı sıfırlamaz. Kayıtlı oyunlar, sesler ve eşleştirmeler korunur.",
     "v7.0.0 — 15 oyunluk yeni kütüphane, büyük özel kapaklar, oyuna özel sayfalar, ortak oyun açılış ekranı, Sesli Sürüş eklentisi, ayrı indirilen 165 video ve 120 ses efekti, arka plan medya indirmesi, ayrı ses paketleri ve yenilenen hediye tasarım aracı. Oyunlar ve kayıtlı ayarlar korunur.",
     "v6.5.17 — Yenilenen TikMnG launcher; oyun ve widget galerileri, tek HTTPS medya bağlantısı, oyuna özel video/hediye eylemleri, 13 yayın widgetı, canlı yayın yeniden bağlanma, bağımsız oyun güncellemeleri ve 10 yerel Türkçe ses stiliyle yayımlandı. Kurulu oyunlar ve kullanıcı ayarları korunur.",
     "v6.5.16 — Minecraft, PUBG ve Minecraft Kartopu Savaşı launcher'a eklendi. İki oyun gömülü Java oyun motoruyla kurulabilir; yayıncı ayarları güncellemelerde korunur. Orbit karşılaşması ayarlanabilir kişi sayısına ulaştığında başlar; beklerken oyuncular yalnızca hediyelerle büyür. Launcher sürüm kontrolü GitHub sürümünü de doğrular.",

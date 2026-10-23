@@ -157,6 +157,50 @@ test("session denies unauthorized input, caller-selected tokens, bad JSON and un
     assert.equal((await f.read("/api/overlay/session", { method: "POST", body: "{}" })).status, 415);
 });
 
+test('offline browser documents retry transparently but media and state keep error responses', async t => {
+    const f = await fixture(t);
+    const session = await f.session();
+    for (const route of ['/tikmng/media', '/tikmng/media/' + ID, '/widget-overlay.html', '/widget/top-gift']) {
+        const response = await f.read(session.path + route);
+        assert.equal(response.status, 503);
+        assert.match(response.headers['content-type'], /^text\/html/);
+        assert.equal(response.headers['retry-after'], '3');
+        assert.match(response.text, /setTimeout\(\(\)=>location.reload\(\),3000\)/);
+        assert.match(response.text, /background:transparent/);
+        const nonce = /<script nonce="([a-f0-9]+)">/.exec(response.text)[1];
+        assert.ok(response.headers['content-security-policy'].includes("script-src 'nonce-" + nonce + "'"));
+        assert.ok(!response.text.includes(session.token));
+        assert.ok(!response.text.includes(INPUT.licenseCode));
+    }
+    for (const route of [FILE, '/tikmng/media/poll', '/widget/state', '/widget/vendor/matter.js']) {
+        const response = await f.read(session.path + route);
+        assert.equal(response.status, 503);
+        assert.match(response.headers['content-type'], /^text\/plain/);
+        assert.ok(!response.text.includes('<script'));
+    }
+    const head = await f.read(session.path + '/tikmng/media', { method: 'HEAD' });
+    assert.equal(head.status, 503);
+    assert.equal(head.body.length, 0);
+});
+
+test('a real browser source opened offline recovers after publisher connects without refresh', {
+    skip: process.env.OVERLAY_RELAY_PLAYWRIGHT ? false : 'Set OVERLAY_RELAY_PLAYWRIGHT for browser verification'
+}, async t => {
+    const { chromium } = await import(pathToFileURL(process.env.OVERLAY_RELAY_PLAYWRIGHT).href);
+    const f = await fixture(t);
+    const session = await f.session();
+    const browser = await chromium.launch({ headless: true, executablePath: process.env.BROWSER_EXECUTABLE });
+    t.after(() => browser.close());
+    const page = await browser.newPage();
+    const url = f.base + session.path + '/tikmng/media';
+    assert.equal((await page.goto(url)).status(), 503);
+    const publisher = await f.connect(session.ticket);
+    const request = await publisher.next('request');
+    respond(publisher, request, '<!doctype html><html><body><main id="recovered">TikMnG ready</main></body></html>', { 'content-type': 'text/html; charset=utf-8' });
+    await page.locator('#recovered').waitFor({ timeout: 10000 });
+    assert.equal(page.url(), url);
+});
+
 test("bridge requires signed unexpired bound tickets in Authorization, never in URLs", async t => {
     const f = await fixture(t, { publicOrigin: "https://overlays.example" });
     const session = await f.session();

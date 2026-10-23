@@ -6,6 +6,7 @@ const BRIDGE = "/api/overlay/bridge";
 const TOKEN = /^[A-Za-z0-9_-]{43}$/;
 const UUID = "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}";
 const MEDIA = new RegExp(`^/tikmng/media(?:/(?:${UUID}|client\\.js|client\\.css|events|poll|file/${UUID}))?$`, "i");
+const MEDIA_DOCUMENT = new RegExp(`^/tikmng/media(?:/${UUID})?$`, "i");
 const WIDGET = new Set([
     "/widget-overlay.html", "/widget/overlay", "/widget/overlay.html",
     "/widget/state", "/api/widget/state", "/widget/vendor/matter.js",
@@ -120,6 +121,22 @@ export function registerOverlayRelay(app, { secret, authorize, publicOrigin, rev
         res.statusCode = status;
         res.setHeader("Content-Type", "text/plain; charset=utf-8");
         res.end(message);
+    }
+
+    function publisherOffline(req, res, route) {
+        const document = MEDIA_DOCUMENT.test(route) || route === '/widget-overlay.html' ||
+            /^\/widget\/(?:overlay|top-gift|top-likes|leaderboard|gift-feed|activity)(?:\.html)?$/.test(route) ||
+            /^\/widget-(?:top-gift|top-likes|leaderboard|gift-feed|activity)\.html$/.test(route);
+        if (!document) return reply(res, 503, 'Overlay publisher offline');
+        const nonce = randomUUID().replaceAll('-', '');
+        safeHeaders(res);
+        res.statusCode = 503;
+        res.setHeader('Retry-After', '3');
+        res.setHeader('Content-Type', 'text/html; charset=utf-8');
+        res.setHeader('Content-Security-Policy', `default-src 'none'; script-src 'nonce-${nonce}'; style-src 'nonce-${nonce}'; ${ISOLATION_CSP}; frame-ancestors *`);
+        // A browser source opened before its publisher must recover without user input.
+        const html = `<!doctype html><html lang="tr"><meta charset="utf-8"><title>TikMnG - Baglanti bekleniyor</title><style nonce="${nonce}">html,body{margin:0;background:transparent}</style><body><script nonce="${nonce}">setTimeout(()=>location.reload(),3000)</script></body></html>`;
+        res.end(req.method === 'HEAD' ? undefined : html);
     }
 
     const parseSession = express.json({ limit: "8kb", strict: true, inflate: false });
@@ -322,7 +339,7 @@ export function registerOverlayRelay(app, { secret, authorize, publicOrigin, rev
         const match = pathname.match(/^\/overlays\/([A-Za-z0-9_-]{43})(\/.*)$/);
         if (!match || (!MEDIA.test(match[2]) && !WIDGET.has(match[2]) && (!GIFT.test(match[2]) || match[2].includes("..")))) return reply(res, 404, "Unknown overlay route");
         const bridge = publishers.get(match[1]);
-        if (closed || !bridge || bridge.ws.readyState !== WebSocket.OPEN || bridge.claims.expiresAt <= Date.now()) return reply(res, 503, "Overlay publisher offline");
+        if (closed || !bridge || bridge.ws.readyState !== WebSocket.OPEN || bridge.claims.expiresAt <= Date.now()) return publisherOffline(req, res, match[2]);
         const query = new URLSearchParams(raw.includes("?") ? raw.slice(raw.indexOf("?") + 1) : "");
         if (query.getAll("channel").length > 1 || query.getAll("key").length > 1) return reply(res, 400, "Duplicate overlay scope");
         if (query.has("channel") && query.get("channel") !== bridge.claims.channel) return reply(res, 403, "Invalid overlay channel");
