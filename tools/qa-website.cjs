@@ -6,6 +6,7 @@ const assert = require('node:assert/strict');
 const root = path.resolve(__dirname, '../web');
 const out = process.env.MNG_WEBSITE_QA || 'D:/TikMnG-QA-Delivery/7.0.0/website';
 const catalog = JSON.parse(fs.readFileSync(path.join(root, 'game-catalog.json'), 'utf8'));
+const version = require('../package.json').version;
 const server = http.createServer((req, res) => {
   try {
     const url = new URL(req.url, 'http://127.0.0.1');
@@ -19,8 +20,9 @@ const server = http.createServer((req, res) => {
 });
 async function main() {
   const serve = process.argv.includes('--serve');
-  await new Promise((resolve, reject) => { server.once('error',reject); server.listen(serve ? Number(process.env.PORT || 4198) : 0, '127.0.0.1', resolve); });
-  const origin = `http://127.0.0.1:${server.address().port}`;
+  const external = process.env.MNG_WEBSITE_ORIGIN;
+  if (serve || !external) await new Promise((resolve, reject) => { server.once('error',reject); server.listen(serve ? Number(process.env.PORT || 4198) : 0, '127.0.0.1', resolve); });
+  const origin = external || `http://127.0.0.1:${server.address().port}`;
   if (serve) { console.log(origin); return; }
   const {chromium} = require(process.env.PLAYWRIGHT_MODULE || 'C:/Users/User/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright');
   let browser;
@@ -30,7 +32,7 @@ async function main() {
     const page = await browser.newPage({viewport:{width:1440,height:960}, reducedMotion:'reduce'});
     const errors = [];
     page.on('pageerror',error => errors.push(error.message));
-    await page.route('**/api/version',route => route.fulfill({json:{latestVersion:'7.0.2'}}));
+    if (!external) await page.route('**/api/version',route => route.fulfill({json:{latestVersion:version}}));
     await page.goto(origin, {waitUntil:'networkidle'});
     await page.waitForSelector('.portal-news-button');
     assert.equal(await page.locator('.catalog-card').count(), 16);
@@ -81,7 +83,7 @@ async function main() {
     assert.equal(await page.locator('#portalDialogTitle').innerText(),'Sesli Sürüş');
     await page.keyboard.press('Escape');
     await page.locator('.hero-cta-group .btn-tiktok').click();
-    assert.equal(await page.locator('#downloadVersion').innerText(),'7.0.2');
+    assert.equal(await page.locator('#downloadVersion').innerText(),version);
     await page.keyboard.press('Escape');
     assert.equal(await page.locator('.download-stage').isVisible(),false);
     const sizes = [];
@@ -121,6 +123,6 @@ async function main() {
     assert.deepEqual(errors,[]);
     fs.writeFileSync(path.join(out,'result.json'),JSON.stringify({passed:true,games:16,coverDecodes:covers.length,gameDetailDialogs:16*(1+sizes.length),setupNotesPerGame:4,initialViewport:{width:1440,height:960},filterSearch:true,notifications:16,designerReachable:true,adminVisible:true,sizes,errors},null,2));
     console.log(`Website QA passed: ${out}`);
-  } finally { await browser?.close(); await new Promise(resolve => server.close(resolve)); }
+  } finally { await browser?.close(); if(server.listening)await new Promise(resolve => server.close(resolve)); }
 }
 main().catch(error => {console.error(error); process.exitCode = 1; if(server.listening)server.close();});
