@@ -49,5 +49,6 @@ test('catalog keeps the independent game update while the approved launcher rele
     assert.equal(game.bytes, 947576508);
     assert.ok(game.resources.some(resource => resource.url.endsWith('/TikMnG-Zombie-War-Hediye-Listesi.png')));
     const source = fs.readFileSync(path.join(root, 'server.js'), 'utf8');
-    assert.match(source, /const EN_GUNCEL_SURUM = "6\.5\.17"/);
+    const version = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8')).version;
+    assert.ok(source.includes(`const EN_GUNCEL_SURUM = "${version}"`));
 });

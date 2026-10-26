@@ -80,10 +80,10 @@
   }
   function filterCatalog() {
     const query = $('giftSearch').value.trim().toLocaleLowerCase('tr-TR');
-    const gifts = state.catalog.filter(gift => [gift.name, gift.originalName, gift.id, gift.coins].some(value => String(value).toLocaleLowerCase('tr-TR').includes(query)));
-    $('catalogCount').textContent = `${gifts.length} / ${state.catalog.length} hediye`;
+    const gifts = window.TikMNGGiftCatalog.group(state.catalog,query);
+    $('catalogCount').textContent = `${gifts.length} / ${window.TikMNGGiftCatalog.group(state.catalog).length} hediye`;
     const currentGift = state.design.items.find(item => item.uid === state.pick?.uid)?.giftId;
-    $('giftGrid').innerHTML = gifts.map(gift => `<button class="gift-card" data-gift="${esc(gift.id)}"${gift.id === currentGift ? ' aria-current="true"' : ''}>${gift.id === currentGift ? `<span class="gift-selected" aria-hidden="true">${icon('circle-check')}</span>` : ''}<img loading="lazy" src="${imageUrl(gift)}" alt=""><strong>${esc(gift.name)}</strong><small>${gift.coins.toLocaleString('tr-TR')} coin</small></button>`).join('') || '<p class="saved-empty">Hediye bulunamadı.</p>';
+    $('giftGrid').innerHTML = gifts.map(gift => `<button class="gift-card" data-gift="${esc(gift.id)}"${gift.id === currentGift ? ' aria-current="true"' : ''}>${gift.id === currentGift ? `<span class="gift-selected" aria-hidden="true">${icon('circle-check')}</span>` : ''}<img loading="lazy" src="${imageUrl(gift)}" alt=""><strong>${esc(gift.name)}</strong><small>${gift.coins.toLocaleString('tr-TR')} coin${gift.variants.length>1?' · '+gift.variants.length+' kod':''}</small></button>`).join('') || '<p class="saved-empty">Hediye bulunamadı.</p>';
     icons();
     $('giftGrid').scrollTop = 0;
   }
@@ -239,10 +239,16 @@
   $('giftGrid').onclick = event => {
     const button = event.target.closest('[data-gift]'); if (!button || !state.pick) return;
     const giftId = button.dataset.gift;
+    const variants=state.catalog.filter(gift=>gift.visualGroup===state.byId.get(giftId)?.visualGroup);
+    if(!button.hasAttribute('data-exact-gift')&&variants.length>1){
+      $('giftGrid').innerHTML=`<div style="grid-column:1/-1"><button data-variant-back>Geri</button><img src="${imageUrl(state.byId.get(giftId))}" alt="" style="display:block;width:88px;height:88px;object-fit:contain;margin:16px auto">${variants.map(gift=>`<button class="gift-card" data-exact-gift data-gift="${esc(gift.id)}"><strong>${esc(gift.name)}</strong><small>${gift.coins.toLocaleString('tr-TR')} coin · #${esc(gift.id)}</small></button>`).join('')}</div>`;
+      return;
+    }
     if (state.pick.uid) state.design.items.find(item => item.uid === state.pick.uid).giftId = giftId;
     else state.design.items.push({ uid: M.id(), region: state.pick.region, giftId, lines: [{ text: '', textColor: null, strokeColor: null }] });
     $('catalogModal').close(); changed(); renderZones();
   };
+  $('giftGrid').addEventListener('click',event=>{if(event.target.closest('[data-variant-back]'))filterCatalog();});
   for (const [input, field] of [['lineColor', 'textColor'], ['lineStroke', 'strokeColor']]) $(input).oninput = () => {
     const item = state.design.items.find(entry => entry.uid === state.line?.uid);
     if (item) { item.lines[state.line.index][field] = $(input).value; changed(); }
@@ -284,7 +290,9 @@
     try {
       const response = await fetch('gift-assets/katalog_tam.json'); if (!response.ok) throw new Error('Katalog indirilemedi.');
       const raw = await response.json();
-      state.catalog = raw.filter(gift => gift.file && !/[\\/]/.test(gift.file)).map(gift => ({ id: String(gift.id), name: String(gift.trName || gift.name || 'Hediye'), originalName: String(gift.name || ''), coins: Math.max(0, Number(gift.coins) || 0), file: gift.file })).sort((a, b) => a.coins - b.coins || a.name.localeCompare(b.name, 'tr'));
+      const visualResponse=await fetch('gift-assets/visual-groups.json');if(!visualResponse.ok)throw new Error('Görsel grupları indirilemedi.');
+      const visualGroups=new Map((await visualResponse.json()).groups.flatMap(group=>group.ids.map(id=>[id,group.id])));
+      state.catalog = raw.filter(gift => gift.file && !/[\\/]/.test(gift.file)).map(gift => ({ id: String(gift.id),visualGroup:visualGroups.get(String(gift.id))||String(gift.id), name: String(gift.trName || gift.name || 'Hediye'), originalName: String(gift.name || ''), coins: Math.max(0, Number(gift.coins) || 0), file: gift.file })).sort((a, b) => a.coins - b.coins || a.name.localeCompare(b.name, 'tr'));
       state.byId = new Map(state.catalog.map(gift => [gift.id, gift])); draw();
       document.documentElement.dataset.ready = 'true';
     } catch (error) { message('Hediye kataloğu açılamadı: ' + error.message, true); }

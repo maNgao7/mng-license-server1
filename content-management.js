@@ -11,6 +11,7 @@ const MAX_CATALOG_BYTES = 2 * 1024 * 1024;
 const ASSET = /^\/content-assets\/([a-f0-9]{64})\.(mp4|webm)$/;
 const defaults = JSON.parse(fs.readFileSync(new URL("./content-defaults.json", import.meta.url), "utf8"));
 const legacyDefaults = JSON.parse(fs.readFileSync(new URL("./content-bootstrap-6.5.17.json", import.meta.url), "utf8"));
+const releasedDefaults = JSON.parse(fs.readFileSync(new URL("./content-bootstrap-7.0.1.json", import.meta.url), "utf8"));
 const clone = value => structuredClone(value);
 const fail = (message, status = 400) => { throw Object.assign(new Error(message), { status }); };
 
@@ -102,10 +103,12 @@ function catalogShape(value, assetsDir) {
                 files = item.files.map(file => {
                     fields(file, ["path", "url", "sha256", "bytes"], "file");
                     const relative = text(file.path, 240, "file.path");
-                    if (relative !== file.path || relative.split("/").some(part =>
+                    const contentManifest = relative === ".tikmng-content.json";
+                    if (relative !== file.path || (!contentManifest && relative.split("/").some(part =>
                         !/^[a-zA-Z0-9][a-zA-Z0-9._ -]{0,119}$/.test(part) || /[. ]$/.test(part)
-                        || /^(con|prn|aux|nul|com[0-9]|lpt[0-9])(?:\.|$)/i.test(part))
+                        || /^(con|prn|aux|nul|com[0-9]|lpt[0-9])(?:\.|$)/i.test(part)))
                         || paths.has(relative.toLowerCase())) fail("file.path: unsafe or duplicate relative path.");
+                    if (contentManifest && (item.files.length !== 1 || file.bytes > 16 * 1024 * 1024)) fail("Content manifest must be the sole file and fit 16 MB.");
                     paths.add(relative.toLowerCase());
                     const location = url(file.url, "file.url");
                     integrity(file, location, "file", false);
@@ -226,7 +229,9 @@ export function registerContentRoutes(app, { dataDir, adminKontrol }) {
         state = { draft: clone(initial), published: clone(initial) };
         atomicWrite(stateFile, JSON.stringify(state));
     }
-    const upgraded = upgradedBootstrapState(state, catalogShape(legacyDefaults, assetsDir).catalog, catalogShape(defaults, assetsDir).catalog);
+    const currentDefaults = catalogShape(defaults, assetsDir).catalog;
+    const upgraded = upgradedBootstrapState(state, catalogShape(legacyDefaults, assetsDir).catalog, currentDefaults)
+        || upgradedBootstrapState(state, catalogShape(releasedDefaults, assetsDir).catalog, currentDefaults, { allowReleasedBaseline: true });
     if (upgraded) {
         atomicWrite(backupFile, JSON.stringify(state));
         atomicWrite(stateFile, JSON.stringify(upgraded));

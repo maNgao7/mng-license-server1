@@ -1,0 +1,197 @@
+{
+  "schemaVersion": 1,
+  "games": [
+    {
+      "id": "minecraft-snake-arena",
+      "title": "Minecraft Yılan Oyunu",
+      "version": "0.15.2",
+      "description": "İzleyiciler yılanlarıyla arenaya katılır. Hediyeler kütleyi artırır; yılanlar yem toplar ve birbirlerini kovalayarak büyür.",
+      "requirements": "Windows 10/11 64 bit, 8 GB RAM. Minecraft 1.20.1 / Forge 47.4.20 oyun paketi gerekir.",
+      "cover": "minecraft-yilan-cover-v2",
+      "announcementId": "minecraft-snake-arena-0.15.0",
+      "adminOnly": true,
+      "package": {
+        "localArchive": "D:/TikMnG-Snake-Admin-Package-0.15.2.zip",
+        "bytes": 824789183,
+        "sha256": "1fa54c2767eec42c7cd996b7df344d367a29dff63be4e73840bff71fc5567306",
+        "localRoot": "D:\\TikMnG-Snake-Admin-Package-0.15.2",
+        "localContentManifest": "D:\\TikMnG-Snake-Admin-Package-0.15.2.content.json",
+        "contentSha256": "5fa9b803b76aba42688e24cff4b2be259434bebd41385d60d3deac1f1039d825"
+      },
+      "resources": [],
+      "definition": {
+        "id": "minecraft-snake-arena",
+        "klasor": "minecraft-snake-arena",
+        "boyut": "787 MB",
+        "paketSurumu": "0.15.2",
+        "minecraft": true,
+        "adminOnly": true,
+        "modFile": "tikmng_snake_arena-0.15.1.jar",
+        "configFile": "tikmng-snake-arena.json"
+      }
+    },
+    {
+      "id": "snow-war",
+      "title": "Minecraft Kartopu Savaşı",
+      "version": "7.0.2-preview.5",
+      "adminOnly": true,
+      "package": {
+        "localArchive": "D:/TikMnG-snow-war-Admin-7.0.2-preview.5.zip",
+        "bytes": 914734464,
+        "sha256": "bd2bd152b1acc0fb58142f29e387a650a73ec06d9c477ed58f344ffc275803eb",
+        "localRoot": "D:\\TikMnG-snow-war-Admin-7.0.2-preview.5",
+        "localContentManifest": "D:\\TikMnG-snow-war-Admin-7.0.2-preview.5.content.json",
+        "contentSha256": "e2c019c9c49f637826ae30e1b4c07b4b5d6a051b1ee49faefd480213cb7cbb07"
+      }
+    },
+    {
+      "id": "battle-royale",
+      "title": "Minecraft, PUBG",
+      "version": "7.0.2-preview.5",
+      "adminOnly": true,
+      "package": {
+        "localArchive": "D:/TikMnG-battle-royale-Admin-7.0.2-preview.5.zip",
+        "bytes": 958445691,
+        "sha256": "59282885331d7e3edb8595350d2e16345d1eb0196951da2bd5db4702e16d5a1a",
+        "localRoot": "D:\\TikMnG-battle-royale-Admin-7.0.2-preview.5",
+        "localContentManifest": "D:\\TikMnG-battle-royale-Admin-7.0.2-preview.5.content.json",
+        "contentSha256": "ee321193ed1f2de7543735bde62ef41b637b66299534b98e2f0ecb7b3d310209"
+      }
+    },
+    {
+      "id": "vs",
+      "title": "TikTok VS Profil",
+      "version": "7.0.2-preview.6",
+      "adminOnly": true,
+      "package": {
+        "packageId": "tiktok-vs",
+        "localArchive": "D:/TikMnG-tiktok-vs-Widgets-7.0.2-preview.6.zip",
+        "bytes": 347449113,
+        "sha256": "c59648458d23bd963214ac70b6724f4335f2540664b828dfe28b0a3399fd235d",
+        "localRoot": "D:\\TikMnG-tiktok-vs-Widgets-7.0.2-preview.6",
+        "localContentManifest": "D:\\TikMnG-tiktok-vs-Widgets-7.0.2-preview.6.content.json",
+        "contentSha256": "22023eb2211d1aab969e5600c6892e23fd0b1026052b1e848ea0fc06662165b9"
+      }
+    },
+    {
+      "id": "puanlama",
+      "title": "Profil Puanlama",
+      "version": "7.0.2-preview.6",
+      "adminOnly": true,
+      "package": {
+        "packageId": "tiktok-vs",
+        "localArchive": "D:/TikMnG-tiktok-vs-Widgets-7.0.2-preview.6.zip",
+        "bytes": 347449113,
+        "sha256": "c59648458d23bd963214ac70b6724f4335f2540664b828dfe28b0a3399fd235d",
+        "localRoot": "D:\\TikMnG-tiktok-vs-Widgets-7.0.2-preview.6",
+        "localContentManifest": "D:\\TikMnG-tiktok-vs-Widgets-7.0.2-preview.6.content.json",
+        "contentSha256": "22023eb2211d1aab969e5600c6892e23fd0b1026052b1e848ea0fc06662165b9"
+      }
+    },
+    {
+      "id": "orbit",
+      "title": "MNG Orbit",
+      "version": "7.0.2-preview.6",
+      "adminOnly": true,
+      "package": {
+        "packageId": "mng-orbit",
+        "localArchive": "D:/TikMnG-mng-orbit-Widgets-7.0.2-preview.6.zip",
+        "bytes": 415341712,
+        "sha256": "beaededc952aae1408d1e74e172195dd349903f325be77b1ada2183021db4f88",
+        "localRoot": "D:\\TikMnG-mng-orbit-Widgets-7.0.2-preview.6",
+        "localContentManifest": "D:\\TikMnG-mng-orbit-Widgets-7.0.2-preview.6.content.json",
+        "contentSha256": "9421b742ee12e2cc30377a8dc41635815b901595ebb9d863926c12fe7d14971f"
+      }
+    },
+    {
+      "id": "crowd-control",
+      "title": "MNG Crowd Control",
+      "version": "7.0.2-preview.6",
+      "adminOnly": true,
+      "package": {
+        "packageId": "crowd-control",
+        "localArchive": "D:/TikMnG-crowd-control-Widgets-7.0.2-preview.6.zip",
+        "bytes": 5176630,
+        "sha256": "caf9b4fb84b58490a26918fcc02ba6df9053d5e3ea5918326abc9a97339c7c59",
+        "localRoot": "D:\\TikMnG-crowd-control-Widgets-7.0.2-preview.6",
+        "localContentManifest": "D:\\TikMnG-crowd-control-Widgets-7.0.2-preview.6.content.json",
+        "contentSha256": "5de54894fd6d3ff00d802a59f8fd675ea2357e41f1820df5f0c81787152ce6c9"
+      }
+    },
+    {
+      "id": "battle-game",
+      "title": "Şövalye Savaşı",
+      "version": "7.0.2-preview.6",
+      "adminOnly": true,
+      "package": {
+        "packageId": "battle-game",
+        "localArchive": "D:/TikMnG-battle-game-Widgets-7.0.2-preview.6.zip",
+        "bytes": 8548409,
+        "sha256": "c25abc9de7f70a059b24ff4870c5fb46386fd413d35a863136f40b0b285feca7",
+        "localRoot": "D:\\TikMnG-battle-game-Widgets-7.0.2-preview.6",
+        "localContentManifest": "D:\\TikMnG-battle-game-Widgets-7.0.2-preview.6.content.json",
+        "contentSha256": "e7dd588bc658a9c63bc449cd182d920bf8513bad0189dcef28950683a7711409"
+      }
+    },
+    {
+      "id": "duck-hunt",
+      "title": "MNG Dodge Hunter",
+      "version": "7.0.2-preview.6",
+      "adminOnly": true,
+      "package": {
+        "packageId": "duck-hunt",
+        "localArchive": "D:/TikMnG-duck-hunt-Widgets-7.0.2-preview.6.zip",
+        "bytes": 15777117,
+        "sha256": "a53099af7f03ac9fee07c4ddc2852d79cfc9570c5c9923331cfbd5b396fe8d95",
+        "localRoot": "D:\\TikMnG-duck-hunt-Widgets-7.0.2-preview.6",
+        "localContentManifest": "D:\\TikMnG-duck-hunt-Widgets-7.0.2-preview.6.content.json",
+        "contentSha256": "38c7c854cef63d0dd35f1b6f36cbb6a64b68f81577a0515187f3891d17c1fa76"
+      }
+    },
+    {
+      "id": "pony-life",
+      "title": "Pony Katırı",
+      "version": "7.0.2-preview.6",
+      "adminOnly": true,
+      "package": {
+        "packageId": "pony-life",
+        "localArchive": "D:/TikMnG-pony-life-Widgets-7.0.2-preview.6.zip",
+        "bytes": 28286720,
+        "sha256": "95deb74fc3e74c935ca84458b61beeded1b663c9734eb290892fd6b6040effd6",
+        "localRoot": "D:\\TikMnG-pony-life-Widgets-7.0.2-preview.6",
+        "localContentManifest": "D:\\TikMnG-pony-life-Widgets-7.0.2-preview.6.content.json",
+        "contentSha256": "0d12a6d624010a15ad68f59443eef4133b120b2771ffa2bf5b15d93c9ecf64c6"
+      }
+    },
+    {
+      "id": "penalty-kick",
+      "title": "Süper Lig (Penaltı)",
+      "version": "7.0.2-preview.6",
+      "adminOnly": true,
+      "package": {
+        "packageId": "penalty-kick",
+        "localArchive": "D:/TikMnG-penalty-kick-Widgets-7.0.2-preview.6.zip",
+        "bytes": 60896826,
+        "sha256": "914a953b407a8afb35936f124086085b95b985e670600b81329bf7703c20673f",
+        "localRoot": "D:\\TikMnG-penalty-kick-Widgets-7.0.2-preview.6",
+        "localContentManifest": "D:\\TikMnG-penalty-kick-Widgets-7.0.2-preview.6.content.json",
+        "contentSha256": "10033206f23b1a2fcbbf5b3ea007912d1c93212e96a5370b52ad8519981e5416"
+      }
+    },
+    {
+      "id": "tightrope-balance",
+      "title": "Dengesiz Yayıncı",
+      "version": "7.0.2-preview.6",
+      "adminOnly": true,
+      "package": {
+        "packageId": "tightrope-balance",
+        "localArchive": "D:/TikMnG-tightrope-balance-Widgets-7.0.2-preview.6.zip",
+        "bytes": 15588633,
+        "sha256": "2c67564a5801d079f2db190a27a6e152e59bd68d6cafbacd08d65e1d44d1be69",
+        "localRoot": "D:\\TikMnG-tightrope-balance-Widgets-7.0.2-preview.6",
+        "localContentManifest": "D:\\TikMnG-tightrope-balance-Widgets-7.0.2-preview.6.content.json",
+        "contentSha256": "1df8bfd87110fb6906393c6154c0524074eb013f4fdab096e20088b5ffe69b87"
+      }
+    }
+  ]
+}

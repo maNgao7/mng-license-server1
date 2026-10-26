@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
-  "revision": 1,
-  "publishedAt": "2026-10-23T14:30:00Z",
+  "revision": 3,
+  "publishedAt": "2026-10-26T08:57:00.998Z",
   "games": [
     {
       "id": "caahr",
@@ -18,78 +18,134 @@
       "id": "battle-royale",
       "title": "Minecraft, PUBG",
       "description": "İzleyiciler uçaktan paraşütle iner, hediyelerle silahlarını ve zırhlarını geliştirir. Daralan güvenli alanın içinde son kişi olmak için savaşırlar.",
-      "version": "6.5.16",
-      "url": "https://github.com/maNgao7/mng-license-server1/releases/download/v6.5.16/battle-royale.zip",
-      "sha256": "c867e05148c5b921bd75edb29c12611bdb73f53dc1a834c888fee98c738d5168",
-      "bytes": 998922210,
+      "version": "7.0.2",
+      "url": "https://github.com/maNgao7/mng-license-server1/releases/download/game-installers-7.0.2/battle-royale-7.0.2.zip",
+      "sha256": "01f1698f85fba3020c3d8a01057d8dbcc00bd4475e30cd0e7a4720a5f027bc68",
+      "bytes": 958445695,
       "requirements": "",
-      "resources": []
+      "resources": [],
+      "files": [
+        {
+          "path": ".tikmng-content.json",
+          "url": "https://github.com/maNgao7/mng-license-server1/releases/download/games-7.0.2/game-content-battle-royale-7.0.2.json",
+          "bytes": 3702288,
+          "sha256": "4614eddd694cbd95d0f000c89f5192d3959023bf2bd0aaf6ab531dc6e909f4e7"
+        }
+      ]
     },
     {
       "id": "snow-war",
       "title": "Minecraft Kartopu Savaşı",
       "description": "İzleyici profilleri kartopu savaşçılarına dönüşür. Gelen hediyeler takımları, canı ve özel kar saldırılarını güçlendirirken kış arenasında rekabet büyür.",
-      "version": "6.5.16",
-      "url": "https://github.com/maNgao7/mng-license-server1/releases/download/v6.5.16/snow-war.zip",
-      "sha256": "fe4bdc56612308daa61254f7ea42f4cb2b46650bd3670fa23616bd7c1c8c7790",
-      "bytes": 1006436941,
+      "version": "7.0.2",
+      "url": "https://github.com/maNgao7/mng-license-server1/releases/download/game-installers-7.0.2/snow-war-7.0.2.zip",
+      "sha256": "00fbd267ce37fa7877ebd0d42b38ea47233438b2f5f6dbd5210acdedb3e35fae",
+      "bytes": 914734468,
       "requirements": "",
-      "resources": []
+      "resources": [],
+      "files": [
+        {
+          "path": ".tikmng-content.json",
+          "url": "https://github.com/maNgao7/mng-license-server1/releases/download/games-7.0.2/game-content-snow-war-7.0.2.json",
+          "bytes": 3963309,
+          "sha256": "bbf822f330d5494c6d534600629f5c0b8c31b8bc5625e7d633ff3f1f1df0b329"
+        }
+      ]
     },
     {
       "id": "vs",
       "title": "TikTok VS Profil",
       "description": "İki TikTok profilini karşı karşıya getir. İzleyicilerin katkılarıyla değişen canlı skor üzerinden yayındaki rekabeti takip et.",
-      "version": "6.5.7",
-      "url": "https://mng-license-server1.onrender.com/download/game/tiktok-vs.zip",
-      "sha256": null,
-      "bytes": null,
+      "version": "7.0.2",
+      "url": "https://github.com/maNgao7/mng-license-server1/releases/download/game-installers-7.0.2/tiktok-vs-7.0.2.zip",
+      "sha256": "b16931136c25544027e970ef3ff636c9600dbe6e7fce542478323d22a0f729db",
+      "bytes": 347449121,
       "requirements": "",
-      "resources": []
+      "resources": [],
+      "files": [
+        {
+          "path": ".tikmng-content.json",
+          "url": "https://github.com/maNgao7/mng-license-server1/releases/download/games-7.0.2/game-content-tiktok-vs-7.0.2.json",
+          "bytes": 2454971,
+          "sha256": "ae9f7794e8f5d1c49c1aa5d678bf37319b696c2b417c1a0221d6d4572c6f412a"
+        }
+      ]
     },
     {
       "id": "puanlama",
       "title": "Profil Puanlama",
       "description": "İzleyicilerin TikTok profillerini sahneye çıkar. Sohbetten gelen oyları topla; puanları ve sıralamayı yayın boyunca takip et.",
-      "version": "6.5.7",
-      "url": "https://mng-license-server1.onrender.com/download/game/tiktok-vs.zip",
-      "sha256": null,
-      "bytes": null,
+      "version": "7.0.2",
+      "url": "https://github.com/maNgao7/mng-license-server1/releases/download/game-installers-7.0.2/tiktok-vs-7.0.2.zip",
+      "sha256": "b16931136c25544027e970ef3ff636c9600dbe6e7fce542478323d22a0f729db",
+      "bytes": 347449121,
       "requirements": "",
-      "resources": []
+      "resources": [],
+      "files": [
+        {
+          "path": ".tikmng-content.json",
+          "url": "https://github.com/maNgao7/mng-license-server1/releases/download/games-7.0.2/game-content-tiktok-vs-7.0.2.json",
+          "bytes": 2454971,
+          "sha256": "ae9f7794e8f5d1c49c1aa5d678bf37319b696c2b417c1a0221d6d4572c6f412a"
+        }
+      ]
     },
     {
       "id": "orbit",
       "title": "MNG Orbit",
       "description": "İzleyici profilleri hareketli bir yörünge arenasında karşılaşır. Canlı yayın etkileşimleriyle büyüyen profiller rakiplerine karşı alan kazanmaya çalışır.",
-      "version": "6.5.16",
-      "url": "https://github.com/maNgao7/mng-license-server1/releases/download/v6.5.16/mng-orbit.zip",
-      "sha256": "be2617dd590826d3996f12ec4b5ab038da50ba5374da7852b69883b58db83d8d",
-      "bytes": 416199515,
+      "version": "7.0.2",
+      "url": "https://github.com/maNgao7/mng-license-server1/releases/download/game-installers-7.0.2/mng-orbit-7.0.2.zip",
+      "sha256": "7559aba673b1b55bd392770db7eb2e6a6d32705e4e045ccd0150a18b5c306636",
+      "bytes": 415341720,
       "requirements": "",
-      "resources": []
+      "resources": [],
+      "files": [
+        {
+          "path": ".tikmng-content.json",
+          "url": "https://github.com/maNgao7/mng-license-server1/releases/download/games-7.0.2/game-content-mng-orbit-7.0.2.json",
+          "bytes": 1015066,
+          "sha256": "605756fdf6026146b9cf26c1cd6890952f7d37b0cff0abf0d25fdb8f9f62093f"
+        }
+      ]
     },
     {
       "id": "crowd-control",
       "title": "MNG Crowd Control",
       "description": "İzleyicilerin hediyeleri bir anda engel ya da desteğe dönüşür. Etrafını saran tehditlerden kaç, güçlen ve boss karşılaşmalarını aş.",
-      "version": "6.5.5",
-      "url": "https://mng-license-server1.onrender.com/download/game/crowd-control.zip",
-      "sha256": null,
-      "bytes": null,
+      "version": "7.0.2",
+      "url": "https://github.com/maNgao7/mng-license-server1/releases/download/game-installers-7.0.2/crowd-control-7.0.2.zip",
+      "sha256": "2ef794dc7524479d23ec0352b55079752c26a15f5908f592e170c0a6875ebf4f",
+      "bytes": 5176638,
       "requirements": "",
-      "resources": []
+      "resources": [],
+      "files": [
+        {
+          "path": ".tikmng-content.json",
+          "url": "https://github.com/maNgao7/mng-license-server1/releases/download/games-7.0.2/game-content-crowd-control-7.0.2.json",
+          "bytes": 1010770,
+          "sha256": "cd653927dbe146e12e23aef3af2c7f8b0ff4f235aae09ed004ce8a79ef1cdeea"
+        }
+      ]
     },
     {
       "id": "battle-game",
       "title": "Şövalye Savaşı",
       "description": "Canlı yayındaki hediyeler savaş alanına asker taşır. İki ordunun mücadelesinde izleyiciler kendi tarafını güçlendirerek savaşın gidişatını değiştirir.",
-      "version": "6.5.5",
-      "url": "https://mng-license-server1.onrender.com/download/game/battle-game.zip",
-      "sha256": null,
-      "bytes": null,
+      "version": "7.0.2",
+      "url": "https://github.com/maNgao7/mng-license-server1/releases/download/game-installers-7.0.2/battle-game-7.0.2.zip",
+      "sha256": "3498a7c7ed4a402cc96b5a56d8d3962e440e235e21cebd821e145c9e86a48b76",
+      "bytes": 8548417,
       "requirements": "",
-      "resources": []
+      "resources": [],
+      "files": [
+        {
+          "path": ".tikmng-content.json",
+          "url": "https://github.com/maNgao7/mng-license-server1/releases/download/games-7.0.2/game-content-battle-game-7.0.2.json",
+          "bytes": 1401356,
+          "sha256": "7f3bca08203e80a23b59e32884d6547f388118220127ab86953ffd9018063a6b"
+        }
+      ]
     },
     {
       "id": "gelene-gecene",
@@ -106,23 +162,39 @@
       "id": "duck-hunt",
       "title": "MNG Dodge Hunter",
       "description": "Karnaval poligonunda canlı yayın hediyeleri ördeklere dönüşür. Hareketli hedefleri vur ve izleyicilerinin katkılarıyla değişen sıralamada ilerle.",
-      "version": "6.5.5",
-      "url": "https://mng-license-server1.onrender.com/download/game/duck-hunt.zip",
-      "sha256": null,
-      "bytes": null,
+      "version": "7.0.2",
+      "url": "https://github.com/maNgao7/mng-license-server1/releases/download/game-installers-7.0.2/duck-hunt-7.0.2.zip",
+      "sha256": "cb8a381ec1857d51e82ea52ac9272d1df63d9a2573853a69ab91d7e93f85ab31",
+      "bytes": 15777125,
       "requirements": "",
-      "resources": []
+      "resources": [],
+      "files": [
+        {
+          "path": ".tikmng-content.json",
+          "url": "https://github.com/maNgao7/mng-license-server1/releases/download/games-7.0.2/game-content-duck-hunt-7.0.2.json",
+          "bytes": 1399528,
+          "sha256": "01b02e3a083edd55ebb2adac23e57d26002935d3f7cd71544168cf5281ca85ab"
+        }
+      ]
     },
     {
       "id": "pony-life",
       "title": "Pony Katırı",
       "description": "Profil fotoğraflı atlar canlı yarış pistinde sıralanır. Hediyeler ve beğenilerle yarışa katılan izleyiciler atlarını hızlandırarak kürsüye ulaşmaya çalışır.",
-      "version": "6.5.5",
-      "url": "https://mng-license-server1.onrender.com/download/game/pony-life.zip",
-      "sha256": null,
-      "bytes": null,
+      "version": "7.0.2",
+      "url": "https://github.com/maNgao7/mng-license-server1/releases/download/game-installers-7.0.2/pony-life-7.0.2.zip",
+      "sha256": "5a5ceb25d213ef5d99f517098c8a8a13bdd72307f5ec1798a30eb87c1d791907",
+      "bytes": 28286728,
       "requirements": "",
-      "resources": []
+      "resources": [],
+      "files": [
+        {
+          "path": ".tikmng-content.json",
+          "url": "https://github.com/maNgao7/mng-license-server1/releases/download/games-7.0.2/game-content-pony-life-7.0.2.json",
+          "bytes": 1993126,
+          "sha256": "e541696f3684443356c64eecd21a47660abc223f0391a7181beec642edbc4080"
+        }
+      ]
     },
     {
       "id": "frog-river",
@@ -139,23 +211,39 @@
       "id": "penalty-kick",
       "title": "Süper Lig (Penaltı)",
       "description": "Nişan al, penaltı ve frikik şutlarını çek. Yayın hediyeleri takımları, kaleciyi ve saha olaylarını değiştirirken canlı skoru belirle.",
-      "version": "6.5.10",
-      "url": "https://github.com/maNgao7/mng-license-server1/releases/download/v6.5.10/penalty-kick.zip",
-      "sha256": "81e0f23fd0ddb290d20c884043dc0eefccf33e15780e80266ebc8a7aeec99039",
-      "bytes": 93293252,
+      "version": "7.0.2",
+      "url": "https://github.com/maNgao7/mng-license-server1/releases/download/game-installers-7.0.2/penalty-kick-7.0.2.zip",
+      "sha256": "33dbd532321e00519563e3f309aa319d2da74d0219c65bb011e0a9e60d47cf73",
+      "bytes": 60896834,
       "requirements": "",
-      "resources": []
+      "resources": [],
+      "files": [
+        {
+          "path": ".tikmng-content.json",
+          "url": "https://github.com/maNgao7/mng-license-server1/releases/download/games-7.0.2/game-content-penalty-kick-7.0.2.json",
+          "bytes": 2835061,
+          "sha256": "a5ff501f5aa82c41ee45a8523b12c2de0b2e32814ba26f7c4ab6634c333d037b"
+        }
+      ]
     },
     {
       "id": "tightrope-balance",
       "title": "Dengesiz Yayıncı",
       "description": "İki dağ arasındaki ipte hedefe yürürken hediyeler sağ ve sol kavanozları doldurur. Ağırlığı dengele, izleyicilerin hamlelerine karşı ayakta kal ve uçurumu aş.",
-      "version": "6.5.10",
-      "url": "https://github.com/maNgao7/mng-license-server1/releases/download/v6.5.10/tightrope-balance.zip",
-      "sha256": "4cfb2f5374944da6cc8906085bb3d977a5a04f3e02e92e68e4e917b5cee026a0",
-      "bytes": 58639241,
+      "version": "7.0.2",
+      "url": "https://github.com/maNgao7/mng-license-server1/releases/download/game-installers-7.0.2/tightrope-balance-7.0.2.zip",
+      "sha256": "7998329d3aa63e1226f6353af49ff470ee6e7f24cdb6839200bb5bcb683a8ac6",
+      "bytes": 15588641,
       "requirements": "",
-      "resources": []
+      "resources": [],
+      "files": [
+        {
+          "path": ".tikmng-content.json",
+          "url": "https://github.com/maNgao7/mng-license-server1/releases/download/games-7.0.2/game-content-tightrope-balance-7.0.2.json",
+          "bytes": 1017993,
+          "sha256": "e0c9bf51dc07c57693b9724e822d68cfef9d8512bae463f2c6c7d8db88d03830"
+        }
+      ]
     },
     {
       "id": "zombie-war",
@@ -170,6 +258,25 @@
         {
           "title": "Hazır hediye görseli (PNG)",
           "url": "https://github.com/maNgao7/mng-license-server1/releases/download/zombie-war-6.5.17/TikMnG-Zombie-War-Hediye-Listesi.png"
+        }
+      ]
+    },
+    {
+      "id": "minecraft-snake-arena",
+      "title": "Minecraft Yılan Oyunu",
+      "description": "İzleyiciler yılanlarıyla arenaya katılır. Hediyeler kütleyi artırır; yılanlar yem toplar ve birbirlerini kovalayarak büyür.",
+      "requirements": "Windows 10/11 64 bit, 8 GB RAM. Minecraft 1.20.1 / Forge 47.4.20 oyun paketi gerekir.",
+      "resources": [],
+      "version": "0.15.2",
+      "url": "https://github.com/maNgao7/mng-license-server1/releases/download/games-7.0.2/minecraft-snake-arena-0.15.2.zip",
+      "bytes": 824789183,
+      "sha256": "1fa54c2767eec42c7cd996b7df344d367a29dff63be4e73840bff71fc5567306",
+      "files": [
+        {
+          "path": ".tikmng-content.json",
+          "url": "https://github.com/maNgao7/mng-license-server1/releases/download/games-7.0.2/game-content-minecraft-snake-arena-0.15.2.json",
+          "bytes": 2724444,
+          "sha256": "4be9fe9916f77dd6739d267d604e2c4c96202b066642f3470c3ce2e9764d0675"
         }
       ]
     }

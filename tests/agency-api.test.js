@@ -39,7 +39,7 @@ async function fixture(t, initial = [], directory) {
     const child = spawn(process.execPath, ["server.js"], { cwd: root, env, stdio: "ignore", windowsHide: true });
     let stopped = false;
     const stop = async () => {
-        if (stopped) return;
+        if (stopped || child.exitCode !== null || child.signalCode !== null) return;
         stopped = true;
         await new Promise(resolve => { child.once("exit", resolve); child.kill(); });
     };

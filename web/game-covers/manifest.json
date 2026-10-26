@@ -1,5 +1,17 @@
 [
   {
+    "id": "minecraft-snake-arena",
+    "file": "minecraft-yilan-cover-v2-500.webp",
+    "bytes": 69396,
+    "sourceSha256": "592ee28889c2f5739f81145a01990d78a0a4b3a4e9c87d0b68e304b5457f8237"
+  },
+  {
+    "id": "minecraft-snake-arena",
+    "file": "minecraft-yilan-cover-v2-1000.webp",
+    "bytes": 217882,
+    "sourceSha256": "592ee28889c2f5739f81145a01990d78a0a4b3a4e9c87d0b68e304b5457f8237"
+  },
+  {
     "id": "caahr",
     "file": "caahr-v2-500.webp",
     "bytes": 53332,

@@ -11,7 +11,7 @@ const esc = value => String(value).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&
 const icon = name => `<i data-lucide="${name}" aria-hidden="true"></i>`;
 
 async function main() {
-  if (catalog.games.length !== 15 || new Set(catalog.games.map(game => game.id)).size !== 15) throw new Error('Expected 15 unique games.');
+  if (catalog.games.length !== 16 || new Set(catalog.games.map(game => game.id)).size !== 16) throw new Error('Expected 16 unique games.');
   const coverRoot = path.join(web, 'game-covers');
   fs.mkdirSync(coverRoot, {recursive:true});
   const manifest = [];
@@ -36,14 +36,14 @@ async function main() {
     </article>`).join('');
   const section = `<section id="games" aria-labelledby="catalogTitle">
     <div class="container catalog-container">
-      <div class="catalog-heading"><div><span class="catalog-eyebrow">TIKMNG OYUN KÜTÜPHANESİ</span><h2 id="catalogTitle">${esc(catalog.heading)}</h2><p>Yarış, rekabet, hayatta kalma. Sıradaki yayının oyununu seç.</p></div><label class="catalog-search">${icon('search')}<input type="search" id="gameSearch" placeholder="Oyun ara" aria-label="Oyun ara" autocomplete="off"><span class="catalog-search-count" aria-hidden="true">15</span></label></div>
-      <div class="catalog-toolbar"><div class="catalog-filters" role="group" aria-label="Oyun kategorileri"><button type="button" data-filter="" aria-pressed="true">Tümü <span>15</span></button>${categories.map(category => `<button type="button" data-filter="${esc(category)}" aria-pressed="false">${esc(category)} <span>${catalog.games.filter(game => game.category === category).length}</span></button>`).join('')}</div><span id="catalogCount" role="status" aria-live="polite">15 oyun</span></div>
+      <div class="catalog-heading"><div><span class="catalog-eyebrow">TIKMNG OYUN KÜTÜPHANESİ</span><h2 id="catalogTitle">${esc(catalog.heading)}</h2><p>Yarış, rekabet, hayatta kalma. Sıradaki yayının oyununu seç.</p></div><label class="catalog-search">${icon('search')}<input type="search" id="gameSearch" placeholder="Oyun ara" aria-label="Oyun ara" autocomplete="off"><span class="catalog-search-count" aria-hidden="true">${catalog.games.length}</span></label></div>
+      <div class="catalog-toolbar"><div class="catalog-filters" role="group" aria-label="Oyun kategorileri"><button type="button" data-filter="" aria-pressed="true">Tümü <span>${catalog.games.length}</span></button>${categories.map(category => `<button type="button" data-filter="${esc(category)}" aria-pressed="false">${esc(category)} <span>${catalog.games.filter(game => game.category === category).length}</span></button>`).join('')}</div><span id="catalogCount" role="status" aria-live="polite">${catalog.games.length} oyun</span></div>
       <div class="catalog-grid">${cards}</div>
       <div id="catalogEmpty" class="catalog-empty" hidden><h3>Oyun bulunamadı.</h3><button type="button" id="clearGameFilters">Filtreleri temizle</button></div>
       <p class="catalog-requirements">Windows 10 / 11 · Oyunlar ayrı indirilir. Bazı oyunlar Steam üzerinden temel oyun kurulumu gerektirir.</p>
     </div>
   </section>`;
-  const announcement = `<aside class="release-band" aria-label="TikMnG yenilikleri"><div class="container"><div><span class="release-pill">YENİLİKLER</span><strong>15 oyunu keşfet. Yayınını sana özel tasarla.</strong></div><button type="button" data-news-open>Yeniliklere bak ${icon('arrow-up-right')}</button></div></aside>`;
+  const announcement = `<aside class="release-band release-feature" aria-label="TikMnG yenilikleri"><div class="container"><img class="release-cover" src="/game-covers/minecraft-yilan-cover-v2-500.webp" alt="Minecraft Yılan Oyunu" width="144" height="96" loading="lazy"><div class="release-copy"><span class="release-pill">7.0.2 · YENİ OYUN</span><strong>Minecraft Yılan Oyunu</strong><p>${catalog.games.length} oyun, yenilenen widgetlar ve yayına özel hediye tasarımları.</p></div><button type="button" data-game-open="minecraft-snake-arena">Oyunu incele ${icon('arrow-up-right')}</button></div></aside>`;
   const giftBand = `<section class="designer-band" id="giftDesign" aria-labelledby="giftBandTitle"><div class="container"><div><span class="catalog-eyebrow">SENİN YAYININ, SENİN TASARIMIN</span><h2 id="giftBandTitle">Hediyelerin sahnede yerini alsın.</h2><p>Launcher'daki hediye tasarım aracı şimdi webde de aynı deneyimle. Düzenini seç, hediyelerini yerleştir, tasarımını kaydet ve şeffaf PNG olarak indir.</p><a href="/hediye-tasarimi" class="portal-command primary">${icon('gift')} Hediye tasarla ${icon('arrow-up-right')}</a></div><div class="designer-sample" aria-label="Örnek hediye tasarımı"><img src="/designer-sample.webp" width="800" height="450" loading="lazy" alt="Sesli Sürüş için hediye ve eylem başlıklarının yerleştirildiği örnek tasarım"></div></div></section>`;
   let html = fs.readFileSync(path.join(web, 'index.html'), 'utf8');
   // Replace only the public game section; authentication and live demo code stay intact.

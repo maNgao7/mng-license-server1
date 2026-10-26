@@ -30,10 +30,10 @@ async function main() {
     const page = await browser.newPage({viewport:{width:1440,height:960}, reducedMotion:'reduce'});
     const errors = [];
     page.on('pageerror',error => errors.push(error.message));
-    await page.route('**/api/version',route => route.fulfill({json:{latestVersion:'6.5.17'}}));
+    await page.route('**/api/version',route => route.fulfill({json:{latestVersion:'7.0.2'}}));
     await page.goto(origin, {waitUntil:'networkidle'});
     await page.waitForSelector('.portal-news-button');
-    assert.equal(await page.locator('.catalog-card').count(), 15);
+    assert.equal(await page.locator('.catalog-card').count(), 16);
     assert.equal(await page.locator('#games').count(), 1);
     assert.deepEqual(await page.locator('[data-game]').evaluateAll(nodes => nodes.map(node => node.dataset.game)),catalog.games.map(game => game.id));
     assert.equal(await page.locator('#adminEntry').getAttribute('href'),'/admin/');
@@ -45,41 +45,42 @@ async function main() {
     await page.locator('#games').scrollIntoViewIfNeeded();
     await page.screenshot({path:path.join(out,'catalog-1440.png')});
     for (const game of catalog.games) {
-      await page.locator(`[data-game-open="${game.id}"]`).click();
+      await page.locator(`.catalog-card [data-game-open="${game.id}"]`).click();
       assert.equal(await page.locator('#portalDialogTitle').innerText(),game.title);
-      assert.equal(await page.locator('#portalDetail li').count(),game.features.length);
+      assert.equal(await page.locator('#portalDetail .game-dialog-content>ul li').count(),game.features.length);
+      assert.equal(await page.locator('#portalDetail .game-setup-notes li').count(),4);
       assert.equal(await page.locator('#portalDetail .game-dialog-requirement').innerText(),game.requirements);
       const details = await page.locator('#portalDetail').evaluate(node => ({height:node.scrollHeight,visible:node.clientHeight}));
       assert.ok(details.height > 0);
       if (game.id === 'caahr') await page.screenshot({path:path.join(out,'game-detail-1440.png')});
       await page.keyboard.press('Escape');
       await page.waitForFunction(() => !document.querySelector('#portalDetail').open);
-      assert.equal(await page.locator(`[data-game-open="${game.id}"]`).evaluate(node => node === document.activeElement), true);
+      assert.equal(await page.locator(`.catalog-card [data-game-open="${game.id}"]`).evaluate(node => node === document.activeElement), true);
     }
     await page.locator('[data-filter="Minecraft"]').click();
-    assert.equal(await page.locator('.catalog-card:visible').count(),3);
+    assert.equal(await page.locator('.catalog-card:visible').count(),4);
     await page.locator('#gameSearch').fill('kARTOPU');
     assert.equal(await page.locator('.catalog-card:visible').count(),1);
     await page.locator('#gameSearch').fill('bulunmayan-oyun-123');
     assert.equal(await page.locator('#catalogEmpty').isVisible(),true);
     await page.locator('#clearGameFilters').click();
-    assert.equal(await page.locator('.catalog-card:visible').count(),15);
+    assert.equal(await page.locator('.catalog-card:visible').count(),16);
     await page.locator('#gameSearch').fill('surus');
     assert.equal(await page.locator('.catalog-card:visible').count(),1);
     await page.locator('#gameSearch').fill('');
     await page.locator('.portal-news-button').click();
-    assert.equal(await page.locator('[data-news-game]').count(),15);
+    assert.equal(await page.locator('[data-news-game]').count(),16);
     await page.keyboard.press('Tab');
     assert.equal(await page.locator('#portalDetail').evaluate(node => node.contains(document.activeElement)),true);
     await page.locator('[data-news-game="caahr"]').click();
     assert.equal(await page.locator('#portalDialogTitle').innerText(),'Sesli Sürüş');
     await page.keyboard.press('Escape');
     await page.locator('.hero-cta-group .btn-tiktok').click();
-    assert.equal(await page.locator('#downloadVersion').innerText(),'6.5.17');
+    assert.equal(await page.locator('#downloadVersion').innerText(),'7.0.2');
     await page.keyboard.press('Escape');
     assert.equal(await page.locator('.download-stage').isVisible(),false);
     const sizes = [];
-    for (const [width,height] of [[1920,1080],[1024,768],[768,1024],[390,844],[360,780]]) {
+    for (const [width,height] of [[1920,1080],[1310,900],[1024,768],[768,1024],[390,844],[360,780]]) {
       await page.setViewportSize({width,height});
       await page.evaluate(() => scrollTo(0,0));
       assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth),true,`No overflow at ${width}`);
@@ -91,6 +92,16 @@ async function main() {
       await page.screenshot({path:path.join(out,`home-${width}.png`)});
       await page.locator('#games').scrollIntoViewIfNeeded();
       await page.screenshot({path:path.join(out,`catalog-${width}.png`)});
+      for (const game of catalog.games) {
+        await page.locator(`.catalog-card [data-game-open="${game.id}"]`).click();
+        await page.locator('.game-dialog-art').evaluate(image => image.decode());
+        assert.equal(await page.locator('#portalDialogTitle').innerText(),game.title);
+        assert.equal(await page.locator('#portalDetail .game-setup-notes li').count(),4);
+        assert.equal(await page.locator('#portalDetail').evaluate(node => node.scrollWidth <= node.clientWidth + 1),true,`${game.id} detail fits at ${width}`);
+        assert.equal(await page.locator('.game-setup-notes').evaluate(node => node.scrollWidth <= node.clientWidth + 1),true,`${game.id} notes fit at ${width}`);
+        if(game.id==='caahr')await page.screenshot({path:path.join(out,`game-detail-${width}.png`)});
+        await page.keyboard.press('Escape');
+      }
       sizes.push({width,height,heroBottom,header});
     }
     await page.locator('[data-game-open="caahr"]').click();
@@ -103,7 +114,7 @@ async function main() {
     await page.waitForSelector('html[data-ready="true"]');
     assert.equal(await page.locator('#layoutType option').count(),6);
     assert.deepEqual(errors,[]);
-    fs.writeFileSync(path.join(out,'result.json'),JSON.stringify({passed:true,games:15,coverDecodes:covers.length,gameDetailDialogs:15,filterSearch:true,notifications:15,designerReachable:true,adminVisible:true,sizes,errors},null,2));
+    fs.writeFileSync(path.join(out,'result.json'),JSON.stringify({passed:true,games:16,coverDecodes:covers.length,gameDetailDialogs:16*(1+sizes.length),setupNotesPerGame:4,initialViewport:{width:1440,height:960},filterSearch:true,notifications:16,designerReachable:true,adminVisible:true,sizes,errors},null,2));
     console.log(`Website QA passed: ${out}`);
   } finally { await browser?.close(); await new Promise(resolve => server.close(resolve)); }
 }

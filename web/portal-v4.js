@@ -43,6 +43,16 @@ document.addEventListener('DOMContentLoaded', () => {
     const game = games.find(game => game.id === id);
     if (!game) return;
     openDialog(`<div class="game-dialog-layout"><img class="game-dialog-art" src="/game-covers/${game.cover}-1000.webp" alt="${esc(game.title)} kapağı" width="1000" height="667"><div class="game-dialog-content"><span class="catalog-eyebrow">${esc(game.category)}</span><h2 id="portalDialogTitle">${esc(game.title)}</h2><p>${esc(game.description)}</p><ul>${game.features.map(feature => `<li>${icon('check')}${esc(feature)}</li>`).join('')}</ul><p class="game-dialog-requirement">${esc(game.requirements)}</p><a class="portal-command primary" href="/download/setup">${icon('download')} Launcher'ı indir</a></div></div>`, source);
+    gameSetup();
+  }
+  function gameSetup() {
+    const content = dialog.querySelector('.game-dialog-content');
+    if (!content || content.querySelector('.game-setup-notes')) return;
+    const notes = document.createElement('ol'); notes.className = 'game-setup-notes';
+    for (const text of ['Launcher üzerinden oyunu seçip yüklemeyi tamamla.', 'Hazır hediye görseli varsa oyun sayfasından indir; yoksa Hediye Tasarımı bölümünde hazırla.', 'Canlı yayını açıp launcher içinden TikTok yayın hesabını bağla.', 'Oyna ile aç; oyun içindeki hediye eşleşmelerini kontrol edip başla.']) {
+      const step = document.createElement('li'); step.textContent = text; notes.append(step);
+    }
+    content.append(notes);
   }
   document.querySelectorAll('[data-game-open]').forEach(button => button.addEventListener('click', () => openGame(button.dataset.gameOpen,button)));
   const newsButton = document.createElement('button');
@@ -54,7 +64,7 @@ document.addEventListener('DOMContentLoaded', () => {
   document.querySelector('.nav-actions').prepend(newsButton);
   try { newsButton.classList.toggle('is-read',localStorage.getItem('tikmng-website-news') === catalog.revision); } catch {}
   function openNews(source) {
-    openDialog(`<div class="portal-news-content"><span class="catalog-eyebrow">TIKMNG'DE YENİLİKLER</span><h2 id="portalDialogTitle">15 oyun, yepyeni bir keşif alanı.</h2><p>Oyunların kendi kapaklarını, mekaniklerini ve kurulum gereksinimlerini bir arada keşfet. Launcher'daki hediye tasarım aracını webde de kullan.</p><div class="portal-news-list">${games.map(game => `<a href="#games" data-news-game="${game.id}"><img src="/game-covers/${game.cover}-500.webp" alt="" width="72" height="48" loading="lazy"><span>${esc(game.title)}<small>${esc(game.category)}${game.isNew ? ' · Yeni' : ''}</small></span></a>`).join('')}</div><a class="portal-command primary" href="/hediye-tasarimi">${icon('gift')} Hediye tasarımını aç</a></div>`,source);
+    openDialog(`<div class="portal-news-content"><span class="catalog-eyebrow">TIKMNG'DE YENİLİKLER</span><h2 id="portalDialogTitle">${games.length} oyun, yepyeni bir keşif alanı.</h2><p>Minecraft Yılan Oyunu artık kütüphanede. Oyunları kapakları, mekanikleri ve kurulum gereksinimleriyle keşfet. Launcher'daki hediye tasarım aracını webde de kullan.</p><div class="portal-news-list">${games.map(game => `<a href="#games" data-news-game="${game.id}"><img src="/game-covers/${game.cover}-500.webp" alt="" width="72" height="48" loading="lazy"><span>${esc(game.title)}<small>${esc(game.category)}${game.isNew ? ' · Yeni' : ''}</small></span></a>`).join('')}</div><a class="portal-command primary" href="/hediye-tasarimi">${icon('gift')} Hediye tasarımını aç</a></div>`,source);
     try { localStorage.setItem('tikmng-website-news',catalog.revision); newsButton.classList.add('is-read'); } catch {}
     dialog.querySelectorAll('[data-news-game]').forEach(link => link.addEventListener('click', event => {
       event.preventDefault(); const id = link.dataset.newsGame; dialog.close(); openGame(id,source);

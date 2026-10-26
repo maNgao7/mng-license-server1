@@ -89,7 +89,7 @@ function draftGame() {
         sha256: null, bytes: null, requirements: "Windows", resources: [{ title: "Guide", url: "https://93.184.216.34/guide" }] }], media: [] };
 }
 
-test("public defaults use actual legacy download URLs and pinned GitHub package integrity; no launcher feed", async t => {
+test("public defaults promote 16 games with pinned complete content and retain independent packages", async t => {
     const f = await fixture(t, {}, {seed:false});
     const response = await f.request("/api/content/catalog", "GET", undefined, false);
     assert.equal(response.status, 200); assert.equal(response.data.schemaVersion, 1);
@@ -97,12 +97,12 @@ test("public defaults use actual legacy download URLs and pinned GitHub package 
     assert.match(response.headers.get("etag"), /^"[a-f0-9]{64}"$/);
     assert.equal(response.data.launcher, undefined);
     const byId = Object.fromEntries(response.data.games.map(item => [item.id, item]));
-    assert.equal(response.data.games.length, 15);
+    assert.equal(response.data.games.length, 16);
     assert.equal(response.data.media.length, 285);
-    assert.equal(response.data.revision, 1);
+    assert.equal(response.data.revision, 3);
     assert.equal(byId.caahr.version, '0.6.11');
     assert.equal(byId.caahr.bytes, 52163999);
-    for (const [id, version, folder] of legacyPackages) {
+    for (const [id, version, folder] of legacyPackages.filter(([id]) => ['frog-river','gelene-gecene'].includes(id))) {
         assert.equal(byId[id].version, version);
         assert.equal(byId[id].url, `https://mng-license-server1.onrender.com/download/game/${folder}.zip`);
         // These routes can redirect via GAME_DOWNLOAD_*_URL or serve a higher-priority data-directory ZIP.
@@ -110,12 +110,9 @@ test("public defaults use actual legacy download URLs and pinned GitHub package 
         assert.equal(byId[id].bytes, null);
     }
     const pinned = [
-        ["battle-royale", "6.5.16", "battle-royale", 998922210, "c867e05148c5b921bd75edb29c12611bdb73f53dc1a834c888fee98c738d5168"],
-        ["snow-war", "6.5.16", "snow-war", 1006436941, "fe4bdc56612308daa61254f7ea42f4cb2b46650bd3670fa23616bd7c1c8c7790"],
-        ["orbit", "6.5.16", "mng-orbit", 416199515, "be2617dd590826d3996f12ec4b5ab038da50ba5374da7852b69883b58db83d8d"],
-        ["zombie-war", "6.5.17", "zombie-war", 947576508, "9d2d641f05d2bec905522202d0f523e64bd5b4868e45f03148bfe37ece466749", "zombie-war-6.5.17"],
-        ["penalty-kick", "6.5.10", "penalty-kick", 93293252, "81e0f23fd0ddb290d20c884043dc0eefccf33e15780e80266ebc8a7aeec99039"],
-        ["tightrope-balance", "6.5.10", "tightrope-balance", 58639241, "4cfb2f5374944da6cc8906085bb3d977a5a04f3e02e92e68e4e917b5cee026a0"]
+        ["battle-royale", "7.0.2", "battle-royale-7.0.2", 958445695, "01f1698f85fba3020c3d8a01057d8dbcc00bd4475e30cd0e7a4720a5f027bc68", "game-installers-7.0.2"],
+        ["snow-war", "7.0.2", "snow-war-7.0.2", 914734468, "00fbd267ce37fa7877ebd0d42b38ea47233438b2f5f6dbd5210acdedb3e35fae", "game-installers-7.0.2"],
+        ["zombie-war", "6.5.17", "zombie-war", 947576508, "9d2d641f05d2bec905522202d0f523e64bd5b4868e45f03148bfe37ece466749", "zombie-war-6.5.17"]
     ];
     for (const [id, version, folder, bytes, sha256, tag = `v${version}`] of pinned) {
         assert.equal(byId[id].version, version);
@@ -123,6 +120,16 @@ test("public defaults use actual legacy download URLs and pinned GitHub package 
         assert.equal(byId[id].bytes, bytes);
         assert.equal(byId[id].sha256, sha256);
     }
+    for (const id of ['vs','puanlama','orbit','crowd-control','battle-game','duck-hunt','pony-life','penalty-kick','tightrope-balance','battle-royale','snow-war','minecraft-snake-arena']) {
+        const game = byId[id];
+        assert.equal(game.version, id === 'minecraft-snake-arena' ? '0.15.2' : '7.0.2');
+        assert.match(game.url, id === 'minecraft-snake-arena' ? /\/games-7\.0\.2\/[^/]+\.zip$/ : /\/game-installers-7\.0\.2\/[^/]+\.zip$/);
+        assert.match(game.sha256, /^[a-f0-9]{64}$/); assert.ok(game.bytes > 0);
+        assert.equal(game.files.length, 1); assert.equal(game.files[0].path, '.tikmng-content.json');
+        assert.match(game.files[0].sha256, /^[a-f0-9]{64}$/); assert.ok(game.files[0].bytes > 0);
+    }
+    assert.deepEqual(byId.vs.files, byId.puanlama.files);
+    assert.equal(byId.vs.url, byId.puanlama.url);
     assert.match(byId["gelene-gecene"].requirements, /Steam.*Unturned.*304930/);
     assert.ok(response.data.games.every(game => !/releases\/download\/v6\.5\.(?:0|5|7)\//.test(game.url)));
     assert.ok(!JSON.stringify(response.data).includes("C:\\"));
@@ -135,12 +142,8 @@ test("legacy download URLs map to real root ZIPs and the existing Gelene Geçene
     const modDirectory = path.join(f.dir, "downloads", "games");
     fs.mkdirSync(modDirectory, { recursive: true });
     fs.copyFileSync(path.join(root, "downloads", "games", "gelene-gecene.zip"), path.join(modDirectory, "gelene-gecene.zip"));
-    const catalog = await f.public();
     for (const folder of new Set(legacyPackages.map(([, , folder]) => folder))) {
-        const game = catalog.games.find(item => new URL(item.url).pathname === `/download/game/${folder}.zip`);
-        assert.ok(game, folder);
-        const url = new URL(game.url);
-        assert.equal(url.origin, "https://mng-license-server1.onrender.com");
+        const url = new URL(`/download/game/${folder}.zip`, "https://mng-license-server1.onrender.com");
         const response = await fetch(f.base + url.pathname, { headers: { Range: "bytes=0-15" }, redirect: "manual" });
         assert.equal(response.status, 206, folder);
         const local = path.join(root, ...(folder === "gelene-gecene" ? ["downloads", "games"] : []), `${folder}.zip`);
@@ -154,11 +157,12 @@ test("legacy download URLs map to real root ZIPs and the existing Gelene Geçene
     }
 });
 
-test("legacy download overrides do not inherit an incorrect root ZIP hash", async t => {
+test("legacy overrides cannot replace the immutable published package or its hash", async t => {
     const f = await fixture(t, { GAME_DOWNLOAD_BATTLE_GAME_URL: remote });
     const game = (await f.public()).games.find(item => item.id === "battle-game");
-    assert.equal(game.sha256, null); assert.equal(game.bytes, null);
-    const response = await fetch(f.base + new URL(game.url).pathname, { redirect: "manual" });
+    assert.match(game.url, /\/game-installers-7\.0\.2\/battle-game-7\.0\.2\.zip$/);
+    assert.match(game.sha256, /^[a-f0-9]{64}$/); assert.ok(game.bytes > 0);
+    const response = await fetch(f.base + '/download/game/battle-game.zip', { redirect: "manual" });
     assert.equal(response.status, 302);
     assert.equal(response.headers.get("location"), remote);
     await response.arrayBuffer();
@@ -262,6 +266,26 @@ test("per-file patches and optional launcher metadata round-trip without changin
         d => { d.launcher.changelog = "<b>bad</b>"; },
         d => { d.launcher.bytes = null; }, d => { d.launcher.extra = true; }
     ]) { const invalid = structuredClone(base); modify(invalid); assert.equal((await f.save(invalid)).status, 400); }
+});
+
+test("complete content descriptors round-trip, while nested, mixed and oversized control files are rejected", async t => {
+    const f = await fixture(t);
+    const draft = draftGame();
+    const descriptor = { path: ".tikmng-content.json", url: "https://93.184.216.34/content.json", sha256: "c".repeat(64), bytes: 4096 };
+    draft.games[0].files = [descriptor];
+    const saved = await f.save(draft); assert.equal(saved.status, 200);
+    assert.equal((await f.publish(saved.data.draft.revision)).status, 200);
+    const base = (await f.get()).draft;
+    assert.deepEqual(base.games[0].files, [descriptor]);
+    for (const files of [
+        [{ ...descriptor, path: "nested/.tikmng-content.json" }],
+        [{ ...descriptor, path: ".tikmng-package.json" }],
+        [{ ...descriptor, bytes: 16 * 1024 * 1024 + 1 }],
+        [descriptor, { ...descriptor, path: "ordinary.js" }]
+    ]) {
+        const invalid = structuredClone(base); invalid.games[0].files = files;
+        assert.equal((await f.save(invalid)).status, 400);
+    }
 });
 
 test("MP4 and WebM uploads are immutable, hashed, ranged, private storage paths stay hidden and assets survive restart", async t => {

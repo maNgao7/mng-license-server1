@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "games": [
+    {
+      "id": "minecraft-snake-arena",
+      "title": "Minecraft Yılan Oyunu",
+      "cover": "minecraft-yilan-cover-v2",
+      "announcementId": "minecraft-snake-arena-0.15.0",
+      "definition": {
+        "id": "minecraft-snake-arena",
+        "klasor": "minecraft-snake-arena",
+        "boyut": "787 MB",
+        "paketSurumu": "0.15.2",
+        "minecraft": true,
+        "modFile": "tikmng_snake_arena-0.15.1.jar",
+        "configFile": "tikmng-snake-arena.json"
+      }
+    }
+  ]
+}
