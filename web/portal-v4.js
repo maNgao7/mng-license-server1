@@ -43,13 +43,16 @@ document.addEventListener('DOMContentLoaded', () => {
     const game = games.find(game => game.id === id);
     if (!game) return;
     openDialog(`<div class="game-dialog-layout"><img class="game-dialog-art" src="/game-covers/${game.cover}-1000.webp" alt="${esc(game.title)} kapağı" width="1000" height="667"><div class="game-dialog-content"><span class="catalog-eyebrow">${esc(game.category)}</span><h2 id="portalDialogTitle">${esc(game.title)}</h2><p>${esc(game.description)}</p><ul>${game.features.map(feature => `<li>${icon('check')}${esc(feature)}</li>`).join('')}</ul><p class="game-dialog-requirement">${esc(game.requirements)}</p><a class="portal-command primary" href="/download/setup">${icon('download')} Launcher'ı indir</a></div></div>`, source);
-    gameSetup();
+    gameSetup(game);
   }
-  function gameSetup() {
+  function gameSetup(game) {
     const content = dialog.querySelector('.game-dialog-content');
     if (!content || content.querySelector('.game-setup-notes')) return;
     const notes = document.createElement('ol'); notes.className = 'game-setup-notes';
-    for (const text of ['Launcher üzerinden oyunu seçip yüklemeyi tamamla.', 'Hazır hediye görseli varsa oyun sayfasından indir; yoksa Hediye Tasarımı bölümünde hazırla.', 'Canlı yayını açıp launcher içinden TikTok yayın hesabını bağla.', 'Oyna ile aç; oyun içindeki hediye eşleşmelerini kontrol edip başla.']) {
+    const controls = game.id === 'minecraft-snake-arena'
+      ? 'Tab ile 300 kütleyle yayıncı yılan olarak katıl, WASD ile oyna. O ile savaşın 10 saniyelik geri sayımını başlat; B ile ayarları aç.'
+      : 'Oyna ile aç; oyun içindeki hediye eşleşmelerini kontrol edip başla.';
+    for (const text of ['Launcher üzerinden oyunu seçip yüklemeyi tamamla.', 'Hazır hediye görseli varsa oyun sayfasından indir; yoksa Hediye Tasarımı bölümünde hazırla.', 'Canlı yayını açıp launcher içinden TikTok yayın hesabını bağla.', controls]) {
       const step = document.createElement('li'); step.textContent = text; notes.append(step);
     }
     content.append(notes);

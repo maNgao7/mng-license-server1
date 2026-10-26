@@ -17,7 +17,7 @@ const expected = {
     'penalty-kick': ['kaleci modunda', 'yayıncı şutu', 'OYUNA GİR', 'sürükle', 'bırak: şut', 'WASD', 'Space: hızlı test'],
     'tightrope-balance': ['ağırlıkları dengele', 'kavanozlara', '3D OYUNA BAŞLA', 'Space, W', 'basılı', 'E veya C', 'sağ tık'],
     'zombie-war': ['yaratıkları', 'hediye/beğeni/takip', 'Glock 17', 'B:', 'P:', 'sol fare', 'otomatik doldurulur'],
-    'minecraft-snake-arena': ['rakip yılanları', '300 kütle', 'Space', 'O tuşuna', '10 saniye', 'WASD:', 'sağ tık: +10', 'B:', 'P:', 'F:']
+    'minecraft-snake-arena': ['rakip yılanları', '300 kütle', 'Tab', 'O tuşuna', '10 saniye', 'WASD:', 'sağ tık: +10', 'B:', 'P:', 'F:']
 };
 
 const sourceEvidence = {

@@ -297,6 +297,8 @@ function mainHarness(options = {}) {
                 if (options.occupied) throw new Error('Occupied by stable launcher');
             } };
             if (name === './lib/shared-game-assets.cjs') return { prepareSharedGameAssets: async () => {} };
+            if (name === './lib/native-game.cjs') return { nativeOwnsLiveSession: game =>
+                game === 'minecraft-snake-arena' || (Boolean(options.currentNative || options.preview) && ['snow-war','battle-royale'].includes(game)) };
             if (name === './lib/game-account-handoff.cjs') return { handoffGameAccount: async data => { handoffs.push(data);if(options.handoffFailure)throw new Error('Synthetic handoff failed');return{requested:true}; } };
             throw new Error(`Unexpected dependency: ${name}`);
         },
@@ -382,9 +384,9 @@ test('account transport failure warns without pretending LIVE or blocking offlin
     await harness.snapshot().session.close();
 });
 
-test('updated preview Minecraft clients own their native LIVE session without a competing launcher connect', async t=>{
-    for(const gameId of ['snow-war','battle-royale'])await t.test(gameId,async()=>{
-        const harness=mainHarness({preview:true});
+test('updated stable and preview Minecraft clients own their native LIVE session without a competing launcher connect', async t=>{
+    for(const preview of [false,true])for(const gameId of ['snow-war','battle-royale'])await t.test(gameId+'/'+preview,async()=>{
+        const harness=mainHarness({preview,currentNative:true});
         assert.equal((await harness.launch({uygulama:gameId,tiktokUser:'selected_host'})).basarili,true);
         assert.equal(harness.spawned[0].config.env.MNG_TIKTOK_USER,'selected_host');
         assert.equal(harness.handoffs.length,0);

@@ -1,0 +1,21 @@
+modLoader="javafml"
+loaderVersion="[47,)"
+license="All Rights Reserved"
+[[mods]]
+modId="tikmng_snake_arena"
+version="0.15.3"
+displayName="TikMnG Snake Arena - Prototip"
+authors="TikMnG"
+description='''TikTok izleyicilerinin yilanlara donustugu ustten gorunumlu Minecraft arena prototipi.'''
+[[dependencies.tikmng_snake_arena]]
+modId="forge"
+mandatory=true
+versionRange="[47,)"
+ordering="NONE"
+side="BOTH"
+[[dependencies.tikmng_snake_arena]]
+modId="minecraft"
+mandatory=true
+versionRange="[1.20.1,1.20.2)"
+ordering="NONE"
+side="BOTH"

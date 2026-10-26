@@ -10,9 +10,9 @@
         "id": "minecraft-snake-arena",
         "klasor": "minecraft-snake-arena",
         "boyut": "787 MB",
-        "paketSurumu": "0.15.2",
+        "paketSurumu": "0.15.3",
         "minecraft": true,
-        "modFile": "tikmng_snake_arena-0.15.1.jar",
+        "modFile": "tikmng_snake_arena-0.15.3.jar",
         "configFile": "tikmng-snake-arena.json"
       }
     }

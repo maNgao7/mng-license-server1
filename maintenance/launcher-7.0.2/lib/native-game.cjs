@@ -30,4 +30,15 @@ function findVoiceDrivingGame({exists=fs.existsSync,env=process.env,requireMod=t
 function voiceDrivingVersion(directory){
     try{return /TikMnG Sesli Surus (\d+\.\d+\.\d+) loaded/.exec(fs.readFileSync(path.join(directory,'BepInEx/config/TikMnG-Diagnostics/loaded.txt'),'utf8'))?.[1]||null;}catch{return null;}
 }
-module.exports = { launchNativeGame, findVoiceDrivingGame, voiceDrivingVersion };
+function nativeOwnsLiveSession(gameId, directory) {
+    if (gameId === 'minecraft-snake-arena') return true;
+    if (!['snow-war', 'battle-royale'].includes(gameId)) return false;
+    try {
+        const marker = JSON.parse(fs.readFileSync(path.join(directory, '.tikmng-package.json'), 'utf8'));
+        const version = /^(\d+)\.(\d+)\.(\d+)(?:[-+]|$)/.exec(String(marker.version));
+        if (!version) return false;
+        const [major, minor, patch] = version.slice(1).map(Number);
+        return major > 7 || (major === 7 && (minor > 0 || patch >= 2));
+    } catch { return false; }
+}
+module.exports = { launchNativeGame, findVoiceDrivingGame, voiceDrivingVersion, nativeOwnsLiveSession };

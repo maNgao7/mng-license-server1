@@ -14,7 +14,7 @@ const digest=file=>crypto.createHash('sha256').update(fs.readFileSync(file)).dig
 const before=digest(savedFile),version=process.env.MNG_QA_VERSION||'7.0.2-preview.6',key=crypto.randomBytes(16).toString('hex');
 const saved=new Store({cwd:sourceProfile,projectVersion:'7.0.2-preview.5',name:'mng-config',encryptionKey:'mng-electron-secret-key-2024'});
 const store=new Store({cwd:profile,projectVersion:version,name:'mng-config',encryptionKey:'mng-electron-secret-key-2024'});
-for(const name of ['lisans_kod','cihaz_kimlik','lisans_token','lisans_bitis','is_unlimited'])if(saved.has(name))store.set(name,saved.get(name));
+for(const name of ['lisans_kod','cihaz_kimlik','lisans_token','lisans_bitis','son_dogrulama','is_unlimited'])if(saved.has(name))store.set(name,saved.get(name));
 store.set('preview_initialized_v1',true);
 store.set('library_root_v1',path.join(profile,'games'));
 store.set('media_root_v1',path.join(profile,'media'));
@@ -32,6 +32,7 @@ async function run(){
     const port=await freePort(),env={...process.env,MNG_TEST_PROFILE:profile,MNG_WIDGET_PORT:String(port),MNG_WIDGET_ACCESS_KEY:key};delete env.ELECTRON_RUN_AS_NODE;
     app=await _electron.launch({executablePath:process.env.MNG_QA_EXE||'D:/TikMnG-Manager-Snake-0.15.0-candidate/win-unpacked/TikMnG.exe',args:process.env.MNG_QA_STABLE==='1'?[]:['--tikmng-preview'],env,timeout:60000});
     const page=await app.firstWindow({timeout:60000});page.on('pageerror',error=>result.rendererErrors.push(error.message));
+    await app.evaluate(({BrowserWindow})=>BrowserWindow.getAllWindows().forEach(window=>window.hide()));
     await page.waitForFunction(()=>window.mngAPI&&document.querySelector('#workspaceRoot'),null,{timeout:60000});
     const snapshot=()=>page.evaluate(()=>window.mngAPI.workspace('snapshot'));
     const initial=await snapshot();assert.equal(initial.version,version);assert.equal(initial.preview,process.env.MNG_QA_STABLE!=='1');assert.equal(initial.libraryRoot,path.join(profile,'games'));

@@ -3,13 +3,14 @@ const fs=require('node:fs'),path=require('node:path'),crypto=require('node:crypt
 const root=path.resolve(__dirname,'..'),candidate=process.argv[2]||'D:/TikMnG-Manager-Snake-0.15.0-candidate/win-unpacked';
 const output=process.env.MNG_QA_OUTPUT||'D:/TikMnG-Widget-Preview12-20261026';
 const archive=path.join(candidate,'resources/app.asar');
-const files=['main.js','renderer/app.js','renderer/workspace.js','renderer/workspace-v3.css','renderer/widget-studio.css','renderer/widgets/reference-widgets.html','lib/widget-studio.cjs','lib/game-announcements.cjs',...['100','500','5000','10000'].map(tier=>`renderer/gift-assets/tikmng-champion-${tier}-v1-runtime.webp`),'renderer/gift-assets/tikmng-champion-wings-v1-runtime.webp','renderer/gift-assets/tikmng-alert-frame-v1-runtime.webp'];
+const files=['main.js','renderer/app.js','renderer/workspace.js','renderer/workspace-v3.css','renderer/widget-studio.css','renderer/widgets/reference-widgets.html','lib/widget-studio.cjs','lib/game-announcements.cjs','lib/native-game.cjs','lib/catalog-defaults.json','lib/published-games.json',...['100','500','5000','10000'].map(tier=>`renderer/gift-assets/tikmng-champion-${tier}-v1-runtime.webp`),'renderer/gift-assets/tikmng-champion-wings-v1-runtime.webp','renderer/gift-assets/tikmng-alert-frame-v1-runtime.webp'];
 const hash=value=>crypto.createHash('sha256').update(value).digest('hex');
 const checked=files.map(file=>{const source=fs.readFileSync(path.join(root,file)),packed=asar.extractFile(archive,path.normalize(file));assert.equal(hash(packed),hash(source),'Packaged source differs: '+file);return {file,sha256:hash(packed),bytes:packed.length};});
 const version=JSON.parse(asar.extractFile(archive,'package.json')).version;
 assert.equal(version,process.env.MNG_QA_VERSION||'7.0.2-preview.12');
-const marker=JSON.parse(fs.readFileSync(path.join(candidate,'resources/tikmng-preview.json'),'utf8'));
-assert.equal(marker.version,version);assert.equal(marker.automaticUpdates,false);
+const markerFile=path.join(candidate,'resources/tikmng-preview.json');
+if(process.env.MNG_QA_STABLE==='1')assert.equal(fs.existsSync(markerFile),false);
+else {const marker=JSON.parse(fs.readFileSync(markerFile,'utf8'));assert.equal(marker.version,version);assert.equal(marker.automaticUpdates,false);}
 const result={passed:true,version,candidate,checked};
 fs.mkdirSync(output,{recursive:true});fs.writeFileSync(path.join(output,'package-verification.json'),JSON.stringify(result,null,2));
 console.log(JSON.stringify({passed:true,version,files:checked.length}));

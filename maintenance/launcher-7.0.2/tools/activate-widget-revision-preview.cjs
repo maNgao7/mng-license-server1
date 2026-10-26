@@ -29,10 +29,22 @@ async function run(){
         await page.locator('[data-workspace-view="games"]').click();
         await page.locator('[data-open="minecraft-snake-arena"]').first().click();
         await page.locator('.game-setup').waitFor();
+        const instructions=await page.locator('.game-setup').innerText();assert.match(instructions,/Tab/);assert.match(instructions,/O tuşuna/);
         assert.deepEqual(await page.locator('.setup-step-number').allTextContents(),['1','2','3','4','5','6']);
         assert.equal(await page.locator('.game-setup h2').evaluate(node=>getComputedStyle(node).fontSize),'22px');
         assert.equal(await page.locator('.game-setup p').first().evaluate(node=>getComputedStyle(node).fontSize),'14px');
         await page.locator('.game-setup').screenshot({path:path.join(output,'installed-game-setup.png')});
+    }
+    if(process.env.MNG_QA_SNAKE_UPDATE==='1'){
+        const before=await page.evaluate(()=>window.mngAPI.workspace('snapshot'));
+        const game=before.games.find(g=>g.id==='minecraft-snake-arena');
+        const configFile=game.path&&path.join(game.path,'game-instance/config/tikmng-snake-arena.json');
+        const config=configFile&&fs.existsSync(configFile)?fs.readFileSync(configFile):null;
+        const installed=await page.evaluate(()=>window.mngAPI.workspace('install',{id:'minecraft-snake-arena'}));assert.equal(installed.basarili,true,installed.hata);
+        const after=await page.evaluate(()=>window.mngAPI.workspace('snapshot'));
+        const updated=after.games.find(g=>g.id==='minecraft-snake-arena');assert.equal(updated.installedVersion,'0.15.3');
+        if(config)assert.deepEqual(fs.readFileSync(path.join(updated.path,'game-instance/config/tikmng-snake-arena.json')),config,'Saved snake settings retained');
+        for(const old of before.games.filter(g=>g.installed&&g.id!=='minecraft-snake-arena')){const same=after.games.find(g=>g.id===old.id);assert.equal(same.path,old.path);assert.equal(same.installedVersion,old.installedVersion);}
     }
     const after=Object.fromEntries(preserve.map(key=>[key,saved.get(key)]));
     for(const key of preserve.filter(key=>key!=='media_studio_v1'))assert.deepEqual(after[key],before[key],'Preserved setting '+key);

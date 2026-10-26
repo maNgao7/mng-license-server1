@@ -11,7 +11,7 @@ const { createGameAnnouncements } = require('../lib/game-announcements.cjs');
 const resources = require('../lib/game-resources.cjs');
 const renderer = path.resolve(__dirname, '../renderer');
 const web = path.resolve('D:/TikMnG-Release-7.0.0-source/web');
-const output = 'D:/TikMnG-Snake-Arena-Prototype/tools/qa/admin-ui-final';
+const output = process.env.MNG_QA_OUTPUT || 'D:/TikMnG-Snake-Arena-Prototype/tools/qa/admin-ui-final';
 fs.mkdirSync(output, { recursive: true });
 const admin = require('../lib/admin-games.json').games[0];
 const base = require('../lib/catalog-defaults.json');
@@ -169,6 +169,7 @@ async function main() {
     });
     const viewportResults = [];
     for (const viewport of viewports) {
+        values.delete('game_announcements_v1');
         channel = 'qa-' + viewport.width;
         await page.setViewportSize(viewport); await page.goto(origin);
         await page.locator('#gameAnnouncement[open]').waitFor();
@@ -206,7 +207,7 @@ async function main() {
         await page.screenshot({ path: path.join(output, `minecraft-hover-${viewport.width}.png`) });
         await page.locator('[data-category="all"]').click();
         const details = [];
-        for (const game of [...base.games, admin]) {
+        for (const game of [...base.games.filter(game=>game.id!==admin.id), admin]) {
             await page.locator(`[data-open="${game.id}"]`).click();
             await page.locator('.game-detail-cover>img').evaluate(image => image.decode());
             assert.equal(await page.locator('.game-detail-info>p').textContent(), game.description);
@@ -232,6 +233,7 @@ async function main() {
         console.log(`Rendered ${viewport.width}x${viewport.height}: 16 covers/details, notes, persisted dismissal and moving source-only hover passed`);
     }
     channel = 'qa-download'; packageReady = true;
+    values.delete('game_announcements_v1');
     await page.setViewportSize({ width: 1310, height: 900 });
     await page.reload(); await page.locator('#gameAnnouncement[open]').waitFor();
     await page.screenshot({ path: path.join(output, 'announcement-download-1310.png') });
@@ -247,6 +249,7 @@ async function main() {
     await page.reload(); await page.locator('.library-card').first().waitFor();
     assert.equal(await page.locator('#gameAnnouncement[open]').count(), 0);
     for(const mode of ['reject','hang']){
+        values.delete('game_announcements_v1');
         dismissMode=mode;channel='qa-close-'+mode;
         await page.reload();await page.locator('#gameAnnouncement[open]').waitFor();
         await page.locator('[data-announcement-open]').click();
@@ -296,7 +299,7 @@ async function main() {
     const result = { passed: true, games: 16, minecraftGames: 4, instructionsVerified: 16 * viewports.length, giftsPerBuilder: gifts.length, cover: admin.cover,
         coverEvidence: { source: coverSource, target: coverFile, sha256: sha(fs.readFileSync(coverFile)), sameBytes: true, typography: 'none in supplied v2', titleInUI: true },
         giftGuide: { sha256: sha(sourceGuide), descriptorVerified: true, commandGameId: admin.id }, viewportResults, builderResults,
-        announcement: ['close-persisted', 'account-isolated', 'escape-persisted', 'mobile-fit', 'download-uses-existing-installer','write-failure-not-blocking','hung-write-not-blocking','straight-growing-rays','changing-distinct-artwork'], hoverImages: 12, hoverSeconds: 4.5,
+        announcement: ['close-persisted-per-installation', 'escape-persisted', 'mobile-fit', 'download-uses-existing-installer','write-failure-not-blocking','hung-write-not-blocking','straight-growing-rays','changing-distinct-artwork'], hoverImages: 12, hoverSeconds: 4.5,
         download: { syntheticOnly: true, id: admin.id, singleRequest: true, progressDisabled: true, installedStateRendered: true, dismissedAfterReload: true },
         uiRevision:'individual-controls-and-celebration',pendingGameRuntimeChecks,
         syntheticProfileOnly: true, built: false, installed: false, mainPlatformEditedByThisRun: false, errors };

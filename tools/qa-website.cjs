@@ -49,6 +49,11 @@ async function main() {
       assert.equal(await page.locator('#portalDialogTitle').innerText(),game.title);
       assert.equal(await page.locator('#portalDetail .game-dialog-content>ul li').count(),game.features.length);
       assert.equal(await page.locator('#portalDetail .game-setup-notes li').count(),4);
+      if (game.id === 'minecraft-snake-arena') {
+        const controls = await page.locator('#portalDetail .game-setup-notes li').last().innerText();
+        assert.match(controls,/Tab ile 300/); assert.match(controls,/O ile savaşın 10 saniyelik/); assert.match(controls,/WASD/);
+        assert.doesNotMatch(controls,/Space|Shift\+O/);
+      }
       assert.equal(await page.locator('#portalDetail .game-dialog-requirement').innerText(),game.requirements);
       const details = await page.locator('#portalDetail').evaluate(node => ({height:node.scrollHeight,visible:node.clientHeight}));
       assert.ok(details.height > 0);

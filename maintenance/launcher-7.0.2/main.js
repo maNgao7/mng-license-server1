@@ -2366,7 +2366,7 @@ async function geleneGeceneOturumKoprusunuBaslat(session, modDir) {
 async function minecraftOyunuAc(oyun, session) {
     const gameDir = oyunKlasoruBul(oyun);
     const runtime = nodeBilgisiBul();
-    const javaOwnedLive = oyun === 'minecraft-snake-arena' || (preview.enabled && ['snow-war', 'battle-royale'].includes(oyun));
+    const javaOwnedLive = require('./lib/native-game.cjs').nativeOwnsLiveSession(oyun, gameDir);
     session.progress('engine', 'Oyun motoru başlatılıyor; hazır sinyali bekleniyor...');
     const child = session.ownChild(spawn(runtime.komut, [path.join(gameDir, 'launch-game.cjs')], {
         cwd: gameDir, env: { ...runtime.env,

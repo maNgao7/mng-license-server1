@@ -4,29 +4,29 @@
     {
       "id": "minecraft-snake-arena",
       "title": "Minecraft Yılan Oyunu",
-      "version": "0.15.2",
+      "version": "0.15.3",
       "description": "İzleyiciler yılanlarıyla arenaya katılır. Hediyeler kütleyi artırır; yılanlar yem toplar ve birbirlerini kovalayarak büyür.",
       "requirements": "Windows 10/11 64 bit, 8 GB RAM. Minecraft 1.20.1 / Forge 47.4.20 oyun paketi gerekir.",
       "cover": "minecraft-yilan-cover-v2",
       "announcementId": "minecraft-snake-arena-0.15.0",
       "adminOnly": true,
       "package": {
-        "localArchive": "D:/TikMnG-Snake-Admin-Package-0.15.2.zip",
-        "bytes": 824789183,
-        "sha256": "1fa54c2767eec42c7cd996b7df344d367a29dff63be4e73840bff71fc5567306",
-        "localRoot": "D:\\TikMnG-Snake-Admin-Package-0.15.2",
-        "localContentManifest": "D:\\TikMnG-Snake-Admin-Package-0.15.2.content.json",
-        "contentSha256": "5fa9b803b76aba42688e24cff4b2be259434bebd41385d60d3deac1f1039d825"
+        "localArchive": "D:/TikMnG-Snake-Admin-Package-0.15.3.zip",
+        "bytes": 824789352,
+        "sha256": "1ecc428d472c801dc90ca608975ce8123f17f52aca2d07df3237ce60b2eed957",
+        "localRoot": "D:\\TikMnG-Snake-Admin-Package-0.15.3",
+        "localContentManifest": "D:\\TikMnG-Snake-Admin-Package-0.15.3.content.json",
+        "contentSha256": "0e6bfb631448b3be8cb861bf9d8b69af50c246eb4a2ce49378d7dd62b609249e"
       },
       "resources": [],
       "definition": {
         "id": "minecraft-snake-arena",
         "klasor": "minecraft-snake-arena",
         "boyut": "787 MB",
-        "paketSurumu": "0.15.2",
+        "paketSurumu": "0.15.3",
         "minecraft": true,
         "adminOnly": true,
-        "modFile": "tikmng_snake_arena-0.15.1.jar",
+        "modFile": "tikmng_snake_arena-0.15.3.jar",
         "configFile": "tikmng-snake-arena.json"
       }
     },

@@ -101,8 +101,8 @@
         },
         'minecraft-snake-arena': {
             purpose:'Yem ve kütle toplayarak yılanını büyüt; savaşta rakip yılanları yiyip son kalan ol.',
-            join:'B panelindeki Yayın, Katılım ve Eylemler ayarlarını seç. İzleyiciler takip, beğeni eşiği veya hediyelerle katılır. Yayıncı Space ile 300 kütlelik kendi yılanını alır.',
-            start:'Oyna ile arenayı aç. Space kişisel oyuna katılmayı sağlar; savaşı başlatmak için O tuşuna bas. Savaş 10 saniyelik geri sayımdan sonra başlar.',
+            join:'B panelindeki Yayın, Katılım ve Eylemler ayarlarını seç. İzleyiciler takip, beğeni eşiği veya hediyelerle katılır. Yayıncı Tab ile 300 kütlelik kendi yılanını alır.',
+            start:'Oyna ile arenayı aç. Tab yayıncı olarak katılmayı sağlar; savaşı başlatmak için O tuşuna bas. Savaş 10 saniyelik geri sayımdan sonra başlar.',
             controls:'WASD: kendi yılanını yönlendir. Kendi yılanını izlerken her sağ tık: +10 kütle. B: panel. Yılana veya listedeki takibe tıkla: seç/izle; P: seçili yılanı kaldır. F: merkez ve üstten görünüm. Tekerlek: yakınlaştırma; sürükle: kamera.'
         }
     };

@@ -2,6 +2,7 @@
 
 - 16 oyunluk kutuphane: Minecraft Yilan Oyunu, kendine ait kapak, hediye listesi ve ilk acilisa ozel duyuru.
 - Tum oyunlarda belirgin, numarali yayina hazirlik adimlari ve oyun tuslari.
+- Minecraft Yilan Oyunu 0.15.3: Tab ile 300 kutleyle yayinci olarak katilma; O ile 10 saniyelik savas geri sayimi. WASD ve sag tikla buyume korunur.
 - Oyun paketleri launcher'dan bagimsizdir. Yeni kurulum tam ZIP kullanir; mevcut kurulum degisen dosyalari SHA-256 ile dogrular ve kayitlari korur.
 - 17 widget; sekiz bagimsiz etkilesim bildirimi ekrani, kalici ayarlar ve HTTPS yayin baglantilari.
 - Viral Benim kanat kademeleri, seffaf ve tasan hediye kavanozu, 100 begeni varsayilani ve ayarlanabilir esik.

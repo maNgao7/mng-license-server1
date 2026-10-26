@@ -1,0 +1,21 @@
+{
+  "arena_loop": {
+    "replace": true,
+    "sounds": [{"name": "tikmng_snake_arena:music/arena_loop", "stream": true}]
+  },
+  "hiss": {
+    "sounds": [{"name": "tikmng_snake_arena:effects/hiss", "preload": true}]
+  },
+  "eat": {
+    "sounds": [{"name": "tikmng_snake_arena:effects/eat", "preload": true}]
+  },
+  "swallow": {
+    "sounds": [{"name": "tikmng_snake_arena:effects/swallow", "preload": true}]
+  },
+  "grow": {
+    "sounds": [{"name": "tikmng_snake_arena:effects/grow", "preload": true}]
+  },
+  "winner": {
+    "sounds": [{"name": "tikmng_snake_arena:effects/winner", "preload": true}]
+  }
+}

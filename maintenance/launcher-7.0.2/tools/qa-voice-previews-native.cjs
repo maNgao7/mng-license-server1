@@ -2,12 +2,13 @@
 const fs=require('node:fs'),path=require('node:path'),crypto=require('node:crypto'),assert=require('node:assert/strict');
 const {_electron}=require(process.env.PLAYWRIGHT_MODULE||'C:/Users/User/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright');
 const samples=require('../renderer/speech-previews.js');
-const output='D:/TikMnG-QA-Delivery/voice-previews-native';
+const output=process.env.MNG_QA_OUTPUT||'D:/TikMnG-QA-Delivery/voice-previews-native';
 const profile=path.join(output,'profile-'+Date.now());let application;
 (async()=>{
     fs.mkdirSync(output,{recursive:true});
     const env={...process.env,MNG_TEST_PROFILE:profile,MNG_WIDGET_PORT:'31978'};delete env.ELECTRON_RUN_AS_NODE;
-    application=await _electron.launch({executablePath:'D:/TikMnG-Test-6.5.17/win-unpacked/TikMnG Test.exe',env,args:['--autoplay-policy=no-user-gesture-required']});
+    application=await _electron.launch({executablePath:process.env.MNG_QA_EXE||'D:/TikMnG-Test-6.5.17/win-unpacked/TikMnG Test.exe',env,args:['--autoplay-policy=no-user-gesture-required']});
+    await application.evaluate(({BrowserWindow})=>BrowserWindow.getAllWindows().forEach(w=>w.hide()));
     const page=await application.firstWindow();await page.waitForSelector('.library-card');
     await page.evaluate(()=>{const NativeAudio=window.Audio;window.__qaAudio=[];window.Audio=function(...args){const audio=new NativeAudio(...args);window.__qaAudio.push(audio);return audio;};});
     // The synthetic profile has no paid license. Only exercise the owned renderer's preview handlers; no login is asserted.

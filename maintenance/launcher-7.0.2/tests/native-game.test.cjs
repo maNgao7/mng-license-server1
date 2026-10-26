@@ -4,7 +4,24 @@ const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const { EventEmitter } = require('node:events');
 const path = require('node:path');
-const { launchNativeGame, findVoiceDrivingGame } = require('../lib/native-game.cjs');
+const { launchNativeGame, findVoiceDrivingGame, nativeOwnsLiveSession } = require('../lib/native-game.cjs');
+const fs = require('node:fs');
+const os = require('node:os');
+
+test('released and preview Minecraft clients own their live session, but older installed clients keep HTTP handoff', t => {
+    const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'tikmng-native-owner-'));
+    t.after(() => fs.rmSync(directory, { recursive: true, force: true }));
+    assert.equal(nativeOwnsLiveSession('minecraft-snake-arena', directory), true);
+    assert.equal(nativeOwnsLiveSession('snow-war', directory), false);
+    for (const version of ['7.0.2', '7.0.2-preview.5', '7.1.0', '8.0.0', '6.5.16', '7.0.1', 'bad']) {
+        fs.writeFileSync(path.join(directory, '.tikmng-package.json'), JSON.stringify({version}));
+        const expected = ['7.0.2', '7.0.2-preview.5', '7.1.0', '8.0.0'].includes(version);
+        for (const game of ['snow-war', 'battle-royale']) assert.equal(nativeOwnsLiveSession(game, directory), expected, game + '/' + version);
+        assert.equal(nativeOwnsLiveSession('zombie-war', directory), false);
+    }
+    fs.writeFileSync(path.join(directory, '.tikmng-package.json'), 'invalid json');
+    assert.equal(nativeOwnsLiveSession('battle-royale', directory), false);
+});
 
 test('voice driving discovery requires both original game and installed mod',()=>{
     const root=path.join('D:/SteamLibrary','steamapps/common','CAAAHR! Demo');

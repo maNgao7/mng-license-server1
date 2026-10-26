@@ -1,0 +1,110 @@
+{
+  "generator": "tools/generate_snake_audio.py",
+  "sample_format": "signed 16-bit PCM before Vorbis encoding",
+  "provenance": "Original synthesized ambience and effects, plus authorized Orbit growth, swallow and winner samples converted locally to Vorbis.",
+  "assets": [
+    {
+      "file": "sounds/music/arena_loop.ogg",
+      "duration_seconds": 32.0,
+      "sample_rate": 44100,
+      "channels": 2,
+      "source_pcm_frames": 1411200,
+      "source_pcm_bytes": 5644800,
+      "ogg_bytes": 261826,
+      "sha256": "01e4d0dbd13a0c0f4f409e2f0f00e0173b26dd62dd2b903da39e582ddaae862e",
+      "source_pcm": {
+        "peak": 0.2600001,
+        "rms": 0.0743145,
+        "peak_dbfs": -11.7,
+        "rms_dbfs": -22.58
+      },
+      "decoded": {
+        "peak": 0.2631004,
+        "rms": 0.074461,
+        "peak_dbfs": -11.6,
+        "rms_dbfs": -22.56
+      },
+      "decoded_frames": 1411200,
+      "loop": true,
+      "decoded_loop_boundary_jump": 0.0061815
+    },
+    {
+      "file": "sounds/effects/hiss.ogg",
+      "duration_seconds": 0.95,
+      "sample_rate": 44100,
+      "channels": 1,
+      "source_pcm_frames": 41895,
+      "source_pcm_bytes": 83790,
+      "ogg_bytes": 14086,
+      "sha256": "116699b00745a455f6b07af3f2687c6223c39aa968d26be370031304361a2dd8",
+      "source_pcm": {
+        "peak": 0.48,
+        "rms": 0.1101479,
+        "peak_dbfs": -6.38,
+        "rms_dbfs": -19.16
+      },
+      "decoded": {
+        "peak": 0.5634437,
+        "rms": 0.1071571,
+        "peak_dbfs": -4.98,
+        "rms_dbfs": -19.4
+      },
+      "decoded_frames": 41767,
+      "loop": false
+    },
+    {
+      "file": "sounds/effects/eat.ogg",
+      "duration_seconds": 0.28,
+      "sample_rate": 44100,
+      "channels": 1,
+      "source_pcm_frames": 12348,
+      "source_pcm_bytes": 24696,
+      "ogg_bytes": 6796,
+      "sha256": "d262a838f6ce79f803723cce69018e12b5d41feb22c0108564fb7b77558c1a27",
+      "source_pcm": {
+        "peak": 0.5140923,
+        "rms": 0.12,
+        "peak_dbfs": -5.78,
+        "rms_dbfs": -18.42
+      },
+      "decoded": {
+        "peak": 0.5078508,
+        "rms": 0.1209293,
+        "peak_dbfs": -5.89,
+        "rms_dbfs": -18.35
+      },
+      "decoded_frames": 12220,
+      "loop": false
+    },
+    {
+      "file": "sounds/effects/grow.ogg",
+      "duration_seconds": 2.005351,
+      "sample_rate": 44100,
+      "channels": 1,
+      "ogg_bytes": 8540,
+      "sha256": "66518d8742bfd3d9c10013e1ce3e04752e71d2870e16695e22b002f14f02dbce",
+      "loop": false,
+      "provenance": "Authorized local MNG Orbit sample; grow cue converted to Vorbis without changing playback pitch."
+    },
+    {
+      "file": "sounds/effects/swallow.ogg",
+      "duration_seconds": 0.4,
+      "sample_rate": 48000,
+      "channels": 2,
+      "ogg_bytes": 11245,
+      "sha256": "41ee3b919d7c08e354995db188d795f3b10848aecffcb9770a5b15dd1540cee5",
+      "loop": false,
+      "provenance": "Authorized local MNG Orbit sample; swallow cue converted to Vorbis without changing playback pitch."
+    },
+    {
+      "file": "sounds/effects/winner.ogg",
+      "duration_seconds": 8.0,
+      "sample_rate": 48000,
+      "channels": 2,
+      "ogg_bytes": 147844,
+      "sha256": "5e3114b978694063d1ce17a5b658367603e1fbce14ce45c8747af15aa7e98fcb",
+      "loop": false,
+      "provenance": "Authorized local MNG Orbit sample; winner cue converted to Vorbis without changing playback pitch."
+    }
+  ]
+}
