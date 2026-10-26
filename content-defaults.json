@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
-  "revision": 5,
-  "publishedAt": "2026-10-26T17:58:19.594Z",
+  "revision": 6,
+  "publishedAt": "2026-10-26T22:02:52.932Z",
   "games": [
     {
       "id": "caahr",
@@ -267,16 +267,16 @@
       "description": "İzleyiciler yılanlarıyla arenaya katılır. Hediyeler kütleyi artırır; yılanlar yem toplar ve birbirlerini kovalayarak büyür.",
       "requirements": "Windows 10/11 64 bit, 8 GB RAM. Minecraft 1.20.1 / Forge 47.4.20 oyun paketi gerekir.",
       "resources": [],
-      "version": "0.15.3",
-      "url": "https://github.com/maNgao7/mng-license-server1/releases/download/game-snake-0.15.3/minecraft-snake-arena-0.15.3.zip",
-      "bytes": 824789352,
-      "sha256": "1ecc428d472c801dc90ca608975ce8123f17f52aca2d07df3237ce60b2eed957",
+      "version": "0.16.0",
+      "url": "https://github.com/maNgao7/mng-license-server1/releases/download/game-snake-0.16.0/minecraft-snake-arena-0.16.0.zip",
+      "bytes": 824803433,
+      "sha256": "11b608c03173c78130febf6c8ba00fd6e39548746a720fe4929bf7cadcbcef5e",
       "files": [
         {
           "path": ".tikmng-content.json",
-          "url": "https://github.com/maNgao7/mng-license-server1/releases/download/game-snake-0.15.3/game-content-minecraft-snake-arena-0.15.3.json",
+          "url": "https://github.com/maNgao7/mng-license-server1/releases/download/game-snake-0.16.0/game-content-minecraft-snake-arena-0.16.0.json",
           "bytes": 2724422,
-          "sha256": "92fdc27154157f2545b0baef322ae12e076261d7378d6ae4beb1f526830d284e"
+          "sha256": "e6d53293f7bcec740db7c59d0c8171fd2763beb0ee561f111496a9df2bfceff2"
         }
       ]
     }

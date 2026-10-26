@@ -1,0 +1,41 @@
+{
+  "version": "7.0.6",
+  "createdAt": "2026-10-26T22:09:51.702Z",
+  "installerBytes": 245166489,
+  "launcherTests": {
+    "passed": 975,
+    "failed": 0
+  },
+  "serverTests": {
+    "passed": 60,
+    "failed": 0,
+    "skipped": 3
+  },
+  "snake": {
+    "version": "0.16.0",
+    "coreSuites": 21,
+    "pursuitCases": 106,
+    "nativeCaptureCount": 9,
+    "realLiveGiftsObserved": true
+  },
+  "widgets": {
+    "transparentSources": 17,
+    "wingTiers": 6,
+    "alphaAndMotionVerified": true,
+    "settingsGalleryVerified": true,
+    "jarOverflowVerified": true
+  },
+  "preservation": {
+    "gameSettings": true,
+    "otherGames": 5,
+    "mediaAndSpeech": true,
+    "stableProfileUntouched": true
+  },
+  "packagedFirstRun": true,
+  "httpsWidgetLinks": 17,
+  "independentAlertScreens": 8,
+  "packagedSourceHashes": 17,
+  "liveStudioAudiovisualAcceptance": false,
+  "renderDeployment": "pending-user",
+  "signedPublisher": false
+}

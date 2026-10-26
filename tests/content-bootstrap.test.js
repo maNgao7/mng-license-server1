@@ -5,6 +5,13 @@ import { upgradedBootstrapState } from '../content-bootstrap.js';
 
 const legacy=JSON.parse(fs.readFileSync(new URL('../content-bootstrap-6.5.17.json',import.meta.url),'utf8'));
 const current=JSON.parse(fs.readFileSync(new URL('../content-defaults.json',import.meta.url),'utf8'));
+
+test('untouched 7.0.5 receives snake 0.16.0 without changing other game packages',()=>{
+  const old=JSON.parse(fs.readFileSync(new URL('../content-bootstrap-7.0.5.json',import.meta.url),'utf8'));
+  const upgraded=upgradedBootstrapState({draft:structuredClone(old),published:structuredClone(old)},old,current,{allowReleasedBaseline:true});
+  assert.equal(upgraded.published.games.find(g=>g.id==='minecraft-snake-arena').version,'0.16.0');
+  assert.deepEqual(upgraded.published.games.filter(g=>g.id!=='minecraft-snake-arena'),old.games.filter(g=>g.id!=='minecraft-snake-arena'));
+});
 test('untouched 7.0.4 catalog receives both urgent game packages; customized catalogs stay unchanged',()=>{
   const previous=JSON.parse(fs.readFileSync(new URL('../content-bootstrap-7.0.4.json',import.meta.url),'utf8'));
   const state={draft:structuredClone(previous),published:structuredClone(previous)};

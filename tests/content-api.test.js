@@ -99,7 +99,7 @@ test("public defaults promote 16 games with pinned complete content and retain i
     const byId = Object.fromEntries(response.data.games.map(item => [item.id, item]));
     assert.equal(response.data.games.length, 16);
     assert.equal(response.data.media.length, 285);
-    assert.equal(response.data.revision, 5);
+    assert.equal(response.data.revision, 6);
     assert.equal(byId.caahr.version, '0.6.12');
     assert.equal(byId.caahr.bytes, 63233577);
     assert.equal(byId['frog-river'].version,'7.0.5');
@@ -125,8 +125,8 @@ test("public defaults promote 16 games with pinned complete content and retain i
     }
     for (const id of ['vs','puanlama','orbit','crowd-control','battle-game','duck-hunt','pony-life','penalty-kick','tightrope-balance','battle-royale','snow-war','minecraft-snake-arena']) {
         const game = byId[id];
-        assert.equal(game.version, id === 'minecraft-snake-arena' ? '0.15.3' : '7.0.2');
-        assert.match(game.url, id === 'minecraft-snake-arena' ? /\/game-snake-0\.15\.3\/[^/]+\.zip$/ : /\/game-installers-7\.0\.2\/[^/]+\.zip$/);
+        assert.equal(game.version, id === 'minecraft-snake-arena' ? '0.16.0' : '7.0.2');
+        assert.match(game.url, id === 'minecraft-snake-arena' ? /\/game-snake-0\.16\.0\/[^/]+\.zip$/ : /\/game-installers-7\.0\.2\/[^/]+\.zip$/);
         assert.match(game.sha256, /^[a-f0-9]{64}$/); assert.ok(game.bytes > 0);
         assert.equal(game.files.length, 1); assert.equal(game.files[0].path, '.tikmng-content.json');
         assert.match(game.files[0].sha256, /^[a-f0-9]{64}$/); assert.ok(game.files[0].bytes > 0);

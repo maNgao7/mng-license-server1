@@ -1,0 +1,20 @@
+plugins {
+    id 'net.minecraftforge.gradle' version '[6.0,6.2)'
+}
+version = '0.16.0'
+group = 'com.tikmng.snake'
+base { archivesName = 'tikmng_snake_arena' }
+java.toolchain.languageVersion = JavaLanguageVersion.of(17)
+minecraft {
+    mappings channel: 'official', version: '1.20.1'
+    runs {
+        client {
+            workingDirectory project.file('../instance')
+            mods { tikmng_snake_arena { source sourceSets.main } }
+        }
+    }
+}
+dependencies { minecraft 'net.minecraftforge:forge:1.20.1-47.4.20' }
+tasks.withType(JavaCompile).configureEach { options.encoding = 'UTF-8' }
+tasks.named('processResources').configure { exclude 'assets/tikmng_snake_arena/textures/gui/gifts/**' }
+tasks.named('jar', Jar).configure { finalizedBy 'reobfJar' }
