@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#000000">
+    <meta name="mobile-web-app-capable" content="yes">
+    <title>TikTok VS Battle</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <video id="bgVideo" autoplay muted loop playsinline></video>
+
+    <button class="bg-picker-btn" id="bgPickerBtn" onclick="arkaPlanPaneliAc()">🎬 Arka Plan</button>
+
+    <div class="bg-picker-panel" id="bgPickerPanel" style="display:none;">
+        <div class="bg-picker-header">
+            <span>Arka Plan Seç</span>
+            <button class="bg-picker-close" onclick="arkaPlanPaneliKapat()">✕</button>
+        </div>
+        <div style="padding: 8px 10px; border-bottom: 1px solid rgba(255,255,255,0.1); display: flex; gap: 6px;">
+            <button id="vsCustomBgBtn" class="bg-picker-custom-btn" onclick="document.getElementById('vsCustomBgInput').click()" style="flex:1; padding:7px 10px; background:linear-gradient(135deg, #00f2ea, #ff0050); border:none; border-radius:8px; color:#fff; font-weight:800; font-size:11px; cursor:pointer;">📁 Kendi Görselini / Videonu Ekle</button>
+            <input type="file" id="vsCustomBgInput" accept="image/*,video/mp4,video/webm" style="display:none;" onchange="vsOzelArkaPlanSecildi(event)">
+        </div>
+        <div class="bg-picker-grid" id="bgPickerGrid"></div>
+    </div>
+
+    <!-- SADECE hediye ikonu PNG'lerine uygulanan hafif animasyon ayarı
+         (yayın sırasında ekranın hep sabit/aynı durmaması için) -->
+    <button class="bg-picker-btn gift-anim-btn" id="giftAnimBtn" onclick="hediyeAnimasyonPaneliAc()">🎞 Hediye Animasyonu</button>
+
+    <div class="bg-picker-panel gift-anim-panel" id="giftAnimPanel" style="display:none;">
+        <div class="bg-picker-header">
+            <span>Hediye İkonu Animasyonu</span>
+            <button class="bg-picker-close" onclick="hediyeAnimasyonPaneliKapat()">✕</button>
+        </div>
+        <div class="gift-anim-controls">
+            <label>Animasyon türü</label>
+            <select id="giftAnimTuru" onchange="hediyeAnimasyonuUygula(this.value, document.getElementById('giftAnimHizi').value)">
+                <option value="yok">Yok (sabit dursun)</option>
+                <option value="karart">Hafif karar - aydınlan</option>
+                <option value="nabiz">Nabız (büyü - küçül)</option>
+                <option value="acKapa">Aç - kapa (küçülüp kaybol)</option>
+                <option value="dondur">Yavaşça döndür</option>
+                <option value="salla">Hafif salla (sağa-sola)</option>
+                <option value="zipla">Zıpla (yukarı-aşağı)</option>
+                <option value="parla">Parla (ışıltı efekti)</option>
+                <option value="beyaz">⚪ Beyaz Işık Efekti</option>
+                <option value="siyahBeyaz">⚫ Siyah-Beyaz (Monokrom) Efekt</option>
+                <option value="altin">✨ Altın Işıltı Efekti</option>
+                <option value="neon">⚡ Neon Siber Efekt</option>
+            </select>
+
+            <label>Hız</label>
+            <select id="giftAnimHizi" onchange="hediyeAnimasyonuUygula(document.getElementById('giftAnimTuru').value, this.value)">
+                <option value="5">Yavaş</option>
+                <option value="3">Orta</option>
+                <option value="1.5">Hızlı</option>
+            </select>
+
+            <button class="gift-anim-apply-btn" onclick="hediyeAnimasyonuUygulaButon()">Uygula</button>
+        </div>
+    </div>
+
+    <div class="battle">
+
+        <!-- SOL TARAF -->
+        <section class="player player-left">
+
+            <div class="win-tally" id="leftTallyBox">
+                <div class="win-tally-marks" id="leftTallyMarks"></div>
+            </div>
+
+            <div class="profile-card">
+
+                <div class="profile-ring" id="leftRing">
+                    <div class="profile-image">
+                        <span id="leftPlaceholder">TIKTOK</span>
+                        <img id="leftProfileImage" src="" alt="Profil">
+                    </div>
+                </div>
+
+                <h2 id="leftUsername">OYUNCU 1</h2>
+
+                <div class="link-area">
+                    <input
+                        type="text"
+                        id="leftLink"
+                        placeholder="TikTok profil linkini yapıştır"
+                    >
+
+                    <button onclick="loadProfile('left')">
+                        PROFİLİ GETİR
+                    </button>
+                    <button class="upload-icon-button" onclick="document.getElementById('leftFile').click()" title="Bilgisayardan net fotoğraf seç">
+                        📷 Net Foto
+                    </button>
+                </div>
+                <input type="file" id="leftFile" accept="image/*" hidden onchange="loadPhotoFile('left', this.files[0])">
+
+                <div class="score-title">SKOR</div>
+
+                <input
+                    class="score-input"
+                    type="number"
+                    id="leftScore"
+                    value="0"
+                    min="0"
+                    max="9999999"
+                    oninput="limitScore(this)"
+                    onchange="syncScoreToServer('left')"
+                >
+
+                <div class="result" id="leftResult"></div>
+
+                <div class="quick-gift-row" id="leftQuickGiftRow">
+                    <div class="quick-gift-slot">
+                        <button class="quick-gift-btn" onclick="hizliHediyeEkle('left', 0)" title="Puan ekle"><img id="leftSlotImg0" src="assets/gifts/left-1.png" alt="1 puan"></button>
+                        <span class="quick-gift-slot-puan" id="leftSlotPuan0">1 PUAN</span>
+                        <button class="quick-gift-arrow" onclick="hediyeSlotDuzenle('left', 0)" title="Gerçek bir TikTok hediyesiyle eşleştir">Değiştir</button>
+                        <span class="quick-gift-slot-badge" id="leftSlotBadge0"></span>
+                    </div>
+                    <div class="quick-gift-slot">
+                        <button class="quick-gift-btn" onclick="hizliHediyeEkle('left', 1)" title="Puan ekle"><img id="leftSlotImg1" src="assets/gifts/left-5.png" alt="5 puan"></button>
+                        <span class="quick-gift-slot-puan" id="leftSlotPuan1">5 PUAN</span>
+                        <button class="quick-gift-arrow" onclick="hediyeSlotDuzenle('left', 1)" title="Gerçek bir TikTok hediyesiyle eşleştir">Değiştir</button>
+                        <span class="quick-gift-slot-badge" id="leftSlotBadge1"></span>
+                    </div>
+                    <div class="quick-gift-slot">
+                        <button class="quick-gift-btn" onclick="hizliHediyeEkle('left', 2)" title="Puan ekle"><img id="leftSlotImg2" src="assets/gifts/left-20.png" alt="20 puan"></button>
+                        <span class="quick-gift-slot-puan" id="leftSlotPuan2">20 PUAN</span>
+                        <button class="quick-gift-arrow" onclick="hediyeSlotDuzenle('left', 2)" title="Gerçek bir TikTok hediyesiyle eşleştir">Değiştir</button>
+                        <span class="quick-gift-slot-badge" id="leftSlotBadge2"></span>
+                    </div>
+                    <div class="quick-gift-slot">
+                        <button class="quick-gift-btn" onclick="hizliHediyeEkle('left', 3)" title="Puan ekle"><img id="leftSlotImg3" src="assets/gifts/left-100.png" alt="100 puan"></button>
+                        <span class="quick-gift-slot-puan" id="leftSlotPuan3">100 PUAN</span>
+                        <button class="quick-gift-arrow" onclick="hediyeSlotDuzenle('left', 3)" title="Gerçek bir TikTok hediyesiyle eşleştir">Değiştir</button>
+                        <span class="quick-gift-slot-badge" id="leftSlotBadge3"></span>
+                    </div>
+                    <div class="quick-gift-slot">
+                        <button class="quick-gift-btn" onclick="hizliHediyeEkle('left', 4)" title="Puan ekle"><img id="leftSlotImg4" src="assets/gifts/left-500.png" alt="500 puan"></button>
+                        <span class="quick-gift-slot-puan" id="leftSlotPuan4">500 PUAN</span>
+                        <button class="quick-gift-arrow" onclick="hediyeSlotDuzenle('left', 4)" title="Gerçek bir TikTok hediyesiyle eşleştir">Değiştir</button>
+                        <span class="quick-gift-slot-badge" id="leftSlotBadge4"></span>
+                    </div>
+                    <div class="quick-gift-slot">
+                        <button class="quick-gift-btn" onclick="hizliHediyeEkle('left', 5)" title="Puan ekle"><img id="leftSlotImg5" src="assets/gifts/left-1000.png" alt="1000 puan"></button>
+                        <span class="quick-gift-slot-puan" id="leftSlotPuan5">1000 PUAN</span>
+                        <button class="quick-gift-arrow" onclick="hediyeSlotDuzenle('left', 5)" title="Gerçek bir TikTok hediyesiyle eşleştir">Değiştir</button>
+                        <span class="quick-gift-slot-badge" id="leftSlotBadge5"></span>
+                    </div>
+                </div>
+                <div class="gift-slot-editor" id="leftSlotEditor" style="display:none;"></div>
+
+            </div>
+
+        </section>
+
+
+        <!-- ORTA -->
+        <section class="middle">
+
+            <div class="battle-title">
+                TIKTOK<br>
+                <span>VS BATTLE</span>
+            </div>
+
+            <div
+                class="custom-title"
+                id="customTitle"
+                contenteditable="true"
+                spellcheck="false"
+                data-placeholder="Başlığını yaz..."
+                oninput="saveCustomTitle()"
+                onkeydown="customTitleKeydown(event)"
+            >MaNga Live</div>
+
+            <div class="duration-area">
+                <label for="duration">SÜRE (SN)</label>
+                <input type="number" id="duration" value="60" min="5" max="300">
+                <select id="durationPreset" onchange="applyDurationPreset(this.value)">
+                    <option value="">Hazır süre seç</option>
+                    <option value="60">1 dakika</option>
+                    <option value="120">2 dakika</option>
+                    <option value="180">3 dakika</option>
+                    <option value="240">4 dakika</option>
+                    <option value="300">5 dakika</option>
+                </select>
+            </div>
+
+            <div class="timer-ring" id="timerRing">
+                <div class="timer-box" id="timerBox">
+                    <div class="timer-label">KALAN SÜRE</div>
+                    <div class="timer" id="timer">60</div>
+                </div>
+            </div>
+
+            <div class="vs">
+                VS
+            </div>
+
+            <button class="start-button" onclick="startTimer()">
+                ⚡ BAŞLAT
+            </button>
+
+            <button class="pause-button" id="pauseButton" onclick="togglePause()">
+                ⏸ DURAKLAT
+            </button>
+
+        </section>
+
+
+        <!-- SAĞ TARAF -->
+        <section class="player player-right">
+
+            <div class="win-tally" id="rightTallyBox">
+                <div class="win-tally-marks" id="rightTallyMarks"></div>
+            </div>
+
+            <div class="profile-card">
+
+                <div class="profile-ring" id="rightRing">
+                    <div class="profile-image">
+                        <span id="rightPlaceholder">TIKTOK</span>
+                        <img id="rightProfileImage" src="" alt="Profil">
+                    </div>
+                </div>
+
+                <h2 id="rightUsername">OYUNCU 2</h2>
+
+                <div class="link-area">
+                    <input
+                        type="text"
+                        id="rightLink"
+                        placeholder="TikTok profil linkini yapıştır"
+                    >
+
+                    <button onclick="loadProfile('right')">
+                        PROFİLİ GETİR
+                    </button>
+                    <button class="upload-icon-button" onclick="document.getElementById('rightFile').click()" title="Bilgisayardan net fotoğraf seç">
+                        📷 Net Foto
+                    </button>
+                </div>
+                <input type="file" id="rightFile" accept="image/*" hidden onchange="loadPhotoFile('right', this.files[0])">
+
+                <div class="score-title">SKOR</div>
+
+                <input
+                    class="score-input"
+                    type="number"
+                    id="rightScore"
+                    value="0"
+                    min="0"
+                    max="9999999"
+                    oninput="limitScore(this)"
+                    onchange="syncScoreToServer('right')"
+                >
+
+                <div class="result" id="rightResult"></div>
+
+                <div class="quick-gift-row" id="rightQuickGiftRow">
+                    <div class="quick-gift-slot">
+                        <button class="quick-gift-btn" onclick="hizliHediyeEkle('right', 0)" title="Puan ekle"><img id="rightSlotImg0" src="assets/gifts/right-1.png" alt="1 puan"></button>
+                        <span class="quick-gift-slot-puan" id="rightSlotPuan0">1 PUAN</span>
+                        <button class="quick-gift-arrow" onclick="hediyeSlotDuzenle('right', 0)" title="Gerçek bir TikTok hediyesiyle eşleştir">Değiştir</button>
+                        <span class="quick-gift-slot-badge" id="rightSlotBadge0"></span>
+                    </div>
+                    <div class="quick-gift-slot">
+                        <button class="quick-gift-btn" onclick="hizliHediyeEkle('right', 1)" title="Puan ekle"><img id="rightSlotImg1" src="assets/gifts/right-5.png" alt="5 puan"></button>
+                        <span class="quick-gift-slot-puan" id="rightSlotPuan1">5 PUAN</span>
+                        <button class="quick-gift-arrow" onclick="hediyeSlotDuzenle('right', 1)" title="Gerçek bir TikTok hediyesiyle eşleştir">Değiştir</button>
+                        <span class="quick-gift-slot-badge" id="rightSlotBadge1"></span>
+                    </div>
+                    <div class="quick-gift-slot">
+                        <button class="quick-gift-btn" onclick="hizliHediyeEkle('right', 2)" title="Puan ekle"><img id="rightSlotImg2" src="assets/gifts/right-20.png" alt="20 puan"></button>
+                        <span class="quick-gift-slot-puan" id="rightSlotPuan2">20 PUAN</span>
+                        <button class="quick-gift-arrow" onclick="hediyeSlotDuzenle('right', 2)" title="Gerçek bir TikTok hediyesiyle eşleştir">Değiştir</button>
+                        <span class="quick-gift-slot-badge" id="rightSlotBadge2"></span>
+                    </div>
+                    <div class="quick-gift-slot">
+                        <button class="quick-gift-btn" onclick="hizliHediyeEkle('right', 3)" title="Puan ekle"><img id="rightSlotImg3" src="assets/gifts/right-100.png" alt="100 puan"></button>
+                        <span class="quick-gift-slot-puan" id="rightSlotPuan3">100 PUAN</span>
+                        <button class="quick-gift-arrow" onclick="hediyeSlotDuzenle('right', 3)" title="Gerçek bir TikTok hediyesiyle eşleştir">Değiştir</button>
+                        <span class="quick-gift-slot-badge" id="rightSlotBadge3"></span>
+                    </div>
+                    <div class="quick-gift-slot">
+                        <button class="quick-gift-btn" onclick="hizliHediyeEkle('right', 4)" title="Puan ekle"><img id="rightSlotImg4" src="assets/gifts/right-500.png" alt="500 puan"></button>
+                        <span class="quick-gift-slot-puan" id="rightSlotPuan4">500 PUAN</span>
+                        <button class="quick-gift-arrow" onclick="hediyeSlotDuzenle('right', 4)" title="Gerçek bir TikTok hediyesiyle eşleştir">Değiştir</button>
+                        <span class="quick-gift-slot-badge" id="rightSlotBadge4"></span>
+                    </div>
+                    <div class="quick-gift-slot">
+                        <button class="quick-gift-btn" onclick="hizliHediyeEkle('right', 5)" title="Puan ekle"><img id="rightSlotImg5" src="assets/gifts/right-1000.png" alt="1000 puan"></button>
+                        <span class="quick-gift-slot-puan" id="rightSlotPuan5">1000 PUAN</span>
+                        <button class="quick-gift-arrow" onclick="hediyeSlotDuzenle('right', 5)" title="Gerçek bir TikTok hediyesiyle eşleştir">Değiştir</button>
+                        <span class="quick-gift-slot-badge" id="rightSlotBadge5"></span>
+                    </div>
+                </div>
+                <div class="gift-slot-editor" id="rightSlotEditor" style="display:none;"></div>
+
+            </div>
+
+        </section>
+
+    </div>
+
+    <div class="viewer-count-badge" id="viewerCountBadge" style="display:none;">
+        👀 <span id="viewerCountValue">0</span> izliyor
+    </div>
+
+    <!-- CANLI YAYIN PANELİ -->
+        <!-- OBS CANLI YAYIN VS WİDGET BUTONU -->
+        <div class="vs-obs-card" style="display:flex; gap:8px; margin-bottom:10px; width:100%;">
+            <button class="obs-btn obs-btn-profile" style="flex:1; padding:8px 14px; background:linear-gradient(135deg, #FE2C55, #25F4EE); border:none; border-radius:10px; color:#fff; font-weight:800; font-size:12px; cursor:pointer; box-shadow:0 4px 15px rgba(254,44,85,0.3);" onclick="obsVsWidgetUrlKopyala()" title="Sadece VS ekranını OBS'e şeffaf aktaran widget linkini kopyala">
+                🎥 OBS VS Widget'ı (Kopyala)
+            </button>
+            <button class="obs-btn obs-btn-preview" style="padding:8px 12px; background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2); border-radius:10px; color:#fff; cursor:pointer;" onclick="window.open('/widget-vs.html', '_blank')" title="VS Widget'ını yeni sekmede önizle">
+                👁️
+            </button>
+        </div>
+        <div class="vs-obs-card" style="display:flex; gap:8px; margin-bottom:10px; width:100%;">
+            <button class="obs-btn obs-btn-profile" style="flex:1; padding:8px 14px; background:#121a31; border:1px solid rgba(37,244,238,0.55); border-radius:10px; color:#fff; font-weight:800; font-size:12px; cursor:pointer;" onclick="obsVsKazananWidgetUrlKopyala()" title="Kazananların 1X, 2X şeklindeki OBS widget bağlantısını kopyala">
+                🏆 Kazananlar Widget'ı (Kopyala)
+            </button>
+            <button class="obs-btn obs-btn-preview" style="padding:8px 12px; background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2); border-radius:10px; color:#fff; cursor:pointer;" onclick="window.open('/widget-vs-winners.html', '_blank')" title="Kazananlar widget'ını yeni sekmede önizle">
+                👁️
+            </button>
+        </div>
+
+        <div class="live-connect">
+            <span class="live-label">TIKTOK LIVE</span>
+            <input type="text" id="liveUsername" placeholder="kendi kullanıcı adın (@olmadan)">
+            <button onclick="connectLive()">BAĞLAN</button>
+            <button class="disconnect-btn" onclick="disconnectLive()">BAĞLANTIYI KES</button>
+            <span class="live-status" id="liveStatus">Bağlı değil</span>
+
+            <label class="live-setting">
+                Listeden düşme
+                <select id="idleTimeout" onchange="saveSettings()">
+                    <option value="0">Hemen (çıkınca)</option>
+                    <option value="60000">1 dakika</option>
+                    <option value="180000" selected>3 dakika</option>
+                    <option value="600000">10 dakika</option>
+                    <option value="-1">Hiç düşürme</option>
+                </select>
+            </label>
+        </div>
+
+        <div class="live-tabs">
+            <button class="tab-button active" id="tabViewers" onclick="switchTab('viewers')">
+                👥 İZLEYİCİLER <span class="tab-count" id="viewerListCount">0</span>
+            </button>
+            <button class="tab-button" id="tabGifts" onclick="switchTab('gifts')">
+                🪙 COIN SIRALAMASI <span class="tab-count" id="totalCoinsBadge">0</span>
+            </button>
+        </div>
+
+        <div class="chat-list" id="chatList"></div>
+
+        <div class="gift-panel" id="giftPanel" style="display:none;">
+
+            <div class="gift-summary">
+                <div class="gift-summary-item">
+                    <span class="gift-summary-label">TOPLAM COIN</span>
+                    <span class="gift-summary-value" id="totalCoinsValue">0</span>
+                </div>
+                <div class="gift-summary-item">
+                    <span class="gift-summary-label">HEDİYE GÖNDEREN</span>
+                    <span class="gift-summary-value" id="gifterCountValue">0</span>
+                </div>
+                <button class="reset-coins" onclick="resetCoins()">SIFIRLA</button>
+            </div>
+
+            <div class="gift-leaderboard" id="giftLeaderboard"></div>
+
+            <div class="gift-feed-title">SON HEDİYELER</div>
+            <div class="gift-feed" id="giftFeed"></div>
+
+        </div>
+
+    </div>
+
+    <!-- Tur bitince kazananı ekranın tam ortasında büyük gösteren katman -->
+    <div class="winner-overlay" id="winnerOverlay">
+        <div class="winner-overlay-inner">
+            <div class="winner-overlay-photo">
+                <img id="winnerOverlayImg" src="" alt="Kazanan">
+            </div>
+            <div class="winner-overlay-label" id="winnerOverlayLabel">🏆 KAZANDI</div>
+        </div>
+    </div>
+    <audio id="winnerSound" src="assets/sounds/kazanan.mp3" preload="auto"></audio>
+    <audio id="startSound" src="assets/sounds/baslat.mp3" preload="auto"></audio>
+    <audio id="countdownSound" src="assets/sounds/geri-sayim.mp3" preload="auto"></audio>
+    <audio id="puanSound" src="assets/sounds/puan.mp3" preload="auto"></audio>
+
+    <!-- PROFİL PUANLAMA — mevcut VS ekranından tamamen bağımsız ayrı sayfa -->
+    <div class="rating-page" id="ratingPage" style="display:none;">
+
+        <button class="rating-close-btn" style="display:none;" onclick="puanlamaSayfasiniKapat()">✕ VS Ekranına Dön</button>
+
+        <div class="rating-layout">
+
+            <!-- SOL: en yüksek ortalamaya göre sıralı liste -->
+            <div class="rating-panel rating-leaderboard">
+                <div class="rating-panel-title">🏆 EN YÜKSEK PUAN</div>
+                <div class="rating-leaderboard-list" id="ratingLeaderboardList"></div>
+            </div>
+
+            <!-- ORTA: gösterilen profil, ortalama, süre kontrolü, canlı oy akışı -->
+            <div class="rating-panel rating-center">
+
+                <!-- OBS CANLI YAYIN WİDGET BUTONLARI (Şeffaf & Temiz Yerleşim) -->
+                <div class="rating-obs-card">
+                    <div class="rating-obs-title">🎥 OBS CANLI YAYIN WİDGET'LARI</div>
+                    <div class="rating-obs-buttons">
+                        <button class="obs-btn obs-btn-profile" onclick="obsWidgetUrlKopyala()" title="Seçilen profilin ve uçuşan balon puanların şeffaf widget'ı">
+                            ✨ Profil & Balon Widget'ı (Kopyala)
+                        </button>
+                        <button class="obs-btn obs-btn-leaderboard" onclick="obsLeaderboardUrlKopyala()" title="Sadece puan alanların canlı sıralama widget'ı">
+                            🏆 Sıralama Widget'ı (Kopyala)
+                        </button>
+                        <button class="obs-btn obs-btn-preview" onclick="window.open('/widget.html', '_blank')" title="Profil widget'ını yeni sekmede önizle">
+                            👁️
+                        </button>
+                    </div>
+                </div>
+
+                <div class="rating-duration-area">
+                    <label for="ratingDuration">SÜRE (SN)</label>
+                    <input type="number" id="ratingDuration" value="30" min="5" max="600">
+                    <select id="ratingDurationPreset" onchange="ratingDurationPresetUygula(this.value)">
+                        <option value="">Hazır süre seç</option>
+                        <option value="5">5 sn</option>
+                        <option value="10">10 sn</option>
+                        <option value="20">20 sn</option>
+                        <option value="30">30 sn</option>
+                        <option value="60">1 dakika</option>
+                        <option value="300">5 dakika</option>
+                    </select>
+                </div>
+
+                <div class="rating-timer" id="ratingTimer">30</div>
+
+                <button class="rating-start-btn" onclick="puanlamaBaslatButon()">⚡ OYLAMAYI BAŞLAT</button>
+
+                <div class="rating-shown-photo-wrap">
+                    <span id="ratingShownPlaceholder">Sağdan bir izleyici seç →</span>
+                    <img id="ratingShownPhoto" src="" alt="">
+                </div>
+
+                <div class="rating-shown-name" id="ratingShownName"></div>
+                <div class="rating-shown-average" id="ratingShownAverage"></div>
+
+                <div class="rating-votes-feed-title">KİM NE PUAN VERDİ</div>
+                <div class="rating-votes-feed" id="ratingVotesFeed"></div>
+
+            </div>
+
+            <!-- SAĞ: izleyici listesi, "Profili Göster" butonuyla -->
+            <div class="rating-panel rating-viewer-panel">
+                <div class="rating-panel-title">👥 İZLEYİCİLER</div>
+
+                <div class="rating-connect-area">
+                    <input type="text" id="ratingUsername" placeholder="kullanıcı adı (@olmadan)">
+                    <div class="rating-connect-buttons">
+                        <button onclick="puanlamaBaglanButon()">BAĞLAN</button>
+                        <button class="disconnect-btn" onclick="puanlamaBaglantiyiKesButon()">KES</button>
+                    </div>
+                    <div class="rating-connect-status" id="ratingConnectStatus">Bağlı değil</div>
+                    <div class="rating-debug-counter" id="ratingDebugCounter">Gelen mesaj: 0 / Geçerli oy: 0</div>
+                </div>
+
+                <div class="rating-viewer-list" id="ratingViewerList"></div>
+            </div>
+
+            <div class="rating-panel rating-gifters-panel">
+                <div class="rating-panel-title">🎁 EN ÇOK HEDİYE ATANLAR</div>
+                <button class="reset-coins rating-gifters-reset" onclick="resetCoins()">SIFIRLA</button>
+                <div class="rating-gifters-list" id="ratingGiftersList"></div>
+            </div>
+
+        </div>
+    </div>
+
+    <div class="obs-toast" id="obsToast"></div>
+
+    <script src="script.js"></script>
+
+</body>
+</html>

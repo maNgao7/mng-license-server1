@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MNG Pony Life</title>
+  <link rel="icon" href="/pony-life-logo.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Inter:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <script type="module" crossorigin src="/assets/index-J1v4Npx_.js"></script>
+  <link rel="stylesheet" crossorigin href="/assets/index-BIjxq2O8.css">
+</head>
+<body>
+  <div id="app">
+    <canvas id="gameCanvas" aria-label="MNG Pony Life yarış sahnesi"></canvas>
+    <canvas id="aimOverlay" aria-hidden="true"></canvas>
+
+    <header class="hud-top">
+      <div class="brand"><span class="brand-mark"><img src="/pony-life-logo.png" alt="At logosu"></span><div><b>MNG PONY LIFE</b><small>CANLI YAYIN YARIŞI</small></div></div>
+      <div class="race-pill"><span id="raceStatus">YARIŞA HAZIR</span><b id="raceTimer">00:00</b></div>
+      <div class="hud-actions"><button id="homeCamera" class="icon-button" title="Kamerayı merkeze al" aria-label="Kamerayı merkeze al"><i data-lucide="rotate-ccw"></i></button><button id="startRaceButton" class="icon-button" title="Yarışı başlat"><i data-lucide="play"></i></button>
+        <button class="icon-button" id="soundButton" aria-label="Sesi kapat" title="Ses"><i data-lucide="volume-2"></i></button>
+        <button class="icon-button" id="settingsButton" aria-label="Ayarları aç" title="Ayarlar"><i data-lucide="settings-2"></i></button>
+      </div>
+    </header>
+
+    <aside class="leaderboard hud-panel" id="leaderboardPanel" aria-label="Yarış sıralaması">
+      <div class="panel-title"><span>CANLI SIRALAMA</span><span class="panel-actions"><b id="riderCount">1 / 8</b><button class="panel-toggle" id="toggleLeaderboard" aria-label="Canlı sıralamayı küçült"><i data-lucide="chevron-left"></i></button></span></div>
+      <div class="panel-body" id="leaderboardBody"><div id="leaderboardList"></div><button id="rankingWidgetButton" class="widget-button"><i data-lucide="link"></i>Sıralama widgetı</button><button id="liveBadge">Bağlı değil</button><small id="audienceStatus"></small></div>
+    </aside>
+    <aside class="winners-panel hud-panel" id="winnersPanel" aria-label="Kazananlar">
+      <div class="panel-title"><span>KAZANANLAR</span><button class="panel-toggle" id="toggleWinners" aria-label="Kazananları küçült"><i data-lucide="chevron-left"></i></button></div>
+      <div class="panel-body"><div id="winsList"></div><button id="widgetButton" class="widget-button">Widget bağlantısı</button></div>
+    </aside>
+
+    <section class="throw-console" id="throwConsole">
+      <div class="aim-copy"><b>TOPU FIRLAT</b><span>Aşağıdan yukarı sürükle ve bırak</span></div>
+      <div class="power"><span id="powerFill"></span></div>
+      <div class="streak" id="streakBadge"><i data-lucide="flame"></i><span>SERİ</span><b id="streakCount">0</b></div>
+    </section>
+
+    <section class="event-feed" id="eventFeed" aria-live="polite"></section>
+
+    <div class="countdown" id="countdown" hidden>3</div>
+    <div class="race-call" id="raceCall" hidden>YARIŞ BAŞLADI!</div>
+
+    <section class="start-screen" id="startScreen">
+      <div class="marquee-lights" aria-hidden="true"></div>
+      <div class="start-inner">
+        <button class="icon-button start-settings" id="startSettings" aria-label="Yarış ayarları" title="Yarış ayarları"><i data-lucide="settings-2"></i></button>
+        <p class="eyebrow">MNG CANLI YAYIN OYUNLARI</p>
+        <h1>PONY<br><span>LIFE</span></h1>
+        <p class="tagline">Topunu fırlat. Atını koştur. İzleyicilerinle aynı pistte yarış.</p>
+        <label class="username-field"><span>@</span><input id="usernameInput" value="mangao7tv" placeholder="TikTok kullanıcı adı" autocomplete="off"></label>
+        <button class="play-button" id="connectButton"><i data-lucide="user-plus"></i><span>CANLI YAYINA BAĞLAN</span></button>
+        <button id="playButton" class="widget-button">Bağlantısız deneme lobisi</button>
+        <div class="connection-state" id="connectionState">Bağlantı bekleniyor</div>
+      </div>
+    </section>
+
+    <section class="result-screen" id="resultScreen" hidden>
+      <button id="showPodiumStage" class="icon-button" title="Pistteki kürsüyü göster" aria-label="Pistteki kürsüyü göster"><i data-lucide="x"></i></button>
+      <p class="winner-word">WINNER</p>
+      <div class="podium">
+        <article class="podium-runner runner-up" id="podium2" hidden><span class="podium-rank">2</span><div class="podium-avatar"></div><h2 class="podium-name"></h2><b class="podium-time"></b><span class="podium-score"></span></article>
+        <article class="podium-runner champion"><span class="podium-rank"><i data-lucide="crown"></i>1</span><div class="winner-avatar podium-avatar" id="winnerAvatar">M</div><h2 id="winnerName">@yayinci</h2><b id="winnerTime"></b><span id="winnerScore"></span><small id="winnerTitle">PİSTİN ŞAMPİYONU</small></article>
+        <article class="podium-runner third-place" id="podium3" hidden><span class="podium-rank">3</span><div class="podium-avatar"></div><h2 class="podium-name"></h2><b class="podium-time"></b><span class="podium-score"></span></article>
+      </div>
+      <button id="restartButton"><i data-lucide="rotate-ccw"></i>YENİ LOBİ</button>
+    </section>
+
+    <aside class="settings-panel" id="settingsPanel" hidden>
+      <div class="settings-head"><div><small>YAYINCI KONTROL MASASI</small><h2>YARIŞ AYARLARI</h2><p>Değişiklikler sahnede anında önizlenir.</p></div><button class="icon-button" id="closeSettings" aria-label="Ayarları kapat"><i data-lucide="x"></i></button></div>
+      <div class="settings-stage-summary"><div><small>PIST</small><b id="settingsLaneSummary">8 AT</b></div><div><small>MESAFE</small><b id="settingsLengthSummary">2800 M</b></div><div><small>BAŞLAT</small><b id="settingsKeySummary">T</b></div></div>
+      <nav class="settings-tabs" aria-label="Ayar bölümleri"><button class="active" data-settings-tab="race">YARIŞ</button><button data-settings-tab="join">KATILIM</button><button data-settings-tab="test">CANLI TEST</button></nav>
+      <div class="settings-scroll">
+        <section class="settings-page active" data-settings-page="race"><h3>Sahne düzeni</h3><p class="section-note">Boş pistler lobide görünür. Otomatik mod, dolduğunda yeni bir kat ekler.</p>
+          <label class="toggle-row"><span>Katılımcı geldikçe pist ekle<small>Seçilen başlangıç sayısını azaltmaz</small></span><input id="autoLanes" type="checkbox" checked></label>
+          <label><span>Başlangıç pist sayısı<small>1-30 ayrı yarış katı</small></span><div class="number-field"><input id="maxRiders" type="number" min="1" max="30" value="8"><span>at</span></div></label>
+          <label><span>Pist uzunluğu<small>80–5000 metre</small></span><div class="range-field"><input id="trackLength" type="range" min="80" max="5000" value="2800"><output id="trackLengthOut">2800</output></div></label>
+          <input id="raceDuration" type="hidden" value="600">
+          <label><span>Başlatma tuşu</span><button id="startKey" class="key-capture" data-code="KeyT">T</button></label>
+          <label><span>Görüntü kalitesi<small>Dengeli, FPS'e göre çözünürlüğü ayarlar</small></span><select id="quality"><option value="low">Hızlı</option><option value="balanced" selected>Dengeli</option><option value="high">Yüksek</option></select></label>
+          <label class="toggle-row"><span>Yarış spikeri</span><input id="commentary" type="checkbox" checked></label>
+          <label class="toggle-row"><span>Yayıncı mini oyunla ilerlesin<small>Ata otomatik hız verilmez; başarılı atışlar ilerletir</small></span><input id="hostPlayRequired" type="checkbox" checked></label>
+          <label><span>Kazanan müziği<small>WINNER ekranındaki ses seviyesi</small></span><div class="range-field"><input id="winnerVolume" type="range" min="0" max="1" step="0.05" value="0.9"><output id="winnerVolumeOut">0.9</output></div></label>
+          <a class="audio-credit" href="/audio/CREDITS.txt" target="_blank" rel="noopener">Ses bilgileri</a>
+        </section>
+        <section class="settings-page" data-settings-page="join"><h3>Hediye ve coin</h3>
+          <label class="toggle-row"><span>Hediye ile katılım<small>Herhangi bir TikTok hediyesi geçerlidir</small></span><input id="giftJoin" type="checkbox" checked></label>
+          <label><span>Giriş bedeli</span><div class="number-field"><input id="entryCoin" type="number" value="1" min="1" max="100"><span>coin</span></div></label>
+          <label><span>Coin başına hız</span><div class="range-field"><input id="coinSpeed" type="range" min="1" max="20" step="1" value="2"><output id="coinSpeedOut">2</output></div></label>
+          <h3>Beğeni ve takip</h3>
+          <label class="toggle-row"><span>Beğeni ile katılım</span><input id="likeJoin" type="checkbox" checked></label>
+          <label><span>Katılım için beğeni</span><div class="number-field"><input id="likesToJoin" type="number" value="100" min="1"><span>beğeni</span></div></label>
+          <label><span>Hız bonusu eşiği</span><div class="number-field"><input id="likesForBoost" type="number" value="100" min="1"><span>beğeni</span></div></label>
+          <label><span>Beğeni hız bonusu</span><div class="range-field"><input id="likeSpeed" type="range" min="1" max="20" value="5"><output id="likeSpeedOut">5</output></div></label>
+          <label class="toggle-row"><span>Takip edeni yarışa al</span><input id="followJoin" type="checkbox" checked></label>
+          <label><span>Takip başlangıç bonusu</span><div class="range-field"><input id="followSpeed" type="range" min="0" max="30" value="5"><output id="followSpeedOut">5</output></div></label>
+        </section>
+        <section class="settings-page" data-settings-page="test"><h3>Canlı yayın provası</h3><p class="section-note">Yayın açmadan katılım ve hız efektlerini deneyin.</p>
+          <div class="test-user"><input id="testUsername" value="izleyici_01" placeholder="kullanıcı adı"><input id="testCoins" type="number" value="20" min="1" aria-label="Coin değeri"></div>
+          <div class="test-grid"><button id="testGift"><i data-lucide="gift"></i>HEDİYE</button><button id="testLike"><i data-lucide="heart"></i>BEĞENİ</button><button id="testFollow"><i data-lucide="user-plus"></i>TAKİP</button></div>
+          <div class="test-tip"><b>İPUCU</b><span>Bir ata tıklayarak yaklaşın. Boş sahneye tıklayınca kamera yerine döner.</span></div>
+        </section>
+      </div>
+      <button class="save-settings" id="saveSettings"><i data-lucide="check"></i>AYARLARI KAYDET</button>
+    </aside>
+  </div>
+  <dialog id="widgetPanel">
+    <header class="widget-heading"><div><small>MNG PONY LIFE</small><h2>Yayın widgetları</h2></div><button id="closeWidget" aria-label="Kapat"><i data-lucide="x"></i></button></header>
+    <nav class="widget-tabs" aria-label="Widget türü"><button data-widget-mode="ranking" aria-pressed="true">Canlı sıralama</button><button data-widget-mode="winners" aria-pressed="false">Kazananlar</button></nav>
+    <iframe id="widgetPreview" title="Widget önizlemesi"></iframe>
+    <label class="widget-link-label" for="launcherWidgetLink">Yayın bağlantısı</label><div class="widget-link-row"><input id="widgetLink" type="hidden"><input id="launcherWidgetLink" readonly aria-label="Widget bağlantısı"><button id="copyWidget"><i data-lucide="copy"></i><span>Bağlantıyı kopyala</span></button></div>
+    <div class="widget-publish"><button id="publishWidget">HTTPS bağlantısını yenile</button><button id="stopWidget" disabled>Launcher üzerinden yönetilir</button></div>
+    <p id="tunnelMessage" hidden></p><p id="launcherWidgetStatus" role="status"></p><p>HTTPS yayın bağlantısı Launcher üzerinden hazırlanır. Galibiyet kayıtları bilgisayarınızda saklanır.</p>
+  </dialog>
+  <script type="module" src="/launcher-widget-ui.js"></script>
+</body>
+</html>

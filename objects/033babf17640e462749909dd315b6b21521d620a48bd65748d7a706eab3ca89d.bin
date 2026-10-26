@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <title>MNG Duck Hunt - OBS Canlı Sıralama Widget'ı</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@600;700&family=Lilita+One&display=swap">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: transparent;
+      font-family: 'Fredoka', sans-serif;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      padding: 16px;
+      width: 340px;
+    }
+
+    .widget-card {
+      background: linear-gradient(135deg, rgba(20, 18, 32, 0.94), rgba(35, 22, 40, 0.94));
+      border: 2px solid #ffcc00;
+      border-radius: 22px;
+      padding: 14px 16px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.8), 0 0 18px rgba(255, 204, 0, 0.35);
+      color: #fff;
+      backdrop-filter: blur(10px);
+    }
+
+    .widget-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1.5px solid rgba(255, 204, 0, 0.3);
+      padding-bottom: 8px;
+      margin-bottom: 10px;
+    }
+
+    .widget-title {
+      font-family: 'Lilita One', cursive;
+      font-size: 16px;
+      color: #ffde59;
+      letter-spacing: 0.5px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .widget-badge {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 10px;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: transform 0.15s, background 0.15s;
+    }
+    .widget-badge.badge-victims {
+      background: #e63946;
+      color: #fff;
+      box-shadow: 0 0 10px rgba(230, 57, 70, 0.5);
+    }
+    .widget-badge.badge-survivors {
+      background: #00b4d8;
+      color: #fff;
+      box-shadow: 0 0 10px rgba(0, 180, 216, 0.5);
+    }
+
+    .rank-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      min-height: 140px;
+    }
+
+    .rank-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 14px;
+      padding: 7px 12px;
+      transition: transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      animation: itemSlide 0.3s ease-out;
+    }
+
+    @keyframes itemSlide {
+      0% { opacity: 0; transform: translateX(-15px); }
+      100% { opacity: 1; transform: translateX(0); }
+    }
+
+    .rank-item.rank-1 {
+      border-color: #ffd700;
+      background: linear-gradient(90deg, rgba(255, 215, 0, 0.28), rgba(255, 255, 255, 0.05));
+      box-shadow: 0 0 12px rgba(255, 215, 0, 0.2);
+    }
+    .rank-item.rank-2 {
+      border-color: #c0c0c0;
+      background: linear-gradient(90deg, rgba(192, 192, 192, 0.28), rgba(255, 255, 255, 0.05));
+    }
+    .rank-item.rank-3 {
+      border-color: #cd7f32;
+      background: linear-gradient(90deg, rgba(205, 127, 50, 0.28), rgba(255, 255, 255, 0.05));
+    }
+
+    .user-info {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+    }
+
+    .user-medal {
+      font-size: 18px;
+      width: 22px;
+      text-align: center;
+    }
+
+    .user-avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      border: 2px solid #ffcc00;
+      object-fit: cover;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.5);
+    }
+
+    .user-name {
+      font-size: 13px;
+      font-weight: 700;
+      max-width: 125px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      color: #fff;
+    }
+
+    .user-count-wrap {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .user-points {
+      font-family: 'Lilita One', cursive;
+      font-size: 18px;
+      color: #ffea00;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.6);
+    }
+
+    .user-points-label {
+      font-size: 10px;
+      color: #cbd5e1;
+      font-weight: 600;
+    }
+
+    .empty-msg {
+      text-align: center;
+      color: #aaa;
+      font-size: 12px;
+      padding: 30px 10px;
+    }
+  </style>
+</head>
+<body>
+  <div class="widget-card">
+    <div class="widget-header">
+      <div class="widget-title">
+        <span id="title-icon">🎯</span>
+        <span id="title-text">EN ÇOK VURULANLAR</span>
+      </div>
+      <span class="widget-badge badge-victims" id="toggle-mode-btn">ÖLENLER</span>
+    </div>
+    <div class="rank-list" id="rank-list">
+      <!-- Dynamic list -->
+    </div>
+  </div>
+
+  <script>
+    const rankList = document.getElementById('rank-list');
+    const titleIcon = document.getElementById('title-icon');
+    const titleText = document.getElementById('title-text');
+    const toggleBtn = document.getElementById('toggle-mode-btn');
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const lockedMode = urlParams.get('mode'); // 'survivors' or 'victims'
+    let currentMode = lockedMode === 'survivors' ? 'survivors' : 'victims';
+    let victimsList = [], survivorsList = [];
+    const escapeHTML = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+    function toggleMode() {
+      if (lockedMode) return; // If locked by URL param, do not alternate!
+      currentMode = currentMode === 'victims' ? 'survivors' : 'victims';
+      render();
+    }
+
+    if (!lockedMode) {
+      toggleBtn.addEventListener('click', toggleMode);
+      // Auto-alternate every 12 seconds only if mode is not locked
+      setInterval(toggleMode, 12000);
+    } else {
+      toggleBtn.style.cursor = 'default';
+    }
+
+    function render() {
+      const medals = ['👑', '🥈', '🥉'];
+      const isVic = currentMode === 'victims';
+
+      if (isVic) {
+        titleIcon.textContent = '🎯';
+        titleText.textContent = 'EN ÇOK VURULANLAR';
+        toggleBtn.textContent = 'ÖLENLER';
+        toggleBtn.className = 'widget-badge badge-victims';
+      } else {
+        titleIcon.textContent = '🏃';
+        titleText.textContent = 'EN ÇOK KAÇANLAR';
+        toggleBtn.textContent = 'SURVIVOR';
+        toggleBtn.className = 'widget-badge badge-survivors';
+      }
+
+      const list = isVic ? victimsList : survivorsList;
+      if (!list || list.length === 0) {
+        rankList.innerHTML = `<div class="empty-msg">Henüz kayıtlı ördek yok...</div>`;
+        return;
+      }
+
+      rankList.innerHTML = list.slice(0, 3).map((item, idx) => `
+        <div class="rank-item rank-${idx + 1}">
+          <div class="user-info">
+            <span class="user-medal">${medals[idx] || (idx + 1) + '.'}</span>
+            <img src="${escapeHTML(item.avatar || '/api/avatar?user=' + encodeURIComponent(item.name || item.nickname || 'user'))}" class="user-avatar" data-fallback="/api/avatar?user=${escapeHTML(encodeURIComponent(item.name || item.nickname || 'user'))}" onerror="this.onerror=null;this.src=this.dataset.fallback">
+            <span class="user-name">@${escapeHTML(item.name || item.nickname)}</span>
+          </div>
+          <div class="user-count-wrap">
+            <span class="user-points">${Number(item.count || item.deathCount || item.escapeCount) || 0}</span>
+            <span class="user-points-label">${isVic ? 'ÖLÜM' : 'KAÇIŞ'}</span>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    render();
+
+    function connectWS() {
+      const ws = new WebSocket((location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host);
+      ws.onmessage = (e) => {
+        try {
+          const msg = JSON.parse(e.data);
+          if (msg.type === 'leaderboard') {
+            if (Array.isArray(msg.victims)) {
+              victimsList = msg.victims.map(v => ({ name: v.nickname, count: v.deathCount, avatar: v.avatar }));
+            }
+            if (Array.isArray(msg.survivors)) {
+              survivorsList = msg.survivors.map(s => ({ name: s.nickname, count: s.escapeCount, avatar: s.avatar }));
+            }
+            render();
+          }
+        } catch {}
+      };
+      ws.onclose = () => setTimeout(connectWS, 3000);
+    }
+    connectWS();
+  </script>
+</body>
+</html>

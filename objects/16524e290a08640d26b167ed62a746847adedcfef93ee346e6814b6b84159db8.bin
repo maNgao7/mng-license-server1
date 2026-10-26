@@ -1,0 +1,11 @@
+import { MAX_DISTANCE } from './race.js';
+export function stageLayout(count, width = 28) {
+  const spacing = 3.4, rise = 1.9;
+  const backZ = -.8 - (count - 1) * spacing;
+  const topY = 1.35 + (count - 1) * rise;
+  return { spacing, rise, backZ, topY, roofY: topY + 5.2, halfWidth: width / 2 + 6, rampScale: Math.min(3.3,Math.max(1,Math.sqrt(count/6)*1.35,Math.sqrt(width/28)*1.1)), podiumScale:Math.min(2.6,Math.max(1,width/48)) };
+}
+export function stageWidth(length,count) {
+  const distance = Math.max(80,Math.min(MAX_DISTANCE,Number(length)||120));
+  return (28 + 14 * Math.log2(distance / 120)) * Math.max(1, 1 + (count-6)*.008);
+}

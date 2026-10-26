@@ -1,0 +1,883 @@
+// ==========================================================================
+// MNG PENALTY KICK - ANA OYUN MOTORU & GİRİŞ NOKTASI
+// ==========================================================================
+import * as THREE from 'three';
+import { ATMOSPHERES, QUALITY_PRESETS, DEFAULT_SETTINGS, TEAMS } from './js/config.js';
+import { SoundManager } from './js/sound.js';
+import { EffectsManager } from './js/effects.js';
+import { StadiumBuilder } from './js/stadium.js';
+import { GameplayManager } from './js/gameplay.js';
+import { UIManager } from './js/ui.js';
+import { matchGiftRule } from './js/gift-rules.js';
+
+class PenaltyGameApp {
+  constructor() {
+    this.settings = { ...DEFAULT_SETTINGS };
+    this.loadSettings();
+
+    this.container = document.getElementById('game-container');
+    this.canvas = document.getElementById('three-canvas');
+
+    // 1. Three.js Temel Bileşenler
+    this.scene = null;
+    this.camera = null;
+    this.renderer = null;
+
+    // 2. Modüller
+    this.sound = new SoundManager();
+    this.effects = null;
+    this.stadium = null;
+    this.gameplay = null;
+    this.ui = null;
+
+    // 3. Işıklar
+    this.ambientLight = null;
+    this.hemiLight = null;
+    this.sunLight = null;
+
+    // 4. Maç İstatistikleri
+    this.goals = 0;
+    this.saves = 0;
+    this.isGoalCelebration = false;
+    this.isMissCelebration = false;
+
+    // 5. WebSocket
+    this.socket = null;
+    this.streamer = { username: '', avatar: '' };
+
+    // 6. Kamera Zoom & Manuel Kontroller (A, D sağdan/soldan bakış, W, S ileri/geri, Mouse tekerlek geri sıfırlama)
+    this.zoomLevel = 0.0;
+    this.targetZoomLevel = 0.0;
+    this.zoomFocusPoint = new THREE.Vector3(0, 2.5, -6.0);
+    this.baseCamPos = new THREE.Vector3(0, this.settings.camHeight || 2.4, 16.0);
+    this.baseLookAt = new THREE.Vector3(0, 1.4, 0);
+    this.currentCamPos = this.baseCamPos.clone();
+    this.currentLookAt = this.baseLookAt.clone();
+    this.camManualOffset = new THREE.Vector3(0, 0, 0);
+    this.targetCamManualOffset = new THREE.Vector3(0, 0, 0);
+    this.keysDown = {};
+
+    this.lastTime = performance.now();
+
+    this.init();
+  }
+
+  loadSettings() {
+    try {
+      const s = localStorage.getItem('mng_penalty_settings');
+      if (s) {
+        const parsed = JSON.parse(s);
+        if (!parsed.version || parsed.version < 9) {
+          parsed.atmosphere = 'festival';
+          parsed.followAction = 'defense_wall';
+          parsed.likeAction = 'defense_wall';
+          parsed.rules = null;
+          parsed.version = 9;
+        }
+        Object.assign(this.settings, parsed);
+      }
+    } catch {}
+    // Kullanıcı isteği: Web her açıldığında profiller taze başlasın (eski kullanıcı profili kalmasın)
+    this.settings.username = '';
+    // Oyuna daima şutör olarak başlansın!
+    this.settings.gameMode = 'shooter';
+  }
+
+  saveSettings() {
+    try {
+      localStorage.setItem('mng_penalty_settings', JSON.stringify(this.settings));
+    } catch {}
+  }
+
+  init() {
+    this.initThree();
+    this.initLighting();
+
+    this.effects = new EffectsManager(this.scene);
+    this.stadium = new StadiumBuilder(this.scene, this.settings.quality);
+    this.stadium.build(this.settings.atmosphere);
+
+    this.gameplay = new GameplayManager(this.scene, this.camera, this.sound, this.effects, this.stadium);
+    this.ui = new UIManager(this);
+
+    this.initInputControls();
+    this.initWebSocket();
+
+    // Başlangıç takım forması
+    if (this.settings.team) {
+      this.gameplay.setShooterJersey(this.settings.team);
+      this.ui.updateHudTeamBadge(this.settings.team);
+    }
+
+    // Başlangıç kullanıcı adı
+    if (this.settings.username) {
+      this.streamer.username = this.settings.username;
+      this.streamer.avatar = `/api/tiktok-avatar?user=${encodeURIComponent(this.settings.username)}`;
+      this.gameplay.setShooterBroadcaster(this.settings.username, this.streamer.avatar);
+      const topInput = document.getElementById('top-tiktok-input');
+      if (topInput) topInput.value = `@${this.settings.username}`;
+    }
+
+    // Başlangıç oyun modu (Şutör veya Kaleci)
+    this.setGameMode(this.settings.gameMode || 'shooter');
+
+    // Pencere boyut değişimi
+    window.addEventListener('resize', () => this.onResize());
+
+    // Animasyon Döngüsünü Başlat
+    requestAnimationFrame(t => this.loop(t));
+  }
+
+  // --------------------------------------------------------------------------
+  // THREE.JS KURULUMU
+  // --------------------------------------------------------------------------
+  initThree() {
+    this.scene = new THREE.Scene();
+    this.scene.background = new THREE.Color(0x141b3d);
+
+    const fov = this.settings.fov || 50;
+    this.camera = new THREE.PerspectiveCamera(fov, window.innerWidth / window.innerHeight, 0.1, 300);
+    // Kamera pozisyonu: topun arkasında, kaleye hafif yüksekten bakar (Z=16.0 rahat ve dengeli açı)
+    this.camera.position.set(0, this.settings.camHeight || 2.4, 16.0);
+    this.camera.lookAt(0, 1.4, 0);
+
+    const q = QUALITY_PRESETS[this.settings.quality] || QUALITY_PRESETS.high;
+
+    this.renderer = new THREE.WebGLRenderer({
+      canvas: this.canvas,
+      antialias: true,
+      powerPreference: 'high-performance'
+    });
+    this.renderer.setSize(window.innerWidth, window.innerHeight);
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, q.pixelRatio));
+    this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    this.renderer.toneMappingExposure = 1.05;
+    this.renderer.shadowMap.enabled = q.shadows;
+    this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  }
+
+  initLighting() {
+    const atmo = ATMOSPHERES[this.settings.atmosphere] || ATMOSPHERES.festival;
+
+    // Hemisferik Işık (Gökyüzü & Saha zemin yansıması)
+    this.hemiLight = new THREE.HemisphereLight(atmo.hemiSky, atmo.hemiGround, atmo.hemi);
+    this.hemiLight.position.set(0, 30, 0);
+    this.scene.add(this.hemiLight);
+
+    // Güneş / Ana Projektör Işığı
+    this.sunLight = new THREE.DirectionalLight(atmo.key, atmo.keyIntensity);
+    this.sunLight.position.set(18, 28, 22);
+    this.sunLight.target.position.set(0, 0, 5);
+    this.sunLight.castShadow = true;
+    this.sunLight.shadow.mapSize.width = 2048;
+    this.sunLight.shadow.mapSize.height = 2048;
+    this.sunLight.shadow.camera.near = 0.5;
+    this.sunLight.shadow.camera.far = 80;
+    this.sunLight.shadow.camera.left = -22;
+    this.sunLight.shadow.camera.right = 22;
+    this.sunLight.shadow.camera.top = 22;
+    this.sunLight.shadow.camera.bottom = -22;
+    this.sunLight.shadow.bias = -0.0005;
+
+    this.scene.add(this.sunLight);
+    this.scene.add(this.sunLight.target);
+
+    // Sis
+    this.scene.fog = new THREE.FogExp2(atmo.fog, atmo.fogDensity);
+    this.scene.background = new THREE.Color(atmo.skyTop);
+  }
+
+  setAtmosphere(atmoKey) {
+    this.settings.atmosphere = atmoKey;
+    this.saveSettings();
+    const atmo = ATMOSPHERES[atmoKey] || ATMOSPHERES.festival;
+
+    if (this.hemiLight) {
+      this.hemiLight.color.set(atmo.hemiSky);
+      this.hemiLight.groundColor.set(atmo.hemiGround);
+      this.hemiLight.intensity = atmo.hemi;
+    }
+    if (this.sunLight) {
+      this.sunLight.color.set(atmo.key);
+      this.sunLight.intensity = atmo.keyIntensity;
+    }
+    if (this.scene.fog) {
+      this.scene.fog.color.set(atmo.fog);
+      this.scene.fog.density = atmo.fogDensity;
+    }
+    this.scene.background.set(atmo.skyTop);
+
+    if (this.stadium) {
+      this.stadium.setAtmosphere(atmoKey);
+    }
+  }
+
+  setQuality(qualKey) {
+    this.settings.quality = qualKey;
+    this.saveSettings();
+    const q = QUALITY_PRESETS[qualKey] || QUALITY_PRESETS.high;
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, q.pixelRatio));
+    this.renderer.shadowMap.enabled = q.shadows;
+    if (this.sunLight) this.sunLight.castShadow = q.shadows;
+    this.scene.traverse(o => {
+      if (o.isMesh && o.material) {
+        o.material.needsUpdate = true;
+      }
+    });
+  }
+
+  setGameMode(mode = 'shooter') {
+    this.settings.gameMode = mode;
+    this.saveSettings();
+    if (this.gameplay) {
+      this.gameplay.setGameMode(mode);
+    }
+
+    if (mode === 'keeper') {
+      // Kaleci Perspektifi: Kalenin tamamını ve sahayı panoramik geniş açıyla gösterir (Z=-3.6 kalenin arkası, fov=72)
+      this.baseCamPos.set(0, 2.50, -3.6);
+      this.baseLookAt.set(0, 1.40, 11.5);
+      this.currentCamPos.copy(this.baseCamPos);
+      this.currentLookAt.copy(this.baseLookAt);
+      this.camera.position.copy(this.baseCamPos);
+      this.camera.lookAt(this.baseLookAt);
+      this.camera.fov = 72; // Geniş açı (Wide FOV) ile kalenin her yeri tam görünür
+      this.camera.updateProjectionMatrix();
+    } else {
+      // Şutör Perspektifi: Sahaya ve topa dengeli ve ferah açı (Z=16.0)
+      this.baseCamPos.set(0, this.settings.camHeight || 2.4, 16.0);
+      this.baseLookAt.set(0, 1.4, 0);
+      this.currentCamPos.copy(this.baseCamPos);
+      this.currentLookAt.copy(this.baseLookAt);
+      this.camera.position.copy(this.baseCamPos);
+      this.camera.lookAt(this.baseLookAt);
+      this.camera.fov = this.settings.fov || 50;
+      this.camera.updateProjectionMatrix();
+    }
+
+    if (this.stadium) {
+      this.stadium.setKeeperMode(mode === 'keeper');
+    }
+    if (this.ui) this.ui.updateGameModeUI(mode);
+  }
+
+  // --------------------------------------------------------------------------
+  // FARE VE DOKUNMA GİRİŞLERİ
+  // --------------------------------------------------------------------------
+  initInputControls() {
+    const onDown = (cx, cy) => {
+      this.sound.init();
+      this.targetZoomLevel = 0.0;
+      this.gameplay.onPointerDown(cx, cy);
+    };
+
+    const onMove = (cx, cy) => {
+      this.gameplay.onPointerMove(cx, cy);
+    };
+
+    const onUp = () => {
+      this.gameplay.onPointerUp();
+    };
+
+    // Fare
+    this.canvas.addEventListener('mousedown', e => {
+      if (e.button === 0) onDown(e.clientX, e.clientY);
+    });
+    window.addEventListener('mousemove', e => onMove(e.clientX, e.clientY));
+    window.addEventListener('mouseup', () => onUp());
+
+    // Çift Tıklama (Seyircilerin Kafasından Kalp Patlaması)
+    this.canvas.addEventListener('dblclick', e => {
+      e.preventDefault();
+      if (this.stadium && this.stadium.spectatorRigs && this.stadium.spectatorRigs.length > 0) {
+        const rigs = this.stadium.spectatorRigs;
+        const count = Math.min(3, rigs.length);
+        for (let i = 0; i < count; i++) {
+          const spec = rigs[Math.floor(Math.random() * Math.min(36, rigs.length))];
+          if (spec) {
+            this.stadium.triggerSpectatorLike(spec.player || { nickname: 'Taraftar' }, 4);
+          }
+        }
+        this.sound.play('gift');
+      }
+    });
+
+    // Mouse Tekerleği: İleri yuvarlama ile yakınlaş, Geriye yuvarlama ile eski hizasına sıfırla!
+    window.addEventListener('wheel', e => {
+      if (this.gameplay.isDragging || this.gameplay.state === 'shooting') return;
+
+      if (e.deltaY > 0) {
+        // Kullanıcı İsteği: "Mouse'u geriye doğru yuvarladığımızda, orta yuvarlağını, yine de eski hizasına gelmesi lazım"
+        // Geriye yuvarlama: Kamerayı ve açıyı pürüzsüzce varsayılan orijinal hizasına sıfırla!
+        this.targetCamManualOffset.set(0, 0, 0);
+        this.targetZoomLevel = 0.0;
+      } else {
+        // İleri yuvarlama: Yakınlaş
+        const mouse = new THREE.Vector2(
+          (e.clientX / window.innerWidth) * 2 - 1,
+          -(e.clientY / window.innerHeight) * 2 + 1
+        );
+        const raycaster = new THREE.Raycaster();
+        raycaster.setFromCamera(mouse, this.camera);
+        const standsPlane = new THREE.Plane(new THREE.Vector3(0, 0, 1), 6.0);
+        const intersect = new THREE.Vector3();
+        raycaster.ray.intersectPlane(standsPlane, intersect);
+        if (intersect) {
+          this.zoomFocusPoint.copy(intersect);
+          this.zoomFocusPoint.x = THREE.MathUtils.clamp(this.zoomFocusPoint.x, -28, 28);
+          this.zoomFocusPoint.y = THREE.MathUtils.clamp(this.zoomFocusPoint.y, 0.8, 8.5);
+        }
+        this.targetZoomLevel = Math.min(0.88, this.targetZoomLevel + 0.16);
+      }
+    }, { passive: true });
+
+    // Dokunmatik
+    this.canvas.addEventListener('touchstart', e => {
+      if (e.touches[0]) onDown(e.touches[0].clientX, e.touches[0].clientY);
+    }, { passive: true });
+    window.addEventListener('touchmove', e => {
+      if (e.touches[0]) onMove(e.touches[0].clientX, e.touches[0].clientY);
+    }, { passive: true });
+    window.addEventListener('touchend', () => onUp());
+
+    // Klavye Tuşları Takibi: A, D ile sağdan/soldan bakış, W, S ile ileri/geri, Boşluk ile vuruş
+    window.addEventListener('keydown', e => {
+      if (e.target.matches('input, textarea')) return;
+      this.keysDown[e.code] = true;
+
+      // Boşluk Tuşu (Hızlı Test Vuruşu)
+      if (e.code === 'Space') {
+        e.preventDefault();
+        this.targetZoomLevel = 0.0;
+        if (this.gameplay.state === 'idle') {
+          this.gameplay.aimTarget.set((Math.random() - 0.5) * 4.0, 1.2 + Math.random() * 0.8, 0);
+          this.gameplay.aimCurve = (Math.random() - 0.5) * 0.6;
+          this.gameplay.executeRunUpAndKick();
+        }
+      }
+    });
+
+    window.addEventListener('keyup', e => {
+      this.keysDown[e.code] = false;
+    });
+  }
+
+  // --------------------------------------------------------------------------
+  // WEBSOCKET & TIKTOK LIVE ENTEGRASYONU
+  // --------------------------------------------------------------------------
+  initWebSocket() {
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const wsUrl = `${protocol}//${window.location.host}`;
+    this.socket = new WebSocket(wsUrl);
+
+    this.socket.onopen = () => console.log('⚽ TikTok Live WebSocket Bağlandı');
+    this.socket.onmessage = evt => {
+      let data;
+      try { data = JSON.parse(evt.data); } catch { return; }
+
+      if (data.type === 'status') this.handleStatusEvent(data);
+      else if (data.type === 'penalty-event') this.handleTikTokEvent(data);
+      else if (data.type === 'init-leaderboard' || data.type === 'sync-leaderboard') {
+        if (this.ui) this.ui.updateLeaderboardData(data);
+      }
+    };
+
+    this.socket.onclose = () => {
+      setTimeout(() => this.initWebSocket(), 3000);
+    };
+
+    // Hızlı Bağlan Butonu
+    const btnConnect = document.getElementById('btn-top-connect');
+    const inputUname = document.getElementById('top-tiktok-input');
+
+    const doConnect = () => {
+      const u = (inputUname?.value || '').trim().replace(/^@/, '');
+      if (u) {
+        this.settings.username = u;
+        this.saveSettings();
+        this.streamer.username = u;
+        this.streamer.avatar = `/api/tiktok-avatar?user=${encodeURIComponent(u)}`;
+        if (this.gameplay.gameMode === 'keeper') {
+          this.gameplay.setGoalkeeperBroadcaster(u, this.streamer.avatar);
+        } else {
+          this.gameplay.setShooterBroadcaster(u, this.streamer.avatar);
+        }
+        if (this.stadium) {
+          this.stadium.setBroadcasterUsername(u);
+        }
+        if (this.socket && this.socket.readyState === WebSocket.OPEN) {
+          this.socket.send(JSON.stringify({ type: 'connect', username: u }));
+        }
+      }
+    };
+
+    if (btnConnect) btnConnect.addEventListener('click', doConnect);
+    if (inputUname) inputUname.addEventListener('keydown', e => { if (e.key === 'Enter') doConnect(); });
+  }
+
+  handleStatusEvent(data) {
+    const statusDot = document.getElementById('status-dot');
+    const statusText = document.getElementById('status-text');
+
+    if (data.activeUsername) {
+      this.streamer.username = data.activeUsername;
+      this.streamer.avatar = data.avatar || `/api/tiktok-avatar?user=${encodeURIComponent(data.activeUsername)}`;
+      if (this.gameplay) {
+        if (this.gameplay.gameMode === 'keeper') {
+          this.gameplay.setGoalkeeperBroadcaster(data.activeUsername, this.streamer.avatar);
+        } else {
+          this.gameplay.setShooterBroadcaster(data.activeUsername, this.streamer.avatar);
+        }
+      }
+      if (this.stadium) {
+        this.stadium.setBroadcasterUsername(data.activeUsername);
+      }
+    }
+
+    if (data.state === 'connected') {
+      if (statusDot) statusDot.className = 'status-dot connected';
+      if (statusText) statusText.textContent = `@${data.activeUsername}`;
+      if (this.ui) this.ui.onStreamConnected(data.activeUsername);
+    } else if (data.state === 'connecting') {
+      if (statusDot) statusDot.className = 'status-dot connecting';
+      if (statusText) statusText.textContent = 'Bağlanıyor...';
+      if (this.ui) this.ui.onStreamConnecting(data.activeUsername);
+    } else {
+      if (statusDot) statusDot.className = 'status-dot disconnected';
+      if (statusText) statusText.textContent = data.activeUsername ? `@${data.activeUsername} (Çevrimdışı)` : (data.error ? 'Bağlantı Hatası' : 'Bağlantı Yok');
+      if (this.ui) this.ui.onStreamDisconnected(data.error || data.message);
+    }
+  }
+
+  handleTikTokEvent(data) {
+    if (data.event === 'gift') {
+      this.handleGiftEvent(data);
+    } else if (data.event === 'like') {
+      const count = Number(data.count) || 1;
+      const player = data.player || { nickname: 'Beğenen' };
+      this.stadium.triggerSpectatorLike(player, count);
+
+      // Kullanıcı bazlı beğeni takibi & Her 100 beğenide bir baraja savunmacı olarak katılma
+      const userKey = (player.uniqueId || player.nickname || 'anon').toLowerCase();
+      if (!this.userLikes) this.userLikes = {};
+      const prevLikes = this.userLikes[userKey] || 0;
+      const newLikes = prevLikes + count;
+      this.userLikes[userKey] = newLikes;
+
+      const prevMilestones = Math.floor(prevLikes / 100);
+      const newMilestones = Math.floor(newLikes / 100);
+      if (newMilestones > prevMilestones) {
+        this.gameplay.addLikeWallDefender(player);
+        this.showToast(player, '🧱 Baraj kurdu!', 'wall');
+      }
+
+      // Genel kural eylemi (Settings panelindeki likeAction)
+      this.likeCounter = (this.likeCounter || 0) + count;
+      const threshold = Number(this.settings.likeThreshold) || 100;
+      if (this.likeCounter >= threshold) {
+        this.likeCounter -= threshold;
+        const act = this.settings.likeAction;
+        if (act && act !== 'defense_wall') {
+          this.executeAction(act, player);
+        }
+      }
+    } else if (data.event === 'follow') {
+      const player = data.player || { nickname: 'Takipçi' };
+      this.stadium.assignViewerToCrowd(player);
+
+      if (this.settings.followAction === 'defense_wall') {
+        this.gameplay.addLikeWallDefender(player);
+        this.showToast(player, '🧱 Baraj kurdu!', 'wall');
+      } else if (this.gameplay.gameMode === 'keeper') {
+        // Kaleci modunda takip eden kişi penaltı noktasına şutör rakip olarak geçer
+        this.gameplay.setShooterOpponent(player);
+        this.showToast(player, '⚽ Şut çekmeye geldi!', 'follow');
+      } else {
+        if (this.settings.followAction) {
+          this.executeAction(this.settings.followAction, player);
+        }
+        this.showToast(player, '➕ Takip etti', 'follow');
+      }
+    } else if (data.event === 'chat' || data.event === 'share' || data.event === 'member') {
+      if (data.player) {
+        this.stadium.assignViewerToCrowd(data.player);
+      }
+    }
+  }
+
+  // Şablondaki 11 resmi hediye ve tüm katalog hediyeleri için akıllı eşleştirici
+  findMatchingRule(giftName, giftId) {
+    return matchGiftRule(this.ui?.rules || [], giftName, giftId, this.ui?.catalog || []);
+  }
+
+  handleGiftEvent(data) {
+    const { player, giftName, count, giftId } = data;
+    this.sound.play('gift');
+    this.showToast(player, `🎁 ${count}x ${giftName} gönderdi!`);
+
+    // İzleyiciyi tribüne de oturt
+    if (player) this.stadium.assignViewerToCrowd(player);
+
+    // Kural eşleştirmesi: Akıllı hediye kuralı arama
+    const rule = this.findMatchingRule(giftName, giftId);
+    if (!rule) return;
+
+    this.executeAction(rule.action, player);
+  }
+
+  executeAction(action, player = null) {
+    if (!action) return;
+
+    if (action === 'team_gs') {
+      this.gameplay.setShooterJersey('galatasaray', player);
+      if (this.ui) this.ui.updateHudTeamBadge('galatasaray');
+    }
+    else if (action === 'team_fb') {
+      this.gameplay.setShooterJersey('fenerbahce', player);
+      if (this.ui) this.ui.updateHudTeamBadge('fenerbahce');
+    }
+    else if (action === 'team_bjk') {
+      this.gameplay.setShooterJersey('besiktas', player);
+      if (this.ui) this.ui.updateHudTeamBadge('besiktas');
+    }
+    else if (action === 'team_ts') {
+      this.gameplay.setShooterJersey('trabzonspor', player);
+      if (this.ui) this.ui.updateHudTeamBadge('trabzonspor');
+    }
+    else if (action === 'team_amed') {
+      this.gameplay.setShooterJersey('amedspor', player);
+      if (this.ui) this.ui.updateHudTeamBadge('amedspor');
+    }
+    else if (action === 'keeper_normal') {
+      const p = player || { nickname: 'Kaleci' };
+      const nick = p.nickname || p.username || 'Kaleci';
+      if (this.gameplay.gameMode === 'keeper') {
+        this.gameplay.setGoalkeeper(p, 'normal');
+        this.showToast(p, `⚽ @${nick} Şut Çekmeye Geldi!`);
+      } else {
+        this.gameplay.setGoalkeeper(p, 'normal');
+        if (this.ui) this.ui.updateHudKeeperCard(nick, 'NORMAL', p.avatar);
+        this.showToast(p, `🧤 @${nick} Kaleye Geçti!`);
+      }
+    }
+    else if (action === 'keeper_agile') {
+      const p = player || { nickname: 'Çevik Kaleci' };
+      const nick = p.nickname || p.username || 'Çevik Kaleci';
+      if (this.gameplay.gameMode === 'keeper') {
+        this.gameplay.setGoalkeeper(p, 'agile');
+        this.showToast(p, `⚡ @${nick} Şut Çekmeye Geldi!`);
+      } else {
+        this.gameplay.setGoalkeeper(p, 'agile');
+        if (this.ui) this.ui.updateHudKeeperCard(nick, 'ÇEVİK', p.avatar);
+        this.showToast(p, `⚡ @${nick} Çevik Kaleci Oldu!`);
+      }
+    }
+    else if (action === 'keeper_boss') {
+      const p = player || { nickname: 'Dev Boss' };
+      const nick = p.nickname || p.username || 'Dev Boss';
+      if (this.gameplay.gameMode === 'keeper') {
+        this.gameplay.setGoalkeeper(p, 'boss');
+        this.showToast(p, `👑 @${nick} Şut Çekmeye Geldi!`);
+      } else {
+        this.gameplay.setGoalkeeper(p, 'boss');
+        if (this.ui) this.ui.updateHudKeeperCard(nick, 'DEV BOSS', p.avatar);
+        this.showToast(p, `👑 @${nick} Dev Boss Kaleci Oldu!`);
+      }
+    }
+    else if (action === 'keeper_dwarf') {
+      const p = player || { nickname: 'Cüce Kaleci' };
+      const nick = p.nickname || p.username || 'Cüce Kaleci';
+      this.gameplay.setGoalkeeper(p, 'dwarf');
+      if (this.ui) this.ui.updateHudKeeperCard(nick, 'CÜCE', p.avatar);
+      this.showToast(p, `♛ @${nick} Cüce Kaleci Oldu!`);
+    }
+    else if (action === 'keeper_shrink50') {
+      this.gameplay.activateShrink(50, this.settings.shrinkDuration);
+      if (this.ui) this.ui.updateHudKeeperCard(this.gameplay.keeperData?.username || 'Kaleci', '%50 KÜÇÜK', this.gameplay.keeperData?.avatar);
+    }
+    else if (action === 'keeper_shrink80') {
+      this.gameplay.activateShrink(80, this.settings.shrinkDuration);
+      if (this.ui) this.ui.updateHudKeeperCard(this.gameplay.keeperData?.username || 'Kaleci', '%80 KÜÇÜK', this.gameplay.keeperData?.avatar);
+    }
+    else if (action === 'power_tsubasa') {
+      this.gameplay.activateTsubasa();
+    }
+    else if (action === 'freekick') {
+      this.gameplay.setupFreekick(player);
+      this.baseCamPos.set(-4.5, 2.5, 25.5);
+      this.baseLookAt.set(0, 1.4, 0);
+      this.currentCamPos.set(-4.5, 2.5, 25.5);
+      this.currentLookAt.set(0, 1.4, 0);
+      this.camera.position.copy(this.currentCamPos);
+      this.camera.lookAt(this.currentLookAt);
+      this.showToast(player, `🎯 Frikik Pozisyonu Hazırlandı! (21 Metre)`);
+    }
+    else if (action === 'defense_wall') {
+      this.gameplay.activateDefenseWall(10, player);
+    }
+    else if (action === 'viewer_shot') {
+      this.gameplay.triggerViewerShot(player, false);
+      this.showToast(player, '⚽ Normal şut kullandı!', 'follow');
+    }
+    else if (action === 'viewer_power_shot') {
+      this.gameplay.triggerViewerShot(player, true);
+      this.showToast(player, '💥 Sert şut kullandı!', 'follow');
+    }
+    else if (action === 'role_swap_keeper') {
+      const nextMode = this.gameplay.gameMode === 'keeper' ? 'shooter' : 'keeper';
+      this.gameplay.swapRoles(nextMode === 'keeper', player);
+      this.setGameMode(nextMode);
+      this.showToast(player, nextMode === 'keeper' ? '🧤 Pozisyon Değişti: Yayıncı Kaleye Geçti!' : '⚽ Pozisyon Değişti: Yayıncı Şuta Geçti!');
+    }
+  }
+
+  showToast(player, message, type = '') {
+    const container = document.getElementById('toast-container');
+    if (!container) return;
+    const toast = document.createElement('div');
+    toast.className = `toast-item ${type ? 'toast-' + type : ''}`;
+    const nick = String(player?.nickname || player?.username || 'İzleyici').replace(/^@/, '');
+    const avatarSrc = `/api/avatar?user=${encodeURIComponent(nick)}&url=${encodeURIComponent(player?.avatar || '')}`;
+
+    toast.innerHTML = `
+      <img src="${avatarSrc}" alt="">
+      <div class="toast-body">
+        <span class="toast-user">@${nick}</span>
+        <span class="toast-desc">${message}</span>
+      </div>
+    `;
+    while (container.children.length >= 4) {
+      container.removeChild(container.firstChild);
+    }
+    container.appendChild(toast);
+    setTimeout(() => {
+      toast.style.opacity = '0';
+      toast.style.transform = 'translateX(-20px)';
+      setTimeout(() => toast.remove(), 320);
+    }, 3800);
+  }
+
+  // --------------------------------------------------------------------------
+  // GOL & KURTARIŞ OLAYLARI
+  // --------------------------------------------------------------------------
+  onGoalScored() {
+    this.goals++;
+    this.ui.updateScore(this.goals, this.saves);
+    this.isGoalCelebration = true;
+    this.sound.play('goal');
+
+    // Sadece gol atılınca baraj, Tsubasa ve kaleci küçültmesi kalkar (Kullanıcı İsteği)
+    if (this.gameplay) {
+      this.gameplay.deactivateWall();
+      this.gameplay.clearTsubasaFireAura();
+      this.gameplay.tsubasaActive = false;
+      this.gameplay.deactivateShrink();
+    }
+
+    // Gol bannerını göster
+    const overlay = document.getElementById('goal-overlay');
+    if (overlay) {
+      overlay.style.display = 'flex';
+      setTimeout(() => { overlay.style.display = 'none'; }, 2600);
+    }
+
+    // Skor tablosunu sunucuya bildir
+    if (this.socket && this.socket.readyState === WebSocket.OPEN) {
+      this.socket.send(JSON.stringify({
+        type: 'trigger-team-goal',
+        team: this.settings.team
+      }));
+    }
+
+    setTimeout(() => {
+      this.isGoalCelebration = false;
+      this.gameplay.resetPosition();
+    }, 3200);
+  }
+
+  onSaved(text) {
+    this.saves++;
+    this.ui.updateScore(this.goals, this.saves);
+    this.isMissCelebration = true;
+
+    const overlay = document.getElementById('save-overlay');
+    const label = document.getElementById('save-keeper-name');
+    if (overlay) {
+      overlay.style.display = 'flex';
+      setTimeout(() => { overlay.style.display = 'none'; }, 2400);
+    }
+
+    if (this.socket && this.socket.readyState === WebSocket.OPEN) {
+      this.socket.send(JSON.stringify({
+        type: 'trigger-keeper-save',
+        username: this.gameplay.keeperData.username,
+        keeperType: this.gameplay.keeperType
+      }));
+    }
+
+    setTimeout(() => {
+      this.isMissCelebration = false;
+      this.gameplay.resetPosition();
+    }, 2800);
+  }
+
+  onMissed(text) {
+    this.isMissCelebration = true;
+    const overlay = document.getElementById('save-overlay');
+    const label = document.getElementById('save-keeper-name');
+    if (label) label.textContent = text;
+    if (overlay) {
+      overlay.style.display = 'flex';
+      setTimeout(() => { overlay.style.display = 'none'; }, 2400);
+    }
+
+    setTimeout(() => {
+      this.isMissCelebration = false;
+      this.gameplay.resetPosition();
+    }, 2600);
+  }
+
+  onResize() {
+    this.camera.aspect = window.innerWidth / window.innerHeight;
+    this.camera.updateProjectionMatrix();
+    this.renderer.setSize(window.innerWidth, window.innerHeight);
+  }
+
+  // --------------------------------------------------------------------------
+  // ANA ANİMASYON DÖNGÜSÜ
+  // --------------------------------------------------------------------------
+  loop(now) {
+    const dt = Math.min((now - this.lastTime) / 1000, 0.1);
+    this.lastTime = now;
+    const timeSec = now * 0.001;
+
+    // 1. Oyun Mekaniği & Fizik
+    this.gameplay.update(
+      dt,
+      () => this.onGoalScored(),
+      text => this.onSaved(text),
+      text => this.onMissed(text)
+    );
+
+    // 2. Stadyum Animasyonları (LED reklam, kollar havaya kalkar/iner)
+    this.stadium.update(dt, timeSec, this.isGoalCelebration, this.isMissCelebration);
+
+    // 3. Parçacıklar & Efektler
+    this.effects.update(dt);
+
+    // 4. HUD Geri Sayım Rozetleri
+    this.ui.updateBuffCountdowns(
+      this.gameplay.shrinkTimer,
+      this.gameplay.wallTimer,
+      this.gameplay.tsubasaActive
+    );
+
+    // 4b. Manuel Kamera Hareketi (A ve D ile sağdan/soldan bakış, W ve S ile ileri/geri)
+    const camSpeed = 16.0 * dt;
+    const isKeeper = this.settings.gameMode === 'keeper';
+    const fwdDir = isKeeper ? 1 : -1;
+
+    if (this.keysDown['KeyA'] || this.keysDown['ArrowLeft']) {
+      this.targetCamManualOffset.x = Math.max(-12.0, this.targetCamManualOffset.x - camSpeed);
+    }
+    if (this.keysDown['KeyD'] || this.keysDown['ArrowRight']) {
+      this.targetCamManualOffset.x = Math.min(12.0, this.targetCamManualOffset.x + camSpeed);
+    }
+    if (this.keysDown['KeyW'] || this.keysDown['ArrowUp']) {
+      this.targetCamManualOffset.z = THREE.MathUtils.clamp(this.targetCamManualOffset.z + fwdDir * camSpeed, -10.0, 10.0);
+    }
+    if (this.keysDown['KeyS'] || this.keysDown['ArrowDown']) {
+      this.targetCamManualOffset.z = THREE.MathUtils.clamp(this.targetCamManualOffset.z - fwdDir * camSpeed, -10.0, 10.0);
+    }
+
+    this.camManualOffset.lerp(this.targetCamManualOffset, 0.14);
+
+    // 4c. Kamera Zoom ve Pozisyon İnterpolasyonu
+    this.zoomLevel = THREE.MathUtils.lerp(this.zoomLevel, this.targetZoomLevel, 0.12);
+    if (this.settings.gameMode === 'keeper') {
+      this.baseCamPos.set(0, 2.50, -3.6);
+      this.baseLookAt.set(0, 1.40, 11.5);
+    } else if (this.gameplay && this.gameplay.isFreekick) {
+      // Frikik Kamerası (Topun tam arkasından 21m kavisli vuruş açısı)
+      this.baseCamPos.set(-4.5, 2.5, 25.5);
+      this.baseLookAt.set(0, 1.4, 0.0);
+    } else {
+      this.baseCamPos.set(0, this.settings.camHeight || 2.4, 16.0);
+      this.baseLookAt.set(0, 1.4, 0);
+    }
+
+    const effectiveCamPos = this.baseCamPos.clone().add(this.camManualOffset);
+    const effectiveLookAt = this.baseLookAt.clone();
+
+    if (this.zoomLevel > 0.005) {
+      const targetPos = new THREE.Vector3().lerpVectors(effectiveCamPos, this.zoomFocusPoint, this.zoomLevel * 0.85);
+      targetPos.y = Math.max(1.8, targetPos.y);
+      const targetLook = new THREE.Vector3().lerpVectors(effectiveLookAt, this.zoomFocusPoint, this.zoomLevel * 0.95);
+
+      this.currentCamPos.lerp(targetPos, 0.14);
+      this.currentLookAt.lerp(targetLook, 0.14);
+    } else {
+      this.currentCamPos.lerp(effectiveCamPos, 0.14);
+      this.currentLookAt.lerp(effectiveLookAt, 0.14);
+    }
+    this.camera.position.copy(this.currentCamPos);
+    this.camera.lookAt(this.currentLookAt);
+
+    // 5. Render
+    this.renderer.render(this.scene, this.camera);
+
+    requestAnimationFrame(t => this.loop(t));
+  }
+}
+
+// Uygulamayı Başlat
+window.addEventListener('DOMContentLoaded', () => {
+  window.gameApp = new PenaltyGameApp();
+
+  // Test ve Doğrulama Parametreleri (?play=1, ?demo=aim, ?demo=kick, ?demo=goal)
+  const params = new URLSearchParams(window.location.search);
+  if (params.has('play') || params.has('demo')) {
+    const intro = document.getElementById('intro-screen');
+    if (intro) intro.style.display = 'none';
+  }
+  const demo = params.get('demo');
+  if (demo) {
+    setTimeout(() => {
+      const gp = window.gameApp.gameplay;
+      if (demo === 'aim') {
+        gp.aimTarget.set(2.35, 2.08, 0.05); // Sağ doksan
+        gp.aimCurve = -0.35; // Falso
+        gp.currentPower = 88;
+        gp.updatePowerUI(88);
+        gp.renderTrajectoryCurve(2.35, 2.08, -0.35, 88);
+      } else if (demo === 'kick') {
+        gp.aimTarget.set(2.35, 2.08, 0.05);
+        gp.aimCurve = -0.35;
+        gp.currentPower = 88;
+        gp.updatePowerUI(88);
+        gp.executeRunUpAndKick();
+      }
+    }, 1800);
+  }
+
+  const modalParam = params.get('modal');
+  if (modalParam) {
+    if (modalParam === 'catalog') {
+      window.gameApp.ui.openGiftCatalogPicker(0);
+    } else if (modalParam === 'leaderboard') {
+      const modal = document.getElementById('leaderboard-modal');
+      if (modal) modal.style.display = 'flex';
+      window.gameApp.ui.renderLeaderboardModal();
+    } else if (modalParam === 'test') {
+      const drawer = document.getElementById('settings-drawer');
+      if (drawer) drawer.classList.add('open');
+      const tabTest = document.querySelector('[data-tab="tab-test"]');
+      if (tabTest) tabTest.click();
+    } else if (modalParam === 'rules') {
+      const drawer = document.getElementById('settings-drawer');
+      if (drawer) drawer.classList.add('open');
+      const tabGifts = document.querySelector('[data-tab="tab-gifts"]');
+      if (tabGifts) tabGifts.click();
+    }
+  }
+});

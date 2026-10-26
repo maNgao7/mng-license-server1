@@ -1,0 +1,16 @@
+{
+  "name": "mng-penalty-kick",
+  "version": "1.0.0",
+  "description": "MNG Penalty Kick - 3D Canlı Yayın Penaltı & Takım Savaşı Oyunu",
+  "main": "server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "tiktok-live-connector": "^2.4.4",
+    "three": "^0.170.0",
+    "ws": "^8.17.0"
+  }
+}

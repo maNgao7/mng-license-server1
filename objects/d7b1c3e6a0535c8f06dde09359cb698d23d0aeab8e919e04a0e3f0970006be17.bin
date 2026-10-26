@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MNG Uçurumda Denge - OBS Ağır Abiler Sıralama Widget</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;700;800;900&family=JetBrains+Mono:wght@700;800&display=swap" rel="stylesheet">
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background: transparent !important;
+      color: #f8fafc;
+      font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+      overflow-x: hidden;
+      overflow-y: auto;
+      width: 100vw;
+      min-height: 100vh;
+      display: flex;
+      align-items: flex-start;
+      justify-content: flex-start;
+      padding: 12px;
+    }
+
+    /* Uzunlamasına, dar ve şık OBS container */
+    .obs-container {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      width: 290px;
+      max-width: 100%;
+    }
+
+    .obs-container.dual-mode {
+      flex-direction: row;
+      width: 590px;
+    }
+
+    /* Şeffaf Transparan Cam Tasarım */
+    .team-widget {
+      flex: 1;
+      width: 100%;
+      background: rgba(10, 15, 29, 0.52);
+      border: 1.5px solid rgba(255, 255, 255, 0.16);
+      border-radius: 16px;
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Üst Başlıklar */
+    .widget-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 14px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      font-weight: 900;
+      font-size: 13px;
+      letter-spacing: 0.5px;
+    }
+
+    .widget-header.blue {
+      background: linear-gradient(90deg, rgba(2, 132, 199, 0.45), rgba(10, 15, 29, 0.2));
+      color: #38bdf8;
+      border-bottom-color: rgba(56, 189, 248, 0.25);
+    }
+
+    .widget-header.red {
+      background: linear-gradient(90deg, rgba(225, 29, 72, 0.45), rgba(10, 15, 29, 0.2));
+      color: #fb7185;
+      border-bottom-color: rgba(251, 113, 133, 0.25);
+    }
+
+    .widget-header.gold {
+      background: linear-gradient(90deg, rgba(245, 158, 11, 0.45), rgba(10, 15, 29, 0.2));
+      color: #facc15;
+      border-bottom-color: rgba(250, 204, 21, 0.25);
+    }
+
+    .header-icon { font-size: 16px; }
+    .header-title { flex: 1; text-transform: uppercase; font-weight: 900; }
+
+    .header-total {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+      font-weight: 800;
+      color: #ffffff;
+      background: rgba(0, 0, 0, 0.45);
+      padding: 3px 8px;
+      border-radius: 7px;
+      border: 1px solid rgba(255, 255, 255, 0.18);
+    }
+
+    /* ========================================================================= */
+    /* 👑 EN AĞIR ABİ (VIP MVP SHOWCASE KARTI) */
+    /* ========================================================================= */
+    .mvp-showcase-box {
+      margin: 10px 12px 4px 12px;
+      background: linear-gradient(135deg, rgba(245, 158, 11, 0.25), rgba(180, 83, 9, 0.15));
+      border: 1.5px solid rgba(245, 158, 11, 0.55);
+      border-radius: 14px;
+      padding: 10px 12px;
+      box-shadow: 0 4px 20px rgba(245, 158, 11, 0.25);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .mvp-badge-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 10px;
+      font-weight: 900;
+      color: #facc15;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      margin-bottom: 6px;
+    }
+
+    .mvp-main-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .mvp-avatar-wrap {
+      position: relative;
+      flex-shrink: 0;
+    }
+
+    .mvp-avatar-img {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 2px solid #facc15;
+      box-shadow: 0 0 12px rgba(250, 204, 21, 0.6);
+    }
+
+    .mvp-crown-float {
+      position: absolute;
+      top: -10px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 16px;
+      filter: drop-shadow(0 2px 4px rgba(0,0,0,0.8));
+    }
+
+    .mvp-user-meta {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .mvp-username {
+      font-size: 13px;
+      font-weight: 900;
+      color: #ffffff;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .mvp-subtext {
+      font-size: 10px;
+      color: #cbd5e1;
+      font-weight: 700;
+    }
+
+    .mvp-kg-badge {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 15px;
+      font-weight: 900;
+      color: #facc15;
+      background: rgba(0, 0, 0, 0.6);
+      padding: 4px 8px;
+      border-radius: 8px;
+      border: 1px solid rgba(250, 204, 21, 0.4);
+      text-shadow: 0 0 8px rgba(250, 204, 21, 0.5);
+      flex-shrink: 0;
+    }
+
+    /* Sıralama Listesi (Uzunlamasına) */
+    .contributor-list {
+      padding: 8px 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      max-height: 640px;
+      overflow-y: auto;
+    }
+
+    .contributor-list::-webkit-scrollbar {
+      width: 4px;
+    }
+    .contributor-list::-webkit-scrollbar-track {
+      background: rgba(0, 0, 0, 0.1);
+    }
+    .contributor-list::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 4px;
+    }
+
+    .contributor-item {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.07);
+      border-radius: 10px;
+      padding: 6px 8px;
+      transition: all 0.15s ease;
+      position: relative;
+    }
+
+    .contributor-item:hover {
+      background: rgba(255, 255, 255, 0.08);
+      border-color: rgba(255, 255, 255, 0.18);
+    }
+
+    .contributor-item.top-1 {
+      background: rgba(245, 158, 11, 0.16);
+      border-color: rgba(245, 158, 11, 0.45);
+    }
+
+    .contributor-item.top-2 {
+      background: rgba(203, 213, 225, 0.13);
+      border-color: rgba(203, 213, 225, 0.35);
+    }
+
+    .contributor-item.top-3 {
+      background: rgba(180, 83, 9, 0.13);
+      border-color: rgba(180, 83, 9, 0.35);
+    }
+
+    .rank-badge {
+      font-size: 13px;
+      width: 20px;
+      text-align: center;
+      flex-shrink: 0;
+      font-weight: 800;
+    }
+
+    .user-avatar {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 1.5px solid rgba(255, 255, 255, 0.3);
+      flex-shrink: 0;
+    }
+
+    .user-info {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+    }
+
+    .user-name-line {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .user-name {
+      font-size: 11.5px;
+      font-weight: 800;
+      color: #ffffff;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .side-pill {
+      font-size: 8.5px;
+      font-weight: 800;
+      padding: 1px 4px;
+      border-radius: 4px;
+      text-transform: uppercase;
+      flex-shrink: 0;
+    }
+    .side-pill.left {
+      background: rgba(2, 132, 199, 0.3);
+      color: #38bdf8;
+      border: 1px solid rgba(56, 189, 248, 0.35);
+    }
+    .side-pill.right {
+      background: rgba(225, 29, 72, 0.3);
+      color: #fb7185;
+      border: 1px solid rgba(251, 113, 133, 0.35);
+    }
+
+    .user-gift {
+      font-size: 9px;
+      color: #94a3b8;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .weight-val {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      font-weight: 800;
+      color: #facc15;
+      flex-shrink: 0;
+      text-shadow: 0 0 6px rgba(250, 204, 21, 0.35);
+    }
+
+    /* Kullanıcı İsteği: Ağır Abilere Manuel Artı / Eksi Butonları */
+    .row-adjust-actions {
+      display: inline-flex;
+      align-items: center;
+      gap: 2px;
+      margin-left: 2px;
+      flex-shrink: 0;
+    }
+
+    .btn-step-action {
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 4px;
+      color: #f1f5f9;
+      font-size: 9px;
+      font-weight: 800;
+      padding: 2px 4px;
+      cursor: pointer;
+      line-height: 1;
+      transition: all 0.12s ease;
+      user-select: none;
+    }
+    .btn-step-action:hover {
+      background: rgba(250, 204, 21, 0.25);
+      border-color: #facc15;
+      color: #facc15;
+    }
+    .btn-step-action:active {
+      transform: scale(0.92);
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 24px 10px;
+      color: #64748b;
+      font-size: 11px;
+      font-style: italic;
+    }
+
+    .status-bar {
+      padding: 5px 12px;
+      background: rgba(0, 0, 0, 0.35);
+      border-top: 1px solid rgba(255, 255, 255, 0.05);
+      font-size: 9.5px;
+      color: #94a3b8;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .live-dot {
+      display: inline-block;
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #10b981;
+      box-shadow: 0 0 6px #10b981;
+      margin-right: 4px;
+    }
+  </style>
+</head>
+<body>
+  <div class="obs-container" id="obs-container">
+    <!-- SOL AĞIR ABİLER WIDGET -->
+    <div class="team-widget" id="widget-left">
+      <div class="widget-header blue">
+        <span class="header-icon">🔵</span>
+        <span class="header-title" id="title-left">SOL AĞIR ABİLER</span>
+        <span class="header-total" id="total-left">0.0 kg</span>
+      </div>
+      <div class="contributor-list" id="list-left">
+        <div class="empty-state">Henüz hediye atılmadı</div>
+      </div>
+      <div class="status-bar">
+        <span><span class="live-dot"></span>OBS Canlı Yayın</span>
+        <span id="count-left">0 Katılımcı</span>
+      </div>
+    </div>
+
+    <!-- SAĞ AĞIR ABİLER WIDGET -->
+    <div class="team-widget" id="widget-right">
+      <div class="widget-header red">
+        <span class="header-icon">🔴</span>
+        <span class="header-title" id="title-right">SAĞ AĞIR ABİLER</span>
+        <span class="header-total" id="total-right">0.0 kg</span>
+      </div>
+      <div class="contributor-list" id="list-right">
+        <div class="empty-state">Henüz hediye atılmadı</div>
+      </div>
+      <div class="status-bar">
+        <span><span class="live-dot"></span>OBS Canlı Yayın</span>
+        <span id="count-right">0 Katılımcı</span>
+      </div>
+    </div>
+
+    <!-- 👑 AĞIR ABİ (BİRLEŞİK LİDERLİK & EN ÇOK HEDİYEYİ ATAN LİDER KARTI) -->
+    <div class="team-widget" id="widget-top" style="display:none;">
+      <div class="widget-header gold">
+        <span class="header-icon">👑</span>
+        <span class="header-title" id="title-top">AĞIR ABİ</span>
+        <span class="header-total" id="total-top">0.0 kg</span>
+      </div>
+
+      <!-- VIP AĞIR ABİ KARTI (EN ÇOK HEDİYEYİ ATAN LİDER) -->
+      <div class="mvp-showcase-box" id="mvp-card">
+        <div class="mvp-badge-tag">👑 AĞIR ABİ</div>
+        <div class="mvp-main-row">
+          <div class="mvp-avatar-wrap">
+            <span class="mvp-crown-float">👑</span>
+            <img src="/api/avatar?user=VIP" class="mvp-avatar-img" id="mvp-avatar" alt="Ağır Abi" onerror="this.src='/api/avatar?user=user'">
+          </div>
+          <div class="mvp-user-meta">
+            <span class="mvp-username" id="mvp-name">Lider Aranıyor</span>
+            <span class="mvp-subtext" id="mvp-subtext">İlk hediyeyi bekliyor...</span>
+          </div>
+          <span class="mvp-kg-badge" id="mvp-kg">0.0 kg</span>
+        </div>
+      </div>
+
+      <div class="contributor-list" id="list-top">
+        <div class="empty-state">Henüz hediye atılmadı</div>
+      </div>
+      <div class="status-bar">
+        <span><span class="live-dot"></span>OBS Canlı Yayın</span>
+        <span id="count-top">0 Katılımcı</span>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const sideParam = (params.get('side') || params.get('mode') || 'top').toLowerCase();
+
+    const container = document.getElementById('obs-container');
+    const widgetLeft = document.getElementById('widget-left');
+    const widgetRight = document.getElementById('widget-right');
+    const widgetTop = document.getElementById('widget-top');
+
+    if (sideParam === 'left') {
+      widgetLeft.style.display = 'flex';
+      widgetRight.style.display = 'none';
+      widgetTop.style.display = 'none';
+    } else if (sideParam === 'right') {
+      widgetLeft.style.display = 'none';
+      widgetRight.style.display = 'flex';
+      widgetTop.style.display = 'none';
+    } else if (sideParam === 'top' || sideParam === 'all' || sideParam === 'mvp') {
+      widgetLeft.style.display = 'none';
+      widgetRight.style.display = 'none';
+      widgetTop.style.display = 'flex';
+    } else if (sideParam === 'both') {
+      container.classList.add('dual-mode');
+      widgetLeft.style.display = 'flex';
+      widgetRight.style.display = 'flex';
+      widgetTop.style.display = 'none';
+    }
+
+    const state = {
+      leftContributors: new Map(),
+      rightContributors: new Map(),
+      leftTotal: 0,
+      rightTotal: 0
+    };
+
+    function escapeHTML(str) {
+      return String(str || '').replace(/[&<>'"]/g, t => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
+      }[t] || t));
+    }
+
+    function renderList(items, listId, totalId, countId, currentTotal, isCombined = false) {
+      const listEl = document.getElementById(listId);
+      const totalEl = document.getElementById(totalId);
+      const countEl = document.getElementById(countId);
+
+      if (totalEl) totalEl.textContent = `${currentTotal.toFixed(1)} kg`;
+      if (countEl) countEl.textContent = `${items.length} Katılımcı`;
+
+      if (items.length === 0) {
+        listEl.innerHTML = '<div class="empty-state">Henüz hediye atılmadı</div>';
+        return;
+      }
+
+      const medals = ['🥇', '🥈', '🥉', '4.', '5.', '6.', '7.', '8.', '9.', '10.', '11.', '12.', '13.', '14.', '15.'];
+      listEl.innerHTML = items.map((c, idx) => {
+        const medal = medals[idx] || `${idx + 1}.`;
+        const topClass = idx === 0 ? 'top-1' : idx === 1 ? 'top-2' : idx === 2 ? 'top-3' : '';
+        const avatarSrc = c.avatar || c.avatarUrl || `/api/avatar?user=${encodeURIComponent(c.nickname)}`;
+        const sidePill = isCombined ? `<span class="side-pill ${c.side}">${c.side === 'left' ? 'Sol' : 'Sağ'}</span>` : '';
+
+        return `
+          <div class="contributor-item ${topClass}">
+            <span class="rank-badge">${medal}</span>
+            <img src="${escapeHTML(avatarSrc)}" class="user-avatar" alt="avatar" onerror="this.onerror=null;this.src='/api/avatar?user=user'">
+            <div class="user-info">
+              <div class="user-name-line">
+                <span class="user-name">${escapeHTML(c.nickname)}</span>
+                ${sidePill}
+              </div>
+              <span class="user-gift">${escapeHTML(c.lastGift || 'Hediye')}</span>
+            </div>
+            <span class="weight-val">+${c.totalKg.toFixed(1)} kg</span>
+            <div class="row-adjust-actions">
+              <button class="btn-step-action" data-nick="${escapeHTML(c.nickname)}" data-side="${c.side === 'both' ? 'left' : c.side || 'left'}" data-delta="-1" title="1 kg Azalt">−</button>
+              <button class="btn-step-action" data-nick="${escapeHTML(c.nickname)}" data-side="${c.side === 'both' ? 'left' : c.side || 'left'}" data-delta="1" title="1 kg Artır">+</button>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      // Butonlara tıklama olayları
+      listEl.querySelectorAll('.btn-step-action').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const nick = btn.getAttribute('data-nick');
+          const side = btn.getAttribute('data-side');
+          const delta = parseFloat(btn.getAttribute('data-delta')) || 1;
+          sendAdjustment(nick, delta, side);
+        });
+      });
+    }
+
+    function renderMVP(topItem) {
+      const card = document.getElementById('mvp-card');
+      const avatar = document.getElementById('mvp-avatar');
+      const name = document.getElementById('mvp-name');
+      const sub = document.getElementById('mvp-subtext');
+      const kg = document.getElementById('mvp-kg');
+
+      if (!card) return;
+      if (!topItem) {
+        if (avatar) avatar.src = '/api/avatar?user=VIP';
+        if (name) name.textContent = 'Lider Aranıyor';
+        if (sub) sub.textContent = 'İlk hediyeyi bekliyor...';
+        if (kg) kg.textContent = '0.0 kg';
+        return;
+      }
+
+      if (avatar) avatar.src = topItem.avatar || topItem.avatarUrl || `/api/avatar?user=${encodeURIComponent(topItem.nickname)}`;
+      if (name) name.textContent = topItem.nickname;
+      const teamLabel = topItem.side === 'both' ? 'İki Kova Birleşik' : (topItem.side === 'left' ? 'Sol Kova' : 'Sağ Kova');
+      if (sub) sub.textContent = `👑 En Çok Hediye Atan Ağır Abi (${teamLabel}) • ${topItem.lastGift || 'Hediye'}`;
+      if (kg) kg.textContent = `${topItem.totalKg.toFixed(1)} kg`;
+    }
+
+    function render() {
+      // Sol Takım Sıralaması
+      const leftItems = Array.from(state.leftContributors.values())
+        .map(c => ({ ...c, side: 'left' }))
+        .sort((a, b) => b.totalKg - a.totalKg)
+        .slice(0, 15);
+      renderList(leftItems, 'list-left', 'total-left', 'count-left', state.leftTotal, false);
+
+      // Sağ Takım Sıralaması
+      const rightItems = Array.from(state.rightContributors.values())
+        .map(c => ({ ...c, side: 'right' }))
+        .sort((a, b) => b.totalKg - a.totalKg)
+        .slice(0, 15);
+      renderList(rightItems, 'list-right', 'total-right', 'count-right', state.rightTotal, false);
+
+      // 👑 Birleşik "Ağır Abi" Sıralaması (Kullanıcı İsteği: En çok hediye atan kişi lider gelsin)
+      // İki kovaya da hediye atanların toplam ağırlığı birleştirilir
+      const userMap = new Map();
+      for (const c of state.leftContributors.values()) {
+        const u = userMap.get(c.nickname) || { nickname: c.nickname, avatar: c.avatar || c.avatarUrl, totalKg: 0, lastGift: c.lastGift, side: 'left' };
+        u.totalKg += c.totalKg;
+        u.lastGift = c.lastGift || u.lastGift;
+        if (c.avatar || c.avatarUrl) u.avatar = c.avatar || c.avatarUrl;
+        userMap.set(c.nickname, u);
+      }
+      for (const c of state.rightContributors.values()) {
+        const u = userMap.get(c.nickname) || { nickname: c.nickname, avatar: c.avatar || c.avatarUrl, totalKg: 0, lastGift: c.lastGift, side: 'right' };
+        if (userMap.has(c.nickname) && u.side === 'left') {
+          u.side = 'both';
+        }
+        u.totalKg += c.totalKg;
+        u.lastGift = c.lastGift || u.lastGift;
+        if (c.avatar || c.avatarUrl) u.avatar = c.avatar || c.avatarUrl;
+        userMap.set(c.nickname, u);
+      }
+
+      const combinedItems = Array.from(userMap.values())
+        .sort((a, b) => b.totalKg - a.totalKg)
+        .slice(0, 15);
+      const combinedTotal = state.leftTotal + state.rightTotal;
+      renderList(combinedItems, 'list-top', 'total-top', 'count-top', combinedTotal, true);
+
+      renderMVP(combinedItems[0]);
+    }
+
+    function sendAdjustment(nickname, deltaKg, side) {
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({
+          type: 'adjust_contributor',
+          nickname,
+          deltaKg,
+          side
+        }));
+      }
+    }
+
+    let dataRevision = 0;
+    function applyLeaderboardData(d) {
+      if (!d) return;
+      dataRevision++;
+      if (Array.isArray(d.left)) {
+        state.leftContributors = new Map(d.left);
+        state.leftTotal = Number(d.leftTotal) || 0;
+      }
+      if (Array.isArray(d.right)) {
+        state.rightContributors = new Map(d.right);
+        state.rightTotal = Number(d.rightTotal) || 0;
+      }
+      render();
+    }
+
+    let ws = null;
+    function connectWS() {
+      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      ws = new WebSocket(`${protocol}//${window.location.host}`);
+
+      ws.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          if (data.type === 'sync_leaderboard') {
+            applyLeaderboardData(data.data);
+          } else if (data.type === 'reset' || data.type === 'empty') {
+            applyLeaderboardData({ left: [], right: [], leftTotal: 0, rightTotal: 0 });
+          }
+        } catch {}
+      };
+
+      ws.onclose = () => setTimeout(connectWS, 2500);
+    }
+
+    async function fetchServerLeaderboard() {
+      const revision = dataRevision;
+      try {
+        const res = await fetch('/api/leaderboard', { cache: 'no-store' });
+        if (res.ok && revision === dataRevision) {
+          const d = await res.json();
+          if (revision === dataRevision) applyLeaderboardData(d);
+        }
+      } catch {}
+    }
+
+    fetchServerLeaderboard();
+    setInterval(fetchServerLeaderboard, 1500);
+    connectWS();
+  </script>
+</body>
+</html>

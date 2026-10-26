@@ -1,0 +1,18 @@
+{
+  "name": "mng-crowd-control",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "MNG Crowd Control - TikTok etkileşimli hayatta kalma oyunu",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "tiktok-live-connector": "^2.4.4",
+    "ws": "^8.17.0"
+  }
+}

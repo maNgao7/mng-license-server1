@@ -1,0 +1,19 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>TikMnG Battle Royale</title>
+<hta:application border="none" caption="no" showintaskbar="yes" singleinstance="yes" windowstate="normal" />
+<style>
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#111713;color:#fff;font-family:Segoe UI,Arial,sans-serif}
+.scene{position:relative;height:100%;display:flex;align-items:center;justify-content:center;text-align:center;background:#111713}
+.content{position:relative;z-index:2;animation:arrive .75s cubic-bezier(.2,.85,.25,1) both}
+h1{font-size:28px;margin:0 0 12px;letter-spacing:0}.snow{font-size:58px;animation:float 2.4s ease-in-out infinite}.bar{width:320px;height:7px;background:#2b342d;margin:22px auto 0;overflow:hidden;border-radius:5px}.bar span{display:block;height:100%;width:42%;background:#efc84a;box-shadow:0 0 14px #efc84a;animation:run 1.55s infinite cubic-bezier(.45,0,.25,1)}
+p{color:#dfe6d7;margin:0}.dots:after{content:'';animation:dots 1.4s steps(4,end) infinite}
+.flake{position:absolute;top:-30px;color:#efc84a;opacity:.65;animation:fall linear infinite}.f1{left:8%;font-size:18px;animation-duration:5.6s}.f2{left:24%;font-size:11px;animation-duration:4.1s;animation-delay:-2s}.f3{left:72%;font-size:15px;animation-duration:5s;animation-delay:-1s}.f4{left:90%;font-size:10px;animation-duration:3.8s;animation-delay:-3s}
+@keyframes run{0%{transform:translateX(-110%)}100%{transform:translateX(355%)}}@keyframes arrive{from{opacity:0;transform:translateY(12px) scale(.98)}to{opacity:1;transform:none}}@keyframes float{0%,100%{transform:translateY(0) rotate(-4deg)}50%{transform:translateY(-7px) rotate(4deg)}}@keyframes fall{to{transform:translateY(410px) rotate(280deg)}}@keyframes dots{0%{content:''}25%{content:'.'}50%{content:'..'}75%,100%{content:'...'}}
+</style></head><body><div class="scene"><span class="flake f1">•</span><span class="flake f2">•</span><span class="flake f3">•</span><span class="flake f4">•</span><div class="content"><div class="snow">&#129666;</div><h1>TikMnG Battle Royale Beta yükleniyor</h1><p>Savaş alanı hazırlanıyor<span class="dots"></span></p><div class="bar"><span></span></div></div></div>
+<script>
+resizeTo(620,360); moveTo((screen.availWidth-620)/2,(screen.availHeight-360)/2);
+var fso=new ActiveXObject('Scripting.FileSystemObject');
+var root=location.pathname.replace(/^\//,'').replace(/\\loading\.hta$/i,'').replace(/\//g,'\\');
+setInterval(function(){if(fso.FileExists(root+'\\game-ready.flag'))window.close();},500);
+setTimeout(function(){window.close();},120000);
+</script></body></html>

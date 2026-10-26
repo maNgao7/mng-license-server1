@@ -1,0 +1,141 @@
+// ==========================================================================
+// MNG PENALTI KUPASI - Konfigürasyon
+// ==========================================================================
+
+export const TEAMS = {
+  turkiye: {
+    id: 'turkiye', name: 'TÜRKİYE', short: 'TR', starPlayer: '@MANGAO7TV', number: '16',
+    primary: '#e30a17', secondary: '#ffffff', shorts: '#ffffff', socks: '#e30a17',
+    pattern: 'national', badge: '🇹🇷', text: '#ffffff'
+  },
+  galatasaray: {
+    id: 'galatasaray', name: 'GS', short: 'GS', starPlayer: 'İZLEYİCİ', number: '10',
+    primary: '#fdb913', secondary: '#a90432', shorts: '#a90432', socks: '#a90432',
+    pattern: 'halves', badge: '🟡🔴', text: '#ffffff'
+  },
+  fenerbahce: {
+    id: 'fenerbahce', name: 'FB', short: 'FB', starPlayer: 'İZLEYİCİ', number: '10',
+    primary: '#ffed00', secondary: '#0b1f5c', shorts: '#ffffff', socks: '#0b1f5c',
+    pattern: 'stripes', badge: '🟡🔵', text: '#0b1f5c'
+  },
+  besiktas: {
+    id: 'besiktas', name: 'BJK', short: 'BJK', starPlayer: 'İZLEYİCİ', number: '10',
+    primary: '#ffffff', secondary: '#111111', shorts: '#111111', socks: '#111111',
+    pattern: 'stripes', badge: '⚪⚫', text: '#111111'
+  },
+  trabzonspor: {
+    id: 'trabzonspor', name: 'TS', short: 'TS', starPlayer: 'İZLEYİCİ', number: '10',
+    primary: '#7a0e2c', secondary: '#69b3e7', shorts: '#69b3e7', socks: '#7a0e2c',
+    pattern: 'stripes', badge: '🔴🔵', text: '#ffffff'
+  },
+  amedspor: {
+    id: 'amedspor', name: 'AMD', short: 'AMD', starPlayer: 'İZLEYİCİ', number: '10',
+    primary: '#009639', secondary: '#d7141a', shorts: '#ffffff', socks: '#009639',
+    pattern: 'stripes', badge: '🟢🔴', text: '#ffffff'
+  }
+};
+
+// Hediye ile tetiklenebilen tüm eylemler
+export const ACTIONS = {
+  team_gs:         { id: 'team_gs', group: 'Forma Değiştir', icon: '🟡🔴', title: 'GS Forması', desc: 'İzleyici adıyla', color: '#c8102e', team: 'galatasaray' },
+  team_fb:         { id: 'team_fb', group: 'Forma Değiştir', icon: '🟡🔵', title: 'FB Forması', desc: 'İzleyici adıyla', color: '#1b3a8f', team: 'fenerbahce' },
+  team_bjk:        { id: 'team_bjk', group: 'Forma Değiştir', icon: '⚪⚫', title: 'BJK Forması', desc: 'İzleyici adıyla', color: '#2b2b2b', team: 'besiktas' },
+  team_ts:         { id: 'team_ts', group: 'Forma Değiştir', icon: '🔴🔵', title: 'TS Forması', desc: 'İzleyici adıyla', color: '#7a0e2c', team: 'trabzonspor' },
+  team_amed:       { id: 'team_amed', group: 'Forma Değiştir', icon: '🟢🔴', title: 'AMD Forması', desc: 'İzleyici adıyla', color: '#00843d', team: 'amedspor' },
+  viewer_shot:     { id: 'viewer_shot', group: 'İzleyici Şutu', icon: '⚽', title: 'Normal Şut', desc: 'Hediyeyi atan izleyici vurur', color: '#22c55e' },
+  viewer_power_shot:{ id: 'viewer_power_shot', group: 'İzleyici Şutu', icon: '💥', title: 'Sert Şut', desc: 'Hediyeyi atan güçlü vurur', color: '#ef4444' },
+  keeper_normal:   { id: 'keeper_normal', group: 'Kaleye Geç', icon: '🧤', title: 'Normal Kaleci', desc: 'Hediyeyi atan kaleye geçer', color: '#0ea5e9' },
+  keeper_agile:    { id: 'keeper_agile', group: 'Kaleye Geç', icon: '⚡', title: 'Güçlü Çevik Kaleci', desc: 'Daha hızlı ve uzun uçar', color: '#f97316' },
+  keeper_boss:     { id: 'keeper_boss', group: 'Kaleye Geç', icon: '👑', title: 'Devasa Boss Kaleci', desc: 'Dev boyutlu, kaleyi kapatır', color: '#eab308' },
+  keeper_dwarf:    { id: 'keeper_dwarf', group: 'Kaleye Geç', icon: '♛', title: 'Cüce Kaleci', desc: 'Küçük kaleci kaleye geçer', color: '#f472b6' },
+  keeper_shrink50: { id: 'keeper_shrink50', group: 'Yayıncıya Destek', icon: '🤏', title: 'Kaleciyi %50 Küçült', desc: 'Süreli küçültme', color: '#a855f7' },
+  keeper_shrink80: { id: 'keeper_shrink80', group: 'Yayıncıya Destek', icon: '🔬', title: 'Kaleciyi %80 Küçült', desc: 'Süreli küçültme', color: '#d946ef' },
+  power_tsubasa:   { id: 'power_tsubasa', group: 'Yayıncıya Destek', icon: '🔥', title: 'Tsubasa Alevli Şut', desc: 'Sonraki şut %90 gol', color: '#ef4444' },
+  defense_wall:    { id: 'defense_wall', group: 'İzleyiciye Destek', icon: '🧱', title: 'Savunma Barajı', desc: 'Baraj kurma desteği', color: '#10b981' },
+  freekick:        { id: 'freekick', group: 'Saha Pozisyonu', icon: '🎯', title: 'Frikik Pozisyonu', desc: 'Ceza sahası dışından frikik (21m)', color: '#f59e0b' },
+  role_swap_keeper:{ id: 'role_swap_keeper', group: 'Pozisyon Değiştir', icon: '🔄', title: 'Pozisyon Değiştir', desc: 'Kaleci ile şutör yer değiştirir (Yayıncı kaleci olur)', color: '#38bdf8' }
+};
+
+// Varsayılan hediye → eylem kuralları (Şablondaki 11 Resmi Hediye)
+export const DEFAULT_RULES = [
+  { action: 'team_gs', gift: 'Blue Bead', giftId: '5319' },
+  { action: 'team_fb', gift: 'Aşırı tepki', giftId: '19447' },
+  { action: 'team_amed', gift: 'Türk kahvesi', giftId: '5994' },
+  { action: 'team_bjk', gift: 'Dönen Top', giftId: '105781' },
+  { action: 'team_ts', gift: 'Finger Heart', giftId: '5487' },
+  { action: 'keeper_normal', gift: 'Gül', giftId: '5655' },
+  { action: 'keeper_boss', gift: 'Mishka Bear', giftId: '5486', giftIds: ['5486', '5566'] },
+  { action: 'keeper_shrink50', gift: 'Parfüm', giftId: '5658' },
+  { action: 'keeper_agile', gift: 'Buket', giftId: '13913', giftIds: ['13913', '10994', '17473'] },
+  { action: 'freekick', gift: 'Çay', giftId: '5303' },
+  { action: 'keeper_dwarf', gift: 'Taç', giftId: '5502' },
+  { action: 'role_swap_keeper', gift: 'Elle Kalp', giftId: '5924', giftIds: ['5924', '5660'] },
+  { action: 'defense_wall', gift: 'Şapka ve Bıyık', giftId: '6427' }
+];
+
+export const KEEPER_TYPES = {
+  bot:    { label: 'BOT', scale: 1.0, reach: 1.0, react: 0.16, saveChance: 0.28, speed: 1.0, kit: '#22c55e', kit2: '#14532d' },
+  normal: { label: 'NORMAL', scale: 1.0, reach: 1.0, react: 0.14, saveChance: 0.40, speed: 1.0, kit: '#06b6d4', kit2: '#0e3a4a' },
+  agile:  { label: 'ÇEVİK', scale: 1.05, reach: 1.22, react: 0.08, saveChance: 0.50, speed: 1.25, kit: '#f97316', kit2: '#3b1203' },
+  boss:   { label: 'DEV BOSS', scale: 1.55, reach: 1.15, react: 0.10, saveChance: 0.60, speed: 1.1, kit: '#facc15', kit2: '#1c1917' },
+  dwarf:  { label: 'CÜCE', scale: 0.55, reach: 0.72, react: 0.18, saveChance: 0.22, speed: 0.9, kit: '#f472b6', kit2: '#4a1232' }
+};
+
+export const QUALITY_PRESETS = {
+  low:    { label: 'Düşük',  pixelRatio: 0.85, shadows: false, shadowSize: 1024, bloom: false, msaa: 0, grass: 0,      crowd: 0.35, envMap: false },
+  medium: { label: 'Orta',   pixelRatio: 1.0,  shadows: true,  shadowSize: 1024, bloom: true,  msaa: 0, grass: 30000,  crowd: 0.6,  envMap: true },
+  high:   { label: 'Yüksek', pixelRatio: 1.25, shadows: true,  shadowSize: 2048, bloom: true,  msaa: 4, grass: 80000,  crowd: 0.85, envMap: true },
+  ultra:  { label: 'Ultra',  pixelRatio: 2.0,  shadows: true,  shadowSize: 4096, bloom: true,  msaa: 4, grass: 160000, crowd: 1.0,  envMap: true }
+};
+
+export const ATMOSPHERES = {
+  festival: {
+    label: 'Festival Arenası (Videodaki Stil)', skyTop: '#5caae6', skyHorizon: '#b8e0f8', skyBottom: '#dcf0fd', sun: '#fffdf5',
+    fog: '#a8d5f0', fogDensity: 0.0016, hemiSky: '#d0ecff', hemiGround: '#2d6e1f', hemi: 0.95,
+    key: '#fffef5', keyIntensity: 2.3, fill: '#cfe9ff', fillIntensity: 0.75, floodlights: 0.2,
+    exposure: 1.0, stars: 0, bloom: 0.25, beams: 0.0
+  },
+  day: {
+    label: 'Gündüz', skyTop: '#2f7fd6', skyHorizon: '#bfe3ff', skyBottom: '#dfefff', sun: '#fff6dd',
+    fog: '#b9d6ee', fogDensity: 0.0042, hemiSky: '#cfe8ff', hemiGround: '#3c6b2a', hemi: 0.9,
+    key: '#fff4e0', keyIntensity: 3.2, fill: '#bcd7ff', fillIntensity: 0.7, floodlights: 0.25,
+    exposure: 1.0, stars: 0, bloom: 0.35, beams: 0.0
+  },
+  dusk: {
+    label: 'Gün Batımı (Projektörler Açık)', skyTop: '#141b3d', skyHorizon: '#e06b32', skyBottom: '#352140', sun: '#ff9248',
+    fog: '#382844', fogDensity: 0.0045, hemiSky: '#4a5b88', hemiGround: '#192812', hemi: 0.48,
+    key: '#ffaa66', keyIntensity: 2.2, fill: '#5568a8', fillIntensity: 0.85, floodlights: 1.5,
+    exposure: 1.05, stars: 0.35, bloom: 0.7, beams: 0.5
+  },
+  night: {
+    label: 'Gece Maçı (Stadyum Projektörleri)', skyTop: '#020308', skyHorizon: '#081226', skyBottom: '#040711', sun: '#4466aa',
+    fog: '#060a17', fogDensity: 0.0055, hemiSky: '#18274d', hemiGround: '#081409', hemi: 0.22,
+    key: '#5577bb', keyIntensity: 0.6, fill: '#1d2e5a', fillIntensity: 0.5, floodlights: 2.4,
+    exposure: 1.15, stars: 1.0, bloom: 0.95, beams: 0.85
+  }
+};
+
+export const DEFAULT_SETTINGS = {
+  version: 9,
+  username: '',
+  team: 'turkiye',
+  quality: 'high',
+  atmosphere: 'festival',
+  fov: 48,
+  camHeight: 2.4,
+  gameMode: 'shooter',         // 'shooter' (Yayıncı vurur) veya 'keeper' (Yayıncı kaleci)
+  keeperStrikeDelay: 3.5,      // Kaleci modunda şutör bekleme süresi (sn)
+  shrinkDuration: 45,
+  wallDuration: 10,
+  tsubasaShots: 1,
+  soundEnabled: true,
+  soundVolume: 80,             // %80 ses seviyesi
+  likeAction: 'defense_wall',  // 100 Beğeni ile savunma barajına katılma
+  likeThreshold: 100,          // Her 100 beğenide bir tetiklenir
+  followAction: 'defense_wall', // Takip gelince savunma barajına katılma
+  rules: null
+};
+
+export const GOAL = { halfWidth: 3.66, height: 2.44, depth: 2.0, postRadius: 0.06 };
+export const BALL_RADIUS = 0.11;
+export const PENALTY_SPOT = 11;

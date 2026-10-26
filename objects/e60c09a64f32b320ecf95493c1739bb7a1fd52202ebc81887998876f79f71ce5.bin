@@ -1,0 +1,66 @@
+const CDN = /(^|\.)(tiktokcdn(?:-us|-eu)?\.com|byteimg\.com|muscdn\.com)$/i;
+
+export function imageUrls(value) {
+  if (typeof value === 'string') return [value];
+  if (Array.isArray(value)) return value.flatMap(imageUrls);
+  if (!value) return [];
+  return imageUrls(value.urlList || value.url || []);
+}
+
+export function imageScore(address) {
+  const size = address.match(/(?:shrink|cropcenter|crop|resize)[:_-](\d+)[:x_-](\d+)/i);
+  return size ? Math.min(Number(size[1]), Number(size[2])) : 256;
+}
+
+export function bestImage(values) {
+  return values.flatMap(imageUrls).filter(address => {
+    try { const u = new URL(address); return u.protocol === 'https:' && CDN.test(u.hostname); }
+    catch { return false; }
+  }).filter(address => !/\.webp(?:\?|$)/i.test(address))
+    .sort((a, b) => imageScore(b) - imageScore(a))[0] || '';
+}
+
+export function profileFromHtml(html) {
+  for (const id of ['__UNIVERSAL_DATA_FOR_REHYDRATION__', 'SIGI_STATE']) {
+    const match = html.match(new RegExp(`<script[^>]*id=["']${id}["'][^>]*>([\\s\\S]*?)<\\/script>`));
+    if (!match) continue;
+    try {
+      const data = JSON.parse(match[1]);
+      const user = data.__DEFAULT_SCOPE__?.['webapp.user-detail']?.userInfo?.user
+        || Object.values(data.UserModule?.users || {})[0];
+      if (user) return bestImage([user.avatarLarger, user.avatarLarge, user.avatarMedium, user.avatarThumb]);
+    } catch {}
+  }
+  return '';
+}
+
+// Optional, bounded enrichment never delays a gift's action dispatch.
+export class ProfileResolver {
+  constructor(fetcher = fetch) { this.fetcher = fetcher; this.cache = new Map(); this.inFlight = new Map(); }
+  async resolve(username) {
+    const key = username.toLowerCase();
+    if (!/^[a-z0-9_.]{2,32}$/.test(key)) return '';
+    const cached = this.cache.get(key);
+    if (cached && cached.expires > Date.now()) return cached.url;
+    if (this.inFlight.has(key)) return this.inFlight.get(key);
+    if (this.inFlight.size >= 4) return '';
+    const pending = (async () => {
+      let url = '';
+      try {
+        const response = await this.fetcher(`https://www.tiktok.com/@${key}`, {
+          headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
+            Accept: 'text/html', 'Accept-Language': 'tr-TR,tr;q=0.9,en;q=0.8' }, signal: AbortSignal.timeout(6000)
+        });
+        if (response.ok) {
+          const text = await response.text();
+          if (text.length < 4_000_000) url = profileFromHtml(text);
+        }
+      } catch {}
+      this.cache.set(key, { url, expires: Date.now() + (url ? 30 * 60_000 : 2 * 60_000) });
+      if (this.cache.size > 1000) this.cache.delete(this.cache.keys().next().value);
+      return url;
+    })();
+    this.inFlight.set(key, pending);
+    try { return await pending; } finally { this.inFlight.delete(key); }
+  }
+}

@@ -1,0 +1,1259 @@
+const byId = id => document.getElementById(id);
+const canvas = byId("orbitCanvas"), ctx = canvas.getContext("2d");
+const settings = { massPerCoin:20, coinMultipliers:{one:.8, fifty:1.5, hundred:1.7, fiveHundred:2, thousand:2.5}, followMass:250, giftMass:200, likeEnterThreshold:100, likeEnterMass:200, likeThreshold:100, likeReward:150, giftMultiplier:20, giftRules:{}, shatterId:"11879", maxMass:1000000, consumeRatio:1.2, roundDuration:300, arenaWidth:5200, protectionSeconds:8, minPlayersToConsume:5 };
+const combatGate = new OrbitCollision.RoundGate();
+function combatStatus() {
+  const label=byId('combatStatus');
+  if(label)label.textContent=combatGate.started?'Karşılaşma başladı':`Oyuncular bekleniyor: ${world.players.size} / ${settings.minPlayersToConsume}`;
+}
+function setArenaSize(w){const width=Math.max(2000,Math.min(25000,Number(w)||5200));world.width=width;world.height=Math.round(width*(3400/5200));}
+let launchConfig = {};
+try { const raw=new URLSearchParams(location.search).get("orbitConfig"); if(raw){const normalized=raw.replace(/-/g,"+").replace(/_/g,"/"),padding="=".repeat((4-normalized.length%4)%4);launchConfig=JSON.parse(atob(normalized+padding));settings.followMass=Math.max(1,Number(launchConfig.followMass)||settings.followMass);settings.likeEnterMass=Math.max(1,Number(launchConfig.likeEnterMass)||settings.likeEnterMass);settings.likeThreshold=Math.max(1,Number(launchConfig.likeThreshold)||settings.likeThreshold);settings.likeReward=Math.max(1,Number(launchConfig.likeReward)||settings.likeReward);if(launchConfig.shatter?.id)settings.shatterId=String(launchConfig.shatter.id);for(const rule of Array.isArray(launchConfig.rules)?launchConfig.rules:[]){if(rule?.id)settings.giftRules[String(rule.id)]={growth:Math.max(1,Number(rule.growth)||1)};}} } catch {}
+const world = { width:5200, height:3400, players:new Map(), stars:[], dust:[] };
+const camera = { x:2600, y:1700, zoom:.48, targetZoom:.48 };
+const bubbles = [], swallows=[];
+let socket, lastTime = performance.now(), selectedId, cameraFollowId, dragging, dragPoint, pointerMoved, roundHadContest, roundEnding, gameStarted=false, roundEndsAt=0, timerPaused=false, pausedRemaining=0;
+let audioCtx = null;
+let growthAudioBuffer = null, swallowAudioBuffer = null, winnerAudioBuffer = null;
+let lastGrowthSound = 0, lastSwallowSound = 0;
+function initWebAudio() {
+  if (!audioCtx) {
+    const AudioCtxClass = window.AudioContext || window.webkitAudioContext;
+    if (AudioCtxClass) audioCtx = new AudioCtxClass();
+  }
+  if (audioCtx && audioCtx.state === "suspended") {
+    audioCtx.resume().catch(() => {});
+  }
+  if (audioCtx) {
+    if (!growthAudioBuffer) {
+      fetch("assets/audio/growth.mp3")
+        .then(res => res.arrayBuffer())
+        .then(buf => audioCtx.decodeAudioData(buf))
+        .then(decoded => { growthAudioBuffer = decoded; })
+        .catch(() => {});
+    }
+    if (!swallowAudioBuffer) {
+      fetch("assets/audio/swallow.mp3")
+        .then(res => res.arrayBuffer())
+        .then(buf => audioCtx.decodeAudioData(buf))
+        .then(decoded => { swallowAudioBuffer = decoded; })
+        .catch(() => {});
+    }
+    if (!winnerAudioBuffer) {
+      fetch("assets/audio/winner.mp3")
+        .then(res => res.arrayBuffer())
+        .then(buf => audioCtx.decodeAudioData(buf))
+        .then(decoded => { winnerAudioBuffer = decoded; })
+        .catch(() => {});
+    }
+  }
+}
+window.addEventListener("pointerdown", initWebAudio);
+window.addEventListener("keydown", initWebAudio);
+initWebAudio();
+
+function playGrowthSound() {
+  const now = performance.now();
+  if (now - lastGrowthSound < 30) return;
+  lastGrowthSound = now;
+  if (audioCtx) {
+    try {
+      if (audioCtx.state === "suspended") audioCtx.resume();
+      // Anında 0 ms kristal büyüme tınısı
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = "sine";
+      osc.frequency.setValueAtTime(560, audioCtx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(1100, audioCtx.currentTime + 0.055);
+      gain.gain.setValueAtTime(0.22, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.055);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start();
+      osc.stop(audioCtx.currentTime + 0.06);
+
+      if (growthAudioBuffer) {
+        const src = audioCtx.createBufferSource();
+        const bGain = audioCtx.createGain();
+        bGain.gain.value = 0.45;
+        src.buffer = growthAudioBuffer;
+        src.connect(bGain);
+        bGain.connect(audioCtx.destination);
+        src.start(0);
+      }
+      return;
+    } catch {}
+  }
+  try {
+    const sound = byId("growthAudio");
+    if (sound) { sound.volume = 0.4; sound.currentTime = 0; sound.play().catch(() => {}); }
+  } catch {}
+}
+
+function playSwallowSound() {
+  const now = performance.now();
+  if (now - lastSwallowSound < 25) return;
+  lastSwallowSound = now;
+  if (audioCtx) {
+    try {
+      if (audioCtx.state === "suspended") audioCtx.resume();
+      // Anında 0 ms tok yutma darbesi
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = "sine";
+      osc.frequency.setValueAtTime(340, audioCtx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(65, audioCtx.currentTime + 0.07);
+      gain.gain.setValueAtTime(0.45, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.07);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start();
+      osc.stop(audioCtx.currentTime + 0.075);
+
+      if (swallowAudioBuffer) {
+        const src = audioCtx.createBufferSource();
+        const bGain = audioCtx.createGain();
+        bGain.gain.value = 0.8;
+        src.buffer = swallowAudioBuffer;
+        src.connect(bGain);
+        bGain.connect(audioCtx.destination);
+        src.start(0);
+      }
+      return;
+    } catch {}
+  }
+  try {
+    const sound = byId("swallowAudio");
+    if (sound) { sound.volume = 0.75; sound.currentTime = 0; sound.play().catch(() => {}); }
+  } catch {}
+}
+
+function playShatterSound() {
+  if (audioCtx) {
+    try {
+      if (audioCtx.state === "suspended") audioCtx.resume();
+      // 1. Patlama / Çarpma gürültüsü
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = "sawtooth";
+      osc.frequency.setValueAtTime(600, audioCtx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(40, audioCtx.currentTime + 0.35);
+      gain.gain.setValueAtTime(0.7, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.35);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start();
+      osc.stop(audioCtx.currentTime + 0.36);
+
+      // 2. Yüksek frekans kırılma tınısı
+      const osc2 = audioCtx.createOscillator();
+      const gain2 = audioCtx.createGain();
+      osc2.type = "triangle";
+      osc2.frequency.setValueAtTime(1400, audioCtx.currentTime);
+      osc2.frequency.exponentialRampToValueAtTime(180, audioCtx.currentTime + 0.25);
+      gain2.gain.setValueAtTime(0.5, audioCtx.currentTime);
+      gain2.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.25);
+      osc2.connect(gain2);
+      gain2.connect(audioCtx.destination);
+      osc2.start();
+      osc2.stop(audioCtx.currentTime + 0.26);
+    } catch {}
+  }
+}
+
+function playWinnerSound() {
+  if (audioCtx && winnerAudioBuffer) {
+    try {
+      if (audioCtx.state === "suspended") audioCtx.resume();
+      const src = audioCtx.createBufferSource();
+      const gain = audioCtx.createGain();
+      gain.gain.value = 0.72;
+      src.buffer = winnerAudioBuffer;
+      src.connect(gain);
+      gain.connect(audioCtx.destination);
+      src.start(0);
+      return;
+    } catch {}
+  }
+  try {
+    const sound = byId("winnerAudio");
+    if (sound) { sound.volume = 0.72; sound.currentTime = 0; sound.play().catch(() => {}); }
+  } catch {}
+}
+
+const wins = new Map();
+const PRESET_GIFT_MASS = {
+  "5655": 150,  // Rose / Gül
+  "5487": 300,  // Finger Heart / Parmak Kalp
+  "17473": 500, // Bouquet / Buket
+  "5303": 1100, // Tea / Çay
+  "6427": 1600  // Hat and Mustache / Şapka & Bıyık
+};
+const DEFAULT_RULES = [
+  { id: "5655", growth: 150 },
+  { id: "5487", growth: 300 },
+  { id: "17473", growth: 500 },
+  { id: "5303", growth: 1100 },
+  { id: "6427", growth: 1600 }
+];
+let giftCatalog = [], gameRules = DEFAULT_RULES.map(rule => ({ ...rule })), gameShatterId = "11879";
+
+let speedGift = { id: "5879", name: "DONUT", image: "/catalog-assets/gift-images/Doughnut.png" };
+let superSpeedGift = { id: "5303", name: "ÇAY", image: "/catalog-assets/gift-images/Tea.png" };
+let shatterGift = { id: "7419", name: "MONEY GUN", image: "/catalog-assets/gift-images/Money_Gun.png" };
+
+try {
+  const giftDefaultsVersion = localStorage.getItem("mng_orbit_speed_defaults_version");
+  if (giftDefaultsVersion !== "2") {
+    localStorage.setItem("mng_orbit_speed_gift", JSON.stringify(speedGift));
+    localStorage.setItem("mng_orbit_super_speed_gift", JSON.stringify(superSpeedGift));
+    localStorage.setItem("mng_orbit_speed_defaults_version", "2");
+  } else {
+    const savedSpeed = JSON.parse(localStorage.getItem("mng_orbit_speed_gift"));
+    if (savedSpeed && savedSpeed.name) speedGift = savedSpeed;
+    const savedSuper = JSON.parse(localStorage.getItem("mng_orbit_super_speed_gift"));
+    if (savedSuper && savedSuper.name) superSpeedGift = savedSuper;
+  }
+  const savedShatter = JSON.parse(localStorage.getItem("mng_orbit_shatter_gift"));
+  if (savedShatter && savedShatter.name) shatterGift = savedShatter;
+} catch {}
+
+function renderSpecialGiftsUI() {
+  const speedImg = byId("speedGiftImg");
+  const speedTitle = byId("speedGiftTitle");
+  if (speedImg) {
+    speedImg.src = speedGift.image;
+    speedImg.alt = speedGift.name;
+  }
+  if (speedTitle) speedTitle.textContent = speedGift.name;
+
+  const superImg = byId("superSpeedGiftImg");
+  const superTitle = byId("superSpeedGiftTitle");
+  if (superImg) {
+    superImg.src = superSpeedGift.image;
+    superImg.alt = superSpeedGift.name;
+  }
+  if (superTitle) superTitle.textContent = superSpeedGift.name;
+
+  const shatterImg = byId("shatterGiftImg");
+  const shatterTitle = byId("shatterGiftTitle");
+  if (shatterImg) {
+    shatterImg.src = shatterGift.image;
+    shatterImg.alt = shatterGift.name;
+  }
+  if (shatterTitle) shatterTitle.textContent = shatterGift.name;
+}
+
+try {
+  const saved = JSON.parse(localStorage.getItem("mng_orbit_game_settings"));
+  if (saved) {
+    if (Array.isArray(saved.rules) && saved.rules.length >= 4) gameRules = saved.rules;
+    if (saved.shatterId) gameShatterId = String(saved.shatterId);
+    if (saved.followMass !== undefined) settings.followMass = Math.max(1, Number(saved.followMass));
+    if (saved.likeEnterThreshold !== undefined) settings.likeEnterThreshold = Math.max(1, Number(saved.likeEnterThreshold));
+    if (saved.likeEnterMass !== undefined) settings.likeEnterMass = Math.max(1, Number(saved.likeEnterMass));
+    if (saved.likeThreshold !== undefined) settings.likeThreshold = Math.max(1, Number(saved.likeThreshold));
+    if (saved.likeReward !== undefined) settings.likeReward = Math.max(1, Number(saved.likeReward));
+  }
+} catch {}
+function coinMultiplierFor(coins){
+  const value=Math.max(1,Number(coins)||1), multipliers=settings.coinMultipliers;
+  if(value>=1000)return multipliers.thousand;
+  if(value>=500)return multipliers.fiveHundred;
+  if(value>=100)return multipliers.hundred;
+  if(value>=50)return multipliers.fifty;
+  return multipliers.one;
+}
+function massForCoins(coins){
+  const value=Math.max(1,Number(coins)||1);
+  return Math.round(value*Math.max(1,Number(settings.massPerCoin)||50)*Math.max(.1,Number(coinMultiplierFor(value))||1));
+}
+function growthForGift(gift){return massForCoins(gift?.coins);}
+function suggestedGrowthForGift(gift) { return growthForGift(gift); }
+function applyGameRules(){
+  settings.giftRules = {};
+  for(const rule of gameRules){
+    const gift = giftById(rule.id);
+    const growth = suggestedGrowthForGift(gift);
+    rule.growth = growth;
+    settings.giftRules[String(rule.id)] = { growth: growth, name: gift.name };
+  }
+  settings.shatterId = gameShatterId;
+}
+applyGameRules();
+const escapeHtml = value => String(value || "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]));
+const proxy = (url,user) => url ? (url.startsWith("/") ? url : "/api/avatar?user="+encodeURIComponent(user||"")+"&url=" + encodeURIComponent(url)) : "";
+const radius = mass => 19 + Math.sqrt(Math.max(0, mass)) * 5.5;
+const random = index => { const v = Math.sin(index * 999.1) * 10000; return v - Math.floor(v); };
+for (let i=0;i<560;i++) world.stars.push({x:random(i)*world.width,y:random(i+1)*world.height,size:1+random(i+2)*2,alpha:.16+random(i+3)*.62});
+for (let i=0;i<80;i++) world.dust.push({x:random(i+500)*world.width,y:random(i+600)*world.height,radius:22+random(i+700)*70,hue:165+random(i+800)*150});
+
+function resize() { const ratio = Math.min(devicePixelRatio || 1,2); canvas.width = innerWidth*ratio; canvas.height = innerHeight*ratio; canvas.style.width=innerWidth+"px"; canvas.style.height=innerHeight+"px"; ctx.setTransform(ratio,0,0,ratio,0,0); ctx.imageSmoothingEnabled=true; ctx.imageSmoothingQuality="high"; }
+function color(id) { let total=0; for (const char of id) total=(total*31+char.charCodeAt(0))>>>0; return 135+total%185; }
+function spawn() { const newcomerRadius=radius(settings.followMass),padding=310;for(let attempt=0;attempt<80;attempt++){const point={x:180+Math.random()*(world.width-360),y:180+Math.random()*(world.height-360)};const clear=[...world.players.values()].every(item=>Math.hypot(point.x-item.x,point.y-item.y)>radius(item.mass)+newcomerRadius+padding);if(clear)return point;}return{x:world.width*.5+(Math.random()-.5)*world.width*.55,y:world.height*.5+(Math.random()-.5)*world.height*.55};}
+function avatar(player) {
+  const list=[player.avatar,player.avatarFallback,player.avatarLastResort].filter((url,index,all)=>url&&all.indexOf(url)===index), source=list[player.avatarAttempt||0];
+  if (!source || player.imageUrl===source) return;
+  const image=new Image(); image.onload=()=>{if(!player.hdReady)player.image=image;player.imageUrl=source;byId("leaderboardList").dataset.signature="";};
+  image.onerror=()=>{player.avatarAttempt=(player.avatarAttempt||0)+1;player.imageUrl="";avatar(player);}; image.src=proxy(source,player.id); player.imageUrl=source;
+}
+function player(data, source, initialMass) {
+  let item=world.players.get(data.id);
+  if (item) { item.nickname=data.nickname||item.nickname; if (data.avatar&&data.avatar!==item.avatar) { item.avatar=data.avatar;item.avatarFallback=data.avatarFallback||item.avatarFallback;item.avatarLastResort=data.avatarLastResort||item.avatarLastResort;item.avatarAttempt=0;avatar(item); } return item; }
+  const position=spawn();
+  const startMass = initialMass !== undefined ? initialMass : (source==="like" ? settings.likeEnterMass : (source==="gift" ? settings.giftMass : settings.followMass));
+  item={id:data.id,nickname:data.nickname||data.id,avatar:data.avatar||null,avatarFallback:data.avatarFallback||null,avatarLastResort:data.avatarLastResort||null,image:null,imageUrl:"",avatarAttempt:0,mass:startMass,likes:0,nextLikeReward:settings.likeThreshold,x:position.x,y:position.y,vx:(Math.random()-.5)*24,vy:(Math.random()-.5)*24,hue:color(data.id),pulse:1.5,spawnProtectedUntil:Date.now()+(settings.protectionSeconds!==undefined?settings.protectionSeconds:8)*1000};
+  world.players.set(item.id,item); if(world.players.size>1) roundHadContest=true;
+  if(world.players.size===1){selectedId=item.id;cameraFollowId=item.id;camera.x=item.x;camera.y=item.y;camera.zoom=.58;camera.targetZoom=.58;} avatar(item);requestHdAvatar(item); return item;
+}
+function requestHdAvatar(item){if(item.hdRequested||!item.avatar)return;item.hdRequested=true;const image=new Image();image.onload=()=>{item.image=image;item.hdReady=true;byId("leaderboardList").dataset.signature="";};image.src="/api/avatar?highres=1&user="+encodeURIComponent(item.id)+"&url="+encodeURIComponent(item.avatar);}
+function addMass(item, amount) { item.mass=Math.min(settings.maxMass,Math.max(1,item.mass+amount));if(item.split?.pieces[0])item.split.pieces[0].mass=item.mass;item.pulse=Math.min(4,item.pulse+.85);if(item.mass>=220)requestHdAvatar(item); }
+function pullInto(eater, source, amount, image, hue, nickname){swallows.push({eaterId:eater.id,startX:source.x,startY:source.y,amount,image,hue,nickname,started:performance.now(),duration:.72});}
+function splitPlayer(item) { if(item.split)return;const originalMass=item.mass,shares=[.42,.24,.16,.11,.07],pieces=shares.map((share,index)=>({mass:originalMass*share,x:item.x,y:item.y,vx:item.vx,vy:item.vy,angle:index===0?0:Math.PI*.72+(index-1)*.62+(Math.random()-.5)*.3,distance:radius(originalMass)*(.72+index*.13)}));item.mass=pieces[0].mass;item.split={started:performance.now(),pieces};item.pulse=3.6; }
+function event(text) { const item=document.createElement("div");item.className="event-item";item.textContent=text;byId("eventFeed").prepend(item);while(byId("eventFeed").children.length>4)byId("eventFeed").lastElementChild.remove();setTimeout(()=>item.remove(),6000); }
+function giftById(id){return giftCatalog.find(gift=>String(gift.id)===String(id))||{id,name:"Hediye",coins:0,image:null};}
+const FALLBACK_GIFT_IMAGE="/catalog-assets/gift-catalog/balon-hediyesi.png";
+async function getGiftChoices(query="", selectedIds=[]){
+  const params=new URLSearchParams({limit:"650"});
+  if(query.trim())params.set("query",query.trim());
+  if(selectedIds.length)params.set("ids",selectedIds.join(","));
+  try {
+    const response=await fetch("/api/gifts?"+params);
+    if(!response.ok) return [];
+    return await response.json();
+  } catch(e) {
+    console.warn("getGiftChoices err:", e);
+    return [];
+  }
+}
+function setGiftImage(image,gift){
+  image.onerror=()=>{image.onerror=null;image.src=FALLBACK_GIFT_IMAGE;};
+  image.decoding="async";
+  image.src=gift.image||FALLBACK_GIFT_IMAGE;
+  image.alt=gift.name;
+}
+let giftPickerTarget=null,giftPickerRequest=0,giftPickerSearchTimer=null;
+function closeGiftPicker(){
+  giftPickerTarget=null;
+  giftPickerRequest++;
+  const modal=byId("orbitGiftPickerModal");
+  if(modal){modal.hidden=true;modal.setAttribute("aria-hidden","true");}
+}
+async function renderGiftPickerResults(query=""){
+  const list=byId("orbitGiftPickerResults");
+  if(!list||!giftPickerTarget)return;
+  const requestId=++giftPickerRequest;
+  list.replaceChildren();
+  const loading=document.createElement("p");
+  loading.className="orbit-gift-picker-status";
+  loading.textContent="Hediyeler yükleniyor...";
+  list.appendChild(loading);
+  try{
+    const choices=await getGiftChoices(query,[giftPickerTarget.selectedId]);
+    if(requestId!==giftPickerRequest||!giftPickerTarget)return;
+    list.replaceChildren();
+    if(!choices.length){
+      const empty=document.createElement("p");
+      empty.className="orbit-gift-picker-status";
+      empty.textContent="Bu aramayla eşleşen hediye bulunamadı.";
+      list.appendChild(empty);
+      return;
+    }
+    choices.forEach(choice=>{
+      const button=document.createElement("button"),thumb=document.createElement("img"),name=document.createElement("span"),coins=document.createElement("small");
+      button.type="button";
+      button.className="orbit-gift-choice"+(String(choice.id)===giftPickerTarget.selectedId?" selected":"");
+      button.title=`${choice.name} - ${choice.coins} coin`;
+      setGiftImage(thumb,choice);
+      name.textContent=choice.name;
+      coins.textContent=`${choice.coins} coin`;
+      button.append(thumb,name,coins);
+      button.addEventListener("click",()=>{
+        if(!giftPickerTarget)return;
+        if(giftPickerTarget.special === "speed"){
+          speedGift = {
+            id: String(choice.id),
+            name: choice.name.toUpperCase(),
+            image: choice.image || FALLBACK_GIFT_IMAGE
+          };
+          try { localStorage.setItem("mng_orbit_speed_gift", JSON.stringify(speedGift)); } catch {}
+          renderSpecialGiftsUI();
+          event(`⚡ 2x Hızlanma hediyesi "${choice.name}" olarak ayarlandı!`);
+        } else if(giftPickerTarget.special === "superSpeed"){
+          superSpeedGift = {
+            id: String(choice.id),
+            name: choice.name.toUpperCase(),
+            image: choice.image || FALLBACK_GIFT_IMAGE
+          };
+          try { localStorage.setItem("mng_orbit_super_speed_gift", JSON.stringify(superSpeedGift)); } catch {}
+          renderSpecialGiftsUI();
+          event(`🚀 5x Süper Hızlanma hediyesi "${choice.name}" olarak ayarlandı!`);
+        } else if(giftPickerTarget.special === "shatter"){
+          shatterGift = {
+            id: String(choice.id),
+            name: choice.name.toUpperCase(),
+            image: choice.image || FALLBACK_GIFT_IMAGE
+          };
+          try { localStorage.setItem("mng_orbit_shatter_gift", JSON.stringify(shatterGift)); } catch {}
+          renderSpecialGiftsUI();
+          event(`💥 Herkesi Parçala hediyesi "${choice.name}" olarak ayarlandı!`);
+        } else if(giftPickerTarget.shatter){
+          gameShatterId=String(choice.id);
+          applyGameRules();
+          persistGameSettings();
+          renderGameSettings();
+          event(`${choice.name} hediyesi seçildi`);
+        } else {
+          const rule=gameRules[giftPickerTarget.index];
+          if(rule){
+            rule.id=String(choice.id);
+            rule.growth=suggestedGrowthForGift(choice);
+          }
+          applyGameRules();
+          persistGameSettings();
+          renderGameSettings();
+          event(`${choice.name} hediyesi seçildi`);
+        }
+        if(!giftCatalog.some(entry=>String(entry.id)===String(choice.id)))giftCatalog.push(choice);
+        closeGiftPicker();
+      });
+      list.appendChild(button);
+    });
+  }catch{
+    if(requestId!==giftPickerRequest)return;
+    list.replaceChildren();
+    const error=document.createElement("p");
+    error.className="orbit-gift-picker-status";
+    error.textContent="Hediyeler yüklenemedi. Lütfen tekrar deneyin.";
+    list.appendChild(error);
+  }
+}
+function openGiftPicker(index,shatter=false){
+  const selectedId=String(shatter?gameShatterId:gameRules[index]?.id||"");
+  giftPickerTarget={index,shatter,selectedId};
+  const modal=byId("orbitGiftPickerModal"),title=byId("orbitGiftPickerTitle"),search=byId("orbitGiftPickerSearch");
+  if(!modal||!title||!search)return;
+  title.textContent=shatter?"Haritayı parçala hediyesini seç":"Hediye "+(index+1)+" seç";
+  modal.hidden=false;
+  modal.setAttribute("aria-hidden","false");
+  search.value="";
+  renderGiftPickerResults();
+  setTimeout(()=>search.focus(),0);
+}
+function openSpecialGiftPicker(specialType){
+  const isSpeed = specialType === "speed";
+  const isSuper = specialType === "superSpeed";
+  const currentGift = isSpeed ? speedGift : (isSuper ? superSpeedGift : shatterGift);
+  giftPickerTarget = { special: specialType, selectedId: String(currentGift.id) };
+  const modal=byId("orbitGiftPickerModal"),title=byId("orbitGiftPickerTitle"),search=byId("orbitGiftPickerSearch");
+  if(!modal||!title||!search)return;
+  title.textContent = isSpeed
+    ? "⚡ 2x Hızlanma Hediyesini Değiştir (600+ Hediye)"
+    : (isSuper ? "🚀 5x Süper Hızlanma Hediyesini Değiştir (600+ Hediye)" : "💥 Herkesi Parçala Hediyesini Değiştir (600+ Hediye)");
+  modal.hidden=false;
+  modal.setAttribute("aria-hidden","false");
+  search.value="";
+  renderGiftPickerResults();
+  setTimeout(()=>search.focus(),0);
+}
+function ruleCard(rule,index,shatter=false){
+  const selectedId=String(shatter?gameShatterId:rule.id),gift=giftById(selectedId),card=document.createElement("article");
+  card.className="game-gift-rule"+(shatter?" shatter":"");
+  const currentGrowth = shatter ? 0 : suggestedGrowthForGift(gift);
+  const growthSection = shatter
+    ? '<small>Bu hediye gelince gerçek oyuncuların tamamı 10 saniyeliğine parçalanır.</small>'
+    : `<div class="growth-edit-wrap"><strong>${Number(gift.coins)||1} coin = +${currentGrowth.toLocaleString("tr-TR")} kütle</strong><small>Hesap, üstteki coin-kütle ayarlarını kullanır.</small></div>`;
+  card.innerHTML=`<img class="rule-gift-image" alt="Hediye görseli"><div><p>${shatter?"HARİTAYI PARÇALA":"HEDİYE "+(index+1)}</p><strong>${escapeHtml(gift.name)}</strong>${growthSection}<div class="gift-rule-actions"><button class="gift-picker-toggle" type="button">Değiştir</button><button class="gift-test" type="button">Test et</button></div></div>`;
+  const image=card.querySelector(".rule-gift-image");
+  setGiftImage(image,gift);
+  card.querySelector(".gift-picker-toggle").addEventListener("click",()=>openGiftPicker(index,shatter));
+  card.querySelector(".gift-test").addEventListener("click",()=>shatter?testShatter():testGrowth(index));
+  return card;
+}
+function renderGameSettings(){
+  const box=byId("gameGiftRules");
+  if(box)box.replaceChildren(...gameRules.map((rule,index)=>ruleCard(rule,index)),ruleCard(null,0,true));
+  if(byId("gameFollowMass")) byId("gameFollowMass").value=settings.followMass;
+  if(byId("gameCoinMultiplier")) byId("gameCoinMultiplier").value=settings.massPerCoin||50;
+  if(byId("gameMultiplier1")) byId("gameMultiplier1").value=settings.coinMultipliers.one;
+  if(byId("gameMultiplier50")) byId("gameMultiplier50").value=settings.coinMultipliers.fifty;
+  if(byId("gameMultiplier100")) byId("gameMultiplier100").value=settings.coinMultipliers.hundred;
+  if(byId("gameMultiplier500")) byId("gameMultiplier500").value=settings.coinMultipliers.fiveHundred;
+  if(byId("gameMultiplier1000")) byId("gameMultiplier1000").value=settings.coinMultipliers.thousand;
+  if(byId("gameLikeEnterMass")) byId("gameLikeEnterMass").value=settings.likeEnterMass;
+  if(byId("gameLikeEnterThreshold")) byId("gameLikeEnterThreshold").value=settings.likeEnterThreshold;
+  if(byId("gameLikeThreshold")) byId("gameLikeThreshold").value=settings.likeThreshold;
+  if(byId("gameLikeReward")) byId("gameLikeReward").value=settings.likeReward;
+  if(byId("gameArenaWidth")) byId("gameArenaWidth").value=settings.arenaWidth||world.width||5200;
+  if(byId("gameProtectionSeconds")) byId("gameProtectionSeconds").value=settings.protectionSeconds!==undefined?settings.protectionSeconds:8;
+  if(byId("gameMinPlayers")) byId("gameMinPlayers").value=settings.minPlayersToConsume||5;
+}
+async function loadGameSettings(){try{
+  const saved=JSON.parse(localStorage.getItem("mng_orbit_game_settings"));
+  if(saved){
+    if(saved.massPerCoin!==undefined)settings.massPerCoin=Math.max(5,Number(saved.massPerCoin));
+    if(saved.coinMultipliers&&typeof saved.coinMultipliers==="object")settings.coinMultipliers={...settings.coinMultipliers,...Object.fromEntries(Object.entries(saved.coinMultipliers).map(([key,value])=>[key,Math.max(.1,Number(value)||1)]))};
+    if(saved.arenaWidth!==undefined){settings.arenaWidth=Math.max(2000,Number(saved.arenaWidth));setArenaSize(settings.arenaWidth);}
+    if(saved.protectionSeconds!==undefined)settings.protectionSeconds=Math.max(0,Number(saved.protectionSeconds));
+    if(saved.roundGateVersion===1&&saved.minPlayersToConsume!==undefined)settings.minPlayersToConsume=Math.max(2,Math.min(100,Math.floor(Number(saved.minPlayersToConsume)||5)));
+  }
+  renderGameSettings();
+}catch{}}
+function persistGameSettings(){
+  localStorage.setItem("mng_orbit_game_settings",JSON.stringify({
+    massPerCoin:settings.massPerCoin||50,
+    coinMultipliers:settings.coinMultipliers,
+    followMass:settings.followMass,
+    likeEnterMass:settings.likeEnterMass,
+    likeEnterThreshold:settings.likeEnterThreshold,
+    likeThreshold:settings.likeThreshold,
+    likeReward:settings.likeReward,
+    arenaWidth:settings.arenaWidth||world.width||5200,
+    protectionSeconds:settings.protectionSeconds!==undefined?settings.protectionSeconds:8,
+    minPlayersToConsume:settings.minPlayersToConsume||5,
+    roundGateVersion:1
+  }));
+}
+function saveGameSettings(){
+  settings.massPerCoin=Math.max(5,Number(byId("gameCoinMultiplier")?.value)||50);
+  settings.coinMultipliers={
+    one:Math.max(.1,Number(byId("gameMultiplier1")?.value)||1),
+    fifty:Math.max(.1,Number(byId("gameMultiplier50")?.value)||1.5),
+    hundred:Math.max(.1,Number(byId("gameMultiplier100")?.value)||1.7),
+    fiveHundred:Math.max(.1,Number(byId("gameMultiplier500")?.value)||2),
+    thousand:Math.max(.1,Number(byId("gameMultiplier1000")?.value)||2.5)
+  };
+  settings.followMass=Math.max(1,Number(byId("gameFollowMass")?.value)||250);
+  settings.likeEnterMass=Math.max(1,Number(byId("gameLikeEnterMass")?.value)||200);
+  settings.likeEnterThreshold=Math.max(1,Number(byId("gameLikeEnterThreshold")?.value)||settings.likeEnterThreshold||100);
+  settings.likeThreshold=Math.max(1,Number(byId("gameLikeThreshold")?.value)||100);
+  settings.likeReward=Math.max(1,Number(byId("gameLikeReward")?.value)||150);
+  settings.arenaWidth=Math.max(2000,Number(byId("gameArenaWidth")?.value)||5200);
+  setArenaSize(settings.arenaWidth);
+  settings.protectionSeconds=Math.max(0,Number(byId("gameProtectionSeconds")?.value)||0);
+  settings.minPlayersToConsume=Math.max(2,Math.min(100,Math.floor(Number(byId("gameMinPlayers")?.value)||5)));
+  persistGameSettings();
+  event("Orbit ayarları kaydedildi (Alan: " + world.width + "x" + world.height + ", Koruma: " + settings.protectionSeconds + "sn)");
+}
+function testPlayers(){const names=["MNG Test","Yıldız Oyuncu","Canlı Destek","Orbit Deneme","Balon Takımı"];return names.map((name,index)=>player({id:"orbit-test-"+index,nickname:name,avatar:`https://pravatar.cc/300?img=${index+10}`},"follow"));}
+function testGrowth(index){saveGameSettings();applyGameRules();const item=testPlayers()[Math.floor(Math.random()*5)],rule=gameRules[index],gift=giftById(rule.id);growth(item,rule.growth);event(`${gift.name} testi: ${item.nickname} +${rule.growth.toLocaleString("tr-TR")} kütle kazanıyor`);}
+function testShatter(){saveGameSettings();const targets=world.players.size?[...world.players.values()]:testPlayers();for(const item of targets){item.split=null;splitPlayer(item);}event(`${giftById(gameShatterId).name} testi: arenadaki herkes parçalandı`);}
+function testLikeGrowth(){
+  saveGameSettings();
+  const testId = "orbit-test-like";
+  const inGame = world.players.get(testId);
+  if (!inGame) {
+    process({
+      event: "like",
+      player: { id: testId, nickname: "Beğeni Şampiyonu", avatar: "https://pravatar.cc/300?img=12" },
+      count: settings.likeEnterThreshold
+    });
+  } else {
+    process({
+      event: "like",
+      player: { id: testId, nickname: "Beğeni Şampiyonu", avatar: inGame.avatar },
+      count: settings.likeThreshold
+    });
+  }
+}
+function testSwallowSound(){
+  playSwallowSound();
+  event("Yutma sesi testi (0 ms gecikmesiz)");
+}
+function growth(item, amount) {
+  playGrowthSound();
+  const count=Math.max(4,Math.min(14,Math.ceil(Math.sqrt(amount)/2.8)));
+  for(let i=0;i<count;i++){
+    const angle=Math.random()*Math.PI*2,distance=150+Math.random()*240;
+    bubbles.push({playerId:item.id,startX:item.x+Math.cos(angle)*distance,startY:item.y+Math.sin(angle)*distance,delay:i*.055,progress:0,duration:.48+Math.random()*.22,gain:amount/count,hue:item.hue,size:15+Math.random()*9});
+  }
+}
+const KNOWN_COINS = {
+  "5655": 1, "5269": 1, "7934": 1, "13651": 1, "6064": 1, "231956": 1, "5827": 1,
+  "5319": 5, "5487": 5, "5994": 5, "16690": 9, "8913": 10, "5282": 10,
+  "17473": 20, "5658": 20, "5879": 30, "5303": 50, "7046": 5,
+  "6427": 99, "6097": 99, "5486": 100, "5585": 100, "5924": 100,
+  "13448": 199, "5502": 199, "6267": 299, "5283": 300,
+  "7168": 500, "7419": 500, "11583": 500, "5336": 500, "12203": 500,
+  "11046": 1000, "11879": 1000, "6820": 2150, "5348": 5000, "13064": 15999
+};
+function getGiftCoinValue(msg) {
+  if (msg.catalogCoins && Number(msg.catalogCoins) > 0) return Number(msg.catalogCoins);
+  // Canlı sunucu "coins" alanında seri hediyenin toplamını gönderir; katalog değeri birim hediyedir.
+  if (msg.coins && Number(msg.coins) > 0) return Number(msg.coins);
+  const id = String(msg.giftId || "");
+  if (KNOWN_COINS[id]) return KNOWN_COINS[id];
+  const name = String(msg.giftName || "").toLowerCase();
+  if (name.includes("rose") || name.includes("gül") || name.includes("tiktok") || name.includes("heart me")) return 1;
+  if (name.includes("nazar") || name.includes("kahve") || name.includes("finger heart")) return 5;
+  if (name.includes("rosa") || name.includes("kalp") || name.includes("heart")) return 10;
+  if (name.includes("bouquet") || name.includes("buket") || name.includes("parfüm") || name.includes("perfume")) return 20;
+  if (name.includes("doughnut") || name.includes("donut")) return 30;
+  if (name.includes("tea") || name.includes("çay") || name.includes("cay")) return 50;
+  if (name.includes("mustache") || name.includes("bıyık") || name.includes("şapka") || name.includes("crown")) return 99;
+  if (name.includes("bear") || name.includes("confetti") || name.includes("hand heart")) return 100;
+  if (name.includes("money gun") || name.includes("para tabancası") || name.includes("tabanca")) return 500;
+  if (name.includes("galaxy") || name.includes("galaksi") || name.includes("zürafa") || name.includes("giraffe")) return 1000;
+  if (name.includes("whale") || name.includes("balina")) return 2150;
+  if (name.includes("unicorn")) return 5000;
+  if (name.includes("tiger") || name.includes("lion") || name.includes("aslan")) return 15999;
+  return 1;
+}
+function gain(message) {
+  const count = Math.max(1, Number(message.count || 1));
+  const coinsPerGift = getGiftCoinValue(message);
+  return massForCoins(coinsPerGift) * count;
+}
+const pendingLikes = new Map();
+function process(message) {
+  if(roundEnding||!message.player||!message.player.id)return;
+  const pId = String(message.player.id);
+  const exists = world.players.has(pId);
+
+  if(message.event==="follow"){
+    if (exists) {
+      const item = player(message.player, "follow");
+      addMass(item, settings.followMass);
+      event(item.nickname + " takip etti (+" + settings.followMass + " kütle)");
+    } else {
+      const item = player(message.player, "follow", settings.followMass);
+      event(item.nickname + " takip ederek oyuna katıldı (" + settings.followMass + " kütle)");
+    }
+    return;
+  }
+
+  if(message.event==="like"){
+    const batch = Math.max(1, Number(message.count || 1));
+    if (!exists) {
+      const current = (pendingLikes.get(pId) || 0) + batch;
+      if (current >= settings.likeEnterThreshold) {
+        pendingLikes.delete(pId);
+        const item = player(message.player, "like", settings.likeEnterMass);
+        const extraLikes = current - settings.likeEnterThreshold;
+        item.likes = extraLikes;
+        item.nextLikeReward = settings.likeThreshold;
+        event(item.nickname + " 100 beğeni ile oyuna katıldı (" + settings.likeEnterMass + " kütle)!");
+        let reward = 0, cycles = 0;
+        while (item.likes >= item.nextLikeReward) {
+          reward += settings.likeReward;
+          item.nextLikeReward += settings.likeThreshold;
+          cycles++;
+        }
+        if (reward > 0) {
+          growth(item, reward);
+          event(item.nickname + " +" + (cycles * settings.likeThreshold) + " ek beğeni ile büyüdü (+" + reward + " kütle)");
+        }
+      } else {
+        pendingLikes.set(pId, current);
+      }
+      return;
+    }
+
+    const item = player(message.player, "like");
+    item.likes = (item.likes || 0) + batch;
+    let reward = 0, cycles = 0;
+    while(item.likes >= item.nextLikeReward){
+      reward += settings.likeReward;
+      item.nextLikeReward += settings.likeThreshold;
+      cycles++;
+    }
+    if(reward > 0){
+      growth(item, reward);
+      event(item.nickname + " " + (cycles > 1 ? (cycles * settings.likeThreshold) : settings.likeThreshold) + " beğeni ile büyüdü (+" + reward + " kütle)");
+    }
+    return;
+  }
+
+  if(message.event==="gift"){
+    const item = player(message.player, "gift");
+    const count = Math.max(1, Number(message.count || 1));
+    const coins = getGiftCoinValue(message);
+    const totalCoins = coins * count;
+    const amount = gain(message);
+    growth(item, amount);
+
+    const giftIdStr = String(message.giftId || "");
+    const nameLower = String(message.giftName || "").toLowerCase();
+
+    // 1. ÖZEL HIZLANMA HEDİYESİ (2x HIZLAN - 15 saniye)
+    const isSpeedGift = (speedGift.id && giftIdStr === String(speedGift.id))
+      || (speedGift.name && nameLower.includes(speedGift.name.toLowerCase()))
+      || giftIdStr === "5303" || giftIdStr === "5994" || giftIdStr === "7046" || nameLower.includes("çay") || nameLower.includes("tea") || nameLower.includes("kahve") || nameLower.includes("coffee");
+
+    // 2. ÖZEL 5x SÜPER HIZLANMA HEDİYESİ (5x HIZLAN - 15 saniye)
+    const isSuperSpeedGift = (superSpeedGift.id && giftIdStr === String(superSpeedGift.id))
+      || (superSpeedGift.name && nameLower.includes(superSpeedGift.name.toLowerCase()));
+
+    // 3. ÖZEL PARÇALAMA HEDİYESİ (HERKESİ PARÇALA)
+    const isShatterGift = (shatterGift.id && giftIdStr === String(shatterGift.id))
+      || (shatterGift.name && nameLower.includes(shatterGift.name.toLowerCase()))
+      || giftIdStr === "7168" || giftIdStr === "7419" || nameLower.includes("money gun") || nameLower.includes("para tabancası");
+
+    if (isSuperSpeedGift) {
+      item.speedBoostUntil = Date.now() + 15000;
+      item.speedMultiplier = 5.0;
+      item.pulse = 6;
+      event("🚀 " + item.nickname + " " + (superSpeedGift.name || "DONUT") + " gönderdi: 5x SÜPER HIZLANDI! (15 saniye)");
+    }
+    else if (isSpeedGift) {
+      item.speedBoostUntil = Date.now() + 15000;
+      item.speedMultiplier = 2.0;
+      item.pulse = 4;
+      event("⚡ " + item.nickname + " " + (speedGift.name || "ÇAY") + " gönderdi: 2x Hızlandı! (15 saniye)");
+    }
+    else if (isShatterGift) {
+      playShatterSound();
+      for (const target of world.players.values()) {
+        if (target.id !== item.id) {
+          target.split = null;
+          splitPlayer(target);
+        }
+      }
+      event("💥 " + item.nickname + " " + (shatterGift.name || "MONEY GUN") + " GÖNDERDİ: HERKES PARÇALANDI!");
+    } else {
+      event(item.nickname + " " + (message.giftName || "Hediye") + (count > 1 ? " x" + count : "") + " (" + totalCoins + " coin) gönderdi (+" + amount + " kütle)");
+    }
+  }
+}
+function update(delta) {
+  const all=[...world.players.values()];
+  const wasRunning=combatGate.started;
+  const combatRunning=!roundEnding&&combatGate.advance(all.length,settings.minPlayersToConsume);
+  if(!wasRunning&&combatRunning){startTimer();event('Karşılaşma başladı: '+all.length+' oyuncu');}
+  combatStatus();
+  if(combatRunning) for(const item of all){let target,threat,targetDistance=Infinity,threatDistance=Infinity;for(const other of all){if(other===item)continue;const d=Math.hypot(other.x-item.x,other.y-item.y);if(other.mass*settings.consumeRatio<item.mass&&d<targetDistance){target=other;targetDistance=d;}if(item.mass*settings.consumeRatio<other.mass&&d<threatDistance){threat=other;threatDistance=d;}}
+    let ax=Math.sin(performance.now()/1000+item.hue)*3,ay=Math.cos(performance.now()/1200+item.hue)*3;
+    if(threat&&threatDistance<900){ax+=(item.x-threat.x)/Math.max(1,threatDistance)*135;ay+=(item.y-threat.y)/Math.max(1,threatDistance)*135;}else if(target){ax+=(target.x-item.x)/Math.max(1,targetDistance)*300;ay+=(target.y-item.y)/Math.max(1,targetDistance)*300;}
+    const speedMult = (item.speedBoostUntil && item.speedBoostUntil > Date.now()) ? (item.speedMultiplier || 1.8) : 1.0;
+    ax *= speedMult; ay *= speedMult;
+    item.vx+=ax*delta;item.vy+=ay*delta;const speed=Math.hypot(item.vx,item.vy),limit=Math.max(40,140-Math.sqrt(item.mass)*1.05)*speedMult;if(speed>limit){item.vx=item.vx/speed*limit;item.vy=item.vy/speed*limit;}const outside=radius(item.mass)*.5,minX=-outside,maxX=world.width+outside,minY=-outside,maxY=world.height+outside;item.x=Math.max(minX,Math.min(maxX,item.x+item.vx*delta));item.y=Math.max(minY,Math.min(maxY,item.y+item.vy*delta));if(item.x===minX||item.x===maxX)item.vx*=-.32;if(item.y===minY||item.y===maxY)item.vy*=-.32;item.pulse=Math.max(0,item.pulse-delta*2);}
+  if(combatRunning) for(const item of all)if(item.split){const elapsed=performance.now()-item.split.started,spread=Math.min(1,elapsed/900),rejoin=Math.max(0,Math.min(1,(elapsed-8000)/2000)),core=item.split.pieces[0];core.x+=(item.x-core.x)*Math.min(1,delta*6);core.y+=(item.y-core.y)*Math.min(1,delta*6);const heading=Math.atan2(item.vy,item.vx)+Math.PI;for(let index=1;index<item.split.pieces.length;index++){const piece=item.split.pieces[index],distance=piece.distance*spread*(1-rejoin),angle=heading+piece.angle+Math.sin(performance.now()/700+index)*.12,targetX=core.x+Math.cos(angle)*distance,targetY=core.y+Math.sin(angle)*distance;piece.x+=(targetX-piece.x)*Math.min(1,delta*3.4);piece.y+=(targetY-piece.y)*Math.min(1,delta*3.4);}}
+  if(combatRunning) for(let i=0;i<all.length;i++)for(let j=i+1;j<all.length;j++){
+    const first=all[i],second=all[j];
+    if(!world.players.has(first.id)||!world.players.has(second.id)) continue;
+    const distance=Math.hypot(first.x-second.x,first.y-second.y);
+    const isFirstProt = Date.now()<first.spawnProtectedUntil;
+    const isSecondProt = Date.now()<second.spawnProtectedUntil;
+    if(isFirstProt || isSecondProt){
+      OrbitCollision.separate(first,second,radius);
+      const minD = (radius(first.mass) + radius(second.mass)) * 0.95;
+      if(distance < minD){
+        const dx = (first.x - second.x) / Math.max(1, distance);
+        const dy = (first.y - second.y) / Math.max(1, distance);
+        const bounce = 175;
+        first.vx += dx * bounce;
+        first.vy += dy * bounce;
+        second.vx -= dx * bounce;
+        second.vy -= dy * bounce;
+        first.pulse = Math.min(3, first.pulse + 0.4);
+        second.pulse = Math.min(3, second.pulse + 0.4);
+      }
+      continue;
+    }
+    const contact=OrbitCollision.contact(first,second,radius,settings.consumeRatio),{large,small}=contact;
+    if(!first.split&&!second.split&&contact.kind==='split'){splitPlayer(first);splitPlayer(second);OrbitCollision.separate(first,second,radius);event(first.nickname+" ve "+second.nickname+" parçalandı");continue;}
+    if(!first.split&&!second.split&&contact.kind==='eat'){world.players.delete(small.id);pullInto(large,small,small.mass*1.2,small.image,small.hue,small.nickname);if(selectedId===small.id)selectedId=large.id;if(cameraFollowId===small.id)cameraFollowId=large.id;event(large.nickname+", "+small.nickname+" hücresini yutuyor");playSwallowSound();}
+  }
+  if(combatRunning) for(const eater of [...world.players.values()])for(const target of [...world.players.values()]){if(eater.id===target.id||!world.players.has(target.id)||!target.split||!world.players.has(eater.id)||Date.now()<target.spawnProtectedUntil||Date.now()<eater.spawnProtectedUntil)continue;const eaterPoint=eater.split?eater.split.pieces[0]:eater;for(let index=target.split.pieces.length-1;index>=0;index--){const piece=target.split.pieces[index];if(eater.mass<piece.mass*settings.consumeRatio||Math.hypot(eaterPoint.x-piece.x,eaterPoint.y-piece.y)>radius(eater.mass)*.98)continue;const isCore=index===0;target.split.pieces.splice(index,1);if(!isCore){}else{world.players.delete(target.id);if(selectedId===target.id)selectedId=eater.id;if(cameraFollowId===target.id)cameraFollowId=eater.id;}pullInto(eater,piece,piece.mass*1.35,target.image,target.hue,target.nickname);event(eater.nickname+", "+target.nickname+" parçasını yutuyor");playSwallowSound();if(isCore)break;}}
+  for(let i=bubbles.length-1;i>=0;i--){const bubble=bubbles[i],item=world.players.get(bubble.playerId);if(!item){bubbles.splice(i,1);continue;}bubble.delay-=delta;if(bubble.delay>0)continue;bubble.progress+=delta/bubble.duration;if(bubble.progress>=1){addMass(item,bubble.gain);playGrowthSound();bubbles.splice(i,1);}}
+  for(let i=swallows.length-1;i>=0;i--){const swallow=swallows[i];swallow.progress=(performance.now()-swallow.started)/(swallow.duration*1000);if(swallow.progress<1)continue;const eater=world.players.get(swallow.eaterId);if(eater)addMass(eater,swallow.amount);swallows.splice(i,1);}
+  for(const item of world.players.values())if(item.split&&performance.now()-item.split.started>=10000){item.mass=item.split.pieces.reduce((total,piece)=>total+piece.mass,0);item.x=item.split.pieces[0]?.x||item.x;item.y=item.split.pieces[0]?.y||item.y;item.split=null;}
+  if(cameraFollowId&&!dragging){const item=world.players.get(cameraFollowId);if(item){camera.x+=(item.x-camera.x)*Math.min(1,delta*3);camera.y+=(item.y-camera.y)*Math.min(1,delta*3);}}
+  if(combatGate.started&&roundHadContest&&world.players.size===1&&!swallows.length&&!roundEnding)winner([...world.players.values()][0]);updateTimer();leaders();selection();
+}
+function drawBubble(bubble) { if(bubble.delay>0)return;const item=world.players.get(bubble.playerId);if(!item)return;const eased=1-Math.pow(1-Math.min(1,bubble.progress),3),x=bubble.startX+(item.x-bubble.startX)*eased,y=bubble.startY+(item.y-bubble.startY)*eased,size=bubble.size*(1-eased*.35);ctx.save();ctx.beginPath();ctx.fillStyle="hsla("+bubble.hue+",96%,72%,.9)";ctx.shadowBlur=18;ctx.shadowColor="hsla("+bubble.hue+",96%,66%,.9)";ctx.arc(x,y,size+3,0,Math.PI*2);ctx.fill();ctx.beginPath();ctx.arc(x,y,size,0,Math.PI*2);ctx.clip();if(item.image&&item.image.complete)ctx.drawImage(item.image,x-size,y-size,size*2,size*2);else{ctx.fillStyle="hsl("+bubble.hue+",78%,45%)";ctx.fillRect(x-size,y-size,size*2,size*2);ctx.fillStyle="#fff";ctx.font="700 "+Math.max(10,size)+"px Segoe UI";ctx.textAlign="center";ctx.textBaseline="middle";ctx.fillText(item.nickname.slice(0,1).toUpperCase(),x,y);}ctx.restore(); }
+function drawPlayer(item) { if(item.split){drawSplitPlayer(item);return;}const size=radius(item.mass);ctx.beginPath();ctx.fillStyle="hsla("+item.hue+",88%,64%,.15)";ctx.arc(item.x,item.y,size+item.pulse*8,0,Math.PI*2);ctx.fill();ctx.save();ctx.beginPath();ctx.arc(item.x,item.y,size,0,Math.PI*2);ctx.clip();const gradient=ctx.createRadialGradient(item.x-size*.35,item.y-size*.4,2,item.x,item.y,size);gradient.addColorStop(0,"hsl("+item.hue+",96%,75%)");gradient.addColorStop(1,"hsl("+item.hue+",72%,34%)");ctx.fillStyle=gradient;ctx.fillRect(item.x-size,item.y-size,size*2,size*2);if(item.image&&item.image.complete){ctx.drawImage(item.image,item.x-size,item.y-size,size*2,size*2);ctx.fillStyle="rgba(7,12,28,.18)";ctx.fillRect(item.x-size,item.y-size,size*2,size*2);}else{ctx.fillStyle="#f5fbff";ctx.font=Math.max(14,size*.65)+"px Segoe UI";ctx.textAlign="center";ctx.textBaseline="middle";ctx.fillText(item.nickname.slice(0,1).toUpperCase(),item.x,item.y);}ctx.restore();if (item.speedBoostUntil && item.speedBoostUntil > Date.now()) {
+    ctx.save();
+    ctx.strokeStyle = "#25f4ee";
+    ctx.lineWidth = 4;
+    ctx.setLineDash([10, 6]);
+    ctx.beginPath();
+    ctx.arc(item.x, item.y, size + 8, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.restore();
+  }
+  if (item.spawnProtectedUntil && item.spawnProtectedUntil > Date.now()) {
+    ctx.save();
+    ctx.strokeStyle = "rgba(37, 244, 238, 0.95)";
+    ctx.lineWidth = 4;
+    ctx.shadowBlur = 16;
+    ctx.shadowColor = "#25f4ee";
+    ctx.beginPath();
+    ctx.arc(item.x, item.y, size + 11, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.strokeStyle = "rgba(255, 215, 0, 0.85)";
+    ctx.lineWidth = 2.5;
+    ctx.beginPath();
+    ctx.arc(item.x, item.y, size + 6 + Math.sin(Date.now() / 140) * 3, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.restore();
+  }
+  ctx.beginPath();ctx.lineWidth=selectedId===item.id?5:2.5;ctx.strokeStyle=selectedId===item.id?"#fff2ad":"hsla("+item.hue+",90%,80%,.95)";ctx.arc(item.x,item.y,size,0,Math.PI*2);ctx.stroke();if(size>25){ctx.textAlign="center";ctx.textBaseline="top";ctx.font="800 "+Math.max(11,Math.min(18,size*.24))+"px Segoe UI";ctx.fillStyle="#ffef9e";ctx.fillText(Math.round(item.mass)+" KÜTLE",item.x,item.y+size+7);ctx.font="700 "+Math.max(12,Math.min(20,size*.28))+"px Segoe UI";ctx.fillStyle="#f8fbff";ctx.fillText(item.nickname.slice(0,16),item.x,item.y+size+27);}}
+function drawSplitPlayer(item){const pieces=item.split.pieces,core=pieces[0],totalSize=radius(item.mass);for(const piece of pieces){const size=radius(piece.mass);ctx.save();ctx.beginPath();ctx.fillStyle="hsla("+item.hue+",90%,62%,.82)";ctx.shadowBlur=15;ctx.shadowColor="hsla("+item.hue+",90%,62%,.8)";ctx.arc(piece.x,piece.y,size+2,0,Math.PI*2);ctx.fill();ctx.shadowBlur=0;ctx.beginPath();ctx.arc(piece.x,piece.y,size,0,Math.PI*2);ctx.clip();if(item.image&&item.image.complete)ctx.drawImage(item.image,piece.x-size,piece.y-size,size*2,size*2);else{ctx.fillStyle="hsl("+item.hue+",72%,40%)";ctx.fillRect(piece.x-size,piece.y-size,size*2,size*2);ctx.fillStyle="#fff";ctx.font="700 "+Math.max(12,size*.7)+"px Segoe UI";ctx.textAlign="center";ctx.textBaseline="middle";ctx.fillText(item.nickname.slice(0,1).toUpperCase(),piece.x,piece.y);}ctx.restore();ctx.beginPath();ctx.lineWidth=piece===core?4:2;ctx.strokeStyle=piece===core?"#fff2ad":"hsla("+item.hue+",90%,80%,.9)";ctx.arc(piece.x,piece.y,size,0,Math.PI*2);ctx.stroke();}ctx.textAlign="center";ctx.textBaseline="top";ctx.font="800 "+Math.max(11,Math.min(18,totalSize*.24))+"px Segoe UI";ctx.fillStyle="#ffef9e";ctx.fillText(Math.round(item.mass)+" KÜTLE",core.x,core.y+radius(core.mass)+8);ctx.font="700 "+Math.max(12,Math.min(20,totalSize*.28))+"px Segoe UI";ctx.fillStyle="#f8fbff";ctx.fillText(item.nickname.slice(0,16),core.x,core.y+radius(core.mass)+28);}
+function drawSwallow(swallow){const eater=world.players.get(swallow.eaterId);if(!eater)return;const progress=Math.min(1,swallow.progress||0),ease=1-Math.pow(1-progress,3),x=swallow.startX+(eater.x-swallow.startX)*ease,y=swallow.startY+(eater.y-swallow.startY)*ease,size=Math.max(3,radius(swallow.amount/.8)*(1-ease*.82));ctx.save();ctx.globalAlpha=Math.max(.15,1-ease*.45);ctx.beginPath();ctx.fillStyle="hsla("+swallow.hue+",90%,65%,.85)";ctx.shadowBlur=18;ctx.shadowColor="hsla("+swallow.hue+",90%,62%,.9)";ctx.arc(x,y,size+3,0,Math.PI*2);ctx.fill();ctx.shadowBlur=0;ctx.beginPath();ctx.arc(x,y,size,0,Math.PI*2);ctx.clip();if(swallow.image&&swallow.image.complete)ctx.drawImage(swallow.image,x-size,y-size,size*2,size*2);else{ctx.fillStyle="hsl("+swallow.hue+",70%,42%)";ctx.fillRect(x-size,y-size,size*2,size*2);ctx.fillStyle="#fff";ctx.font="700 "+Math.max(10,size)+"px Segoe UI";ctx.textAlign="center";ctx.textBaseline="middle";ctx.fillText((swallow.nickname||"?").slice(0,1).toUpperCase(),x,y);}ctx.restore();}
+function draw() { ctx.clearRect(0,0,innerWidth,innerHeight);ctx.fillStyle="rgba(3,8,24,.42)";ctx.fillRect(0,0,innerWidth,innerHeight);camera.zoom+=(camera.targetZoom-camera.zoom)*.13;ctx.save();ctx.translate(innerWidth/2,innerHeight/2);ctx.scale(camera.zoom,camera.zoom);ctx.translate(-camera.x,-camera.y);ctx.fillStyle="rgba(7,25,63,.64)";ctx.fillRect(0,0,world.width,world.height);ctx.strokeStyle="rgba(113,224,219,.14)";ctx.lineWidth=2;for(let x=0;x<=world.width;x+=250){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,world.height);ctx.stroke();}for(let y=0;y<=world.height;y+=250){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(world.width,y);ctx.stroke();}ctx.strokeStyle="rgba(105,233,221,.8)";ctx.lineWidth=10;ctx.strokeRect(0,0,world.width,world.height);ctx.strokeStyle="rgba(255,237,166,.6)";ctx.lineWidth=2;ctx.strokeRect(16,16,world.width-32,world.height-32);for(const cloud of world.dust){ctx.beginPath();ctx.fillStyle="hsla("+cloud.hue+",82%,63%,.07)";ctx.arc(cloud.x,cloud.y,cloud.radius,0,Math.PI*2);ctx.fill();}for(const star of world.stars){ctx.fillStyle="rgba(221,239,255,"+star.alpha+")";ctx.fillRect(star.x,star.y,star.size,star.size);}[...world.players.values()].sort((a,b)=>a.mass-b.mass).forEach(drawPlayer);bubbles.forEach(drawBubble);swallows.forEach(drawSwallow);ctx.restore(); }
+function leaders() { const list=[...world.players.values()].sort((a,b)=>b.mass-a.mass).slice(0,7),box=byId("leaderboardList"),signature=list.map(item=>item.id+":"+Math.round(item.mass)+":"+item.imageUrl).join("|");if(box.dataset.signature===signature)return;box.dataset.signature=signature;if(socket&&socket.readyState===WebSocket.OPEN)socket.send(JSON.stringify({type:"leaderboard",entries:list.map(item=>({id:item.id,nickname:item.nickname,avatar:item.imageUrl||item.avatar||item.avatarFallback,mass:item.mass}))}));box.replaceChildren(...list.map((item,index)=>{const row=document.createElement("li"),source=item.imageUrl||item.avatar||item.avatarFallback||item.avatarLastResort;row.innerHTML="<b>"+(index+1)+"</b>"+(source?'<img src="'+proxy(source,item.id)+'" alt="'+escapeHtml(item.nickname)+'">':"")+'<span class="rank-name">'+escapeHtml(item.nickname)+'</span><span class="rank-mass">'+Math.round(item.mass)+"</span>";row.querySelector("img")?.addEventListener("error",e=>{const fall=document.createElement("span");fall.className="rank-avatar";fall.textContent=item.nickname.slice(0,1).toUpperCase();e.currentTarget.replaceWith(fall);});row.addEventListener("click",()=>focus(item.id));return row;})); }
+
+function focus(id){const item=world.players.get(id);if(!item)return;selectedId=id;cameraFollowId=id;camera.x=item.x;camera.y=item.y;camera.targetZoom=Math.max(.42,Math.min(2.4,165/radius(item.mass)));}
+function selection(){}
+function clamp(){const marginX=world.width*.65,marginY=world.height*.65;camera.x=Math.max(-marginX,Math.min(world.width+marginX,camera.x));camera.y=Math.max(-marginY,Math.min(world.height+marginY,camera.y));}
+function point(x,y){return{x:(x-innerWidth/2)/camera.zoom+camera.x,y:(y-innerHeight/2)/camera.zoom+camera.y};}
+function renderTimer(seconds){const safe=Math.max(0,Math.ceil(seconds)),minutes=Math.floor(safe/60),remainder=String(safe%60).padStart(2,"0");byId("roundTimer").querySelector("b").textContent=String(minutes).padStart(2,"0")+":"+remainder;}
+function updateTimer(){if(!gameStarted||!combatGate.started||!roundEndsAt||roundEnding||timerPaused)return;const remaining=(roundEndsAt-Date.now())/1000;renderTimer(remaining);if(remaining<=0){const leader=[...world.players.values()].sort((a,b)=>b.mass-a.mass)[0];if(leader)winner(leader);}}
+function updateTimerBtnLabels() {
+  const toggleBtn = byId("timerToggleBtn") || byId("timerPauseButton");
+  if (toggleBtn) {
+    toggleBtn.textContent = timerPaused ? "▶ Devam Et" : "⏸ Duraklat";
+  }
+}
+function startTimer(){
+  timerPaused=false;
+  pausedRemaining=0;
+  roundEnding=false;
+  roundEndsAt=Date.now()+settings.roundDuration*1000;
+  renderTimer(settings.roundDuration);
+  updateTimerBtnLabels();
+}
+function toggleTimer(){
+  if(!gameStarted) {
+    start();
+    return;
+  }
+  if(timerPaused){
+    timerPaused=false;
+    roundEndsAt=Date.now()+pausedRemaining*1000;
+  }else{
+    pausedRemaining=Math.max(0,(roundEndsAt-Date.now())/1000);
+    timerPaused=true;
+  }
+  updateTimerBtnLabels();
+}
+function finishRound(){
+  if(!gameStarted) return;
+  const players = [...world.players.values()].sort((a,b) => b.mass - a.mass);
+  if(players.length > 0){
+    winner(players[0]);
+    event("🏆 Tur bitirildi! Kazanan: " + players[0].nickname);
+  } else {
+    event("Henüz oyunda lider oyuncu bulunmuyor!");
+  }
+}
+function makeElementDraggable(element, storageKey) {
+  if (!element) return;
+  const savedPos = localStorage.getItem(storageKey);
+  if (savedPos) {
+    try {
+      const pos = JSON.parse(savedPos);
+      if (pos.left !== undefined && pos.top !== undefined) {
+        element.style.left = pos.left + "px";
+        element.style.top = pos.top + "px";
+        element.style.right = "auto";
+        element.style.bottom = "auto";
+      }
+    } catch {}
+  }
+
+  let isDragging = false, startX, startY, initialLeft, initialTop;
+  const header = element.querySelector("h2") || element;
+  header.style.cursor = "grab";
+
+  header.addEventListener("mousedown", (e) => {
+    if (e.target.tagName === "BUTTON" || e.target.closest("button")) return;
+    isDragging = true;
+    startX = e.clientX;
+    startY = e.clientY;
+    const rect = element.getBoundingClientRect();
+    initialLeft = rect.left;
+    initialTop = rect.top;
+    header.style.cursor = "grabbing";
+    element.style.right = "auto";
+    element.style.bottom = "auto";
+    element.style.left = initialLeft + "px";
+    element.style.top = initialTop + "px";
+    e.preventDefault();
+  });
+
+  window.addEventListener("mousemove", (e) => {
+    if (!isDragging) return;
+    const dx = e.clientX - startX;
+    const dy = e.clientY - startY;
+    const nextLeft = Math.max(0, Math.min(window.innerWidth - element.offsetWidth, initialLeft + dx));
+    const nextTop = Math.max(0, Math.min(window.innerHeight - element.offsetHeight, initialTop + dy));
+    element.style.left = nextLeft + "px";
+    element.style.top = nextTop + "px";
+  });
+
+  window.addEventListener("mouseup", () => {
+    if (!isDragging) return;
+    isDragging = false;
+    header.style.cursor = "grab";
+    try {
+      localStorage.setItem(storageKey, JSON.stringify({
+        left: parseInt(element.style.left),
+        top: parseInt(element.style.top)
+      }));
+    } catch {}
+  });
+}
+
+function modifyWinCount(id, delta) {
+  const current = wins.get(id);
+  if (!current) return;
+  current.count = Math.max(0, (current.count || 0) + delta);
+  if (current.count <= 0) {
+    wins.delete(id);
+  } else {
+    wins.set(id, current);
+  }
+  renderWins();
+  if (socket?.readyState === WebSocket.OPEN) {
+    socket.send(JSON.stringify({
+      type: "winner-update",
+      winnersList: [...wins.values()].sort((a,b) => b.count - a.count)
+    }));
+  }
+}
+
+function renderWins(){
+  const box=byId("winsList");
+  if (!box) return;
+  const sorted = [...wins.values()].sort((a,b)=>b.count-a.count).slice(0,12);
+  box.replaceChildren(...sorted.map((entry, index)=>{
+    const row=document.createElement("li");
+    const rankClass = index === 0 ? "rank-1" : (index === 1 ? "rank-2" : (index === 2 ? "rank-3" : ""));
+    if (rankClass) row.classList.add(rankClass);
+
+    const crownHtml = index === 0 ? '<span class="win-crown" title="Lider Şampiyon">👑</span>' : (index === 1 ? '<span class="win-crown" style="font-size:12px;">🥈</span>' : (index === 2 ? '<span class="win-crown" style="font-size:12px;">🥉</span>' : ''));
+
+    row.innerHTML = `
+      <div class="win-avatar-wrap">
+        ${crownHtml}
+        <img src="${proxy(entry.avatar,entry.id)}" alt="">
+      </div>
+      <div class="win-user-info">
+        <span>${escapeHtml(entry.nickname)}</span>
+      </div>
+      <div class="win-controls">
+        <button class="win-btn minus" type="button" title="Azalt">-</button>
+        <b class="win-count-badge">${entry.count}X</b>
+        <button class="win-btn plus" type="button" title="Arttır">+</button>
+      </div>
+    `;
+
+    row.querySelector(".win-btn.minus")?.addEventListener("click", (e) => {
+      e.stopPropagation();
+      modifyWinCount(entry.id, -1);
+    });
+    row.querySelector(".win-btn.plus")?.addEventListener("click", (e) => {
+      e.stopPropagation();
+      modifyWinCount(entry.id, 1);
+    });
+
+    return row;
+  }));
+}
+function reset(){world.players.clear();bubbles.length=0;swallows.length=0;combatGate.reset();selectedId=null;cameraFollowId=null;roundHadContest=false;roundEnding=false;startTimer();combatStatus();camera.x=world.width/2;camera.y=world.height/2;camera.zoom=.48;camera.targetZoom=.48;byId("victoryOverlay").hidden=true;event("Yeni tur canlı etkileşimleri bekliyor");}
+function celebrateGifts(){const box=byId("giftFireworks");box.replaceChildren();const choices=giftCatalog.filter(gift=>gift.image).sort(()=>Math.random()-.5).slice(0,26);choices.forEach((gift,index)=>{const icon=document.createElement("img"),angle=(Math.PI*2/choices.length)*index+Math.random()*.22,distance=180+Math.random()*360;icon.src=gift.image;icon.alt="";icon.className="gift-firework";icon.style.setProperty("--x",`${Math.cos(angle)*distance}px`);icon.style.setProperty("--y",`${Math.sin(angle)*distance}px`);icon.style.setProperty("--delay",`${Math.random()*.45}s`);box.append(icon);});}
+function winner(item){
+  roundEnding=true;
+  const avatar=item.imageUrl||item.avatar||item.avatarFallback||item.avatarLastResort;
+  const current=wins.get(item.id)||{id:item.id,nickname:item.nickname,avatar,count:0};
+  current.count++;
+  current.avatar=avatar;
+  wins.set(item.id,current);
+  renderWins();
+  if(socket?.readyState===WebSocket.OPEN)socket.send(JSON.stringify({type:"winner",winner:current,winnersList:[...wins.values()].sort((a,b)=>b.count-a.count)}));
+  
+  const highResUrl = item.avatar ? `/api/avatar?highres=1&user=${encodeURIComponent(item.id)}&url=${encodeURIComponent(item.avatar)}` : proxy(avatar,item.id);
+  const winImg = byId("winnerAvatar");
+  winImg.onerror = () => { winImg.src = proxy(avatar,item.id); };
+  winImg.src = highResUrl;
+  
+  byId("winnerName").textContent=item.nickname;
+  byId("winnerScore").textContent=Math.round(item.mass)+" kütle ile turu kazandı";
+  celebrateGifts();
+  byId("victoryOverlay").hidden=false;
+  
+  setTimeout(() => { playWinnerSound(); }, 90);
+  setTimeout(reset,7500);
+}
+function start(){gameStarted=true;byId("gameShell").hidden=false;byId("introScreen").classList.add("hidden");startTimer();}
+function background(index){
+ const videos=[...document.querySelectorAll('.background-video[data-background]')];
+ if(!videos.some(v=>Number(v.dataset.background)===index))index=0;
+ const custom=byId('customBgVideo'); if(custom){custom.pause();custom.style.display='none'}
+ videos.forEach(video=>{const active=Number(video.dataset.background)===index;video.classList.toggle('active',active);if(active){video.muted=true;video.play().catch(()=>video.addEventListener('canplay',()=>video.play().catch(()=>{}),{once:true}));}else video.pause()});
+ document.querySelectorAll('.background-option').forEach(button=>button.classList.toggle('selected',Number(button.dataset.background)===index));
+ byId('backgroundMenu').hidden=true;try{localStorage.setItem('mng_orbit_selected_background',String(index))}catch{}
+}
+async function sharedBackgrounds(){
+  try{
+    let backgrounds = [];
+    try {
+      const res = await fetch("/api/backgrounds");
+      if (res.ok) backgrounds = await res.json();
+    } catch {}
+
+    if (!Array.isArray(backgrounds)) backgrounds = [];
+
+    const stage = document.querySelector(".background-stage");
+    const options = document.querySelector(".background-options");
+    if (!stage || !options) return;
+    const start = 4;
+    for (const button of options.querySelectorAll('[data-background]')) {
+      const original = document.querySelector('.background-stage video[data-background="' + button.dataset.background + '"]');
+      if (original && !button.querySelector('video')) {
+        const preview = original.cloneNode(); preview.removeAttribute('autoplay'); preview.className = ''; preview.removeAttribute('data-background'); preview.preload = 'metadata'; preview.muted = true;
+        button.prepend(preview);
+        button.onmouseenter = () => preview.play().catch(()=>{});
+        button.onmouseleave = () => preview.pause();
+      }
+    }
+
+    backgrounds.forEach((item, offset) => {
+      const index = start + offset;
+      const video = document.createElement("video");
+      const button = document.createElement("button");
+      video.className = "background-video";
+      video.dataset.background = index;
+      video.muted = true;
+      video.loop = true;
+      video.playsInline = true;
+      video.preload = "none";
+      video.src = item.src;
+      stage.append(video);
+
+      button.className = "background-option";
+      button.dataset.background = index;
+      button.type = "button";
+      button.innerHTML = `<video muted loop playsinline preload="metadata" src="${item.src}"></video><span>${String(index + 1).padStart(2, "0")}</span><b>${item.name}</b>`;
+      button.addEventListener("mouseenter", () => button.querySelector("video")?.play().catch(()=>{}));
+      button.addEventListener("mouseleave", () => { const preview=button.querySelector("video"); if(preview){preview.pause();preview.currentTime=0;} });
+      button.addEventListener("click", () => background(index));
+      options.append(button);
+    });
+
+    const savedBg = localStorage.getItem("mng_orbit_selected_background");
+    background(savedBg === null ? 0 : Number(savedBg));
+  } catch(e) {
+    console.warn("sharedBackgrounds error:", e);
+  }
+}
+
+// =====================================================================
+// USERNAME HAFIZASI — Son kullanıcı adını localStorage'a kaydet
+// =====================================================================
+const usernameInput = byId("username");
+const savedUsername = localStorage.getItem("mng_orbit_last_username");
+if (savedUsername) usernameInput.value = savedUsername;
+
+function openSocket(){
+  socket=new WebSocket("ws://"+location.host);
+  socket.addEventListener("open",()=>{const autoUser=new URLSearchParams(location.search).get("autoUser");if(autoUser){byId("username").value=autoUser;socket.send(JSON.stringify({type:"connect",username:autoUser}));byId("introStatus").textContent="TikTok yayınına otomatik bağlanılıyor...";}});
+  socket.addEventListener("message",e=>{
+    let msg;
+    try { msg=JSON.parse(e.data); } catch { return; }
+    if(msg.type==="status"){
+      byId("introStatus").textContent=msg.message;
+      byId("connectionState").textContent=msg.state==="connected"?msg.message:msg.state==="connecting"?"Bağlanıyor...":"Bağlantı bekleniyor";
+      if(msg.state==="connected"){byId("connectButton").textContent="Bağlandı";byId("connectButton").disabled=true;}
+      if(msg.state==="idle"||msg.state==="error"){byId("connectButton").textContent="Bağlan";byId("connectButton").disabled=false;}
+    }
+    if(msg.type==="orbit-event"&&gameStarted)process(msg);
+  });
+  socket.addEventListener("close",()=>{
+    byId("connectionState").textContent="Bağlantı yeniden kuruluyor";
+    setTimeout(openSocket,1500);
+  });
+  socket.addEventListener("error",()=>{ try{socket.close();}catch{} });
+}
+byId("connectForm").addEventListener("submit",e=>{
+  e.preventDefault();
+  const username=byId("username").value.trim();
+  if(!username||!socket||socket.readyState!==WebSocket.OPEN)return;
+  // Kullanıcı adını kaydet
+  localStorage.setItem("mng_orbit_last_username", username);
+  byId("connectButton").disabled=true;
+  byId("introStatus").textContent="TikTok yayınına bağlanılıyor...";
+  socket.send(JSON.stringify({type:"connect",username}));
+});
+byId("startGameButton").addEventListener("click",start);
+byId("offlineStartButton")?.addEventListener("click",()=>{
+  start();
+  const demo=["Ahmet_TR","Selin_06","Mehmet_VIP","Ayse_Yildiz","Deniz_34"];
+  demo.forEach((name,idx)=>{
+    player({id:"demo-"+idx,nickname:name,mass:200+idx*80},"follow");
+  });
+});
+byId("disconnectButton")?.addEventListener("click",()=>{if(socket)socket.send(JSON.stringify({type:"disconnect"}));gameStarted=false;reset();byId("gameShell").hidden=true;byId("introScreen").classList.remove("hidden");byId("username")?.focus();});
+byId("backgroundButton")?.addEventListener("click",()=>byId("backgroundMenu").hidden=!byId("backgroundMenu").hidden);
+byId("fullscreenButton")?.addEventListener("click",()=>document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen().catch(()=>{}));
+document.querySelectorAll(".background-option").forEach(button=>button.addEventListener("click",()=>background(Number(button.dataset.background))));
+
+byId("gameSettingsButton")?.addEventListener("click",async()=>{byId("orbitGameSettings").hidden=false;if(!giftCatalog.length)await loadGameSettings();else renderGameSettings();});
+byId("closeGameSettings")?.addEventListener("click",()=>{closeGiftPicker();byId("orbitGameSettings").hidden=true;});
+byId("saveGameSettings")?.addEventListener("click",saveGameSettings);
+byId("testShatterButton")?.addEventListener("click",testShatter);
+byId("testLikeButton")?.addEventListener("click",testLikeGrowth);
+byId("testSwallowButton")?.addEventListener("click",testSwallowSound);
+
+function testSpeedBoost(multiplier = 2.0, label = "2x") {
+  const target = world.players.size ? [...world.players.values()][0] : testPlayers()[0];
+  if (target) {
+    target.speedBoostUntil = Date.now() + 15000;
+    target.speedMultiplier = multiplier;
+    target.pulse = multiplier >= 4.5 ? 6 : 4;
+    event(`⚡ Test: ${target.nickname} ${label} Hızlandı! (15 sn)`);
+  }
+}
+
+byId("testSpeedButton")?.addEventListener("click", () => testSpeedBoost(2.0, "2x"));
+byId("testSuperSpeedButton")?.addEventListener("click", () => testSpeedBoost(5.0, "5x Süper"));
+
+byId("changeSpeedGiftBtn")?.addEventListener("click", () => openSpecialGiftPicker("speed"));
+byId("changeSuperSpeedGiftBtn")?.addEventListener("click", () => openSpecialGiftPicker("superSpeed"));
+byId("changeShatterGiftBtn")?.addEventListener("click", () => openSpecialGiftPicker("shatter"));
+
+// Sansürleme: Seçili oyuncu varken klavyeden P tuşuna basıldığında fotoğrafı silinir
+window.addEventListener("keydown", (e) => {
+  if ((e.key === "p" || e.key === "P") && selectedId && world.players.has(selectedId)) {
+    const p = world.players.get(selectedId);
+    p.image = null;
+    p.imageUrl = "";
+    p.avatar = null;
+    p.avatarFallback = null;
+    p.avatarLastResort = null;
+    p.censored = true;
+    byId("leaderboardList").dataset.signature = "";
+    event(`🛡️ @${p.nickname} profil fotoğrafı sansürlendi!`);
+  }
+});
+
+// Draggable Paneller
+try {
+  makeElementDraggable(document.querySelector(".leaderboard"), "mng_orbit_pos_leaderboard");
+  makeElementDraggable(document.querySelector(".wins-panel"), "mng_orbit_pos_wins");
+} catch {}
+
+byId("closeGiftPicker")?.addEventListener("click",closeGiftPicker);
+byId("orbitGiftPickerSearch")?.addEventListener("input",event=>{clearTimeout(giftPickerSearchTimer);giftPickerSearchTimer=setTimeout(()=>renderGiftPickerResults(event.target.value),180);});
+byId("orbitGiftPickerModal")?.addEventListener("click",event=>{if(event.target===event.currentTarget)closeGiftPicker();});
+window.addEventListener("keydown",event=>{if(event.key==="Escape"&&!byId("orbitGiftPickerModal")?.hidden)closeGiftPicker();});
+
+const settingsPanel = byId("orbitGameSettings");
+if (settingsPanel) {
+  const stopEvt = e => e.stopPropagation();
+  settingsPanel.addEventListener("pointerdown", stopEvt);
+  settingsPanel.addEventListener("pointermove", stopEvt);
+  settingsPanel.addEventListener("pointerup", stopEvt);
+  settingsPanel.addEventListener("wheel", stopEvt, { passive: false });
+  settingsPanel.addEventListener("mousedown", stopEvt);
+}
+function updateDuration(value){settings.roundDuration=Math.max(5,Number(value)||5);if(gameStarted)startTimer();else renderTimer(settings.roundDuration);}
+byId("roundDuration")?.addEventListener("change",event=>{const custom=event.target.value==="custom",input=byId("customDuration");if(input)input.hidden=!custom;updateDuration(custom?input?.value:event.target.value);});
+byId("customDuration")?.addEventListener("input",event=>{if(byId("roundDuration")?.value==="custom")updateDuration(event.target.value);});
+byId("timerStartButton")?.addEventListener("click",startTimer);
+byId("timerPauseButton")?.addEventListener("click",toggleTimer);
+byId("timerToggleBtn")?.addEventListener("click",toggleTimer);
+byId("timerFinishButton")?.addEventListener("click",finishRound);
+
+async function copyWidget(mode,label){
+  try {
+    const response = await fetch("/api/launcher-widget-links", { cache: "no-store" });
+    const data = await response.json();
+    const url = data.links?.[mode];
+    if (!response.ok || !data.ready || typeof url !== "string" || new URL(url).protocol !== "https:") throw new Error(data.message || "HTTPS yayın bağlantısı hazır değil. Launcher içinden yayın bağlantısını hazırlayın.");
+    try { await navigator.clipboard.writeText(url); event(label+" bağlantısı kopyalandı"); }
+    catch { prompt(label+" bağlantısı:",url); }
+  } catch (error) { event(error.message || "HTTPS yayın bağlantısı kullanılamıyor."); }
+}
+byId("winnerWidgetButton")?.addEventListener("click",()=>copyWidget("winners","Kazanan widget'ı"));
+byId("leaderboardWidgetButton")?.addEventListener("click",()=>copyWidget("ranking","Sıralama widget'ı"));
+
+canvas.addEventListener("wheel",e=>{e.preventDefault();const at=point(e.clientX,e.clientY),before=camera.zoom,next=Math.max(.18,Math.min(3.2,before*(e.deltaY>0?.82:1.24))),scale=before/next;camera.x=at.x-(at.x-camera.x)*scale;camera.y=at.y-(at.y-camera.y)*scale;camera.zoom=next;camera.targetZoom=next;clamp();},{passive:false});
+canvas.addEventListener("pointerdown",e=>{if(e.button!==0)return;dragging=true;pointerMoved=false;dragPoint={x:e.clientX,y:e.clientY,cameraX:camera.x,cameraY:camera.y};canvas.setPointerCapture(e.pointerId);});
+window.addEventListener("pointermove",e=>{if(!dragging||!dragPoint)return;if(Math.hypot(e.clientX-dragPoint.x,e.clientY-dragPoint.y)>4)pointerMoved=true;if(pointerMoved)cameraFollowId=null;camera.x=dragPoint.cameraX-(e.clientX-dragPoint.x)/camera.zoom;camera.y=dragPoint.cameraY-(e.clientY-dragPoint.y)/camera.zoom;clamp();});
+window.addEventListener("pointerup",e=>{if(!dragging||!dragPoint)return;if(!pointerMoved){const at=point(e.clientX,e.clientY);for(const item of world.players.values())if(Math.hypot(at.x-item.x,at.y-item.y)<radius(item.mass))focus(item.id);}dragging=false;dragPoint=null;});
+
+function loop(now){const delta=Math.min(.05,(now-lastTime)/1000);lastTime=now;update(delta);clamp();draw();requestAnimationFrame(loop);}
+function testLaunch(){if(launchConfig.test===undefined)return;start();const demo=["Orbit Test","MNG Canlı","Balon Oyuncu","Yörünge"];demo.forEach((name,index)=>player({id:"test-"+index,nickname:name},"follow"));setTimeout(()=>{if(launchConfig.test==="shatter"){for(const item of world.players.values())splitPlayer(item);event("Haritayı parçala testi çalıştı");}else{const item=[...world.players.values()][0];growth(item,settings.giftRules[Object.keys(settings.giftRules)[Number(launchConfig.test)]]?.growth||120);event((launchConfig.testLabel||"Büyüme")+" testi çalıştı");}},500);}
+
+try { resize(); } catch(e){ console.error("resize err:", e); }
+try { renderTimer(settings.roundDuration); } catch {}
+try { renderSpecialGiftsUI(); } catch(e){ console.error("specials UI err:", e); }
+window.addEventListener("resize",resize);
+try { openSocket(); } catch(e){ console.error("socket err:", e); }
+try { loadGameSettings(); } catch(e){ console.error("loadSettings err:", e); }
+try { sharedBackgrounds(); } catch(e){ console.error("sharedBackgrounds err:", e); }
+try { testLaunch(); } catch {}
+requestAnimationFrame(loop);
+
+
+// =====================================================================
+// ÖZEL ARKA PLAN (KENDİ GÖRSELİNİ / VİDEONU EKLE)
+// =====================================================================
+const customBgInput = byId("customBgFileInput");
+const customBgBtn = byId("customBgBtn");
+const resetBgBtn = byId("resetBgBtn");
+const customBgVideo = byId("customBgVideo");
+const customBgImg = byId("customBgImg");
+
+if (customBgBtn && customBgInput) {
+  customBgBtn.addEventListener("click", () => customBgInput.click());
+  customBgInput.addEventListener("change", (e) => {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+    const url = URL.createObjectURL(file);
+    const isVideo = file.type.startsWith("video/");
+    document.querySelectorAll(".background-video").forEach(v => { v.classList.remove("active"); v.pause(); });
+    if (isVideo) {
+      if (customBgImg) customBgImg.style.display = "none";
+      customBgVideo.style.display = "block";
+      customBgVideo.loop = true;
+      customBgVideo.src = url;
+      customBgVideo.onended = () => { customBgVideo.currentTime = 0; customBgVideo.play().catch(() => {}); };
+      customBgVideo.play().catch(() => {});
+      customBgVideo.classList.add("active");
+    } else {
+      customBgVideo.style.display = "none";
+      if (customBgImg) {
+        customBgImg.style.display = "block";
+        customBgImg.src = url;
+      }
+    }
+    if (resetBgBtn) resetBgBtn.style.display = "block";
+
+    // Menünün en üstüne Özel Arka Plan butonu ekle
+    const optionsList = document.querySelector(".background-options");
+    if (optionsList) {
+      document.querySelectorAll(".background-option").forEach(b => b.classList.remove("selected"));
+      let customOpt = optionsList.querySelector(".custom-bg-opt");
+      if (!customOpt) {
+        customOpt = document.createElement("button");
+        customOpt.className = "background-option custom-bg-opt selected";
+        customOpt.style.border = "1.5px solid #25f4ee";
+        customOpt.innerHTML = `<span>⭐</span><b>${escapeHtml(file.name.slice(0, 14))}</b>`;
+        optionsList.prepend(customOpt);
+      } else {
+        customOpt.classList.add("selected");
+        customOpt.querySelector("b").textContent = file.name.slice(0, 14);
+      }
+    }
+
+    event("Özel arka plan uygulandı: " + file.name);
+  });
+}
+if (resetBgBtn) {
+  resetBgBtn.addEventListener("click", () => {
+    if (customBgVideo) { customBgVideo.pause(); customBgVideo.style.display = "none"; }
+    if (customBgImg) customBgImg.style.display = "none";
+    resetBgBtn.style.display = "none";
+    const customOpt = document.querySelector(".custom-bg-opt");
+    if (customOpt) customOpt.remove();
+    const firstVid = document.querySelector(".background-video[data-background='0']");
+    if (firstVid) { firstVid.classList.add("active"); firstVid.play().catch(() => {}); }
+    document.querySelectorAll(".background-option").forEach(b => b.classList.remove("selected"));
+    document.querySelector(".background-option[data-background='0']")?.classList.add("selected");
+    event("Varsayılan arka plana dönüldü");
+  });
+}

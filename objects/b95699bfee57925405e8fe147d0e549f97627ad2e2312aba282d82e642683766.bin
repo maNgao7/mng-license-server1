@@ -1,0 +1,263 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>MNG Orbit Kazananlar Widget'ı</title>
+  <style>
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: transparent !important;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      color: #ffffff;
+      user-select: none;
+    }
+    .panel {
+      width: 360px;
+      margin: 18px;
+      padding: 16px 18px;
+      border: 1px solid rgba(37, 244, 238, 0.55);
+      border-radius: 16px;
+      background: rgba(7, 18, 44, 0.88);
+      box-shadow: 0 10px 35px rgba(0, 0, 0, 0.65), 0 0 20px rgba(37, 244, 238, 0.18);
+      backdrop-filter: blur(8px);
+    }
+    .panel-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      padding-bottom: 8px;
+    }
+    h1 {
+      margin: 0;
+      color: #25f4ee;
+      font-size: 15px;
+      font-weight: 800;
+      letter-spacing: 1.2px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .subtext {
+      color: #94a3b8;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+    }
+    .list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      max-height: 520px;
+      overflow-y: hidden;
+    }
+    .row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-height: 42px;
+      padding: 6px 12px;
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      transition: all 0.3s ease;
+      animation: slideIn 0.35s ease;
+    }
+    .row:first-child {
+      background: linear-gradient(90deg, rgba(255, 215, 0, 0.15), rgba(255, 255, 255, 0.06));
+      border: 1px solid rgba(255, 215, 0, 0.35);
+      box-shadow: 0 0 12px rgba(255, 215, 0, 0.15);
+    }
+    .rank-badge {
+      font-size: 13px;
+      font-weight: 900;
+      color: #64e2d3;
+      width: 18px;
+      text-align: center;
+    }
+    .row:first-child .rank-badge {
+      color: #ffd53d;
+    }
+    .row-avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 2px solid rgba(37, 244, 238, 0.6);
+      background: #1e293b;
+      flex-shrink: 0;
+    }
+    .row:first-child .row-avatar {
+      border-color: #ffd53d;
+      box-shadow: 0 0 8px rgba(255, 213, 61, 0.4);
+    }
+    .row-name {
+      flex: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-size: 14px;
+      font-weight: 700;
+      color: #f1f5f9;
+    }
+    .row-wins {
+      margin-left: 8px;
+      color: #ffd53d;
+      font-size: 17px;
+      font-weight: 900;
+      white-space: nowrap;
+      letter-spacing: 0.5px;
+      text-shadow: 0 0 8px rgba(255, 213, 61, 0.35);
+    }
+    .empty {
+      opacity: 0.72;
+      font-size: 13px;
+      text-align: center;
+      padding: 16px 0;
+      color: #94a3b8;
+    }
+    @keyframes slideIn {
+      from { transform: translateY(-8px); opacity: 0; }
+      to { transform: none; opacity: 1; }
+    }
+  </style>
+</head>
+<body>
+  <section class="panel">
+    <div class="panel-head">
+      <h1>🏆 KAZANANLAR</h1>
+      <span class="subtext">MNG ORBIT</span>
+    </div>
+    <div id="list" class="list">
+      <div class="empty">Henüz tamamlanan tur yok.</div>
+    </div>
+  </section>
+
+  <script>
+    function makeInitialSvg(name) {
+      const char = (name || "?").trim().charAt(0).toUpperCase() || "?";
+      let hash = 0;
+      for (let i = 0; i < (name || "").length; i++) {
+        hash = (hash << 5) - hash + name.charCodeAt(i);
+        hash |= 0;
+      }
+      const colors = ["#ef4444", "#f97316", "#f59e0b", "#10b981", "#06b6d4", "#3b82f6", "#8b5cf6", "#ec4899"];
+      const bg = colors[Math.abs(hash) % colors.length];
+      const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64"><circle cx="32" cy="32" r="32" fill="${bg}"/><text x="32" y="40" font-size="28" font-family="sans-serif" font-weight="bold" fill="#ffffff" text-anchor="middle">${char}</text></svg>`;
+      return "data:image/svg+xml;utf8," + encodeURIComponent(svg);
+    }
+
+    function getAvatarUrl(winner) {
+      if (!winner || !winner.avatar) return makeInitialSvg(winner ? (winner.nickname || winner.id) : "?");
+      const av = String(winner.avatar);
+      if (av.startsWith("data:") || av.startsWith("/")) return av;
+      return "/api/avatar?user=" + encodeURIComponent(winner.id || "") + "&url=" + encodeURIComponent(av);
+    }
+
+    const box = document.getElementById("list");
+    let winnersMap = new Map();
+
+    function renderList() {
+      const sorted = [...winnersMap.values()].sort((a, b) => (b.count || 0) - (a.count || 0)).slice(0, 10);
+      if (!sorted.length) {
+        box.innerHTML = '<div class="empty">Henüz tamamlanan tur yok.</div>';
+        return;
+      }
+      box.innerHTML = "";
+      sorted.forEach((w, idx) => {
+        const row = document.createElement("div");
+        row.className = "row" + (idx === 0 ? " rank-first" : "");
+
+        const rank = document.createElement("div");
+        rank.className = "rank-badge";
+        rank.textContent = (idx + 1);
+
+        const imgWrap = document.createElement("div");
+        imgWrap.style.position = "relative";
+        imgWrap.style.display = "inline-block";
+
+        if (idx === 0) {
+          const crown = document.createElement("span");
+          crown.textContent = "👑";
+          crown.style.position = "absolute";
+          crown.style.top = "-12px";
+          crown.style.left = "50%";
+          crown.style.transform = "translateX(-50%)";
+          crown.style.fontSize = "16px";
+          crown.style.filter = "drop-shadow(0 0 5px gold)";
+          imgWrap.appendChild(crown);
+        }
+
+        const img = document.createElement("img");
+        img.className = "row-avatar";
+        img.alt = "";
+        const fallback = makeInitialSvg(w.nickname || w.id);
+        img.src = getAvatarUrl(w);
+        img.onerror = function() { this.onerror = null; this.src = fallback; };
+        imgWrap.appendChild(img);
+
+        const name = document.createElement("div");
+        name.className = "row-name";
+        name.textContent = "@" + (w.nickname || w.id || "Kazanan");
+
+        const wins = document.createElement("div");
+        wins.className = "row-wins";
+        wins.textContent = (w.count || 1) + "X";
+
+        row.append(rank, imgWrap, name, wins);
+        box.appendChild(row);
+      });
+    }
+
+    let socket = null;
+    let retryDelay = 1000;
+
+    function connect() {
+      if (socket && (socket.readyState === WebSocket.OPEN || socket.readyState === WebSocket.CONNECTING)) return;
+      const host = location.host || "localhost:3010";
+      const wsUrl = (location.protocol === "https:" ? "wss://" : "ws://") + host;
+      try {
+        socket = new WebSocket(wsUrl);
+        socket.onopen = () => { retryDelay = 1000; };
+        socket.onmessage = (event) => {
+          try {
+            const data = JSON.parse(event.data);
+            if (data.type === "winner" || data.type === "winner-update") {
+              if (Array.isArray(data.winnersList)) {
+                winnersMap = new Map();
+                data.winnersList.forEach(w => {
+                  const key = String(w.id || w.nickname || "");
+                  if (key && (w.count || 0) > 0) winnersMap.set(key, w);
+                });
+              } else if (data.winner) {
+                const key = String(data.winner.id || data.winner.nickname || "");
+                if (key) winnersMap.set(key, data.winner);
+              }
+              renderList();
+            }
+          } catch (_) {}
+        };
+        socket.onclose = () => {
+          socket = null;
+          setTimeout(connect, retryDelay);
+          retryDelay = Math.min(retryDelay * 1.5, 8000);
+        };
+        socket.onerror = () => {
+          try { socket.close(); } catch (_) {}
+        };
+      } catch (_) {
+        setTimeout(connect, retryDelay);
+      }
+    }
+
+    connect();
+  </script>
+</body>
+</html>

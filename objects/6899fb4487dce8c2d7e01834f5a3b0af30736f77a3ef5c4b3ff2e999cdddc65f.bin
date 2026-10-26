@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Dengesiz Yayıncı</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800;900&family=Teko:wght@600;700&family=JetBrains+Mono:wght@600;800&display=swap" rel="stylesheet">
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "./libs/three.module.js",
+      "three/addons/": "./libs/addons/"
+    }
+  }
+  </script>
+</head>
+<body>
+  <div id="game-container">
+    <!-- 3D Three.js Render Sahnesi (Tam Ekran) -->
+    <canvas id="three-canvas"></canvas>
+
+    <!-- ================================================================= -->
+    <!-- 1. GİRİŞ EKRANI (LOBİ & BAĞLANTI) -->
+    <!-- ================================================================= -->
+    <div id="intro-screen" class="intro-screen-overlay">
+      <div class="intro-card">
+        <div class="intro-brand">
+          <div class="intro-icon-badge">🧗‍♂️</div>
+          <h1 class="intro-title">DENGESİZ YAYINCI</h1>
+          <p class="intro-subtitle">GERÇEKÇİ 3D FİZİK • İKİ KAVANOZ SAVAŞI • GERİLİM MÜZİĞİ</p>
+        </div>
+
+        <!-- TikTok Canlı Yayın Bağlantı Kutusu -->
+        <div class="intro-connection-box">
+          <label class="intro-input-label" for="intro-username-input">TikTok Kullanıcı Adınızı Girin:</label>
+          <div class="intro-input-row">
+            <span class="intro-input-prefix">@</span>
+            <input type="text" id="intro-username-input" class="intro-input" placeholder="kullanici_adi" autocomplete="off" spellcheck="false">
+            <button id="btn-intro-connect" class="intro-btn-connect">Bağlan</button>
+            <button id="btn-intro-profile" class="intro-btn-profile" type="button">Profili Getir</button>
+            <button id="btn-intro-profile-hide" class="intro-btn-profile" type="button">Profili Çıkar</button>
+          </div>
+          
+          <div class="intro-status-row">
+            <span class="intro-status-dot disconnected" id="intro-status-dot"></span>
+            <span class="intro-status-text" id="intro-status-text">Yayına bağlanmak için kullanıcı adınızı yazıp Bağlan'a basın.</span>
+          </div>
+        </div>
+
+        <!-- Mesafe Ön Ayarı (1000m Standart) -->
+        <div class="intro-distance-box">
+          <span class="intro-dist-label">🏁 Parkur Mesafesi & Hedef:</span>
+          <div class="intro-dist-buttons">
+            <button type="button" class="dist-chip" data-meters="100">100m (Hızlı Test)</button>
+            <button type="button" class="dist-chip" data-meters="250">250m</button>
+            <button type="button" class="dist-chip" data-meters="500">500m</button>
+            <button type="button" class="dist-chip active" data-meters="1000">1.000m (Standart)</button>
+            <button type="button" class="dist-chip" data-meters="2000">2.000m</button>
+            <button type="button" class="dist-chip" data-meters="5000">5.000m</button>
+          </div>
+        </div>
+
+        <fieldset class="character-picker">
+          <legend>Karakterini Seç</legend>
+          <div class="character-options">
+            <label class="character-option">
+              <input type="radio" name="climber-character" value="female">
+              <img id="character-preview-female" alt="Kadın dağcı">
+              <span>Kadın <small>Dağcı</small></span>
+            </label>
+            <label class="character-option">
+              <input type="radio" name="climber-character" value="male" checked>
+              <img id="character-preview-male" alt="Erkek dağcı">
+              <span>Erkek <small>Dağcı</small></span>
+            </label>
+          </div>
+        </fieldset>
+
+        <!-- Hızlı Butonlar: Hediye Kataloğu & OBS Şablonu -->
+        <div class="intro-tools-row">
+          <button type="button" class="btn-tool-link" id="btn-intro-catalog">
+            <span class="tool-icon">🎁</span>
+            <div class="tool-text">
+              <span class="tool-title">Hediye Kataloğu (686 Hediye)</span>
+              <span class="tool-sub">Hangi hediye kaç kg gör & ayarla</span>
+            </div>
+          </button>
+          <a href="/hediye-sablonu.png" download="MNG-Ucurumda-Denge-Hediye-Sablonu.png" class="btn-tool-link" id="btn-download-gift-template">
+            <span class="tool-icon">🖼️</span>
+            <div class="tool-text">
+              <span class="tool-title">OBS Şablonu (PNG)</span>
+              <span class="tool-sub">Canlı yayın ekranına ekle</span>
+            </div>
+          </a>
+        </div>
+
+        <!-- Oyuna Giriş Butonları -->
+        <div class="intro-actions-row">
+          <button id="btn-start-game" class="btn-play-game">
+            <span class="play-icon">▶</span>
+            <span class="play-text">3D OYUNA BAŞLA</span>
+          </button>
+        </div>
+
+        <a href="/denge-hediye-listesi.png" download="Ucurumda-Denge-Hediye-Listesi.png" class="intro-download-poster">
+          <img src="/denge-hediye-listesi.png" alt="Hazır yayın hediye görseli">
+          <span><strong>Hazır Görseli İndir (PNG)</strong><small>Yayın ekranına eklemek için hazır hediye listesi</small></span>
+        </a>
+
+        <div class="intro-footer-note">
+          <span>🎧 Gerilim müziği ve derinlik hissi için kulaklık önerilir</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ================================================================= -->
+    <!-- 2. OYUN İÇİ HUD (3D SAHNE ÜSTÜ KATMANLAR) -->
+    <!-- ================================================================= -->
+    <div id="game-hud" class="game-hud-layer">
+      <!-- ÜST BİLGİ VE MESAFE TAKİP BARI -->
+      <header class="hud-top-bar">
+        <div class="hud-left-meta">
+          <div class="hud-live-pill" id="hud-live-pill">
+            <span class="hud-dot disconnected" id="hud-live-dot"></span>
+            <span class="hud-live-user" id="hud-live-user">Canlı Yayın: Bağlı Değil</span>
+          </div>
+          <div class="hud-mode-pill">
+            <span>🎥 3D ARKADAN BAKIŞ</span>
+          </div>
+        </div>
+
+        <!-- ORTA MERKEZİ PANEL (MESAFE İLERLEME + SU TERAZİSİ TAM EKRAN ORTASINDA KUSURSUZ HİZALI) -->
+        <div class="hud-center-flight-cluster">
+          <!-- 1. MESAFE İLERLEME VE HEDEF ÇİZELGESİ -->
+          <div class="hud-distance-tracker">
+            <div class="dist-header">
+              <div class="goal-pill remaining-pill" title="Zirveye kalan mesafe">
+                <span class="goal-label">🏁 KALAN:</span>
+                <span class="goal-val" id="hud-remaining-meters">1000m</span>
+              </div>
+              <div class="dist-readout">
+                <span class="dist-current" id="hud-walked-meters">0m</span>
+                <span class="dist-sep">/</span>
+                <span class="dist-total" id="hud-total-meters">1000m</span>
+                <span class="dist-pct" id="hud-progress-pct">(%0)</span>
+              </div>
+              <div class="goal-pill target-pill" title="Hedef parkur mesafesi">
+                <span class="goal-label">🎯 HEDEF:</span>
+                <span class="goal-val" id="hud-target-label">1000m</span>
+              </div>
+            </div>
+
+            <div class="dist-track-bar">
+              <div class="dist-fill" id="dist-progress-fill" style="width: 0%;"></div>
+              <div class="dist-marker" id="dist-marker" style="left: 0%;">🏃‍♂️</div>
+              <div class="dist-flag" style="left: 25%;" title="1. Çeyrek">🚩</div>
+              <div class="dist-flag" style="left: 50%;" title="Yarı Yol">🚩</div>
+              <div class="dist-flag" style="left: 75%;" title="3. Çeyrek">🚩</div>
+              <div class="dist-flag" style="left: 100%;" title="Zirve Bitiş">🏆</div>
+            </div>
+          </div>
+
+          <!-- 2. SU TERAZİSİ (NEON BALONCUKLU DENGE SEVİYESİ & KOVA AĞIRLIKLARI) -->
+          <div class="hud-spirit-level-container">
+            <div class="team-badge left-team">
+              <div class="team-dot blue"></div>
+              <div class="team-info">
+                <span class="team-title" id="hud-top-left-name">SOL KOVA</span>
+                <span class="team-weight" id="hud-top-left-weight">0.0 kg</span>
+              </div>
+            </div>
+
+            <div class="spirit-gauge-box">
+              <div class="spirit-gauge-tube">
+                <div class="spirit-safe-center"></div>
+                <div class="spirit-center-pin"></div>
+                <div class="spirit-bubble" id="spirit-bubble" style="left: 50%;"></div>
+              </div>
+              <div class="spirit-readout" id="spirit-readout">0.0° DENGEDE (HIZLI)</div>
+            </div>
+
+            <div class="team-badge right-team">
+              <div class="team-info align-right">
+                <span class="team-title" id="hud-top-right-name">SAĞ KOVA</span>
+                <span class="team-weight" id="hud-top-right-weight">0.0 kg</span>
+              </div>
+              <div class="team-dot red"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- SAĞ: AKSİYON BUTONLARI -->
+        <div class="hud-right-actions">
+          <button class="hud-action-pill" id="btn-hud-catalog" title="Tüm Hediye Kataloğu (686 Hediye)">🎁 Katalog</button>
+          <button class="hud-icon-btn" id="btn-atmosphere-toggle" title="3D Atmosfer / Işıklandırma (Gün Batımı / Gündüz / Gece)">🌄</button>
+          <button class="hud-icon-btn active" id="btn-music-toggle" title="Fon Müziği Aç/Kapat (MnG Kesit 11)">🎵</button>
+          <button class="hud-icon-btn active" id="btn-sound-toggle" title="Ses Efektleri Aç/Kapat">🔊</button>
+          <button class="hud-icon-btn" id="btn-open-settings" title="Ayarlar">⚙️</button>
+          <button class="hud-icon-btn" id="btn-restart-run" title="Yeniden Başlat">🔄</button>
+          <button class="hud-icon-btn exit-btn" id="btn-exit-to-lobby" title="Lobiye Dön">🚪</button>
+        </div>
+      </header>
+
+      <!-- SOL VE SAĞ TAKIM İZLEYİCİ AĞIRLIK SIRALAMA WIDGETLARI (TRANSPARAN ARKA PLAN) -->
+      <div id="widget-left-leaderboard" class="team-leaderboard-widget left-side">
+        <div class="tlb-header blue">
+          <span class="tlb-icon">🔵</span>
+          <span class="tlb-title" id="tlb-left-title">SOL AĞIR ABİLER</span>
+          <span class="tlb-total" id="tlb-left-total">0.0 kg</span>
+        </div>
+        <div class="tlb-list" id="tlb-left-list">
+          <div class="tlb-empty">Henüz hediye atılmadı</div>
+        </div>
+      </div>
+
+      <div id="widget-right-leaderboard" class="team-leaderboard-widget right-side">
+        <div class="tlb-header red">
+          <span class="tlb-icon">🔴</span>
+          <span class="tlb-title" id="tlb-right-title">SAĞ AĞIR ABİLER</span>
+          <span class="tlb-total" id="tlb-right-total">0.0 kg</span>
+        </div>
+        <div class="tlb-list" id="tlb-right-list">
+          <div class="tlb-empty">Henüz hediye atılmadı</div>
+        </div>
+      </div>
+
+      <!-- TEHLİKE VE KRİTİK EĞİM UYARISI -->
+      <div id="warning-vignette" class="warning-vignette"></div>
+      <div id="tilt-warning-box" class="tilt-warning-box">
+        <span class="warn-icon">⚠️</span>
+        <span class="warn-msg">DİKKAT! TEK TARAFA AŞIRI YATTI! DENGEYİ SAĞLA!</span>
+      </div>
+
+      <!-- AŞIRI YÜK VE KAPASİTE UYARISI -->
+      <div id="overload-warning-box" class="tilt-warning-box overload-box" style="display:none;">
+        <span class="warn-icon">🚨</span>
+        <span class="warn-msg" id="overload-warning-text">AŞIRI YÜK! (150 kg Sınırı Aşıldı - Yürüyemez!)</span>
+      </div>
+
+      <!-- DÜŞME / PARAŞÜT OVERLAY -->
+      <div id="fall-overlay" class="game-event-overlay">
+        <div class="event-card fall-card">
+          <div class="event-emoji">😱</div>
+          <h2>UÇURUMA DÜŞÜLDÜ!</h2>
+          <p id="fall-message">Kavanoz ağırlık farkı dengeyi bozdu!</p>
+          <p>Yeni tur başlangıç çizgisinden başlayacak.</p>
+          <button type="button" class="btn-celebrate-next" id="btn-fall-restart">Yeniden Başlat</button>
+        </div>
+      </div>
+
+      <!-- ZAFER OVERLAY -->
+      <div id="victory-overlay" class="game-event-overlay">
+        <div class="event-card victory-card">
+          <div class="event-emoji">🏆</div>
+          <h2>DAĞI BAŞARIYLA GEÇTİN!</h2>
+          <p id="victory-message">1.000 metrelik dev kanyon başarıyla aşıldı!</p>
+          <button class="btn-celebrate-next" id="btn-victory-restart">🚀 Yeni Rekor Turu Başlat</button>
+        </div>
+      </div>
+
+      <!-- ================================================================= -->
+      <!-- 3. ALT TAKIM PANELİ & YÜRÜME KONTROLLERİ (TEMİZ & YAYINCI FORMATI) -->
+      <!-- ================================================================= -->
+      <footer class="hud-bottom-gift-bar">
+        <!-- SOL TAKIM KARTI (MAVİ) -->
+        <div class="team-battle-hud-card blue">
+          <button type="button" class="voice-side left-voice" id="voice-hold-left" title="Sol ses desteğini aç veya kapat" aria-label="Sol ses desteğini aç veya kapat"><span class="voice-mic-icon">🎙</span><small>SOL SES · AÇ</small><meter class="mic-level" min="0" max="1" value="0"></meter></button>
+          <div class="tb-left-col">
+            <div class="tb-header">
+              <span class="tb-dot blue"></span>
+              <span class="tb-name" id="hud-left-name">SOL KOVA</span>
+            </div>
+            <div class="tb-weight-box">
+              <span class="tb-weight" id="hud-left-weight">0.0 kg</span>
+            </div>
+          </div>
+          <div class="tb-right-col">
+            <div class="tb-gift-control-wrap">
+              <button class="tb-gift-tag clickable" id="btn-select-left-gift" title="Sol Takım Hediyesini Değiştirmek İçin Tıklayın">
+                <span class="tb-gift-icon" id="hud-left-gift-icon" hidden>🌹</span>
+                <span class="tb-gift-name" id="hud-left-gift-name" hidden>Gül</span>
+                <span class="tb-change-hint">🎁 Hediyeyi Değiştir</span>
+              </button>
+              <div class="tb-quick-kg-box" title="Sol küre ağırlığı (kg)">
+                <span class="tb-kg-caption">AĞIRLIK</span>
+                <button type="button" class="btn-hud-step minus" id="btn-hud-left-minus" title="0.5 kg Azalt">−</button>
+                <input type="text" id="input-hud-left-kg" class="tb-quick-kg-input" inputmode="decimal" value="1">
+                <button type="button" class="btn-hud-step plus" id="btn-hud-left-plus" title="0.5 kg Artır">+</button>
+                <span class="tb-quick-kg-unit">kg</span>
+              </div>
+            </div>
+            <button class="btn-team-test-drop blue" id="btn-test-drop-left" data-side="left" title="Sol kovaya 1 hediye küresi at">+Test At</button>
+          </div>
+        </div>
+
+        <div id="voice-lane-left" class="voice-lane left-lane" role="meter" aria-label="Sol ses desteği" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span>SOL</span><div class="voice-track"><i></i></div><b>↑</b></div>
+        <!-- ORTA YÜRÜME VE DENGE KONTROLLERİ -->
+        <div class="gift-bar-section center-section">
+          <button type="button" id="voice-mic-toggle" class="mic-toggle" aria-pressed="false" title="Mikrofonu aç veya kapat" aria-label="Mikrofonu aç veya kapat"><span>🎙</span><small>AÇ</small><meter class="mic-level" min="0" max="1" value="0"></meter></button>
+          <button class="btn-walk-hold" id="btn-walk-hold" title="Basılı tutarak yürütün (Space veya W tuşu)">
+            <span class="walk-icon">🏃‍♂️</span>
+            <span class="walk-text">YÜRÜ <small>(Space / W)</small></span>
+          </button>
+          <div class="center-sub-actions">
+            <button class="action-btn-chip" id="btn-toggle-autowalk" title="Otomatik Yürüme Modunu Aç/Kapat">⚡ Oto Yürü: Kapalı</button>
+            <button class="action-btn-chip" id="btn-action-wind" title="Rastgele sert kanyon rüzgarı estirir">💨 Rüzgar</button>
+            <button class="action-btn-chip" id="btn-action-balance" title="İki tarafın ağırlığını eşitler">⚖️ Dengele</button>
+            <button class="action-btn-chip" id="btn-action-empty" title="İki kovayı da boşaltır">🧹 Boşalt</button>
+          </div>
+        </div>
+
+        <div id="voice-lane-right" class="voice-lane right-lane" role="meter" aria-label="Sağ ses desteği" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><b>↑</b><div class="voice-track"><i></i></div><span>SAĞ</span></div>
+        <!-- SAĞ TAKIM KARTI (KIRMIZI) -->
+        <div class="team-battle-hud-card red">
+          <button type="button" class="voice-side right-voice" id="voice-hold-right" title="Sağ ses desteğini aç veya kapat" aria-label="Sağ ses desteğini aç veya kapat"><span class="voice-mic-icon">🎙</span><small>SAĞ SES · AÇ</small><meter class="mic-level" min="0" max="1" value="0"></meter></button>
+          <div class="tb-left-col">
+            <div class="tb-header">
+              <span class="tb-name" id="hud-right-name">SAĞ KOVA</span>
+              <span class="tb-dot red"></span>
+            </div>
+            <div class="tb-weight-box">
+              <span class="tb-weight" id="hud-right-weight">0.0 kg</span>
+            </div>
+          </div>
+          <div class="tb-right-col">
+            <div class="tb-gift-control-wrap">
+              <button class="tb-gift-tag clickable" id="btn-select-right-gift" title="Sağ Takım Hediyesini Değiştirmek İçin Tıklayın">
+                <span class="tb-gift-icon" id="hud-right-gift-icon" hidden>🎵</span>
+                <span class="tb-gift-name" id="hud-right-gift-name" hidden>TikTok</span>
+                <span class="tb-change-hint">🎁 Hediyeyi Değiştir</span>
+              </button>
+              <div class="tb-quick-kg-box" title="Sağ küre ağırlığı (kg)">
+                <span class="tb-kg-caption">AĞIRLIK</span>
+                <button type="button" class="btn-hud-step minus" id="btn-hud-right-minus" title="0.5 kg Azalt">−</button>
+                <input type="text" id="input-hud-right-kg" class="tb-quick-kg-input" inputmode="decimal" value="1">
+                <button type="button" class="btn-hud-step plus" id="btn-hud-right-plus" title="0.5 kg Artır">+</button>
+                <span class="tb-quick-kg-unit">kg</span>
+              </div>
+            </div>
+            <button class="btn-team-test-drop red" id="btn-test-drop-right" data-side="right" title="Sağ kovaya 1 hediye küresi at">+Test At</button>
+          </div>
+        </div>
+      </footer>
+    </div>
+
+    <!-- ================================================================= -->
+    <!-- 4. HEDİYE KATALOĞU MODAL (686 TİKTOK HEDİYESİ) -->
+    <!-- ================================================================= -->
+    <div id="catalog-modal" class="modal-backdrop">
+      <div class="modal-dialog catalog-dialog">
+        <div class="modal-header">
+          <div class="modal-header-titles">
+            <h3>🎁 TikTok Hediye Kataloğu</h3>
+            <span class="modal-subtitle">Hediyeleri ara, Sol veya Sağ kavanoza bağla ve kaç kg olacağını belirle</span>
+          </div>
+          <button class="modal-close-btn" id="btn-close-catalog">✕</button>
+        </div>
+
+        <!-- Kural Seçim Bildirim Banner'ı -->
+        <div id="catalog-picking-banner" class="catalog-picking-banner" style="display: none;">
+          <span class="picking-text" id="catalog-picking-text">🎯 <strong>Sol Takım Kuralı</strong> için hediye seçiyorsunuz. Listeden istediğiniz hediyeye tıklayın.</span>
+          <button type="button" class="btn-cancel-pick" id="btn-cancel-rule-pick">✕ Seçimi İptal Et</button>
+        </div>
+
+        <div class="catalog-toolbar">
+          <div class="catalog-search-wrap">
+            <span class="search-icon">🔍</span>
+            <input type="text" id="catalog-search-input" placeholder="Hediye ara (Gül, Donat, Panda, Para Tabancası, Yat, Ejderha...)" autocomplete="off">
+          </div>
+          <div class="catalog-filter-tabs">
+            <button class="tab-btn active" data-filter="all">Tümü (<span id="cat-total-count">0</span>)</button>
+            <button class="tab-btn" data-filter="left">🔵 Sol Kavanoz</button>
+            <button class="tab-btn" data-filter="right">🔴 Sağ Kavanoz</button>
+          </div>
+        </div>
+
+        <div class="catalog-grid" id="catalog-grid-items">
+          <div class="catalog-loading">Hediyeler yükleniyor...</div>
+        </div>
+
+        <div class="modal-footer">
+          <span class="catalog-hint">💡 İstediğiniz hediyeye tıklayarak Sol veya Sağ takıma atayabilir veya anında test edebilirsiniz.</span>
+          <button class="btn-cancel" id="btn-cancel-catalog">Kapat</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ================================================================= -->
+    <!-- 5. OYUN AYARLARI MODAL (YENİDEN TASARLANMIŞ SEKME VE DİNAMİK HEDİYE YÖNETİMİ) -->
+    <!-- ================================================================= -->
+    <div id="settings-modal" class="modal-backdrop">
+      <div class="modal-dialog settings-dialog-large">
+        <div class="modal-header">
+          <div class="modal-header-titles">
+            <h3>⚙️ Oyun, Hediye & Canlı Yayın Ayarları</h3>
+            <span class="modal-subtitle">Takımlara özel hediye-ağırlık kuralları belirleyin, canlı yayına bağlanın ve OBS widget'larını yönetin</span>
+          </div>
+          <button class="modal-close-btn" id="btn-close-settings">✕</button>
+        </div>
+
+        <!-- ÜST AYAR SEKMELERİ -->
+        <div class="settings-nav-tabs">
+          <button type="button" class="set-tab-btn active" data-tab="tab-gifts">🎁 Hediye & Ağırlık Kuralları</button>
+          <button type="button" class="set-tab-btn" data-tab="tab-live">📺 Canlı Yayın & OBS</button>
+          <button type="button" class="set-tab-btn" data-tab="tab-game">🎮 Parkur, Fizik & Ses</button>
+        </div>
+
+        <div class="modal-body settings-scroll-body">
+          <!-- SEKME 1: HEDİYE VE AĞIRLIK KURALLARI -->
+          <div class="settings-tab-pane active" id="tab-gifts">
+            <div class="settings-pane-intro">
+              <p>💡 Her iki takım için hangi hediyenin kaç kilo ağırlık oluşturacağını serbestçe belirleyin. "Yeni Hediye Ekle" butonuna basarak dilediğiniz kadar kural oluşturabilirsiniz.</p>
+            </div>
+
+            <div class="team-rules-grid">
+              <!-- SOL TAKIM KURALLARI -->
+              <div class="team-rule-card blue">
+                <div class="team-rule-header">
+                  <span class="tr-badge blue">🔵 SOL TAKIM</span>
+                  <div class="tr-name-input-wrap">
+                    <label>Takım Adı:</label>
+                    <input type="text" id="setting-left-name" value="Sol Kova" placeholder="Sol Kova">
+                  </div>
+                </div>
+                <div class="team-rules-list" id="list-left-gift-rules">
+                  <!-- Dinamik kurallar JS ile buraya eklenecek -->
+                </div>
+                <button type="button" class="btn-add-rule blue" id="btn-add-left-rule">+ Sol Takıma Yeni Hediye Ekle</button>
+              </div>
+
+              <!-- SAĞ TAKIM KURALLARI -->
+              <div class="team-rule-card red">
+                <div class="team-rule-header">
+                  <span class="tr-badge red">🔴 SAĞ TAKIM</span>
+                  <div class="tr-name-input-wrap">
+                    <label>Takım Adı:</label>
+                    <input type="text" id="setting-right-name" value="Sağ Kova" placeholder="Sağ Kova">
+                  </div>
+                </div>
+                <div class="team-rules-list" id="list-right-gift-rules">
+                  <!-- Dinamik kurallar JS ile buraya eklenecek -->
+                </div>
+                <button type="button" class="btn-add-rule red" id="btn-add-right-rule">+ Sağ Takıma Yeni Hediye Ekle</button>
+              </div>
+            </div>
+
+            <div class="movement-rule-card">
+              <div class="movement-rule-header">
+                <div><strong>İleri, Geri ve Başlangıç Etkinlikleri</strong><small>Bu hediyeler kovalara ağırlık eklemez; karakteri köprü üzerinde hareket ettirir.</small></div>
+                <div class="social-distance-settings">
+                  <label>1 Takip <input id="setting-follow-meters" type="number" value="10" min="1" max="500"> m ileri <button type="button" class="btn-social-test" id="btn-test-follow-move">Test</button></label>
+                  <label>100 Beğeni <input id="setting-like-meters" type="number" value="10" min="1" max="500"> m ileri <button type="button" class="btn-social-test" id="btn-test-like-move">Test</button></label>
+                </div>
+              </div>
+              <div id="list-movement-rules" class="movement-rules-list"></div>
+            </div>
+          </div>
+
+          <!-- SEKME 2: CANLI YAYIN VE OBS WIDGET'LARI -->
+          <div class="settings-tab-pane" id="tab-live">
+            <div class="settings-section-card">
+              <h4>🔴 TikTok Canlı Yayın Bağlantısı</h4>
+              <p class="section-desc">Yayına bağlandığınızda gelen hediyeler anlık olarak kovaları ağırlaştırır ve 3D profil topları kovalara dökülür.</p>
+              <div class="live-connect-row">
+                <div class="input-with-icon">
+                  <span class="input-icon">@</span>
+                  <input type="text" id="setting-tiktok-user" placeholder="TikTok kullanıcı adınızı yazın..." autocomplete="off">
+                </div>
+                <button type="button" class="btn-primary-connect" id="btn-setting-connect">Yayına Bağlan</button>
+                <button type="button" class="btn-profile-refresh" id="btn-setting-profile">Profili Getir</button>
+                <button type="button" class="btn-profile-refresh" id="btn-setting-profile-hide">Profili Çıkar</button>
+                <button type="button" class="btn-cancel" id="btn-setting-disconnect">Bağlantıyı Kes</button>
+              </div>
+              <div class="connection-status-pill">
+                <span class="status-indicator disconnected" id="setting-live-indicator"></span>
+                <span id="setting-live-status-text">Yayın durumu: Bağlantı bekleniyor</span>
+              </div>
+            </div>
+
+            <div class="settings-section-card">
+              <h4>📋 OBS Studio Şeffaf Tarayıcı Widget Linkleri</h4>
+              <p class="section-desc">Aşağıdaki linkleri OBS'e "Tarayıcı (Browser Source)" olarak ekleyin (Genişlik: 400, Yükseklik: 600, Şeffaf Arka Plan):</p>
+              <div class="obs-links-table">
+                <div class="obs-link-row">
+                  <div class="obs-link-info">
+                    <span class="obs-link-title">🔵 Sol Ağır Abiler Sıralama Widget'ı</span>
+                    <span class="obs-link-url" id="obs-url-left">http://localhost:3080/widget.html?side=left</span>
+                  </div>
+                  <button type="button" class="btn-copy-widget" data-target="obs-url-left">📋 Kopyala</button>
+                </div>
+                <div class="obs-link-row">
+                  <div class="obs-link-info">
+                    <span class="obs-link-title">🔴 Sağ Ağır Abiler Sıralama Widget'ı</span>
+                    <span class="obs-link-url" id="obs-url-right">http://localhost:3080/widget.html?side=right</span>
+                  </div>
+                  <button type="button" class="btn-copy-widget" data-target="obs-url-right">📋 Kopyala</button>
+                </div>
+                <div class="obs-link-row">
+                  <div class="obs-link-info">
+                    <span class="obs-link-title">👑 Ağır Abi Widget'ı (En Çok Hediye Atan Lider & Genel Sıralama)</span>
+                    <span class="obs-link-url" id="obs-url-top">http://localhost:3080/widget.html?side=top</span>
+                  </div>
+                  <button type="button" class="btn-copy-widget" data-target="obs-url-top">📋 Kopyala</button>
+                </div>
+                <div class="obs-link-row">
+                  <div class="obs-link-info">
+                    <span class="obs-link-title">⚖️ İki Kova Yan Yana Birleşik Sıralama Widget'ı</span>
+                    <span class="obs-link-url" id="obs-url-both">http://localhost:3080/widget.html?side=both</span>
+                  </div>
+                  <button type="button" class="btn-copy-widget" data-target="obs-url-both">📋 Kopyala</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- SEKME 3: OYUN, FİZİK VE SES -->
+          <div class="settings-tab-pane" id="tab-game">
+            <div class="form-group">
+              <label><input type="checkbox" id="voice-balance-enabled"> Sesle Denge</label>
+              <span id="voice-balance-status" role="status">Mikrofon kapalı</span>
+              <div class="modal-dist-chips">
+                <button type="button" class="chip-setting" id="voice-test-left">Sol Destek Testi</button>
+                <button type="button" class="chip-setting" id="voice-test-right">Sağ Destek Testi</button>
+              </div>
+            </div>
+            <div class="form-group">
+              <label>🏁 Parkur Mesafesi & Hedef (Metre):</label>
+              <div class="modal-dist-chips">
+                <button type="button" class="chip-setting" data-meters="100">100m (Hızlı Test)</button>
+                <button type="button" class="chip-setting" data-meters="250">250m</button>
+                <button type="button" class="chip-setting" data-meters="500">500m</button>
+                <button type="button" class="chip-setting active" data-meters="1000">1.000m</button>
+                <button type="button" class="chip-setting" data-meters="2000">2.000m</button>
+                <button type="button" class="chip-setting" data-meters="5000">5.000m</button>
+              </div>
+              <input type="number" id="setting-distance-input" min="50" max="50000" step="50" value="1000" placeholder="Örnek: 1000">
+            </div>
+
+            <!-- KULLANICI İSTEĞİ: MAKSİMUM AĞIRLIK VE AŞIRI YÜK KAPASİTESİ (STANDART 150 KG) -->
+            <div class="form-group">
+              <label>⚖️ Maksimum Kova Taşıma Kapasitesi (kg) [Aşırı Yük Sınırı]:</label>
+              <div class="modal-dist-chips" id="max-weight-chips">
+                <button type="button" class="chip-setting active" data-weight="150">150 kg (Standart)</button>
+                <button type="button" class="chip-setting" data-weight="200">200 kg</button>
+                <button type="button" class="chip-setting" data-weight="300">300 kg</button>
+                <button type="button" class="chip-setting" data-weight="400">400 kg</button>
+                <button type="button" class="chip-setting" data-weight="500">500 kg</button>
+                <button type="button" class="chip-setting" data-weight="0">Sınırsız</button>
+              </div>
+              <input type="number" id="setting-max-weight-input" min="0" max="2000" step="5" value="150" placeholder="Örnek: 150 (0 = sınırsız)">
+              <small style="color: rgba(255,255,255,0.6); display:block; margin-top:4px;">Herhangi bir kova bu ağırlığa ulaştığında karakter yürüyemez, dengesi bozulur ve aşırı yük alarmı çalar.</small>
+            </div>
+
+            <div class="form-row-2">
+              <div class="form-group">
+                <label>🎵 Arka Fon Müziği Ses Düzeyi:</label>
+                <input type="range" id="setting-music-vol" min="0" max="100" value="15">
+                <span class="range-val" id="val-music-vol">%15</span>
+              </div>
+              <div class="form-group">
+                <label>🔊 Ses Efektleri (SFX) Düzeyi:</label>
+                <input type="range" id="setting-sfx-vol" min="0" max="100" value="20">
+                <span class="range-val" id="val-sfx-vol">%20</span>
+              </div>
+            </div>
+
+            <div class="form-row-2">
+              <div class="form-group">
+                <label>🔁 Müzik Döngüsü (Loop):</label>
+                <select id="setting-music-loop">
+                  <option value="loop" selected>Sürekli Tekrarla (Sonsuz Döngü)</option>
+                  <option value="once">Bir Kez Çal ve Dur</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>💓 Gerilim Kalp Atışı & Rüzgar Efekti:</label>
+                <select id="setting-tension-fx">
+                  <option value="enabled" selected>Açık (Eğildikçe Hızlanan Kalp Atışı)</option>
+                  <option value="disabled">Kapalı (Sadece Fon Müziği)</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label>📐 Ağırlık Hassasiyeti (Eğim Çarpanı):</label>
+              <input type="range" id="setting-sensitivity" min="1" max="10" value="1">
+              <span class="range-val" id="val-sensitivity">Düşük (1)</span>
+            </div>
+
+            <div class="form-group">
+              <label>🧘 Karakter Toparlanma Refleksi:</label>
+              <input type="range" id="setting-recovery" min="1" max="10" value="9">
+              <span class="range-val" id="val-recovery">Çok Hızlı (9)</span>
+            </div>
+
+            <div class="form-group">
+              <label>🌄 3D Atmosfer / Işıklandırma:</label>
+              <select id="setting-atmosphere">
+                <option value="sunset" selected>🌄 Gün Batımı Kanyonu (Gerilimli & Dramatik)</option>
+                <option value="day">☀️ Parlak Gündüz Dağları (Yüksek Görünürlük)</option>
+                <option value="night">🌌 Gece ve Yıldızlı Kanyon (Ekstra Gerilim)</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button class="btn-cancel" id="btn-cancel-settings">Vazgeç</button>
+          <button class="btn-save" id="btn-save-settings">Kaydet & Uygula</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>

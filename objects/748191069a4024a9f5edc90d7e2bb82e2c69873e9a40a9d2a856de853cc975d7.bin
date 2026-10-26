@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>MNG Crowd Control</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- ARKA PLAN VİDEOSU & GÖRSELİ -->
+  <video id="bgVideo" class="bg-video" autoplay loop muted playsinline></video>
+  <img id="bgImg" class="bg-img" style="position:fixed; inset:0; width:100%; height:100%; object-fit:cover; display:none; z-index:-2;" alt="Arka Plan">
+  <div class="bg-overlay"></div>
+
+  <!-- 1. GİRİŞ & YAYINA BAĞLAN EKRANI -->
+  <div id="introScreen" class="intro-screen">
+    <div class="intro-card">
+      <div class="intro-badge">✨ YENİ OYUNUMUZ</div>
+      <h1 class="intro-title">MNG CROWD CONTROL</h1>
+      <p class="intro-subtitle">TikTok Canlı Yayın İnteraktif Hayatta Kalma Oyunu</p>
+      
+      <form id="connectForm" class="connect-form">
+        <div class="input-wrap">
+          <span class="input-prefix">@</span>
+          <input type="text" id="username" placeholder="TikTok Kullanıcı Adınız" autocomplete="off" required>
+        </div>
+        <div class="form-buttons">
+          <button type="submit" id="connectBtn" class="btn btn-primary">Yayına Bağlan</button>
+          <button type="button" id="startOfflineBtn" class="btn btn-secondary">Test / Çevrimdışı Başla</button>
+        </div>
+      </form>
+
+      <div id="introStatus" class="intro-status">Yayına bağlanın veya test modunda başlayın.</div>
+
+      <div id="startSection" class="start-section" style="display: none;">
+        <div class="ready-badge">✓ BAĞLANTI AKTİF</div>
+        <button type="button" id="startGameBtn" class="btn btn-start">▶ OYUNA BAŞLA</button>
+      </div>
+
+      <div class="intro-instructions">
+        <div class="inst-item"><span>🌹</span> Gül = 5 Engel</div>
+        <div class="inst-item"><span>🧿</span> Nazar = 10 Engel</div>
+        <div class="inst-item"><span>🍩</span> Donut = 30 Engel</div>
+        <div class="inst-item"><span>🎩</span> Şapka = 2 Boss</div>
+        <div class="inst-item"><span>🧪</span> Parfüm = Kalkan</div>
+        <div class="inst-item"><span>☕</span> Kahve = +1 Can</div>
+        <div class="inst-item"><span>🔫</span> Money Gun = MEGA BOSS</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. OYUN ALANI -->
+  <div id="gameShell" class="game-shell" style="display: none;">
+    
+    <!-- ÜST ÇUBUK / HUD -->
+    <header class="hud-top">
+      <div class="hud-left">
+        <button id="bgBtn" class="hud-btn" type="button" title="Arka Planı Değiştir">🎨 Arka Plan</button>
+        <button id="settingsBtn" class="hud-btn" type="button" title="Ayarlar">⚙️ Ayarlar</button>
+        <button id="widgetBtn" class="hud-btn hud-btn-accent" type="button" title="OBS Sıralama Widget'ı">🏆 OBS Widget</button>
+        <button id="fsBtn" class="hud-btn hud-btn-icon" type="button" title="Tam Ekran">⛶</button>
+        <button id="exitBtn" class="hud-btn hud-btn-danger" type="button" title="Çıkış">✕</button>
+      </div>
+
+      <div class="hud-center">
+        <div class="hud-stat">⏱️ <b id="timeVal">0</b>s</div>
+        <div class="hud-stat hud-lives" id="livesVal">❤️❤️❤️❤️❤️</div>
+        <div class="hud-stat">🎁 <b id="giftVal">0</b></div>
+        <div class="hud-stat">🏆 En İyi: <b id="bestVal">0</b>s</div>
+      </div>
+
+      <div class="hud-right">
+        <div id="miniLeaderboard" class="mini-leaderboard">
+          <div class="ml-title">🏅 En Çok Destek</div>
+          <div id="mlList" class="ml-list">Henüz hediye gelmedi</div>
+        </div>
+      </div>
+    </header>
+
+    <!-- ARKA PLAN MENÜSÜ -->
+    <div id="bgMenu" class="bg-menu" style="display: none;">
+      <div class="bg-menu-header">
+        <span>Arka Plan Seçin</span>
+        <button id="closeBgMenu" class="close-btn" type="button">✕</button>
+      </div>
+      <div style="padding: 10px 14px; border-bottom: 1px solid rgba(255,255,255,0.12); display: flex; gap: 8px;">
+        <button id="ccCustomBgBtn" type="button" class="btn btn-primary" style="flex:1; font-size:12px; padding:7px 10px;">📁 Kendi Görselini / Videonu Ekle</button>
+        <input type="file" id="ccCustomBgInput" accept="image/*,video/mp4,video/webm" style="display:none;">
+      </div>
+      <div id="bgGrid" class="bg-grid"></div>
+    </div>
+
+    <!-- CANVAS WRAPPER -->
+    <div id="canvasWrap" class="canvas-wrap">
+      <canvas id="gameCanvas"></canvas>
+      
+      <!-- SAĞ / ÜST CANLI HEDİYE ETKİLEŞİM PANELİ (İzleyicilerin görmesi için) -->
+      <aside id="crowdLiveGiftHud" class="crowd-live-gift-hud">
+        <div class="clg-header">🎁 HEDİYE EYLEMLERİ</div>
+        <div id="clgList" class="clg-list"></div>
+      </aside>
+
+      <!-- HEDEF / BOSS BARI -->
+      <div id="goalWrap" class="goal-wrap">
+        <div id="goalText" class="goal-text">👹 MEGA BOSS: 0/50 Hediye Puanı</div>
+        <div class="goal-bar"><div id="goalFill" class="goal-fill"></div></div>
+      </div>
+
+      <!-- TOAST BİLDİRİMLERİ -->
+      <div id="toast" class="toast"></div>
+
+      <!-- MEGA BOSS UYARISI -->
+      <div id="megaAlert" class="mega-alert">
+        <div class="mega-alert-icon">⚔️</div>
+        <div class="mega-alert-title">1v1 ARENA DÜELLOSU!</div>
+        <div id="megaAlertUser" class="mega-alert-user"></div>
+        <div class="mega-alert-sub">⚡ Çevre temizlendi! Hasarın 1.5x KATINA ÇIKTI!</div>
+      </div>
+
+      <!-- OYUN BİTTİ EKRANI -->
+      <div id="gameOverModal" class="game-over-modal" style="display: none;">
+        <div class="go-box">
+          <div class="go-icon">💀</div>
+          <h2 class="go-title">OYUN BİTTİ!</h2>
+          <div id="goTime" class="go-time">Hayatta Kalma Süresi: 0 saniye</div>
+          <div id="goKiller" class="go-killer"></div>
+          <button id="restartBtn" class="btn btn-primary btn-lg">Tekrar Oyna</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ALT KONTROL BARI (KALDIRILDI - TÜM KONTROLLER AYARLARDA) -->
+    <footer class="gift-bar" style="display:none !important;">
+      <div id="giftButtonsWrap" class="gift-buttons-wrap"></div>
+      <div class="aux-buttons">
+        <button id="toggleSoundBtn" class="aux-btn" type="button" style="display:none;">🔊 Ses: AÇIK</button>
+        <button id="toggleAutoBtn" class="aux-btn" type="button" style="display:none;">🤖 Test Botu: KAPALI</button>
+      </div>
+    </footer>
+
+  </div>
+
+  <!-- 3. AYARLAR MODALI -->
+  <div id="settingsModal" class="modal-backdrop" style="display: none;">
+    <div class="settings-modal-card">
+      <div class="modal-head">
+        <h2>⚙️ Crowd Control Ayarları</h2>
+        <button id="closeSettingsBtn" class="close-btn" type="button">✕</button>
+      </div>
+
+      <div class="settings-body">
+        
+        <!-- SES & TEST KONTROLLERİ -->
+        <div class="settings-section">
+          <h3>🔊 Ses & 🤖 Test Botu</h3>
+          <p class="section-sub">Oyun içi ses efektlerini ve otomatik test botunu buradan yönetebilirsiniz.</p>
+          <div style="display: flex; gap: 12px; margin-top: 10px;">
+            <button id="settingsToggleSoundBtn" class="btn btn-secondary" type="button" style="flex: 1; padding: 10px 14px; font-weight: 700; font-size: 14px;">🔊 Ses: AÇIK</button>
+            <button id="settingsToggleAutoBtn" class="btn btn-secondary" type="button" style="flex: 1; padding: 10px 14px; font-weight: 700; font-size: 14px;">🤖 Test Botu: KAPALI</button>
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <h3>🎁 Hediye Eylemleri & Karakteristikleri</h3>
+          <p class="section-sub">Her hediye için hangi engelin geleceğini veya destek vereceğini belirleyin.</p>
+          <div id="giftRulesGrid" class="gift-rules-grid"></div>
+        </div>
+
+        <!-- BEĞENİ & TAKİP AYARLARI -->
+        <div class="settings-section">
+          <h3>👍 Beğeni & ⭐ Takip Ayarları</h3>
+          <p class="section-sub">İzleyicilerin beğenileri ve takipleriyle sahaya otomatik engel veya destek gelmesini sağlayın.</p>
+          <div class="settings-social-grid">
+            
+            <div class="social-setting-card">
+              <div class="ssc-head">
+                <span class="ssc-icon">👍</span>
+                <div>
+                  <strong>Beğeni ile Engel Gönderimi</strong>
+                  <p>İzleyici beğeni attıkça birikir ve her eşiğe ulaştığında sahaya engel fırlar.</p>
+                </div>
+              </div>
+              <div class="ssc-controls">
+                <label class="ssc-label">
+                  <span>Beğeni Eşiği (Her X beğenide bir):</span>
+                  <input type="number" id="likeThresholdInput" min="10" max="5000" step="10" value="50">
+                </label>
+                <label class="ssc-label">
+                  <span>Gönderilecek Engel Eylemi:</span>
+                  <select id="likeActionSelect">
+                    <option value="small_wave">Küçük Pasif Engel</option>
+                    <option value="medium_wave">Standart Engel</option>
+                    <option value="heavy_wave">Hızlı / Sert Engel</option>
+                  </select>
+                </label>
+                <label class="ssc-label">
+                  <span>Engel Adedi:</span>
+                  <input type="number" id="likeCountInput" min="1" max="50" value="3">
+                </label>
+              </div>
+            </div>
+
+            <div class="social-setting-card">
+              <div class="ssc-head">
+                <span class="ssc-icon">⭐</span>
+                <div>
+                  <strong>Takip Edilince Tetikleme</strong>
+                  <p>Yayın takip edildiğinde sahaya anında gelen tepkiyi belirleyin.</p>
+                </div>
+              </div>
+              <div class="ssc-controls">
+                <label class="ssc-label">
+                  <span>Takip Eylemi:</span>
+                  <select id="followActionSelect">
+                    <option value="small_wave">Küçük Pasif Engel Gönder</option>
+                    <option value="medium_wave">Standart Engel Gönder</option>
+                    <option value="boss">Boss Gönder</option>
+                    <option value="shield">🛡️ Kalkan Ver (Yayıncıyı Koru)</option>
+                    <option value="life">💚 +1 Can Ver (Destek)</option>
+                  </select>
+                </label>
+                <label class="ssc-label">
+                  <span>Engel / Etki Adedi:</span>
+                  <input type="number" id="followCountInput" min="1" max="20" value="4">
+                </label>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <h3>🎮 Oyun & Denge Ayarları</h3>
+          <div class="settings-sliders-grid">
+            <label class="slider-field">
+              <span class="sf-title">💥 Vuruş Gücü (Hasar): <b id="dmgValDisplay">8</b></span>
+              <input type="range" id="dmgSlider" min="2" max="60" value="8">
+            </label>
+            <label class="slider-field">
+              <span class="sf-title">🔫 Ateş Hızı (Mermi/sn): <b id="fireValDisplay">15</b></span>
+              <input type="range" id="fireSlider" min="5" max="35" value="15">
+            </label>
+            <label class="slider-field">
+              <span class="sf-title">❤️ Maksimum Can: <b id="maxLivesDisplay">5</b></span>
+              <input type="range" id="maxLivesSlider" min="3" max="10" value="5">
+            </label>
+            <label class="slider-field">
+              <span class="sf-title">👹 Normal Boss Canı: <b id="bossHpDisplay">1200</b></span>
+              <input type="range" id="bossHpSlider" min="300" max="6000" step="100" value="1200">
+            </label>
+            <label class="slider-field">
+              <span class="sf-title">👑 Mega Boss Canı: <b id="megaHpDisplay">5000</b></span>
+              <input type="range" id="megaHpSlider" min="1000" max="20000" step="500" value="5000">
+            </label>
+            <label class="slider-field">
+              <span class="sf-title">🏆 Mega Boss Puan Eşiği: <b id="megaGoalDisplay">50</b> Puan</span>
+              <input type="range" id="megaGoalSlider" min="15" max="300" step="5" value="50">
+            </label>
+            <label class="slider-field">
+              <span class="sf-title">🗺️ Harita Boyutu: <b id="mapScaleDisplay">1.8</b>x</span>
+              <input type="range" id="mapScaleSlider" min="1.0" max="3.0" step="0.1" value="1.8">
+            </label>
+            <label class="slider-field">
+              <span class="sf-title">🔭 Kamera Zoom: <b id="zoomDisplay">0.75</b></span>
+              <input type="range" id="zoomSlider" min="0.45" max="1.2" step="0.05" value="0.75">
+            </label>
+            <label class="slider-field">
+              <span class="sf-title">📐 Genel Engel Boyutu: <b id="obstacleScaleDisplay">1.0</b>x</span>
+              <input type="range" id="obstacleScaleSlider" min="0.5" max="2.5" step="0.1" value="1.0">
+            </label>
+            <label class="slider-field">
+              <span class="sf-title">👤 Profil & İsim Boyutu: <b id="nameScaleDisplay">1.0</b>x</span>
+              <input type="range" id="nameScaleSlider" min="0.6" max="2.5" step="0.1" value="1.0">
+            </label>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="modal-footer">
+        <button id="resetSettingsBtn" class="btn btn-secondary" type="button">Varsayılana Sıfırla</button>
+        <button id="saveSettingsBtn" class="btn btn-primary" type="button">Kaydet & Uygula</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4. HEDİYE SEÇİCİ MODAL -->
+  <div id="giftPickerModal" class="modal-backdrop" style="display: none;">
+    <div class="gift-picker-card">
+      <div class="modal-head">
+        <h3 id="pickerTitle">Hediye Değiştir</h3>
+        <button id="closePickerBtn" class="close-btn" type="button">✕</button>
+      </div>
+      <div class="picker-search-wrap">
+        <input type="text" id="giftSearchInput" placeholder="Hediye ara... (Gül, Asa, Kalp, Donut...)" autocomplete="off">
+      </div>
+      <div id="pickerResults" class="picker-results-grid"></div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

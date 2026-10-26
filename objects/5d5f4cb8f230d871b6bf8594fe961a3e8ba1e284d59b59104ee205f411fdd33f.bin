@@ -1,0 +1,21 @@
+export function normalizeName(value) {
+  return String(value || '').normalize('NFD').replace(/\p{M}/gu, '').toLowerCase().replace(/ı/g, 'i').replace(/[^a-z0-9]/g, '');
+}
+
+export function sortedCatalog(items) {
+  return [...items].sort((a, b) => (Number(a.coins) || 1) - (Number(b.coins) || 1)
+    || String(a.trName || a.name).localeCompare(String(b.trName || b.name), 'tr'));
+}
+
+export function matchGift(left, right, giftName, giftId, coins = 1, count = 1) {
+  const id = String(giftId || ''), name = normalizeName(giftName);
+  const rules = [...left.map(rule => ({ side: 'left', rule })), ...right.map(rule => ({ side: 'right', rule }))];
+  // A numeric ID is authoritative, even when two catalog gifts have the same name.
+  const match = rules.find(({ rule }) => id && String(rule.giftId) === id)
+    || rules.find(({ rule }) => (!id || !/^\d+$/.test(String(rule.giftId || ''))) && name && normalizeName(rule.name) === name);
+  const amount = Math.max(1, Number(count) || 1);
+  if (match) return { side: match.side, weight: Math.max(0.1, Number(String(match.rule.weight).replace(',', '.')) || 1) * amount,
+    ruleName: match.rule.name, icon: match.rule.icon || '🎁' };
+  return { side: Number(coins) % 2 ? 'left' : 'right', weight: Math.max(1, Math.round(Number(coins || 1) / 2)) * amount,
+    ruleName: giftName || 'Hediye', icon: '🎁' };
+}

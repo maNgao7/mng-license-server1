@@ -1,0 +1,4 @@
+1) Zip'e sag tik > Tumunu ayikla (zipin icinden CALISTIRMA)
+2) Ayiklanan klasorde BASLAT.bat'a cift tikla
+3) Tarayici acilmazsa: http://localhost:8000
+Internet gerekir (three.js CDN'den yuklenir). Python veya Node.js kurulu olmali.

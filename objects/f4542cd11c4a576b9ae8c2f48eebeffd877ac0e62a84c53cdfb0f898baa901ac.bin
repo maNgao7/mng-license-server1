@@ -1,0 +1,34 @@
+import * as CANNON from './libs/cannon-es.js';
+
+export function createJarPhysics() {
+  const world = new CANNON.World({ gravity: new CANNON.Vec3(0, -9.81, 0), allowSleep: true });
+  world.solver.iterations = 12;
+  world.defaultContactMaterial.friction = 0.45;
+  world.defaultContactMaterial.restitution = 0.12;
+  const floor = new CANNON.Body({ mass: 0 });
+  floor.addShape(new CANNON.Box(new CANNON.Vec3(0.58, 0.05, 0.58)), new CANNON.Vec3(0, -0.66, 0));
+  world.addBody(floor);
+  for (let i = 0; i < 24; i++) {
+    const angle = i / 24 * Math.PI * 2;
+    const wall = new CANNON.Body({ mass: 0 });
+    wall.addShape(new CANNON.Box(new CANNON.Vec3(0.075, 3.3, 0.07)));
+    wall.position.set(Math.cos(angle) * 0.565, 2.55, Math.sin(angle) * 0.565);
+    wall.quaternion.setFromAxisAngle(new CANNON.Vec3(0, 1, 0), -angle);
+    world.addBody(wall);
+  }
+  const bodies = new Set();
+  return {
+    world,
+    add(radius, x = 0, z = 0, y = 2.8) {
+      const body = new CANNON.Body({ mass: 1, shape: new CANNON.Sphere(radius),
+        linearDamping: 0.35, angularDamping: 0.6, sleepSpeedLimit: 0.08, sleepTimeLimit: 0.8 });
+      body.position.set(x, y, z);
+      bodies.add(body);
+      world.addBody(body);
+      return body;
+    },
+    remove(body) { world.removeBody(body); bodies.delete(body); },
+    step(dt) { world.step(1 / 60, Math.min(dt, 0.05), 4); },
+    clear() { for (const body of bodies) world.removeBody(body); bodies.clear(); }
+  };
+}

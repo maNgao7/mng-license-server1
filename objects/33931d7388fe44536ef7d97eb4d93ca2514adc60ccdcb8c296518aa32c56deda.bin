@@ -1,0 +1,75 @@
+const list = document.getElementById("leaderboard");
+let socket = null;
+let retryTimer = null;
+
+function avatarSource(entry) {
+  if (!entry.avatar) return null;
+  return entry.avatar.startsWith("/") || entry.avatar.startsWith("data:")
+    ? entry.avatar
+    : `/api/avatar?user=${encodeURIComponent(entry.id || "")}&url=${encodeURIComponent(entry.avatar)}`;
+}
+
+function render(entries) {
+  if (!entries || !entries.length) {
+    list.innerHTML = '<li style="justify-content:center;color:#94a9cd;font-size:12px;opacity:0.8;font-style:italic;padding:12px 0;">🪐 Yörünge Sıralaması Bekleniyor...</li>';
+    return;
+  }
+  list.replaceChildren(...entries.map((entry, index) => {
+    const item = document.createElement("li");
+    const rank = document.createElement("b");
+    rank.textContent = index + 1;
+    const avatar = avatarSource(entry);
+    const name = document.createElement("span");
+    name.className = "name";
+    name.textContent = entry.nickname || entry.id || "Oyuncu";
+    const mass = document.createElement("span");
+    mass.className = "mass";
+    mass.textContent = (entry.mass || 0) + " kütle";
+    item.append(rank);
+    if (avatar) {
+      const image = new Image();
+      image.src = avatar;
+      image.alt = "";
+      image.addEventListener("error", () => {
+        const fallback = document.createElement("span");
+        fallback.className = "avatar";
+        fallback.textContent = (entry.nickname || "?").slice(0, 1).toUpperCase();
+        image.replaceWith(fallback);
+      });
+      item.append(image);
+    } else {
+      const fallback = document.createElement("span");
+      fallback.className = "avatar";
+      fallback.textContent = (entry.nickname || "?").slice(0, 1).toUpperCase();
+      item.append(fallback);
+    }
+    item.append(name, mass);
+    return item;
+  }));
+}
+
+function connect() {
+  if (socket && (socket.readyState === WebSocket.OPEN || socket.readyState === WebSocket.CONNECTING)) return;
+  const host = location.host || "localhost:3010";
+  const wsUrl = (location.protocol === "https:" ? "wss://" : "ws://") + host;
+  try {
+    socket = new WebSocket(wsUrl);
+    socket.addEventListener("message", (event) => {
+      try {
+        const message = JSON.parse(event.data);
+        if (message.type === "leaderboard") render(message.entries || []);
+      } catch (_) {}
+    });
+    socket.addEventListener("close", () => {
+      socket = null;
+      if (!retryTimer) retryTimer = setTimeout(() => { retryTimer = null; connect(); }, 1500);
+    });
+    socket.addEventListener("error", () => {
+      try { socket.close(); } catch (_) {}
+    });
+  } catch (_) {
+    if (!retryTimer) retryTimer = setTimeout(() => { retryTimer = null; connect(); }, 1500);
+  }
+}
+
+connect();

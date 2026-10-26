@@ -1,0 +1,31 @@
+const names = [
+ ['blue bead', 'nazar', 'nazar boncuğu', 'nazar boncugu'],
+ ['aşırı tepki', 'asiri tepki', 'face pulling', 'crazy face'],
+ ['türk kahvesi', 'turk kahvesi', 'turkish coffee'],
+ ['dönen top', 'donen top', 'football', 'spinning soccer', 'spinning football'],
+ ['finger heart', 'parmak kalp'], ['gül', 'gul', 'rose'],
+ ['mishka bear', 'ayıcık', 'ayicik'], ['parfüm', 'parfum', 'perfume'],
+ ['buket', 'bouquet'], ['çay', 'cay', 'tea'],
+ ['taç', 'tac', 'crown', 'live ranking crown', 'canlı yayın sıralama tacı'],
+ ['elle kalp', 'hand heart'], ['şapka ve bıyık', 'sapka ve biyik', 'şapka bıyık', 'hat and mustache']
+];
+const normalize = value => String(value || '').toLowerCase().replace(/[-_&]/g, ' ').replace(/\s+/g, ' ').trim();
+export function matchGiftRule(rules, giftName, giftId, catalog = []) {
+ const id = String(giftId || ''), name = normalize(giftName);
+ if (!name && !id) return null;
+ if (id) {
+  const byId = rules.find(rule => [rule.giftId, ...(rule.giftIds || [])].some(value => value && String(value) === id));
+  if (byId) return byId;
+ }
+ const catalogGift = id ? catalog.find(item => String(item.id) === id) : null;
+ const incoming = name || normalize(catalogGift?.name);
+ if (!incoming) return null;
+ return rules.find(rule => {
+  // An explicit ID distinguishes similarly named gifts, such as different crowns.
+  if (id && rule.giftId) return false;
+  const configured = normalize(rule.gift);
+  if (!configured) return false;
+  if (configured === incoming) return true;
+  return names.some(group => group.includes(configured) && group.includes(incoming));
+ }) || null;
+}

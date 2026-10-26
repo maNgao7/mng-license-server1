@@ -1,0 +1,40 @@
+export function imageUrl(...values) {
+  for (const v of values) {
+    if (typeof v === 'string' && /^https:\/\//.test(v)) return v;
+    if (v && typeof v === 'object') { const list = Array.isArray(v) ? v : v.urlList || v.url_list || v.urls || (Array.isArray(v.url)?v.url:[v.url]); if (typeof list?.[0] === 'string' && /^https:\/\//.test(list[0])) return list[0]; }
+  }
+  return '';
+}
+export function profileFrom(data = {}) {
+  const u = data.user || data, id = u.uniqueId || u.unique_id || u.displayId || data.uniqueId || u.userId || u.id;
+  if (!id) return null;
+  const large=imageUrl(u.avatarLarger,u.avatarLarge,u.avatar_larger,u.avatar_large),medium=imageUrl(u.avatarMedium,u.avatar_medium),small=imageUrl(u.avatarThumb,u.avatar_thumb);
+  return { id: String(id), username: String(u.uniqueId || u.displayId || data.uniqueId || id), nickname: String(u.nickname || data.nickname || id), avatar: large||medium||small||imageUrl(u.profilePictureUrl,data.profilePictureUrl), avatarQuality:large?3:medium?2:1 };
+}
+export class GiftNormalizer {
+  constructor() { this.combos = new Map(); this.seen = new Map(); }
+  read(data, now = Date.now()) {
+    const profile = profileFrom(data); if (!profile) return null;
+    const g = data.gift || {}, e = data.extendedGiftInfo || {}, d = data.giftDetails || data.giftInfo || {};
+    const id = String(data.giftId || g.id || e.id || d.giftId || data.giftName || 'gift');
+    const coin = [e.diamondCount,e.diamond_count,d.diamondCount,d.diamond_count,data.diamondCount,data.diamond_count,g.diamondCount,g.diamond_count].map(Number).find(v=>Number.isFinite(v)&&v>0)||0;
+    const count = Math.max(1, Number(data.repeatCount)||Number(g.repeatCount)||Number(data.comboCount)||1);
+    const messageId = String(data.msgId || data.messageId || data.common?.msgId || '');
+    const seenKey = messageId && `${messageId}:${count}:${!!data.repeatEnd}`;
+    if (seenKey && this.seen.has(seenKey)) return null;
+    if (seenKey) this.seen.set(seenKey, now);
+    let delta = count;
+    if (Number(data.giftType ?? g.type ?? g.gift_type ?? d.giftType ?? e.type) === 1) {
+      const rawGroup = data.groupId || data.group_id || g.groupId || '';
+      const group=String(rawGroup)==='0'?'':rawGroup;
+      const key = `${profile.id}:${id}:${group}`; const old = this.combos.get(key);
+      const newUngrouped = !group && old?.ended && (!data.repeatEnd || (messageId && messageId !== old.messageId));
+      if (old && now - old.time < 30000 && count >= old.count && !newUngrouped) delta = count - old.count;
+      this.combos.set(key, { count, time: now, ended: !!data.repeatEnd, messageId });
+    }
+    for (const [k, t] of this.seen) if (now - t > 120000) this.seen.delete(k);
+    for (const [k, v] of this.combos) if (now - v.time > 30000) this.combos.delete(k);
+    if (!delta || !Number.isFinite(coin) || coin <= 0) return null;
+    return { profile, coins: Math.floor(delta * coin), count: delta, giftName: String(e.name || d.giftName || data.giftName || g.name || 'Hediye') };
+  }
+}

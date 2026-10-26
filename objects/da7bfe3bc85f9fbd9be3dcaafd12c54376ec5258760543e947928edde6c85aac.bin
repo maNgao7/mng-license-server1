@@ -1,0 +1,443 @@
+import express from 'express';
+import { createRequire } from 'node:module';
+import { createServer } from 'node:http';
+import { randomBytes } from 'node:crypto';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { WebSocketServer } from 'ws';
+import { TikTokLiveConnection, WebcastEvent } from 'tiktok-live-connector';
+import { createGiftNormalizer, playerIdentity } from './live-events.js';
+
+const root = dirname(fileURLToPath(import.meta.url));
+const settingsFile = process.env.TIGHTROPE_SETTINGS_FILE || resolve(root, 'settings.json');
+const bundledAssets = resolve(root, 'shared', 'public', 'assets');
+const catalogAssetsPath = existsSync(bundledAssets) ? bundledAssets : resolve(root, '..', 'tiktok-vs', 'public', 'assets');
+
+export async function startServer(port = Number(process.env.PORT || 3080), dependencies = {}) {
+  const app = express(), server = createServer(app), token = randomBytes(32).toString('hex');
+  createRequire(import.meta.url)('./launcher-widget-links.cjs').mountWidgetLinks(app, { gameId: 'tightrope-balance' });
+  const sockets = new WebSocketServer({ noServer: true, maxPayload: 16384 });
+
+  let current, generation = 0, connectTimer, currentRoomInfo = null;
+  let live = { status: 'disconnected', username: '', message: 'TikTok yayını bekleniyor' };
+
+  const broadcast = data => {
+    const raw = JSON.stringify(data);
+    for (const ws of sockets.clients) {
+      if (ws.readyState === 1 && ws.bufferedAmount < 128000) ws.send(raw);
+    }
+  };
+
+  const status = next => {
+    live = { ...live, ...next };
+    broadcast({ type: 'status', ...live });
+  };
+
+  function key() {
+    if (process.env.EULER_API_KEY) return process.env.EULER_API_KEY.trim();
+    for (const p of [
+      resolve(root, 'euler-api-key.txt'),
+      resolve(root, '..', 'tiktok-vs', 'euler-api-key.txt'),
+      resolve(process.env.USERPROFILE || '', 'Desktop/MNG-TikTok-Game/apps/tiktok-vs/euler-api-key.txt')
+    ]) {
+      try {
+        const k = readFileSync(p, 'utf8').trim();
+        if (k) return k;
+      } catch {}
+    }
+  }
+
+  function disconnect() {
+    generation++;
+    clearTimeout(connectTimer);
+    if (current) {
+      try { current.disconnect(); } catch {}
+      current = null;
+    }
+    currentRoomInfo = null;
+    status({ status: 'disconnected', username: '', roomId: '', avatar: '', message: 'Bağlantı kesildi' });
+  }
+
+  async function connect(username) {
+    disconnect();
+    const g = ++generation;
+    const cleanUser = String(username || '').trim().replace(/^@/, '').toLowerCase();
+    if (!/^[a-zA-Z0-9_.]{2,32}$/.test(cleanUser)) return { ok: false, error: 'Geçerli @kullanıcı adını yazın.' };
+
+    status({ status: 'connecting', username: cleanUser, message: `@${cleanUser} yayınına bağlanılıyor...` });
+
+    try {
+      const apiKey = key();
+      const options = {
+        processInitialData: false,
+        fetchRoomInfoOnConnect: true,
+        requestHeaders: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' }
+      };
+      if (apiKey) {
+        options.signApiKey = apiKey;
+      }
+
+      const client = dependencies.createConnection ? dependencies.createConnection(cleanUser, options) : new TikTokLiveConnection(cleanUser, options);
+      current = client;
+      const normalizeGift = createGiftNormalizer();
+
+      client.on('error', err => {
+        if (g !== generation) return;
+        console.warn('[TikTok Error]:', err?.message);
+        status({ status: 'error', username: cleanUser, message: err?.message || 'Bağlantı hatası' });
+      });
+
+      client.on(WebcastEvent.CONNECTED, () => {
+        if (g !== generation) return client.disconnect();
+        current = client;
+        status({ status: 'connected', username: cleanUser, message: `@${cleanUser} yayınına bağlandı!` });
+      });
+
+      client.on(WebcastEvent.DISCONNECTED, () => {
+        if (g !== generation) return;
+        status({ status: 'disconnected', username: cleanUser, message: 'Yayın bağlantısı koptu' });
+      });
+
+      client.on(WebcastEvent.GIFT, data => {
+        if (g !== generation) return;
+        const event = normalizeGift(data);
+        if (event) broadcast({ ...event, streamer: cleanUser });
+      });
+
+      client.on(WebcastEvent.CHAT, data => {
+        if (g !== generation) return;
+        broadcast({
+          type: 'chat',
+          comment: data.comment,
+          player: playerIdentity(data)
+        });
+      });
+
+      client.on(WebcastEvent.LIKE, data => {
+        if (g !== generation) return;
+        broadcast({
+          type: 'like',
+          count: data.likeCount || 1,
+          totalLikes: data.totalLikeCount || 0,
+          player: playerIdentity(data)
+        });
+      });
+
+      client.on(WebcastEvent.FOLLOW, data => {
+        if (g !== generation) return;
+        broadcast({ type: 'follow', player: playerIdentity(data) });
+      });
+
+      client.on(WebcastEvent.MEMBER, data => {
+        if (g !== generation) return;
+        broadcast({ type: 'viewer', player: playerIdentity(data) });
+      });
+
+      const connectState = await Promise.race([client.connect(), new Promise((_, reject) => {
+        connectTimer = setTimeout(() => reject(new Error('Yayın bağlantısı zaman aşımına uğradı.')), 30000);
+      })]);
+      if (g !== generation) { try { client.disconnect(); } catch {} return { ok: false, error: 'Bağlantı isteği iptal edildi.' }; }
+      clearTimeout(connectTimer);
+      if (g === generation) {
+        current = client;
+        const roomInfo = connectState?.roomInfo || client.roomInfo || client.state?.roomInfo || {};
+        currentRoomInfo = roomInfo;
+        const roomOwner = roomInfo?.data?.owner || roomInfo?.data?.user || roomInfo?.owner || roomInfo?.ownerInfo || {};
+        status({
+          status: 'connected',
+          username: cleanUser,
+          roomId: connectState?.roomId,
+          avatar: playerIdentity({ user: roomOwner }).avatar,
+          message: `@${cleanUser} yayınına bağlandı!`
+        });
+      }
+      return { ok: true, roomId: connectState?.roomId };
+    } catch (err) {
+      if (g === generation) {
+        generation++;
+        clearTimeout(connectTimer);
+        try { current?.disconnect(); } catch {}
+        current = null;
+        status({ status: 'error', username: cleanUser, message: `Bağlantı hatası: ${err.message}` });
+      }
+      return { ok: false, error: err.message };
+    }
+  }
+
+  // HTTP MIDDLEWARES
+  app.use(express.json({ limit: '2mb' }));
+  app.use(express.static(resolve(root, 'public')));
+  if (existsSync(catalogAssetsPath)) {
+    app.use('/catalog-assets', express.static(catalogAssetsPath));
+  }
+
+  // API ENDPOINTS
+  app.get('/api/health', (req, res) => {
+    res.json({ app: 'mng-tightrope-balance', version: '1.0.1', port: server.address()?.port || port, live });
+  });
+
+  app.get('/api/session', (req, res) => {
+    let savedSettings = null;
+    try {
+      if (existsSync(settingsFile)) savedSettings = JSON.parse(readFileSync(settingsFile, 'utf8'));
+    } catch {}
+    res.json({ token, live, settings: savedSettings });
+  });
+
+  app.post('/api/connect', async (req, res) => {
+    const { username } = req.body || {};
+    const result = await connect(username);
+    res.json(result);
+  });
+
+  app.post('/api/disconnect', (req, res) => {
+    disconnect();
+    res.json({ ok: true });
+  });
+
+  app.post('/api/profile/refresh', async (req, res) => {
+    if (!current || live.status !== 'connected' || !live.username) {
+      return res.status(409).json({ ok: false, error: 'Önce yayına bağlanın.' });
+    }
+    try {
+      let roomInfo = currentRoomInfo || current.roomInfo || current.state?.roomInfo || {};
+      if (typeof current.getRoomInfo === 'function') {
+        try { roomInfo = await current.getRoomInfo() || roomInfo; } catch {}
+      }
+      currentRoomInfo = roomInfo;
+      const owner = roomInfo?.data?.owner || roomInfo?.data?.user || roomInfo?.owner || roomInfo?.ownerInfo
+        || roomInfo?.roomInfo?.data?.owner || {};
+      const identity = playerIdentity({ user: owner });
+      const avatar = identity.avatar || live.avatar || '';
+      status({ status: 'connected', username: live.username, avatar,
+        message: avatar ? `@${live.username} profili getirildi.` : `@${live.username} bağlı; profil için tekrar deneyin.` });
+      res.json({ ok: true, username: live.username, avatar });
+    } catch (err) {
+      res.status(500).json({ ok: false, error: err.message || 'Profil alınamadı.' });
+    }
+  });
+
+  app.get('/api/settings', (req, res) => {
+    try {
+      if (existsSync(settingsFile)) {
+        return res.json(JSON.parse(readFileSync(settingsFile, 'utf8')));
+      }
+    } catch {}
+    res.json({});
+  });
+
+  app.post('/api/settings', (req, res) => {
+    try {
+      let currentSettings = {};
+      try { if (existsSync(settingsFile)) currentSettings = JSON.parse(readFileSync(settingsFile, 'utf8')); } catch {}
+      writeFileSync(settingsFile, JSON.stringify({ ...currentSettings, ...(req.body || {}) }, null, 2), 'utf8');
+      res.json({ ok: true });
+    } catch (e) {
+      res.status(500).json({ ok: false, error: e.message });
+    }
+  });
+
+  let currentLeaderboard = { left: [], right: [], leftTotal: 0, rightTotal: 0 };
+
+  app.get('/api/leaderboard', (req, res) => {
+    res.set('Cache-Control', 'no-store').json(currentLeaderboard);
+  });
+
+  app.post('/api/leaderboard', (req, res) => {
+    if (req.body) {
+      currentLeaderboard = req.body;
+      broadcast({ type: 'sync_leaderboard', data: currentLeaderboard });
+    }
+    res.json({ ok: true });
+  });
+
+  app.get('/api/catalog', (req, res) => {
+    try {
+      const candidates = [
+        resolve(root, 'gift-catalog.json'),
+        resolve(root, 'public', 'gift-catalog.json'),
+        resolve(catalogAssetsPath, 'catalog.json'),
+        resolve(catalogAssetsPath, 'gift-catalog.json'),
+        resolve(root, '..', 'penalty-kick', 'gift-catalog.json')
+      ];
+      for (const p of candidates) {
+        if (existsSync(p)) return res.sendFile(p);
+      }
+    } catch {}
+    res.json([]);
+  });
+
+  // AVATAR PROXY
+  app.get('/api/avatar', async (req, res) => {
+    const targetUrl = req.query.url;
+    const fallbackUser = req.query.user || '?';
+    if (!targetUrl) return sendFallbackAvatar(res, fallbackUser);
+    let parsed;
+    try { parsed = new URL(String(targetUrl)); } catch { return sendFallbackAvatar(res, fallbackUser); }
+    if (parsed.protocol !== 'https:' || !/(^|\.)(tiktokcdn\.com|tiktokcdn-us\.com|tiktok\.com|byteoversea\.com|ibytedtos\.com|muscdn\.com|tiktokcdn-eu\.com)$/.test(parsed.hostname)) return sendFallbackAvatar(res, fallbackUser);
+
+    try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 3500);
+      const resp = await fetch(targetUrl, { signal: controller.signal });
+      clearTimeout(timeout);
+      if (!resp.ok) return sendFallbackAvatar(res, fallbackUser);
+
+      const buffer = Buffer.from(await resp.arrayBuffer());
+      res.setHeader('Content-Type', resp.headers.get('content-type') || 'image/jpeg');
+      res.setHeader('Cache-Control', 'public, max-age=86400');
+      res.send(buffer);
+    } catch {
+      sendFallbackAvatar(res, fallbackUser);
+    }
+  });
+
+  function sendFallbackAvatar(res, name) {
+    const clean = (name || 'User').replace(/[^a-zA-Z0-9_\u00C0-\u017F]/g, '');
+    const charCode = (clean.charCodeAt(0) || 65) + (clean.charCodeAt(clean.length - 1) || 90);
+    const avatarIndex = charCode % 6;
+
+    const palettes = [
+      { bg1: '#0284c7', bg2: '#082f49', skin: '#fcd34d', hair: '#0f172a', shirt: '#38bdf8', hat: 'beanie', hatColor: '#ef4444' },
+      { bg1: '#e11d48', bg2: '#4c0519', skin: '#fbcfe8', hair: '#831843', shirt: '#fb7185', hat: 'none', hatColor: '#e11d48' },
+      { bg1: '#7c3aed', bg2: '#2e1065', skin: '#fed7aa', hair: '#18181b', shirt: '#a855f7', hat: 'cap', hatColor: '#f59e0b' },
+      { bg1: '#059669', bg2: '#022c22', skin: '#fcd34d', hair: '#451a03', shirt: '#34d399', hat: 'headset', hatColor: '#0f172a' },
+      { bg1: '#d97706', bg2: '#451a03', skin: '#fed7aa', hair: '#1e293b', shirt: '#fbbf24', hat: 'beanie', hatColor: '#0284c7' },
+      { bg1: '#db2777', bg2: '#500724', skin: '#fef08a', hair: '#7c2d12', shirt: '#f472b6', hat: 'cap', hatColor: '#10b981' }
+    ];
+    const p = palettes[avatarIndex];
+    const initial = (clean.charAt(0) || 'U').toUpperCase();
+
+    const svg = `
+      <svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
+        <defs>
+          <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="${p.bg1}"/>
+            <stop offset="100%" stop-color="${p.bg2}"/>
+          </linearGradient>
+          <clipPath id="circleClip">
+            <circle cx="128" cy="128" r="126"/>
+          </clipPath>
+        </defs>
+        <g clip-path="url(#circleClip)">
+          <!-- Background -->
+          <rect width="256" height="256" fill="url(#bg)"/>
+          <circle cx="128" cy="128" r="124" fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="4"/>
+
+          <!-- Shoulders / Jacket -->
+          <ellipse cx="128" cy="250" rx="90" ry="70" fill="${p.shirt}"/>
+          <path d="M128 190 L128 256" stroke="rgba(0,0,0,0.25)" stroke-width="4"/>
+
+          <!-- Neck -->
+          <rect x="110" y="150" width="36" height="40" rx="6" fill="${p.skin}"/>
+
+          <!-- Face -->
+          <ellipse cx="128" cy="120" rx="55" ry="65" fill="${p.skin}"/>
+          <circle cx="95" cy="135" r="10" fill="rgba(239, 68, 68, 0.25)"/>
+          <circle cx="161" cy="135" r="10" fill="rgba(239, 68, 68, 0.25)"/>
+
+          <!-- Hair / Hat -->
+          ${p.hat === 'beanie' ? `
+            <path d="M72 105 Q128 45 184 105 Z" fill="${p.hatColor}"/>
+            <rect x="68" y="98" width="120" height="18" rx="8" fill="${p.hatColor}"/>
+            <circle cx="128" cy="52" r="12" fill="#facc15"/>
+          ` : p.hat === 'cap' ? `
+            <path d="M72 105 Q128 55 184 105 Z" fill="${p.hatColor}"/>
+            <ellipse cx="128" cy="105" rx="68" ry="12" fill="${p.hatColor}"/>
+          ` : p.hat === 'headset' ? `
+            <path d="M72 110 Q128 55 184 110" fill="none" stroke="${p.hair}" stroke-width="26"/>
+            <rect x="62" y="100" width="18" height="34" rx="8" fill="#f43f5e"/>
+            <rect x="176" y="100" width="18" height="34" rx="8" fill="#f43f5e"/>
+          ` : `
+            <path d="M72 110 Q128 55 184 110 Q170 80 128 75 Q86 80 72 110 Z" fill="${p.hair}"/>
+            <path d="M72 110 Q80 135 88 120 Q84 100 72 110 Z" fill="${p.hair}"/>
+            <path d="M184 110 Q176 135 168 120 Q172 100 184 110 Z" fill="${p.hair}"/>
+          `}
+
+          <!-- Eyebrows & Eyes -->
+          ${avatarIndex % 2 === 0 ? `
+            <rect x="85" y="112" width="36" height="24" rx="6" fill="#0f172a"/>
+            <rect x="135" y="112" width="36" height="24" rx="6" fill="#0f172a"/>
+            <rect x="121" y="118" width="14" height="5" fill="#0f172a"/>
+            <path d="M89 116 L117 116" stroke="#38bdf8" stroke-width="3" stroke-linecap="round"/>
+            <path d="M139 116 L167 116" stroke="#38bdf8" stroke-width="3" stroke-linecap="round"/>
+          ` : `
+            <path d="M88 108 Q102 104 116 108" fill="none" stroke="${p.hair}" stroke-width="4" stroke-linecap="round"/>
+            <path d="M140 108 Q154 104 168 108" fill="none" stroke="${p.hair}" stroke-width="4" stroke-linecap="round"/>
+            <circle cx="102" cy="120" r="7" fill="#0f172a"/>
+            <circle cx="154" cy="120" r="7" fill="#0f172a"/>
+            <circle cx="104" cy="118" r="2.5" fill="#ffffff"/>
+            <circle cx="156" cy="118" r="2.5" fill="#ffffff"/>
+          `}
+
+          <!-- Nose & Smile -->
+          <path d="M128 126 L124 140 L132 140" fill="none" stroke="rgba(0,0,0,0.25)" stroke-width="3" stroke-linecap="round"/>
+          <path d="M110 152 Q128 168 146 152" fill="none" stroke="#991b1b" stroke-width="4" stroke-linecap="round"/>
+
+          <!-- Initial Badge in Bottom Right -->
+          <circle cx="210" cy="210" r="28" fill="#0f172a" stroke="#ffffff" stroke-width="3"/>
+          <text x="210" y="219" font-size="22" font-family="Arial,sans-serif" font-weight="bold" fill="#ffffff" text-anchor="middle">${initial}</text>
+        </g>
+      </svg>
+    `;
+    res.setHeader('Content-Type', 'image/svg+xml');
+    res.setHeader('Cache-Control', 'public, max-age=86400');
+    res.send(svg.trim());
+  }
+
+  // WEBSOCKET UPGRADE
+  server.on('upgrade', (req, socket, head) => {
+    sockets.handleUpgrade(req, socket, head, ws => {
+      sockets.emit('connection', ws, req);
+    });
+  });
+
+  sockets.on('connection', ws => {
+    ws.send(JSON.stringify({ type: 'status', ...live }));
+    ws.send(JSON.stringify({ type: 'sync_leaderboard', data: currentLeaderboard }));
+
+    ws.on('message', async raw => {
+      try {
+        const msg = JSON.parse(raw);
+        if (msg.type === 'connect' && msg.username) {
+          await connect(msg.username);
+        } else if (msg.type === 'disconnect') {
+          disconnect();
+        } else if (msg.type === 'sync_leaderboard') {
+          if (msg.data) currentLeaderboard = msg.data;
+          broadcast(msg);
+        } else if (msg.type === 'adjust_contributor') {
+          const side = msg.side === 'right' ? 'right' : 'left';
+          const entry = currentLeaderboard[side]?.find(([key, contributor]) => key === msg.nickname || contributor.nickname === msg.nickname);
+          const delta = Number(msg.deltaKg);
+          if (entry && Number.isFinite(delta)) {
+            const before = Number(entry[1].totalKg) || 0;
+            entry[1].totalKg = Math.max(0, before + delta);
+            const totalKey = side === 'left' ? 'leftTotal' : 'rightTotal';
+            currentLeaderboard[totalKey] = Math.max(0, (Number(currentLeaderboard[totalKey]) || 0) + entry[1].totalKg - before);
+            broadcast({ ...msg, side });
+            broadcast({ type: 'sync_leaderboard', data: currentLeaderboard });
+          }
+        } else if (msg.type === 'reset' || msg.type === 'empty') {
+          currentLeaderboard = { left: [], right: [], leftTotal: 0, rightTotal: 0 };
+          broadcast(msg);
+          broadcast({ type: 'sync_leaderboard', data: currentLeaderboard });
+        }
+      } catch {}
+    });
+  });
+
+  server.on('close', () => { disconnect(); for (const ws of sockets.clients) ws.terminate(); sockets.close(); });
+  return new Promise(resolveServer => {
+    server.listen(port, () => {
+      console.log(`[Tightrope Balance] Denge Oyunu Sunucusu aktif: http://localhost:${port}`);
+      resolveServer({ app, server, port: server.address().port });
+    });
+  });
+}
+
+// DOĞRUDAN ÇALIŞTIRMA
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  startServer();
+}

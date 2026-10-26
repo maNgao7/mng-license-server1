@@ -1,0 +1,36 @@
+import { spawn } from 'node:child_process';
+import { mkdir, writeFile, readFile } from 'node:fs/promises';
+import { createHash } from 'node:crypto';
+import { resolve } from 'node:path';
+let processHandle, pending;
+export function closeTunnel() { processHandle?.kill(); processHandle=undefined; pending=undefined; }
+export function openTunnel(root, port, status) {
+  if (pending) return pending;
+  pending = (async () => {
+    status('Güvenli widget bağlantısı hazırlanıyor...');
+    const metadata = await fetch('https://api.github.com/repos/cloudflare/cloudflared/releases/latest', { headers: { 'User-Agent': 'MNG-Pony-Live' }, signal: AbortSignal.timeout(15000) }).then(r => { if (!r.ok) throw new Error('Tünel sürümü alınamadı.'); return r.json(); });
+    const asset = metadata.assets.find(a => a.name === 'cloudflared-windows-amd64.exe');
+    if (!asset?.digest?.startsWith('sha256:') || !asset.browser_download_url.startsWith('https://github.com/cloudflare/cloudflared/releases/download/')) throw new Error('Doğrulanmış tünel dosyası bulunamadı.');
+    const path = resolve(root, 'tools/cloudflared.exe');
+    let bytes; try { bytes = await readFile(path); } catch { /* Download the official binary on first explicit use. */ }
+    const digest = b => 'sha256:' + createHash('sha256').update(b).digest('hex');
+    if (!bytes || digest(bytes) !== asset.digest) {
+      status('Resmî Cloudflare tünel aracı indiriliyor...');
+      const response = await fetch(asset.browser_download_url, { signal: AbortSignal.timeout(120000) });
+      if (!response.ok) throw new Error('Tünel aracı indirilemedi.');
+      bytes = Buffer.from(await response.arrayBuffer()); if (digest(bytes) !== asset.digest) throw new Error('Tünel dosyasının doğrulaması başarısız.');
+      await mkdir(resolve(root, 'tools'), { recursive: true }); await writeFile(path, bytes);
+    }
+    return new Promise((resolveUrl, reject) => {
+      processHandle = spawn(path, ['tunnel', '--url', `http://127.0.0.1:${port}`, '--protocol', 'http2', '--no-autoupdate'], { windowsHide: true });
+      let found = false, buffer = '', publicUrl='', registered=false;
+      const timeout = setTimeout(() => { if (!found) { processHandle.kill(); reject(new Error('Tünel bağlantısı zaman aşımına uğradı.')); } }, 60000);
+      const read = chunk => { buffer = (buffer + chunk.toString()).slice(-8000); const match = buffer.match(/https:\/\/[a-z0-9-]+\.trycloudflare\.com/); if(match) publicUrl=match[0]; if(buffer.includes('Registered tunnel connection')) registered=true; if (publicUrl && registered && !found) { found = true; clearTimeout(timeout); resolveUrl(publicUrl); } };
+      processHandle.stdout.on('data', read); processHandle.stderr.on('data', read);
+      processHandle.on('error', e => { clearTimeout(timeout); pending = undefined; reject(e); });
+      processHandle.on('exit', () => { clearTimeout(timeout); pending = undefined; status('Tünel kapandı. Yeni bağlantı oluşturabilirsiniz.'); if (!found) reject(new Error('Tünel açılamadı.')); });
+    });
+  })().catch(e => { pending = undefined; throw e; });
+  return pending;
+}
+process.on('exit', closeTunnel);

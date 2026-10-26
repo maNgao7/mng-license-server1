@@ -1,0 +1,90 @@
+export function normalize(type, data) {
+  const user = data.user || data;
+  const avatarSources = [user.avatarJpg, user.avatarLarge, user.avatarMedium, user.avatarThumb,
+    user.profilePictureLarge, user.profilePictureMedium, user.profilePicture];
+  const urls = avatarSources.flatMap(avatar => {
+    if (!avatar) return [];
+    if (typeof avatar === 'string') return [avatar];
+    if (Array.isArray(avatar)) return avatar;
+    if (Array.isArray(avatar.urlList)) return avatar.urlList;
+    if (Array.isArray(avatar.url)) return avatar.url;
+    return typeof avatar.url === 'string' ? [avatar.url] : [];
+  });
+  // Minecraft's NativeImage does not decode TikTok's WebP avatars. Prefer the
+  // signed JPEG variant; it is crisp at the 28px in-world display size.
+  const profile = urls.find(u => /\.jpe?g(?:\?|$)/i.test(u)) || urls.find(u => /\.png(?:\?|$)/i.test(u))
+    || urls.find(u => /^https:\/\//i.test(u)) || user.profilePictureUrl || data.profilePictureUrl || '';
+  const event = { type, username: String(user.uniqueId || user.displayId || data.uniqueId || user.nickname || 'Izleyici').slice(0, 64),
+    profile: /^https:\/\//.test(profile) ? profile : '', count: 1 };
+  if (type === 'gift') {
+    const gift = data.gift || data.giftDetails || data.extendedGiftInfo || data;
+    event.giftId = String(data.giftId || gift.id || '');
+    event.giftName = String(gift.name || gift.giftName || data.giftName || '').slice(0, 96);
+    event.count = Math.min(10000, Math.max(1, Number(data.repeatCount) || 1));
+    event.coins = Math.max(0, Number(gift.diamondCount || data.diamondCount) || 0);
+    event.streak = Number(gift.type ?? gift.giftType ?? data.giftType) === 1;
+    event.repeatEnd = data.repeatEnd === true || Number(data.repeatEnd) === 1;
+    event.groupId = identity(data.groupId);
+    event.orderId = identity(data.orderId);
+    if (event.streak && !event.repeatEnd && !event.groupId) return null;
+  }
+  if (type === 'like') {
+    const count = Number(data.count ?? data.likeCount);
+    if (!Number.isFinite(count) || count <= 0) return null;
+    event.count = Math.min(10000, Math.floor(count));
+    event.total = identity(data.total ?? data.totalLikeCount);
+  }
+  event.id = identity(data.common?.msgId || data.msgId);
+  return event;
+}
+
+function identity(value) {
+  const result = String(value ?? '');
+  return /^0*$/.test(result) ? '' : result;
+}
+
+// Streak updates contain a running total. Initial/update/final messages often
+// have different message IDs, but share the same viewer, gift and group ID.
+export class EventLedger {
+  constructor() { this.seen = new Set(); this.streaks = new Map(); }
+  accept(event) {
+    if (!event) return null;
+    const viewer = event.username.toLowerCase();
+    if (event.type === 'gift' && event.groupId) {
+      const key = `${viewer}:${event.giftId}:${event.groupId}`;
+      const previous = this.streaks.get(key) || 0;
+      if (event.count <= previous) return null;
+      this.streaks.set(key, event.count);
+      this.trim(this.streaks);
+      return { ...event, count: event.count - previous };
+    }
+    // Without a group ID, wait for the final streak total rather than adding
+    // each cumulative update. Ordinary gifts are processed immediately.
+    if (event.type === 'gift' && event.streak && !event.repeatEnd) return null;
+    let key = '';
+    if (event.type === 'gift') key = event.orderId
+      ? `gift:${viewer}:${event.giftId}:order:${event.orderId}`
+      : event.id ? `gift:${viewer}:${event.giftId}:${event.id}` : '';
+    if (event.type === 'follow') key = `follow:${viewer}`;
+    // Modern likes carry a batch count and stream total. A replay has the same
+    // total; legitimate batches can reuse msgId, so msgId alone is insufficient.
+    if (event.type === 'like' && event.total) key = `like:${viewer}:${event.id}:${event.total}:${event.count}`;
+    else if (event.type === 'like' && event.id) key = `like:${viewer}:${event.id}:${event.count}`;
+    if (key && this.seen.has(key)) return null;
+    if (key) this.seen.add(key);
+    this.trim(this.seen);
+    return event;
+  }
+  trim(collection) { if (collection.size > 20000) collection.delete(collection.keys().next().value); }
+}
+
+export function explain(error) {
+  const raw = String(error?.message || error?.exception?.message || error?.info || error || 'Bilinmeyen hata');
+  if (/offline|not live|not currently live|isn't online|not online/i.test(raw)) return 'Bu hesap şu anda canlı yayında değil.';
+  if (/business plan|premium endpoint/i.test(raw)) return 'TikTok bağlantısı için gerekli canlı yayın servisi isteği reddedildi. Daha sonra tekrar deneyin.';
+  if (/api.?key|401|403|unauthorized|sign server|signing/i.test(raw)) return 'TikTok bağlantı servisi erişimi reddetti. Biraz bekleyip tekrar deneyin.';
+  if (/429|rate.limit/i.test(raw)) return 'Bağlantı limiti aşıldı. Biraz bekleyip tekrar deneyin.';
+  if (/timeout|timed out|ETIMEDOUT/i.test(raw)) return 'TikTok yanıt vermedi; ağ bağlantısını kontrol edip tekrar deneyin.';
+  if (/not found|unique.?id/i.test(raw)) return 'Kullanıcı adı bulunamadı. Görünen ad yerine @kullanıcı adını yazın.';
+  return 'TikTok bağlantısı kurulamadı: ' + raw.replace(/https?:\/\/\S+/g, '[servis]').slice(0, 180);
+}

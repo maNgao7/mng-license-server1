@@ -1,0 +1,63 @@
+import http from 'node:http';
+import { WebSocketServer } from 'ws';
+import { TikTokLiveConnection, WebcastEvent } from 'tiktok-live-connector';
+import { LiveSession } from './live-session.js';
+
+const port = Number(process.env.MNG_BRIDGE_PORT || 43821), version = '11';
+const clients = new Set();
+function send(data) { for (const ws of clients) if (ws.readyState === 1) ws.send(JSON.stringify(data)); }
+const live = new LiveSession(
+  // Extended gift metadata uses Euler's paid webcast-signing endpoint. The
+  // normal gift event already includes the stable gift ID used by the game.
+  username => new TikTokLiveConnection(username, { processInitialData: false, enableExtendedGiftInfo: false }),
+  [[WebcastEvent.GIFT, 'gift'], [WebcastEvent.LIKE, 'like'], [WebcastEvent.FOLLOW, 'follow']],
+  data => {
+    if (data.type === 'status') console.log(new Date().toISOString(), data.state, data.username, data.message);
+    else console.log(new Date().toISOString(), 'event', data.streamer, data.type, data.username, data.giftId || '-', 'x' + data.count, 'group=' + (data.groupId || '-'), 'dispatch=' + data.dispatchId);
+    send(data);
+  }, 30000, { autoReconnect: true }
+);
+
+function allowed(req) {
+  const address = String(req.socket?.remoteAddress || '');
+  const localClient = address === '127.0.0.1' || address === '::1' || address === '::ffff:127.0.0.1';
+  const host = String(req.headers.host || '').toLowerCase();
+  const localHost = host === `127.0.0.1:${port}` || host === `localhost:${port}`;
+  const origin = String(req.headers.origin || '').toLowerCase();
+  const localOrigin = !origin || origin.startsWith('http://127.0.0.1:') || origin.startsWith('http://localhost:');
+  return localClient && localHost && localOrigin;
+}
+const server = http.createServer(async (req, res) => {
+  res.setHeader('Content-Type', 'application/json; charset=utf-8'); res.setHeader('Cache-Control', 'no-store');
+  const reply = (code, value) => { res.statusCode = code; res.end(JSON.stringify(value)); };
+  if (!allowed(req)) return reply(403, { error: 'Yalnızca yerel oyun istemcisi erişebilir.' });
+  if (req.method === 'GET' && req.url === '/health') return reply(200, { ok: true, version, clients: clients.size, ...live.snapshot() });
+  if (req.method === 'POST' && req.url === '/disconnect') {
+    live.disconnect(); return reply(200, { ok: true });
+  }
+  if (req.method === 'POST' && req.url === '/connect') {
+    try {
+      let body = '';
+      for await (const chunk of req) { body += chunk; if (body.length > 2048) return reply(413, { error: 'İstek çok büyük.' }); }
+      const payload = JSON.parse(body);
+      const username = String(payload.username || '').trim().replace(/^@/, '').toLowerCase();
+      if (!/^[a-zA-Z0-9_.]{2,32}$/.test(username)) return reply(400, { error: 'Geçerli bir TikTok kullanıcı adı yazın.' });
+      const session = String(payload.session || '').slice(0, 80) || undefined;
+      void live.connect(username, session);
+      return reply(202, { ok: true, ...live.snapshot() });
+    } catch { return reply(400, { error: 'Bağlantı isteği okunamadı.' }); }
+  }
+  reply(404, { error: 'Bulunamadı' });
+});
+const wss = new WebSocketServer({ server, path: '/events', maxPayload: 4096, verifyClient: ({ req }) => allowed(req) });
+wss.on('error', error => console.error('Live WebSocket server:', error.code || error.message));
+wss.on('connection', ws => {
+  clients.add(ws); ws.send(JSON.stringify({ type: 'status', ...live.snapshot() }));
+  ws.on('error', () => clients.delete(ws)); ws.on('close', () => clients.delete(ws));
+});
+server.on('error', error => {
+  console.error(`Kar Topu Savaşı yayın servisi açılamadı (${port}): ${error.code || error.message}`);
+  process.exitCode = 1;
+});
+server.listen(port, '127.0.0.1', () => console.log(`MNG Kar Topu Savaşı yayın servisi v${version}: ${port}`));
+process.on('SIGTERM', () => { live.disconnect(); wss.close(); server.close(); });

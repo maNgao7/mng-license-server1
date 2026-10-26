@@ -1,0 +1,85 @@
+export function directionWords(text) {
+  return text.toLocaleLowerCase('tr-TR').replace(/[^a-zçğıöşü ]/g, ' ').split(/\s+/)
+    .map(word => ['sağ', 'sağa', 'sag', 'saga'].includes(word) ? 'right'
+      : ['sol', 'sola'].includes(word) ? 'left' : null).filter(Boolean);
+}
+
+export function createVoiceBalance({ onCommand, onStatus, onLevel }) {
+  let stream, context, analyser, samples, recognition, enabled = false, generation = 0;
+  let heldSide = null, heldTimer = 0, peak = 0, rmsLevel = 0, processed = new Map();
+  const power = () => 0.018 + Math.min(1, Math.max(peak, rmsLevel) * 2) * 0.055;
+  const stop = () => {
+    enabled = false; generation++; heldSide = null;
+    recognition?.abort(); recognition = null;
+    stream?.getTracks().forEach(track => track.stop()); stream = null;
+    context?.close(); context = null; analyser = null; peak = 0;
+    onLevel(0); onStatus('Mikrofon kapalı');
+  };
+  const start = async () => {
+    stop();
+    const run = generation;
+    try {
+      const nextStream = await navigator.mediaDevices.getUserMedia({ audio: {
+        echoCancellation: true, noiseSuppression: true, autoGainControl: false
+      } });
+      if (run !== generation) { nextStream.getTracks().forEach(track => track.stop()); return false; }
+      stream = nextStream;
+      context = new (window.AudioContext || window.webkitAudioContext)();
+      await context.resume();
+      analyser = context.createAnalyser(); analyser.fftSize = 1024;
+      samples = new Float32Array(analyser.fftSize);
+      context.createMediaStreamSource(stream).connect(analyser);
+      enabled = true;
+      onStatus('Mikrofon açık');
+      const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (Recognition) {
+        recognition = new Recognition(); recognition.lang = 'tr-TR';
+        recognition.continuous = true; recognition.interimResults = true;
+        recognition.onresult = event => {
+          for (let i = event.resultIndex; i < event.results.length; i++) {
+            const words = directionWords(event.results[i][0].transcript);
+            const previous = processed.get(i) || 0;
+            for (let j = previous; j < words.length; j++) onCommand(words[j], power());
+            processed.set(i, Math.max(previous, words.length));
+          }
+        };
+        recognition.onerror = event => {
+          if (event.error !== 'no-speech' && event.error !== 'aborted') {
+            onStatus('Kelime tanıma kullanılamıyor; sağ/sol mikrofonuna basılı tutun.');
+            recognition.onend = null;
+          }
+        };
+        recognition.onend = () => {
+          if (enabled && run === generation) {
+            processed = new Map();
+            try { recognition.start(); } catch { onStatus('Sağ/sol mikrofonuna basılı tutun.'); }
+          }
+        };
+        try { recognition.start(); } catch { onStatus('Sağ/sol mikrofonuna basılı tutun.'); }
+      } else onStatus('Sağ/sol mikrofonuna basılı tutun.');
+      return true;
+    } catch {
+      stop(); onStatus('Mikrofon izni veya mikrofon bağlantısı gerekli.'); return false;
+    }
+  };
+  return {
+    start, stop,
+    get enabled() { return enabled; },
+    hold(side) { heldSide = side; heldTimer = 0; },
+    release() { heldSide = null; },
+    update(dt) {
+      if (!enabled || !analyser) return;
+      analyser.getFloatTimeDomainData(samples);
+      let sum = 0;
+      for (const value of samples) sum += value * value;
+      const rms = Math.sqrt(sum / samples.length);
+      rmsLevel = Math.min(1, rms * 14);
+      peak = Math.max(rmsLevel, peak * Math.exp(-dt * 2));
+      onLevel(rmsLevel);
+      heldTimer -= dt;
+      if (heldSide && rms > 0.004 && heldTimer <= 0) {
+        onCommand(heldSide, power()); heldTimer = 0.22;
+      }
+    }
+  };
+}

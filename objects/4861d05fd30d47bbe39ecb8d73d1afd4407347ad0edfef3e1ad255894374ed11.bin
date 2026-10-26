@@ -1,0 +1,174 @@
+const fs = require('node:fs');
+const path = require('node:path');
+const { spawn } = require('node:child_process');
+const net = require('node:net');
+const root = __dirname;
+let launchLock;
+const runtime = path.join(root, 'runtime');
+const game = path.join(root, 'game-instance');
+const read = p => JSON.parse(fs.readFileSync(p, 'utf8').replace(/^\uFEFF/, ''));
+
+function stabilizeDisplayOptions() {
+  const optionsPath = path.join(game, 'options.txt');
+  let content = fs.existsSync(optionsPath) ? fs.readFileSync(optionsPath, 'utf8') : '';
+  const setOption = (key, value) => {
+    const line = new RegExp(`^${key}:.*$`, 'm');
+    if (!line.test(content)) content = `${content}${content && !content.endsWith('\n') ? '\n' : ''}${key}:${value}\n`;
+  };
+  setOption('guiScale', '3');
+  setOption('fullscreen', 'false');
+  setOption('renderDistance', '16');
+  setOption('simulationDistance', '10');
+  setOption('entityDistanceScaling', '1.5');
+  setOption('pauseOnLostFocus', 'false');
+  if (!fs.existsSync(optionsPath) || fs.readFileSync(optionsPath,'utf8') !== content)
+    fs.writeFileSync(optionsPath, content, 'utf8');
+}
+
+function launchArguments(bridgePort = 43821) {
+  const profile = read(path.join(runtime, 'profile.json'));
+  const libraries = profile.libraries.filter(item => !item.rules?.length || item.rules.reduce((allowed, rule) => {
+    const matches = !rule.os?.name || rule.os.name === 'windows';
+    return matches ? rule.action === 'allow' : allowed;
+  }, false)).map(item => {
+    const artifact = item.downloads?.artifact || item.artifact;
+    return artifact?.path ? path.join(runtime, 'libraries', artifact.path.replace(/^libraries[\\/]/, '')) : null;
+  }).filter(Boolean);
+  const missing = libraries.filter(file => !fs.existsSync(file));
+  if (missing.length) throw new Error('Oyun motoru dosyaları eksik. Battle Royale test paketini yeniden kurun.');
+  const nativeDir = path.join(runtime, 'natives');
+  const variables = {
+    natives_directory: nativeDir, library_directory: path.join(runtime, 'libraries'),
+    classpath: [...libraries, path.join(runtime, 'client.jar')].join(path.delimiter),
+    classpath_separator: path.delimiter, launcher_name: 'TikMnG', launcher_version: 'Battle-Royale-Beta',
+    version_name: 'TikMnG-Battle-Royale', version_type: 'release',
+    auth_player_name: 'TikMnG', auth_uuid: '00000000000000000000000000000000', auth_access_token: '0',
+    clientid: '', auth_xuid: '', user_type: 'legacy',
+    game_directory: game, assets_root: path.join(runtime, 'assets'),
+    assets_index_name: profile.assetIndex.id, resolution_width: '1920', resolution_height: '1080'
+  };
+  const rulesAllow = rules => !rules?.length || rules.reduce((allowed, rule) => {
+    const os = rule.os;
+    const matches = (!os?.name || os.name === 'windows') && !rule.features;
+    return matches ? rule.action === 'allow' : allowed;
+  }, false);
+  const expand = entries => entries.flatMap(entry => {
+    if (typeof entry === 'string') return [entry];
+    if (!rulesAllow(entry.rules)) return [];
+    const value = entry.value ?? entry.values;
+    return Array.isArray(value) ? value : value ? [value] : [];
+  }).map(value => value.replace(/\$\{([^}]+)\}/g, (_, key) => variables[key] ?? ''));
+  const jvm = expand(profile.arguments.jvm).map(arg => arg.startsWith('-DignoreList=') ? arg + ',client.jar' : arg);
+  const args = ['-Xms1G', '-Xmx4G', `-Dmng.bridge.port=${bridgePort}`, `-Dmng.node.path=${process.execPath}`,
+    `-Dmng.node.electron=${process.env.ELECTRON_RUN_AS_NODE === '1'}`, ...jvm, profile.mainClass,
+    ...expand(profile.arguments.game), '--width', '1920', '--height', '1080'];
+  if (process.argv.includes('--battle-smoke')) args.unshift('-Dmng.royale.smoke=true');
+  if (process.argv.includes('--visual-check')) args.unshift('-Dmng.royale.visual=true');
+  return args;
+}
+
+function reserveBridgePort() {
+  return new Promise((resolve, reject) => {
+    const probe = net.createServer();
+    probe.unref();
+    probe.once('error', reject);
+    probe.listen(0, '127.0.0.1', () => {
+      const selected = probe.address().port;
+      probe.close(error => error ? reject(error) : resolve(selected));
+    });
+  });
+}
+
+function acquireLaunchLock() {
+  const key = require('node:crypto').createHash('sha256').update(root.toLowerCase()).digest('hex').slice(0,20);
+  return new Promise((resolve,reject) => {
+    const guard = net.createServer(socket => socket.end());
+    guard.once('error',error => error.code === 'EADDRINUSE' ? resolve(null) : reject(error));
+    guard.listen('\\\\.\\pipe\\TikMnG-BattleRoyale-'+key,() => resolve(guard));
+  });
+}
+
+function releaseLaunchLock() { launchLock?.close(); launchLock = undefined; }
+
+async function startBridge(bridgePort) {
+  const logPath = path.join(root, 'live-bridge', 'bridge.log');
+  const errorPath = path.join(root, 'live-bridge', 'bridge-error.log');
+  const bridge = spawn(process.execPath, [path.join(root, 'live-bridge', 'server.js')], {
+    cwd: path.join(root, 'live-bridge'), windowsHide: true,
+    env: { ...process.env, ELECTRON_RUN_AS_NODE: '1', MNG_BRIDGE_PORT: String(bridgePort) },
+    stdio: ['ignore', fs.openSync(logPath, 'a'), fs.openSync(errorPath, 'a')]
+  });
+  let ready = false;
+  for (let i = 0; i < 40; i++) {
+    await new Promise(resolve => setTimeout(resolve, 250));
+    if (bridge.exitCode !== null) break;
+    try {
+      const health = await fetch(`http://127.0.0.1:${bridgePort}/health`).then(r => r.json());
+      if (health.version === '13') { ready = true; break; }
+    } catch {}
+  }
+  if (!ready) { bridge.kill(); throw new Error('Canlı yayın servisi başlatılamadı. Oyunu launcher üzerinden yeniden açın.'); }
+  return bridge;
+}
+
+async function main() {
+  const startedAt = performance.now();
+  if (!process.argv.includes('--check')) {
+    launchLock = await acquireLaunchLock();
+    if (!launchLock) { console.log('Battle Royale zaten acik veya yukleniyor.'); return; }
+  }
+  const readyFlag = path.join(root, 'game-ready.flag');
+  try { fs.unlinkSync(readyFlag); } catch {}
+  const java = path.join(runtime, 'java', 'bin', 'java.exe');
+  if (!fs.existsSync(java)) throw new Error('Java oyun motoru eksik. Battle Royale test paketini yeniden kurun.');
+  stabilizeDisplayOptions();
+  const bridgePort = await reserveBridgePort();
+  const args = launchArguments(bridgePort);
+  if (process.argv.includes('--check')) { console.log(JSON.stringify({ ok: true, libraries: read(path.join(runtime, 'profile.json')).libraries.length, arguments: args.length })); return; }
+  const bridge = await startBridge(bridgePort);
+  const argumentFile = path.join(game, 'launch-args.txt');
+  fs.writeFileSync(argumentFile, args.map(value => '"' + value.replace(/\\/g, '\\\\').replace(/"/g, '\\"') + '"').join('\n'));
+  const child = spawn(java, ['@' + argumentFile], { cwd: game, windowsHide: true, stdio: ['ignore','pipe','pipe'] });
+  const battleSmoke = process.argv.includes('--battle-smoke');
+  const visualCheck = process.argv.includes('--visual-check');
+  const smoke = process.argv.includes('--smoke') || battleSmoke || visualCheck;
+  let smokePassed = false;
+  let giftRulesPassed = false;
+  const smokeTimer = smoke ? setTimeout(() => { console.error('Minecraft dünya yükleme kontrolü zaman aşımına uğradı.'); child.kill(); }, 120000) : null;
+  const log = fs.createWriteStream(path.join(game, 'launch.log'));
+  child.stdout.on('data', chunk => {
+    log.write(chunk);
+    if (/Created:.*atlas|Setting user|Starting integrated minecraft server/i.test(String(chunk))) {
+      console.log('MNG_GAME_READY');
+      try { fs.writeFileSync(readyFlag, 'ready'); } catch {}
+    }
+    if (smoke && /PlayerList.*logged in with entity id/i.test(String(chunk))) console.log('MNG_WORLD_LOADED');
+    if (/PlayerList.*logged in with entity id/i.test(String(chunk)))
+      console.log('MNG_STARTUP_WORLD_SECONDS=' + ((performance.now()-startedAt)/1000).toFixed(2));
+    if (battleSmoke && /MNG_ROYALE_GIFT_RULES passed=true/.test(String(chunk))) {
+      giftRulesPassed = true;
+      console.log(String(chunk).match(/MNG_ROYALE_GIFT_RULES[^\r\n]*/)?.[0]);
+    }
+    if (smoke && /MNG_BATTLE_ARENA_READY/.test(String(chunk))) {
+      console.log('MNG_BATTLE_ARENA_READY');
+      if (!battleSmoke && !visualCheck) { smokePassed = true; clearTimeout(smokeTimer); child.kill(); }
+    }
+    if (battleSmoke && /MNG_ROYALE_SMOKE_RESULT/.test(String(chunk))) {
+      const result = String(chunk).match(/MNG_ROYALE_SMOKE_RESULT[^\r\n]*/)?.[0] || '';
+      smokePassed = giftRulesPassed && /spawned=true landed=true gear=true fired=true resolved=true zone=true armor=true reload=true zoneDamage=true gifts=true billboard=true/.test(result);
+      console.log(result || 'MNG_ROYALE_SMOKE_RESULT missing');
+      clearTimeout(smokeTimer); child.kill();
+    }
+    if (visualCheck && /MNG_ROYALE_VISUAL/.test(String(chunk))) {
+      console.log(String(chunk).match(/MNG_ROYALE_VISUAL[^\r\n]*/)?.[0]);
+      if (/MNG_ROYALE_VISUAL done/.test(String(chunk))) {
+        smokePassed = true; clearTimeout(smokeTimer); child.kill();
+      }
+    }
+  });
+  child.stderr.on('data', chunk => log.write(chunk));
+  child.on('error', error => { releaseLaunchLock(); bridge?.kill(); console.error(error.message); process.exitCode=1; });
+  child.on('exit', code => { releaseLaunchLock(); clearTimeout(smokeTimer); bridge?.kill(); log.end(); try { fs.unlinkSync(readyFlag); } catch {} if(code&&!smokePassed)console.error('Battle Royale açılamadı. game-instance/launch.log kaydını kontrol edin.'); process.exitCode=smokePassed?0:smoke?(code||1):(code||0); });
+}
+if(require.main===module)main().catch(error=>{releaseLaunchLock();console.error(error.message);process.exitCode=1});
+module.exports={launchArguments,acquireLaunchLock};

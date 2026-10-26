@@ -1,0 +1,42 @@
+const params=new URLSearchParams(location.search),mode=params.get('mode')==='winners'?'winners':'ranking',preview=params.get('preview')==='1';
+const esc=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+document.getElementById('title').textContent=mode==='winners'?'PİSTİN ŞAMPİYONLARI':'CANLI SIRALAMA';
+const avatar=p=>p.avatar?'<img src="/api/avatar?highres=1&user='+encodeURIComponent(p.username)+'&url='+encodeURIComponent(p.avatar)+'" alt="" onerror="this.remove()">':'';
+function entry(p,index,length){
+  const metric=mode==='winners'?Math.max(0,p.count)+'x':Math.min(100,Math.round(p.distance/length*100))+'%';
+  const detail=mode==='winners'?'GALİBİYET':Math.round(Number(p.speed||0))+' HIZ';
+  return {p,index,metric,detail};
+}
+function card({p,index,metric,detail},sample){
+  return '<article data-rank="'+index+'" class="podium-card '+(index===0?'first':index===2?'third':'second')+(sample?' sample':'')+'"><span class="rank">'+(index+1)+'</span><div class="portrait">'+esc(p.username?.[0]?.toUpperCase()||'?')+avatar(p)+'</div><span class="username">@'+esc(p.username)+'</span><b class="metric">'+metric+'</b><small class="detail">'+detail+'</small></article>';
+}
+function row({p,index,metric,detail}){
+  return '<article class="row" data-rank="'+index+'"><span>'+(index+1)+'</span><span class="avatar">'+esc(p.username?.[0]?.toUpperCase()||'?')+avatar(p)+'</span><span><span class="username">@'+esc(p.username)+'</span><small class="detail">'+detail+'</small></span><b class="metric">'+metric+'</b></article>';
+}
+let last='',busy=false;
+async function update(){
+  if(busy)return;busy=true;
+  try{
+    const response=await fetch('/api/widget-state',{cache:'no-store'});if(!response.ok)throw new Error();
+    const s=await response.json(),length=s.settings.trackLength;
+    let people=mode==='winners'?s.wins.slice(0,10):s.players.filter(Boolean).sort((a,b)=>b.distance-a.distance||b.speed-a.speed).slice(0,10);
+    const sample=preview&&(mode==='winners'?!people.length:!people.some(p=>!p.host));
+    if(sample)people=['örnek_yayıncı','örnek_izleyici','örnek_yarışçı','örnek_oyuncu'].map((username,i)=>({username,count:6-i,distance:length*(.74-i*.13),speed:8-i}));
+    document.getElementById('demo').hidden=!sample;
+    const entries=people.map((p,i)=>entry(p,i,length)),signature=JSON.stringify(people.map(p=>[p.id,p.username,p.avatar]))+sample;
+    if(last!==signature){
+      last=signature;const top=entries.slice(0,3),ordered=[top[1],top[0],top[2]].filter(Boolean);
+      document.getElementById('podium').innerHTML=ordered.map(p=>card(p,sample)).join('');
+      document.getElementById('rows').innerHTML=entries.slice(3).map(row).join('');
+    }
+    for(const e of entries){
+      const node=document.querySelector('[data-rank="'+e.index+'"]');
+      node.querySelector('.metric').textContent=e.metric;
+      node.querySelector('.detail').textContent=e.detail;
+    }
+    document.getElementById('status').textContent=people.length?'':mode==='winners'?'İlk şampiyon bekleniyor':'Yarışmacılar bekleniyor';
+  }catch{document.getElementById('status').textContent='Oyun bağlantısı bekleniyor';}
+  finally{busy=false;setTimeout(update,750);}
+}
+update();
+

@@ -1,0 +1,41 @@
+let mode = 'ranking';
+const link = document.getElementById('launcherWidgetLink');
+const status = document.getElementById('launcherWidgetStatus');
+
+async function refresh() {
+  const requested = mode;
+  try {
+    const response = await fetch('/api/launcher-widget-links', { cache: 'no-store' });
+    const data = await response.json();
+    const url = data.links?.[requested];
+    if (!response.ok || !data.ready || typeof url !== 'string' || new URL(url).protocol !== 'https:') {
+      throw new Error(data.message || 'HTTPS yayın bağlantısı kullanılamıyor.');
+    }
+    if (requested === mode) { link.value = url; status.textContent = ''; }
+    return url;
+  } catch (error) {
+    if (requested === mode) { link.value = ''; status.textContent = error.message || 'HTTPS yayın hizmetine ulaşılamıyor.'; }
+    return null;
+  }
+}
+
+// The packaged game bundle still manages its local preview and hidden local URL.
+document.addEventListener('click', async event => {
+  const button = event.target.closest('button');
+  if (!button) return;
+  if (button.id === 'rankingWidgetButton' || button.id === 'widgetButton' || button.dataset.widgetMode) {
+    mode = button.dataset.widgetMode || (button.id === 'widgetButton' ? 'winners' : 'ranking');
+    link.value = '';
+    void refresh();
+  }
+  if (!['copyWidget', 'publishWidget'].includes(button.id)) return;
+  event.preventDefault();
+  event.stopImmediatePropagation();
+  button.disabled = true;
+  try {
+    const url = await refresh();
+    if (!url || button.id !== 'copyWidget') return;
+    try { await navigator.clipboard.writeText(url); status.textContent = 'Kopyalandı'; }
+    catch { link.select(); status.textContent = document.execCommand('copy') ? 'Kopyalandı' : 'Bağlantıyı seçip kopyalayın'; }
+  } finally { button.disabled = false; }
+}, true);

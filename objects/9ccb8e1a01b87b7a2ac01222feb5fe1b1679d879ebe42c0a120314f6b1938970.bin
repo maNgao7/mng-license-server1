@@ -1,0 +1,1472 @@
+// ==========================================================================
+// OYUN MEKANİĞİ - Birebir Nişangah, Falso Şut Fiziği, Kaleci Dalışları, Baraj
+// ==========================================================================
+import * as THREE from 'three';
+import { GOAL, BALL_RADIUS, PENALTY_SPOT, KEEPER_TYPES, TEAMS } from './config.js';
+import { createHumanoid, blendPose, POSES, createAvatarBadge } from './characters.js';
+
+const PENALTY_STRAIGHT_ZONE = Object.freeze({
+  keeperHalfWidth: 0.55,
+  minY: 0.20,
+  maxY: 1.90,
+  maxCurve: 0.012
+});
+
+export class GameplayManager {
+  constructor(scene, camera, sound, effects, stadium) {
+    this.scene = scene;
+    this.camera = camera;
+    this.sound = sound;
+    this.effects = effects;
+    this.stadium = stadium;
+
+    // Durumlar: 'idle', 'running', 'shooting', 'bouncing', 'in_net', 'celebrating'
+    this.state = 'idle';
+
+    // Top
+    this.ball = null;
+    this.ballPos = new THREE.Vector3(0, BALL_RADIUS, PENALTY_SPOT);
+    this.ballVel = new THREE.Vector3();
+    this.ballBounceVel = new THREE.Vector3();
+    this.ballSpin = 0;
+    this.gravity = -18.5;
+
+    // Şut çeken oyuncu (Kaleyi kapatmayacak şekilde sol çaprazda bekler)
+    this.shooter = null;
+    this.shooterDefaultPos = new THREE.Vector3(-2.1, 0, 12.4);
+    this.shooterBadge = null;
+    this.broadcasterName = 'YAYINCI';
+    this.broadcasterAvatar = '';
+    this.ballLaunched = false;
+    this.gameMode = 'shooter'; // 'shooter' | 'keeper'
+    this.isSwapped = false;
+    this.isKeeperHolding = false;
+    this.keeperCountdown = 0;
+    this.keeperCountdownTotal = 3.5;
+    this.keeperTargetX = 0;
+    this.keeperTargetY = 0;
+
+    // Frikik Pozisyonu (Ceza sahası dışından, sol çaprazdan 21 metre serbest vuruş)
+    this.isFreekick = false;
+    this.freekickBallPos = new THREE.Vector3(-4.5, BALL_RADIUS, 20.5);
+    this.freekickShooterPos = new THREE.Vector3(-5.8, 0, 21.6);
+
+    // Tsubasa Alev Efekti Mesh & Işık
+    this.tsubasaAuraMesh = null;
+    this.tsubasaLight = null;
+
+    // Kaleci
+    this.goalkeeper = null;
+    this.keeperBadge = null;
+    this.keeperType = 'normal';
+    this.keeperData = { username: 'Kaleci', saves: 0, goals: 0 };
+    this.keeperBaseScale = 1.0;
+    this.keeperDive = {
+      active: false,
+      startPos: new THREE.Vector3(0, 0, 0.2),
+      targetPos: new THREE.Vector3(0, 0, 0.2),
+      t: 0,
+      duration: 0.65,
+      direction: 'center',
+      divePose: POSES.keeper_dive,
+      willSave: false
+    };
+
+    // İnsan Savunma Barajı (3 Kişilik Gerçek Futbolcu)
+    this.defenseWallGroup = null;
+    this.defenders = [];
+    this.wallActive = false;
+    this.wallTimer = 0;
+    this.wallDuration = 60; // saniye
+
+    // Küçültme Süresi
+    this.shrinkActive = false;
+    this.shrinkPercent = 0;
+    this.shrinkTimer = 0;
+    this.shrinkDuration = 45; // saniye
+
+    // Tsubasa Alevli Şut
+    this.tsubasaActive = false;
+
+    // Sürükle - Falso Nişangah & Güç Takibi
+    this.isDragging = false;
+    this.dragStart = { x: 0, y: 0 };
+    this.dragCurrent = { x: 0, y: 0 };
+    this.dragPath = [];
+    this.aimTarget = new THREE.Vector3(0, 1.4, 0.05);
+    this.aimCurve = 0;
+    this.aimLift = 0;
+    this.currentPower = 0;
+
+    // Uçuş Parametreleri (1:1 Noktaları Takip Eden Parametrik Çözüm)
+    this.flightDuration = 0.65;
+    this.flightTimeElapsed = 0;
+    this.kickStartPos = new THREE.Vector3(0, BALL_RADIUS, PENALTY_SPOT);
+    this.flightArcY = 1.4;
+
+    // 3D Beyaz Noktalı Kavisli Çizgi & Hedef Halkası
+    this.trajectoryGroup = new THREE.Group();
+    this.trajectoryDots = [];
+    this.targetReticle = null;
+
+    this.initEntities();
+  }
+
+  isStraightPenaltySideTarget(x, y) {
+    if (this.isFreekick) return false;
+    const absX = Math.abs(Number(x) || 0);
+    return absX >= PENALTY_STRAIGHT_ZONE.keeperHalfWidth
+      && absX <= GOAL.halfWidth - 0.08
+      && y >= PENALTY_STRAIGHT_ZONE.minY
+      && y <= PENALTY_STRAIGHT_ZONE.maxY;
+  }
+
+  restrictPenaltySideCurve(x, y, curve) {
+    if (!this.isStraightPenaltySideTarget(x, y)) return curve;
+    return THREE.MathUtils.clamp(curve * 0.01, -PENALTY_STRAIGHT_ZONE.maxCurve, PENALTY_STRAIGHT_ZONE.maxCurve);
+  }
+
+  initEntities() {
+    // 1. Futbol Topu (Klasik Siyah-Beyaz Beşgen Desenli 3D Top)
+    const ballGeo = new THREE.SphereGeometry(BALL_RADIUS, 24, 24);
+    const ballCanvas = document.createElement('canvas');
+    ballCanvas.width = 512;
+    ballCanvas.height = 512;
+    const bctx = ballCanvas.getContext('2d');
+    bctx.fillStyle = '#ffffff';
+    bctx.fillRect(0, 0, 512, 512);
+
+    // Siyah beşgenler
+    bctx.fillStyle = '#111111';
+    const drawPentagon = (cx, cy, r) => {
+      bctx.beginPath();
+      for (let i = 0; i < 5; i++) {
+        const a = -Math.PI / 2 + (i * Math.PI * 2) / 5;
+        const px = cx + Math.cos(a) * r;
+        const py = cy + Math.sin(a) * r;
+        if (i === 0) bctx.moveTo(px, py); else bctx.lineTo(px, py);
+      }
+      bctx.closePath();
+      bctx.fill();
+    };
+    drawPentagon(256, 256, 68);
+    drawPentagon(120, 120, 48);
+    drawPentagon(392, 120, 48);
+    drawPentagon(120, 392, 48);
+    drawPentagon(392, 392, 48);
+
+    const ballTex = new THREE.CanvasTexture(ballCanvas);
+    ballTex.anisotropy = 8;
+    const ballMat = new THREE.MeshStandardMaterial({
+      map: ballTex,
+      roughness: 0.35,
+      metalness: 0.05
+    });
+
+    this.ball = new THREE.Mesh(ballGeo, ballMat);
+    this.ball.castShadow = true;
+    this.ball.position.copy(this.ballPos);
+    this.scene.add(this.ball);
+
+    // 2. Şut Çeken Oyuncu (Sol Çaprazda)
+    this.shooter = createHumanoid({
+      team: { primary: '#e30a17', secondary: '#ffffff', shorts: '#ffffff', socks: '#e30a17', pattern: 'national' },
+      backName: '@MANGAO7TV',
+      number: '16'
+    });
+    this.shooter.root.position.copy(this.shooterDefaultPos);
+    this.shooter.root.rotation.set(0, Math.PI - 0.28, 0); // Topa ve kaleye dönük doğal açı
+    blendPose(this.shooter, POSES.stand, 1.0);
+    this.scene.add(this.shooter.root);
+
+    // Yayıncı Kafa Üstü Profil Rozeti (Kullanıcı İsteği: Sadece profil fotoğrafı, kullanıcı adı yok)
+    this.shooterBadge = createAvatarBadge({ nickname: 'mangao7tv' }, { size: 0.62, ring: '#ffbe0b', showLabel: false });
+    this.shooterBadge.position.set(0, 2.3, 0);
+    this.shooter.root.add(this.shooterBadge);
+
+    // 3. Kaleci
+    this.goalkeeper = createHumanoid({
+      team: { primary: '#0ea5e9', secondary: '#0369a1', shorts: '#0f172a', socks: '#0ea5e9', pattern: 'keeper' },
+      backName: 'KALECİ',
+      number: '1',
+      gloves: '#f97316'
+    });
+    this.goalkeeper.root.position.set(0, 0, 0.2);
+    blendPose(this.goalkeeper, POSES.keeper_ready, 1.0);
+    this.scene.add(this.goalkeeper.root);
+
+    // Kaleci Kafa Üstü Profil Rozeti
+    this.keeperBadge = createAvatarBadge({ nickname: 'Kaleci' }, { size: 0.75, ring: '#00e5ff' });
+    this.keeperBadge.position.set(0, 2.45, 0);
+    this.goalkeeper.root.add(this.keeperBadge);
+
+    // 4. İnsan Savunma Barajı (Dinamik Katılımlı Savunma Barajı)
+    this.defenseWallGroup = new THREE.Group();
+    this.defenseWallGroup.position.set(1.4, 0, 7.0);
+    this.defenseWallGroup.visible = false;
+    this.defenders = [];
+    this.wallMembers = [];
+    this.scene.add(this.defenseWallGroup);
+
+    // 5. 3D Trajectory Çizgisi ve Hedef Çemberi
+    this.initTrajectoryVisuals();
+  }
+
+  initTrajectoryVisuals() {
+    // 22 adet belirgin ve parlak beyaz inci küre (Büyüyen, pürüzsüz kavis çizgisi)
+    const dotGeo = new THREE.SphereGeometry(0.13, 16, 16);
+
+    for (let i = 0; i < 22; i++) {
+      const dotMat = new THREE.MeshBasicMaterial({
+        color: 0xffffff,
+        transparent: true,
+        opacity: 0.98
+      });
+      const dot = new THREE.Mesh(dotGeo, dotMat);
+      dot.visible = false;
+      this.trajectoryGroup.add(dot);
+      this.trajectoryDots.push(dot);
+    }
+
+    // Modern & Şık Hedef Nişangahı (🎯 Videodaki Estetik Hedef Çemberi)
+    this.targetReticle = new THREE.Group();
+
+    // 1. Dış Halka (Sleek Outer Ring)
+    const ringGeo = new THREE.RingGeometry(0.22, 0.29, 36);
+    const ringMat = new THREE.MeshBasicMaterial({
+      color: 0xffffff,
+      side: THREE.DoubleSide,
+      transparent: true,
+      opacity: 0.95
+    });
+    const outerRing = new THREE.Mesh(ringGeo, ringMat);
+    this.targetReticle.add(outerRing);
+
+    // 2. 4 Adet Hassas Nişan Çentiği (Crosshair Ticks)
+    const tickGeo = new THREE.PlaneGeometry(0.035, 0.10);
+    const tickMat = new THREE.MeshBasicMaterial({ color: 0xffffff, side: THREE.DoubleSide });
+    [
+      { x: 0, y: 0.27, rot: 0 },
+      { x: 0, y: -0.27, rot: 0 },
+      { x: 0.27, y: 0, rot: Math.PI / 2 },
+      { x: -0.27, y: 0, rot: Math.PI / 2 }
+    ].forEach(t => {
+      const tick = new THREE.Mesh(tickGeo, tickMat);
+      tick.position.set(t.x, t.y, 0.005);
+      tick.rotation.z = t.rot;
+      this.targetReticle.add(tick);
+    });
+
+    // 3. İç Halka
+    const innerRingGeo = new THREE.RingGeometry(0.065, 0.095, 24);
+    const innerRing = new THREE.Mesh(innerRingGeo, ringMat);
+    this.targetReticle.add(innerRing);
+
+    // 4. Merkez Parlak Kırmızı Nişangah Noktası
+    const centerGeo = new THREE.CircleGeometry(0.045, 16);
+    const centerMat = new THREE.MeshBasicMaterial({ color: 0xff3b30, side: THREE.DoubleSide });
+    const centerDot = new THREE.Mesh(centerGeo, centerMat);
+    centerDot.position.z = 0.008;
+    this.targetReticle.add(centerDot);
+
+    this.targetReticle.visible = false;
+    this.trajectoryGroup.add(this.targetReticle);
+
+    this.scene.add(this.trajectoryGroup);
+  }
+
+  // --------------------------------------------------------------------------
+  // SÜRÜKLE - BIRAK VE FALSO HESAPLAMA (Swipe Curve Detection & Smoothing)
+  // --------------------------------------------------------------------------
+  onPointerDown(clientX, clientY) {
+    if (this.gameMode === 'keeper') {
+      this.isKeeperHolding = true;
+      this.onPointerMove(clientX, clientY);
+      return;
+    }
+    if (this.state !== 'idle') return;
+
+    this.isDragging = true;
+    this.dragStart = { x: clientX, y: clientY };
+    this.dragCurrent = { x: clientX, y: clientY };
+    this.dragPath = [{ x: clientX, y: clientY, t: performance.now() }];
+    this.aimCurve = 0;
+
+    // İlk tıklamada hedef doğrudan hesaplanır (sıfır gecikme)
+    this.updateAimCalculation(clientX, clientY, true);
+  }
+
+  onPointerMove(clientX, clientY) {
+    if (this.gameMode === 'keeper') {
+      if (!this.isKeeperHolding) return;
+      this.updateKeeperTarget(clientX, clientY);
+      return;
+    }
+
+    if (!this.isDragging || this.state !== 'idle') return;
+
+    this.dragCurrent = { x: clientX, y: clientY };
+    this.dragPath.push({ x: clientX, y: clientY, t: performance.now() });
+
+    this.updateAimCalculation(clientX, clientY, false);
+  }
+
+  onPointerUp() {
+    if (this.gameMode === 'keeper') {
+      this.isKeeperHolding = false;
+      return;
+    }
+    if (!this.isDragging) return;
+    this.isDragging = false;
+
+    const dy = this.dragStart.y - this.dragCurrent.y;
+    const totalDist = Math.hypot(
+      this.dragCurrent.x - this.dragStart.x,
+      this.dragCurrent.y - this.dragStart.y
+    );
+
+    // Yeterli sürükleme yapıldıysa şutu başlat (Düdük sesi kesinlikle yok!)
+    if (dy > 10 || totalDist > 16) {
+      this.hideTrajectory();
+      this.executeRunUpAndKick();
+    } else {
+      this.hideTrajectory();
+      this.updatePowerUI(0);
+    }
+  }
+
+  updateKeeperTarget(clientX, clientY) {
+    const mouse = new THREE.Vector2(
+      (clientX / window.innerWidth) * 2 - 1,
+      -(clientY / window.innerHeight) * 2 + 1
+    );
+    const raycaster = new THREE.Raycaster();
+    raycaster.setFromCamera(mouse, this.camera);
+    const keeperPlane = new THREE.Plane(new THREE.Vector3(0, 0, 1), -0.2); // Z = 0.2
+    const intersect = new THREE.Vector3();
+    raycaster.ray.intersectPlane(keeperPlane, intersect);
+    if (intersect) {
+      this.keeperTargetX = THREE.MathUtils.clamp(intersect.x, -GOAL.halfWidth + 0.15, GOAL.halfWidth - 0.15);
+      this.keeperTargetY = THREE.MathUtils.clamp(intersect.y, 0.0, GOAL.height - 0.1);
+    }
+  }
+
+  updateAimCalculation(clientX, clientY, isFirstClick = false) {
+    // 1. Kaleye Raycast (Z=0 Düzlemi)
+    const mouse = new THREE.Vector2(
+      (clientX / window.innerWidth) * 2 - 1,
+      -(clientY / window.innerHeight) * 2 + 1
+    );
+
+    const raycaster = new THREE.Raycaster();
+    raycaster.setFromCamera(mouse, this.camera);
+
+    const goalPlane = new THREE.Plane(new THREE.Vector3(0, 0, 1), 0);
+    const intersect = new THREE.Vector3();
+    raycaster.ray.intersectPlane(goalPlane, intersect);
+
+    const dy = this.dragStart.y - clientY;
+    const dx = clientX - this.dragStart.x;
+    const dragDist = Math.hypot(dx, dy);
+
+    let rawTx = 0;
+    let rawTy = 1.35;
+    let normY = 0;
+
+    // Hedef hesaplama: Kalenin dışına da serbestçe nişan alınabilir
+    if (intersect && intersect.y >= -0.5) {
+      rawTx = THREE.MathUtils.clamp(intersect.x, -6.5, 6.5);
+
+      // Kullanıcı İsteği: "İzleyiciler baraj kurduğu zaman biraz üstten vurabilirim, mouse'u yukarı götürüp biraz daha kaleye doğru insin o çizgi."
+      // Mouse yukarı çekildiğinde hedef gökyüzüne uçup gitmez, üstten aşırtma/falso alarak kalenin içine (üst köşelere/direk altına) doğru iner
+      if (intersect.y > 2.05) {
+        const excess = intersect.y - 2.05;
+        // Çok aşırı yukarı çekilmedikçe (excess < 1.6) hedef kalenin içinde (2.05m - 2.30m) kalır
+        if (excess < 1.6) {
+          rawTy = THREE.MathUtils.clamp(2.05 + excess * 0.12, 1.8, 2.30);
+        } else {
+          // Aşırı yukarı çekildiyse auta gitsin
+          rawTy = 2.30 + (excess - 1.6) * 0.85;
+        }
+      } else {
+        rawTy = THREE.MathUtils.clamp(intersect.y, 0.22, 2.30);
+      }
+    } else {
+      normY = THREE.MathUtils.clamp(dy / (window.innerHeight * 0.40), 0, 1);
+      const normX = THREE.MathUtils.clamp(dx / (window.innerWidth * 0.40), -1, 1);
+      rawTx = normX * 6.0;
+      rawTy = 0.22 + normY * 2.1;
+    }
+
+    // Yukarı çekme / aşırtma payı (Baraj üstü aşırıp kaleye indirme katsayısı)
+    const rawAimLift = Math.max(0, (intersect ? intersect.y : (normY * 3.4)) - 1.5);
+    this.aimLift = rawAimLift;
+
+    // 2. FALSO & VURUŞ HESAPLAMA (Eski Doğal Falso Sistemi)
+    let rawCurve = 0;
+    if (this.dragPath && this.dragPath.length >= 3) {
+      const pStart = this.dragPath[0];
+      const pEnd = { x: clientX, y: clientY };
+      const vx = pEnd.x - pStart.x;
+      const vy = pEnd.y - pStart.y;
+      const len = Math.hypot(vx, vy);
+
+      if (len > 24) {
+        // Ekranın SAĞINA bakan birim normal vektör (vy negatif/yukarı olduğundan -vy pozitiftir)
+        const nx = -vy / len;
+        const ny = vx / len;
+
+        let maxRight = 0;
+        let maxLeft = 0;
+
+        for (let i = 0; i < this.dragPath.length; i++) {
+          const pt = this.dragPath[i];
+          const dist = (pt.x - pStart.x) * nx + (pt.y - pStart.y) * ny;
+          if (dist > maxRight) maxRight = dist;
+          if (dist < maxLeft) maxLeft = dist;
+        }
+
+        const dominantDev = Math.abs(maxRight) >= Math.abs(maxLeft) ? maxRight : maxLeft;
+        const curveDivisor = this.isFreekick ? 85.0 : 105.0;
+        const curveMax = this.isFreekick ? 1.65 : 1.15;
+        const devMag = Math.abs(dominantDev);
+        if (devMag < 12) {
+          rawCurve = 0; // Baktığımız hedefe dümdüz gitsin
+        } else {
+          const sign = Math.sign(dominantDev);
+          rawCurve = THREE.MathUtils.clamp(sign * ((devMag - 8) / curveDivisor), -curveMax, curveMax);
+        }
+      }
+    }
+
+    // Kaleci ile iki direk arasındaki işaretli yan koridorlarda penaltı düz gider.
+    // Çok hafif doğal sapma korunur; frikik ve üst köşe falsosu etkilenmez.
+    const isStraightPenaltySide = this.isStraightPenaltySideTarget(rawTx, rawTy);
+    rawCurve = this.restrictPenaltySideCurve(rawTx, rawTy, rawCurve);
+
+    // 3. GÜÇ (Power Meter)
+    const power = Math.round(THREE.MathUtils.clamp((dragDist / 220) * 100, 20, 100));
+    this.currentPower = power;
+    this.updatePowerUI(power);
+
+    // 4. Yumuşatma (Smoothing Easing) - Jittersiz, ipeksi nişan akışı
+    if (isFirstClick) {
+      this.aimTarget.set(rawTx, rawTy, 0.05);
+      this.aimCurve = rawCurve;
+    } else {
+      this.aimTarget.x = THREE.MathUtils.lerp(this.aimTarget.x, rawTx, 0.58);
+      this.aimTarget.y = THREE.MathUtils.lerp(this.aimTarget.y, rawTy, 0.58);
+      this.aimCurve = isStraightPenaltySide
+        ? rawCurve
+        : THREE.MathUtils.lerp(this.aimCurve, rawCurve, 0.52);
+    }
+
+    // 5. Trajectory Eğrisini Çiz
+    this.renderTrajectoryCurve(this.aimTarget.x, this.aimTarget.y, this.aimCurve, power);
+  }
+
+  updatePowerUI(power) {
+    const barFill = document.getElementById('power-bar-fill');
+    const barPercent = document.getElementById('power-percent');
+    if (barFill) {
+      barFill.style.height = `${power}%`;
+      if (power >= 85) {
+        barFill.style.background = 'linear-gradient(to top, #f59e0b, #ef4444)';
+      } else if (power >= 55) {
+        barFill.style.background = 'linear-gradient(to top, #10b981, #f59e0b)';
+      } else {
+        barFill.style.background = '#10b981';
+      }
+    }
+    if (barPercent) {
+      barPercent.textContent = `${power}%`;
+    }
+  }
+
+  renderTrajectoryCurve(tx, ty, curve, power = 50) {
+    const count = this.trajectoryDots.length;
+    const start = this.ballPos.clone();
+    const end = this.aimTarget.clone();
+
+    // Yere veya çok alçağa vurulduğunda top havaya fırlamaz, çimden düz/alçak gider
+    let maxArcY = 0;
+    if (ty < 0.6) {
+      maxArcY = 0; // Yerden giden sert/düz şut
+    } else if (ty < 1.15) {
+      maxArcY = 0.15 * (ty / 1.15); // Alçak şut
+    } else {
+      const baseArc = (0.75 + (power / 100) * 0.45) * (ty / 2.44);
+      // Baraj kurulduğunda veya mouse yukarı götürüldüğünde top barajın üstünden aşırır ve kaleye doğru tatlıca iner
+      const wallLift = this.wallActive ? 0.60 : 0.0;
+      const mouseUpLift = (this.aimLift || 0) * 0.50;
+      maxArcY = baseArc + wallLift + mouseUpLift;
+    }
+
+    const now = performance.now();
+
+    for (let i = 0; i < count; i++) {
+      const t = (i + 1) / (count + 1);
+      const dot = this.trajectoryDots[i];
+
+      const z = THREE.MathUtils.lerp(start.z, end.z, t);
+      const baseX = THREE.MathUtils.lerp(start.x, end.x, t);
+      const baseY = THREE.MathUtils.lerp(start.y, end.y, t);
+
+      // Doğal aerodinamik kavis ve baraj üstünden kaleye aşırtma/iniş formülü:
+      // Tepe noktası tam barajın üzerinde (t ~ 0.40) oluşur ve kaleye doğru (t -> 1.0) dik şekilde iner!
+      const curveFactor = Math.sin(Math.PI * Math.pow(t, 0.92));
+      const arcFactor = Math.sin(Math.pow(t, 0.80) * Math.PI);
+
+      const arcY = arcFactor * maxArcY;
+      const curveX = curveFactor * curve;
+
+      dot.position.set(baseX + curveX, Math.max(BALL_RADIUS, baseY + arcY), z);
+
+      // Zarif inci akışı & kademeli büyüme (Toptan hedefe doğru tatlı büyüme)
+      const flow = Math.sin(now * 0.009 - t * 6.5) * 0.08;
+      const baseScale = 0.72 + t * 0.58;
+      const s = baseScale * (1.0 + flow);
+      dot.scale.set(s, s, s);
+
+      // Şık opaklık geçişi
+      if (dot.material) {
+        dot.material.opacity = THREE.MathUtils.clamp(0.60 + t * 0.40, 0.5, 1.0);
+      }
+      dot.visible = true;
+    }
+
+    this.targetReticle.position.set(tx, ty, 0.05);
+    this.targetReticle.lookAt(this.camera.position);
+    this.targetReticle.visible = true;
+  }
+
+  hideTrajectory() {
+    this.trajectoryDots.forEach(d => { d.visible = false; });
+    if (this.targetReticle) this.targetReticle.visible = false;
+  }
+
+  // --------------------------------------------------------------------------
+  // KOŞU VE GERÇEKÇİ AYAKLA ŞUT VURUŞU (Run-up & Strike Animation)
+  // --------------------------------------------------------------------------
+  executeRunUpAndKick() {
+    if (this.state !== 'idle') return;
+    this.state = 'running';
+    this.ballLaunched = false;
+
+    const startPos = this.isFreekick ? this.freekickShooterPos.clone() : this.shooterDefaultPos.clone();
+    const plantPos = this.isFreekick ? new THREE.Vector3(-4.85, 0, 20.35) : new THREE.Vector3(-0.35, 0, 11.08);
+
+    let kickStart = performance.now();
+    const runDuration = this.isFreekick ? 220 : 200; // Akıcı dinamik koşu ve şut
+
+    const animateKick = () => {
+      const now = performance.now();
+      const progress = Math.min(1.0, (now - kickStart) / runDuration);
+
+      if (progress < 0.60) {
+        // 1. Topa doğru koşu adımı
+        const tRun = progress / 0.60;
+        this.shooter.root.position.lerpVectors(startPos, plantPos, tRun);
+        blendPose(this.shooter, POSES.run, 0.45);
+      } else if (progress < 0.82) {
+        // 2. Destek ayağı basışı & şut ayağı geriye gerilme
+        this.shooter.root.position.copy(plantPos);
+        blendPose(this.shooter, POSES.kick_windup, 0.65);
+      } else {
+        // 3. Sert ayakla vuruş darbesi
+        this.shooter.root.position.copy(plantPos);
+        blendPose(this.shooter, POSES.kick_strike, 0.85);
+      }
+
+      // Ayak topa değdiği an (yaklaşık %76) fizik başlar
+      if (progress >= 0.76 && !this.ballLaunched) {
+        this.ballLaunched = true;
+        this.launchBallPhysics();
+      }
+
+      if (progress < 1.0) {
+        requestAnimationFrame(animateKick);
+      } else {
+        if (!this.ballLaunched) {
+          this.ballLaunched = true;
+          this.launchBallPhysics();
+        }
+      }
+    };
+    animateKick();
+  }
+
+  triggerViewerShot(player, hard = false) {
+    if (this.state !== 'idle') return false;
+    this.setShooterOpponent(player || { nickname: 'İzleyici' });
+    const side = Math.random() < 0.5 ? -1 : 1;
+    this.aimTarget.set(side * (1.0 + Math.random() * 2.25), 0.65 + Math.random() * 1.45, 0.05);
+    this.aimCurve = this.aimTarget.y >= 1.9 ? side * (Math.random() * 0.34) : 0;
+    this.currentPower = hard ? 100 : 72;
+    if (hard) this.activateTsubasa();
+    this.executeRunUpAndKick();
+    return true;
+  }
+
+  launchBallPhysics() {
+    this.state = 'shooting';
+
+    // Fare son anda yan koridora girdiyse önceki hedefin falsosu taşınmasın.
+    this.aimCurve = this.restrictPenaltySideCurve(this.aimTarget.x, this.aimTarget.y, this.aimCurve);
+
+    // Ses ve parçacık (Düdük sesi kesinlikle yok!)
+    this.sound.play('kick', { fire: this.tsubasaActive });
+    this.effects.spawnKickDust(this.ballPos);
+
+    const isTsubasa = this.tsubasaActive;
+    const baseDuration = isTsubasa ? 0.38 : Math.max(0.48, 0.72 - (this.currentPower / 100) * 0.18);
+    this.flightDuration = baseDuration;
+    this.flightTimeElapsed = 0;
+    this.kickStartPos = this.ballPos.clone();
+
+    // Düz / yer şutlarında top çimden alçak gider (havaya uçmaz)
+    const ty = this.aimTarget.y;
+    let maxArcY = 0;
+    if (ty < 0.6) {
+      maxArcY = 0;
+    } else if (ty < 1.15) {
+      maxArcY = 0.15 * (ty / 1.15);
+    } else {
+      const baseArc = (0.75 + (this.currentPower / 100) * 0.45) * (ty / 2.44);
+      const wallLift = this.wallActive ? 0.60 : 0.0;
+      const mouseUpLift = (this.aimLift || 0) * 0.50;
+      maxArcY = baseArc + wallLift + mouseUpLift;
+    }
+    this.flightArcY = isTsubasa ? 0.85 : maxArcY;
+
+    // Kaleci Dalışını Başlat
+    this.triggerGoalkeeperDive(this.flightDuration);
+
+    // Savunma Barajı Zıplaması
+    if (this.wallActive) {
+      this.animateWallJump();
+    }
+  }
+
+  animateWallJump() {
+    let t = 0;
+    const jumpAnim = () => {
+      t += 0.065;
+      if (t < Math.PI) {
+        const jumpY = Math.sin(t) * 0.85;
+        this.defenseWallGroup.position.y = jumpY;
+        this.defenders.forEach(d => blendPose(d, POSES.wall_jump, 0.2));
+        requestAnimationFrame(jumpAnim);
+      } else {
+        this.defenseWallGroup.position.y = 0;
+        this.defenders.forEach(d => blendPose(d, POSES.wall_guard, 0.2));
+      }
+    };
+    jumpAnim();
+  }
+
+  // --------------------------------------------------------------------------
+  // GERÇEKÇİ KALECİ DALIŞI (Normal Kaleci %30 Kurtarış)
+  // --------------------------------------------------------------------------
+  triggerGoalkeeperDive(flightTime) {
+    if (this.gameMode === 'keeper') {
+      // Kaleci modunda kaleciyi canlı olarak yayıncı fareyle yönlendirir
+      return;
+    }
+
+    const target = this.aimTarget;
+    const isTsubasa = this.tsubasaActive;
+    const cfg = KEEPER_TYPES[this.keeperType] || KEEPER_TYPES.normal;
+
+    // Kurtarış ihtimali (Normal kaleci %30)
+    const isTargetOnGoal = Math.abs(target.x) < (GOAL.halfWidth - 0.1) && target.y > 0.15 && target.y < (GOAL.height - 0.08);
+    let willSave = false;
+    if (isTargetOnGoal) {
+      if (isTsubasa) {
+        willSave = Math.random() < 0.08; // Tsubasa şutu %92 gol!
+      } else if (this.shrinkActive) {
+        willSave = Math.random() < (this.shrinkPercent === 80 ? 0.04 : 0.12);
+      } else {
+        willSave = Math.random() < (cfg.saveChance || 0.35);
+      }
+    }
+
+    const diveTarget = new THREE.Vector3(0, 0, 0.2);
+
+    // Kullanıcı İsteği: "Kaleci bazen havaya doğru uçabiliyor, onu bir düzenleyelim istersen. Kaleci havaya doğru uçsun, topa doğru uçsun, biraz gerçekçi olsun."
+    // Kaleci kök yüksekliği (root.y) direk boyunun (2.44m) üstüne asla fırlamamalı!
+    // Kollar ve eller uzandığı için kalecinin bel/gövde yüksekliği en fazla 0.85m - 1.05m aralığında olmalıdır.
+    if (willSave) {
+      // Topa doğru tam odaklı atletik dalış
+      diveTarget.x = THREE.MathUtils.clamp(target.x, -GOAL.halfWidth + 0.35, GOAL.halfWidth - 0.35);
+      const isTopShot = target.y > 1.35;
+      diveTarget.y = isTopShot 
+        ? THREE.MathUtils.clamp((target.y - 0.90) * 0.72, 0.40, 1.05) 
+        : THREE.MathUtils.clamp((target.y - 0.30) * 0.45, 0.05, 0.35);
+    } else {
+      // Yanlış köşeye veya hedefin uzağına atlayış
+      const wrongSide = target.x >= 0 ? -2.2 : 2.2;
+      diveTarget.x = THREE.MathUtils.clamp(wrongSide + (Math.random() - 0.5) * 0.8, -GOAL.halfWidth + 0.2, GOAL.halfWidth - 0.2);
+      diveTarget.y = Math.random() * 0.40 + 0.05;
+    }
+
+    // Dalış yönü ve poz seçimi (Topun yüksekliğine göre uygun kurtarış pozu)
+    let dir = 'center';
+    let divePose = POSES.keeper_dive;
+    const isHighTarget = target.y > 1.25;
+    if (diveTarget.x > 0.45) {
+      dir = 'right';
+      divePose = isHighTarget ? POSES.keeper_dive_top_right : POSES.keeper_dive_low_right;
+    } else if (diveTarget.x < -0.45) {
+      dir = 'left';
+      divePose = isHighTarget ? POSES.keeper_dive_top_left : POSES.keeper_dive_low_left;
+    } else {
+      divePose = isHighTarget ? POSES.keeper_dive_top_right : POSES.keeper_dive;
+    }
+
+    this.keeperDive = {
+      active: true,
+      startPos: this.goalkeeper.root.position.clone(),
+      targetPos: diveTarget,
+      t: 0,
+      duration: flightTime * 0.95,
+      direction: dir,
+      divePose,
+      willSave
+    };
+
+    blendPose(this.goalkeeper, divePose, 0.55);
+  }
+
+  // --------------------------------------------------------------------------
+  // FİZİK DÖNGÜSÜ & ÇARPIŞMALAR
+  // --------------------------------------------------------------------------
+  update(dt, onGoal, onSave, onMiss) {
+    // Savunma barajı ve kaleci küçülmesi süresizdir: Sadece gol atılınca yok olur (1 gollük!)
+
+    // Tsubasa Alev Efekti Animasyonu (Topta ve havada)
+    if (this.tsubasaActive) {
+      this.updateTsubasaFireAura(dt);
+    }
+
+    // Kaleci Modu: Yayıncı Kaleci Hareketi ve AI Şut Geri Sayımı
+    if (this.gameMode === 'keeper') {
+      const pos = this.goalkeeper.root.position;
+      if (this.isKeeperHolding) {
+        const targetX = this.keeperTargetX || 0;
+        const targetY = this.keeperTargetY || 0;
+
+        // Mouse basılı tutulduğunda agresif uçuş & dalış refleksleri
+        const lerpSpeed = 0.45;
+        pos.x = THREE.MathUtils.lerp(pos.x, targetX, lerpSpeed);
+        pos.y = THREE.MathUtils.lerp(pos.y, targetY, lerpSpeed);
+
+        const dx = targetX - pos.x;
+        if (Math.abs(dx) > 0.16) {
+          const tilt = dx > 0 ? -Math.PI / 3.4 : Math.PI / 3.4;
+          this.goalkeeper.body.rotation.z = THREE.MathUtils.lerp(this.goalkeeper.body.rotation.z, tilt, 0.35);
+          const isHigh = targetY > 1.3;
+          if (dx > 0) {
+            blendPose(this.goalkeeper, isHigh ? POSES.keeper_dive_top_right : POSES.keeper_dive_low_right, 0.4);
+          } else {
+            blendPose(this.goalkeeper, isHigh ? POSES.keeper_dive_top_left : POSES.keeper_dive_low_left, 0.4);
+          }
+        } else {
+          this.goalkeeper.body.rotation.z = THREE.MathUtils.lerp(this.goalkeeper.body.rotation.z, 0, 0.20);
+          blendPose(this.goalkeeper, POSES.keeper_ready, 0.3);
+        }
+      } else {
+        // Fare basılı tutulmadığında kaleci merkezde hazır bekler, fareyi takip etmez!
+        pos.x = THREE.MathUtils.lerp(pos.x, 0, 0.15);
+        pos.y = THREE.MathUtils.lerp(pos.y, 0, 0.18);
+        this.goalkeeper.body.rotation.z = THREE.MathUtils.lerp(this.goalkeeper.body.rotation.z, 0, 0.22);
+        blendPose(this.goalkeeper, POSES.keeper_ready, 0.25);
+      }
+
+      // Şutör Bekleme Süresi & Otomatik Şut
+      if (this.state === 'idle') {
+        this.keeperCountdown -= dt;
+        const countdownEl = document.querySelector('.bottom-prompt-pill .prompt-text');
+        if (countdownEl) {
+          countdownEl.textContent = `🧤 Mouse'a Basılı Tutun! Şut Geliyor: ${Math.max(0, this.keeperCountdown).toFixed(1)}s`;
+        }
+        if (this.keeperCountdown <= 0) {
+          this.keeperCountdown = this.keeperCountdownTotal || 3.5;
+          const rawTx = (Math.random() - 0.5) * 5.8;
+          const rawTy = 0.35 + Math.random() * 2.2;
+          const rawCurve = (Math.random() - 0.5) * 0.9;
+          this.aimTarget.set(rawTx, rawTy, 0.05);
+          this.aimCurve = rawCurve;
+          this.currentPower = 75 + Math.round(Math.random() * 25);
+          this.executeRunUpAndKick();
+        }
+      }
+    }
+
+    // 0. Nişan Sırasında Çizgi ve Nişangah Canlandırması (İnci Akışı & Dönen Çember)
+    if (this.isDragging && this.state === 'idle') {
+      this.renderTrajectoryCurve(this.aimTarget.x, this.aimTarget.y, this.aimCurve, this.currentPower);
+      if (this.targetReticle && this.targetReticle.visible) {
+        this.targetReticle.rotation.z += dt * 1.5;
+        const pulse = 1.0 + Math.sin(performance.now() * 0.007) * 0.04;
+        this.targetReticle.scale.set(pulse, pulse, pulse);
+      }
+    }
+
+    // 2. Kaleci Dalış Hareketi
+    if (this.keeperDive.active) {
+      this.updateKeeperDive(dt);
+    }
+
+    // 3. Top Uçuş Fiziği (1:1 Trajectory Noktalarını İzleyen Kesin Çözüm)
+    if (this.state === 'shooting') {
+      this.flightTimeElapsed += dt;
+      const u = Math.min(1.0, this.flightTimeElapsed / this.flightDuration);
+
+      const start = this.kickStartPos;
+      const end = this.aimTarget;
+      const arcFactor = Math.sin(Math.pow(u, 0.80) * Math.PI);
+      const arcY = arcFactor * this.flightArcY;
+      const curveFactor = Math.sin(Math.PI * Math.pow(u, 0.92));
+      const curveX = curveFactor * this.aimCurve;
+
+      this.ballPos.x = THREE.MathUtils.lerp(start.x, end.x, u) + curveX;
+      this.ballPos.y = Math.max(BALL_RADIUS, THREE.MathUtils.lerp(start.y, end.y, u) + arcY);
+      this.ballPos.z = THREE.MathUtils.lerp(start.z, end.z, u);
+      this.ball.position.copy(this.ballPos);
+
+      // Top dönüşü (spin)
+      this.ball.rotation.x += dt * (this.tsubasaActive ? 32 : 22);
+      this.ball.rotation.y += -this.aimCurve * dt * 8;
+
+      // Parçacıklar (Tsubasa'da alev, normal vuruşta şık hava akımı izi)
+      if (this.tsubasaActive) {
+        this.effects.spawnFireTail(this.ballPos, 2);
+      } else {
+        this.effects.spawnBallTrail(this.ballPos);
+      }
+
+      // Baraj Çarpışması (Penaltı Z=7.0 veya Frikik Z=12.0)
+      if (this.wallActive) {
+        const wallPos = this.defenseWallGroup.position;
+        if (Math.abs(this.ballPos.z - wallPos.z) < 0.55) {
+          const wallY = wallPos.y;
+          const count = Math.max(1, this.wallMembers.length);
+          const halfWallW = (count * 0.68) / 2 + 0.32;
+          if (Math.abs(this.ballPos.x - wallPos.x) < halfWallW && this.ballPos.y < (wallY + 2.25)) {
+            // Baraja çarptı!
+            this.sound.play('save');
+            this.effects.spawnKickDust(this.ballPos);
+            this.ballBounceVel = new THREE.Vector3(
+              (Math.random() - 0.5) * 5,
+              3.5,
+              6.5
+            );
+            this.state = 'bouncing';
+            blendPose(this.shooter, POSES.hands_head, 0.4);
+            if (onSave) onSave('Baraj Geçit Vermedi!');
+            return;
+          }
+        }
+      }
+
+      // Hedefe / Kale çizgisine ulaşma
+      if (u >= 1.0 || this.ballPos.z <= 0.2) {
+        this.checkGoalResolution(onGoal, onSave, onMiss);
+      }
+    } else if (this.state === 'bouncing') {
+      // Sekme fiziği
+      this.ballBounceVel.y += this.gravity * dt;
+      this.ballPos.addScaledVector(this.ballBounceVel, dt);
+      if (this.ballPos.y < BALL_RADIUS) {
+        this.ballPos.y = BALL_RADIUS;
+        this.ballBounceVel.y = -this.ballBounceVel.y * 0.45;
+        this.ballBounceVel.x *= 0.75;
+        this.ballBounceVel.z *= 0.75;
+      }
+      this.ball.position.copy(this.ballPos);
+    } else if (this.state === 'in_net') {
+      // File içinde durma
+      if (this.ballPos.y > BALL_RADIUS) {
+        this.ballPos.y = Math.max(BALL_RADIUS, this.ballPos.y - 2.5 * dt);
+      }
+      if (this.ballPos.z > -1.2) {
+        this.ballPos.z -= 1.0 * dt;
+      }
+      this.ball.position.copy(this.ballPos);
+    }
+  }
+
+  updateKeeperDive(dt) {
+    this.keeperDive.t += dt / this.keeperDive.duration;
+    const t = Math.min(1.0, this.keeperDive.t);
+
+    const pos = this.goalkeeper.root.position;
+    // Yatay dalış
+    pos.x = THREE.MathUtils.lerp(this.keeperDive.startPos.x, this.keeperDive.targetPos.x, t);
+
+    // Doğal parabolik sıçrama eğrisi (Topa doğru atletik uçuş, havaya fırlamaz)
+    const isHigh = this.keeperDive.targetPos.y > 0.35;
+    const jumpApex = isHigh ? 0.28 : 0.10;
+    const jumpArc = Math.sin(t * Math.PI) * jumpApex;
+    pos.y = Math.max(0.0, THREE.MathUtils.lerp(this.keeperDive.startPos.y, this.keeperDive.targetPos.y, t) + jumpArc);
+
+    // Gövde yatış açısı (profesyonel yatay süzülüş)
+    if (this.keeperDive.direction === 'left') {
+      this.goalkeeper.body.rotation.z = THREE.MathUtils.lerp(0, Math.PI / 2.3, t);
+    } else if (this.keeperDive.direction === 'right') {
+      this.goalkeeper.body.rotation.z = THREE.MathUtils.lerp(0, -Math.PI / 2.3, t);
+    }
+
+    blendPose(this.goalkeeper, this.keeperDive.divePose, 0.22);
+
+    if (t >= 1.0) {
+      this.keeperDive.active = false;
+    }
+  }
+
+  checkGoalResolution(onGoal, onSave, onMiss) {
+    const bx = this.ballPos.x;
+    const by = this.ballPos.y;
+    const hw = GOAL.halfWidth;
+    const gh = GOAL.height;
+
+    // 1. Direk Çarpması
+    const hitLeftPost = Math.abs(bx - (-hw)) < 0.16 && by <= gh + 0.1;
+    const hitRightPost = Math.abs(bx - hw) < 0.16 && by <= gh + 0.1;
+    const hitCrossbar = Math.abs(by - gh) < 0.16 && Math.abs(bx) <= hw + 0.1;
+
+    if (hitLeftPost || hitRightPost || hitCrossbar) {
+      this.sound.play('post');
+      this.sound.play('ooh');
+      // Tsubasa alevi ve baraj gol atılana kadar kalıcıdır (Kullanıcı İsteği)
+      this.ballBounceVel = new THREE.Vector3(
+        (Math.random() - 0.5) * 4,
+        4.0,
+        7.0
+      );
+      this.state = 'bouncing';
+      blendPose(this.shooter, POSES.sad, 0.5);
+      if (onMiss) onMiss('DİREKTEN DÖNDÜ!');
+      return;
+    }
+
+    // 2. Kaleci Kurtarışı
+    let isSaved = false;
+    if (this.gameMode === 'keeper') {
+      const keeperCenterY = this.goalkeeper.root.position.y + 0.95;
+      const reachDist = 1.35 * (this.keeperBaseScale || 1.0) * (this.shrinkActive ? (this.shrinkPercent === 80 ? 0.35 : 0.6) : 1.0);
+      const dist = Math.hypot(this.goalkeeper.root.position.x - bx, keeperCenterY - by);
+      isSaved = dist <= reachDist;
+    } else {
+      isSaved = this.keeperDive.willSave;
+    }
+
+    if (isSaved) {
+      this.sound.play('save');
+      this.sound.play('ooh');
+      // Tsubasa alevi ve baraj gol atılana kadar kalıcıdır (Kullanıcı İsteği)
+      this.ballBounceVel = new THREE.Vector3(
+        (Math.random() - 0.5) * 6,
+        4.2,
+        6.5
+      );
+      this.state = 'bouncing';
+      blendPose(this.shooter, POSES.hands_head, 0.5);
+      const saver = this.gameMode === 'keeper' ? (this.broadcasterName || 'Yayıncı') : this.keeperData.username;
+      if (onSave) onSave(`@${saver} Kurtardı!`);
+      return;
+    }
+
+    // 3. Kale İçi (GOOOL!)
+    if (Math.abs(bx) < hw && by > 0 && by < gh) {
+      this.sound.play('goal');
+      this.sound.play('cheer');
+      this.stadium.rippleNet();
+      this.effects.spawnConfetti('#ffd700', '#ff0033', 250);
+
+      // SADECE GOL ATILINCA: Savunma barajı, kaleci küçülmesi ve Tsubasa ateşi söner
+      this.deactivateWall();
+      this.deactivateShrink();
+      this.clearTsubasaFireAura();
+      this.tsubasaActive = false;
+
+      // Şutör sevinir
+      blendPose(this.shooter, POSES.goal_cheer, 0.6);
+
+      // Top fileye dolanır ve yavaşça durur
+      this.ballBounceVel = new THREE.Vector3(0, -1.8, -1.2);
+      this.state = 'in_net';
+      if (onGoal) onGoal();
+      return;
+    }
+
+    // 4. Aut (Dışarı gitti)
+    this.sound.play('miss');
+    this.sound.play('ooh');
+    // Tsubasa alevi ve baraj gol atılana kadar kalıcıdır (Kullanıcı İsteği)
+    this.ballBounceVel = new THREE.Vector3(0, 0, -5.0);
+    this.state = 'bouncing';
+    blendPose(this.shooter, POSES.sad, 0.5);
+    if (onMiss) onMiss('AUT! DIŞARI GİTTİ');
+  }
+
+  // --------------------------------------------------------------------------
+  // GÜÇLER VE ETKİLER
+  // --------------------------------------------------------------------------
+  setupDefaultWall(player = null) {
+    while (this.wallMembers.length > 0) {
+      const m = this.wallMembers.pop();
+      this.defenseWallGroup.remove(m.root);
+      if (m.badge?.userData?.dispose) m.badge.userData.dispose();
+    }
+    this.defenders = [];
+
+    // 3 Kişilik standart baraj
+    for (let i = 0; i < 3; i++) {
+      const isPlayerSlot = (player && i === 1);
+      const nick = isPlayerSlot ? (player.nickname || 'Savunma') : 'BARAJ';
+      const def = createHumanoid({
+        team: { primary: '#334155', secondary: '#64748b', shorts: '#0f172a', socks: '#334155', pattern: 'stripes' },
+        backName: nick.slice(0, 10).toUpperCase(),
+        number: String(4 + i)
+      });
+      blendPose(def, POSES.wall_guard, 1.0);
+
+      let badge = null;
+      if (isPlayerSlot) {
+        badge = createAvatarBadge(player, { size: 0.68, ring: '#10b981' });
+        badge.position.set(0, 2.35, 0);
+        def.root.add(badge);
+      }
+
+      this.defenseWallGroup.add(def.root);
+      this.defenders.push(def);
+      this.wallMembers.push({ root: def.root, def, badge, player: isPlayerSlot ? player : null });
+    }
+    this.repositionWallDefenders();
+  }
+
+  activateDefenseWall(durationSec = 999999, player = null) {
+    this.wallActive = true;
+    this.wallDuration = 999999;
+    this.wallTimer = 999999;
+    if (this.wallMembers.length === 0) {
+      this.setupDefaultWall(player);
+    }
+    this.defenseWallGroup.visible = true;
+    this.sound.play('wall');
+  }
+
+  addWallDefender(player, durationSec = 999999) {
+    if (this.wallMembers.length === 0) {
+      this.setupDefaultWall(null);
+    }
+    if (this.wallMembers.length >= 8) return;
+
+    // Aynı kullanıcı arka arkaya 100 beğeni attıysa rozetini tazele
+    const pNick = player?.nickname || 'Savunmacı';
+    const def = createHumanoid({
+      team: { primary: '#1e293b', secondary: '#ff2a6d', shorts: '#0f172a', socks: '#1e293b', pattern: 'stripes' },
+      backName: pNick.slice(0, 10).toUpperCase(),
+      number: String(this.wallMembers.length + 1)
+    });
+    const badge = createAvatarBadge(player, { size: 0.68, ring: '#ff0055' });
+    badge.position.set(0, 2.35, 0);
+    def.root.add(badge);
+    blendPose(def, POSES.wall_guard, 1.0);
+
+    this.defenseWallGroup.add(def.root);
+    this.defenders.push(def);
+    this.wallMembers.push({ root: def.root, def, badge, player });
+
+    this.repositionWallDefenders();
+    this.wallActive = true;
+    this.wallDuration = 999999;
+    this.wallTimer = 999999;
+    this.defenseWallGroup.visible = true;
+    this.sound.play('wall');
+  }
+
+  // 100 Beğeni ile eklenen savunma barajı (SADECE 100 beğeni atan kişi eklenir, asla bot gelmez! Gol olana kadar süresiz kalır)
+  addLikeWallDefender(player) {
+    if (this.wallMembers.length >= 8) return;
+
+    const pNick = player?.nickname || 'Destekçi';
+    const def = createHumanoid({
+      team: { primary: '#1e293b', secondary: '#ff2a6d', shorts: '#0f172a', socks: '#1e293b', pattern: 'stripes' },
+      backName: pNick.slice(0, 10).toUpperCase(),
+      number: String(this.wallMembers.length + 1)
+    });
+    const badge = createAvatarBadge(player, { size: 0.72, ring: '#ff0055' });
+    badge.position.set(0, 2.35, 0);
+    def.root.add(badge);
+    blendPose(def, POSES.wall_guard, 1.0);
+
+    this.defenseWallGroup.add(def.root);
+    this.defenders.push(def);
+    this.wallMembers.push({ root: def.root, def, badge, player });
+
+    this.repositionWallDefenders();
+    this.wallActive = true;
+    this.wallDuration = 999999; // Süresiz: Gol atılana kadar kalır!
+    this.wallTimer = 999999;
+    this.defenseWallGroup.visible = true;
+    this.sound.play('wall');
+  }
+
+  setupFreekick(player = null) {
+    if (this.gameMode === 'keeper') {
+      if (player) this.setShooterOpponent(player);
+    } else {
+      if (player) this.setShooterBroadcaster(player.nickname, player.avatar);
+    }
+    this.isFreekick = true;
+    this.state = 'idle';
+    this.ballLaunched = false;
+    this.ballPos.copy(this.freekickBallPos);
+    this.ballVel.set(0, 0, 0);
+    this.ballBounceVel.set(0, 0, 0);
+    this.ball.position.copy(this.ballPos);
+    this.ball.rotation.set(0, 0, 0);
+
+    // Şutör frikik noktasına geçer
+    this.shooter.root.position.copy(this.freekickShooterPos);
+    this.shooter.root.rotation.set(0, Math.PI - 0.38, 0);
+    blendPose(this.shooter, POSES.stand, 1.0);
+
+    // Barajı frikik açısına göre ayarla
+    if (this.wallActive) {
+      this.repositionWallDefenders();
+    }
+
+    this.sound.play('jersey');
+  }
+
+  repositionWallDefenders() {
+    const n = this.wallMembers.length;
+    if (n === 0) return;
+
+    if (this.isFreekick) {
+      // Frikik barajı (Ceza sahası önü, şut açısını kapatacak şekilde)
+      this.defenseWallGroup.position.set(-2.4, 0, 12.0);
+      this.defenseWallGroup.rotation.y = -0.22;
+    } else {
+      // Penaltı barajı
+      this.defenseWallGroup.position.set(1.4, 0, 7.0);
+      this.defenseWallGroup.rotation.y = 0;
+    }
+
+    const spacing = 0.68;
+    this.wallMembers.forEach((m, idx) => {
+      const x = (idx - (n - 1) / 2) * spacing;
+      m.root.position.set(x, 0, 0);
+    });
+  }
+
+  deactivateWall() {
+    this.wallActive = false;
+    this.wallTimer = 0;
+    this.wallDuration = 60;
+    this.defenseWallGroup.visible = false;
+    while (this.defenseWallGroup.children.length > 0) {
+      const child = this.defenseWallGroup.children[0];
+      this.defenseWallGroup.remove(child);
+      if (child.userData?.dispose) child.userData.dispose();
+    }
+    this.wallMembers = [];
+    this.defenders = [];
+  }
+
+  activateShrink(percent = 50, durationSec = 999999) {
+    this.shrinkActive = true;
+    this.shrinkPercent = percent;
+    this.shrinkDuration = 999999;
+    this.shrinkTimer = 999999;
+
+    const base = KEEPER_TYPES[this.keeperType]?.scale || this.keeperBaseScale || 1.0;
+    const factor = percent === 80 ? 0.25 : 0.5;
+    const finalScale = base * factor;
+    this.goalkeeper.root.scale.set(finalScale, finalScale, finalScale);
+    this.sound.play('shrink');
+  }
+
+  deactivateShrink() {
+    this.shrinkActive = false;
+    this.shrinkPercent = 0;
+    this.shrinkTimer = 0;
+    const base = KEEPER_TYPES[this.keeperType]?.scale || this.keeperBaseScale || 1.0;
+    this.goalkeeper.root.scale.set(base, base, base);
+  }
+
+  activateTsubasa() {
+    this.tsubasaActive = true;
+    this.createTsubasaFireAura();
+    this.sound.play('tsubasa');
+  }
+
+  createTsubasaFireAura() {
+    this.clearTsubasaFireAura();
+
+    // 1. Parlak Alev Küresi (Glow Shell)
+    const auraGeo = new THREE.SphereGeometry(BALL_RADIUS * 1.6, 16, 16);
+    const auraMat = new THREE.MeshBasicMaterial({
+      color: 0xff3b00,
+      transparent: true,
+      opacity: 0.65,
+      blending: THREE.AdditiveBlending,
+      side: THREE.DoubleSide
+    });
+    this.tsubasaAuraMesh = new THREE.Mesh(auraGeo, auraMat);
+    this.tsubasaAuraMesh.position.copy(this.ballPos);
+    this.scene.add(this.tsubasaAuraMesh);
+
+    // 2. Güçlü Ateş Işığı (Pulsing Fire PointLight)
+    this.tsubasaLight = new THREE.PointLight(0xff5500, 4.5, 8.0);
+    this.tsubasaLight.position.copy(this.ballPos);
+    this.tsubasaLight.position.y += 0.25;
+    this.scene.add(this.tsubasaLight);
+  }
+
+  updateTsubasaFireAura(dt) {
+    if (!this.tsubasaActive) return;
+    const now = performance.now();
+    if (this.tsubasaAuraMesh) {
+      this.tsubasaAuraMesh.position.copy(this.ballPos);
+      const pulse = 1.0 + Math.sin(now * 0.015) * 0.18;
+      this.tsubasaAuraMesh.scale.set(pulse, pulse, pulse);
+      this.tsubasaAuraMesh.rotation.y += dt * 4.0;
+      this.tsubasaAuraMesh.rotation.x += dt * 2.5;
+    }
+    if (this.tsubasaLight) {
+      this.tsubasaLight.position.copy(this.ballPos);
+      this.tsubasaLight.position.y += 0.25;
+      this.tsubasaLight.intensity = 4.0 + Math.sin(now * 0.02) * 1.5;
+    }
+    // Top yerinde dururken alev kıvılcımları yükselir
+    if (this.state === 'idle') {
+      this.effects.spawnFireAura(this.ballPos);
+    }
+  }
+
+  clearTsubasaFireAura() {
+    if (this.tsubasaAuraMesh) {
+      this.scene.remove(this.tsubasaAuraMesh);
+      if (this.tsubasaAuraMesh.geometry) this.tsubasaAuraMesh.geometry.dispose();
+      if (this.tsubasaAuraMesh.material) this.tsubasaAuraMesh.material.dispose();
+      this.tsubasaAuraMesh = null;
+    }
+    if (this.tsubasaLight) {
+      this.scene.remove(this.tsubasaLight);
+      this.tsubasaLight = null;
+    }
+  }
+
+  setGoalkeeper(player, type = 'normal') {
+    const p = player || { nickname: 'Kaleci' };
+    const keeperName = p.nickname || p.username || p.uniqueId || 'Kaleci';
+
+    // 1. EĞER YAYINCI KALEDEYSE (keeper modu aktif):
+    // Yayıncı kalede kalmaya devam eder! Hediye atan kişi penaltı noktasına şutör olarak geçer!
+    if (this.gameMode === 'keeper') {
+      this.setShooterOpponent(p);
+      this.keeperCountdown = 2.0; // Şutör hazırlanır ve şutunu çeker
+      return;
+    }
+
+    // 2. EĞER YAYINCI ŞUTÖRSE (normal mod):
+    // Hediye atan kişi kaleye geçer
+    // Kullanıcı İsteği: "Hediye geldiği zaman kaleciyi küçülttükleri zaman küçülüyor, eyvallah ama dev boss kalecisi hediyesi geldiği zaman hemen büyümesi lazım. Çünkü hediye, hediyeyi etkilememesi lazım."
+    this.shrinkActive = false;
+    this.shrinkPercent = 0;
+    this.shrinkTimer = 0;
+
+    this.keeperType = type;
+    this.keeperData.username = keeperName;
+
+    const cfg = KEEPER_TYPES[type] || KEEPER_TYPES.normal;
+    this.keeperBaseScale = cfg.scale;
+    // Anında yeni hediye boyutuna (örneğin Boss ise 2.1x dev boyuta) hemen büyü/ayarla!
+    this.goalkeeper.root.scale.set(cfg.scale, cfg.scale, cfg.scale);
+
+    // Kaleci Forması ve Eldiveni (Sırtında hediye atanın adı yazar)
+    this.goalkeeper.setKit(
+      { primary: cfg.kit, secondary: cfg.kit2, shorts: '#0f172a', socks: cfg.kit, pattern: 'keeper' },
+      keeperName,
+      '1',
+      { gloves: '#ffffff' }
+    );
+
+    // Kafa Üstü Rozet (Hediye atan kişinin net ve kaliteli profil fotoğrafı ve adı)
+    if (this.keeperBadge) {
+      this.goalkeeper.root.remove(this.keeperBadge);
+      if (this.keeperBadge.userData?.dispose) this.keeperBadge.userData.dispose();
+    }
+    this.keeperBadge = createAvatarBadge(player, { size: 0.82, ring: '#00e5ff' });
+    this.keeperBadge.position.set(0, 2.5, 0);
+    this.goalkeeper.root.add(this.keeperBadge);
+
+    this.sound.play('keeper');
+  }
+
+  setShooterJersey(teamKey, player = null) {
+    const team = TEAMS[teamKey];
+    if (!team) return;
+    this.currentTeamKey = teamKey;
+    const viewerName = String(player?.nickname || player?.username || team.starPlayer || 'İZLEYİCİ')
+      .replace(/^@/, '').slice(0, 14).toUpperCase();
+    this.shooter.setKit(team, viewerName, team.number);
+
+    this.sound.play('jersey');
+    this.effects.spawnConfetti(team.primary, team.secondary, 120);
+  }
+
+  setShooterBroadcaster(username, avatarUrl = null) {
+    if (!username) return;
+    this.broadcasterName = username;
+    const finalAvatar = avatarUrl || `/api/tiktok-avatar?user=${encodeURIComponent(username)}`;
+    this.broadcasterAvatar = finalAvatar;
+    if (this.shooterBadge) this.shooter.root.remove(this.shooterBadge);
+    this.shooterBadge = createAvatarBadge({
+      nickname: username,
+      avatar: finalAvatar,
+      avatarFallback: `/api/avatar?user=${encodeURIComponent(username)}`
+    }, { size: 0.62, ring: '#ffbe0b', showLabel: false });
+    this.shooterBadge.position.set(0, 2.3, 0);
+    this.shooter.root.add(this.shooterBadge);
+  }
+
+  setGoalkeeperBroadcaster(username, avatarUrl = null) {
+    if (!username) return;
+    this.broadcasterName = username;
+    const finalAvatar = avatarUrl || this.broadcasterAvatar || `/api/tiktok-avatar?user=${encodeURIComponent(username)}`;
+    this.broadcasterAvatar = finalAvatar;
+    if (this.keeperBadge) this.goalkeeper.root.remove(this.keeperBadge);
+    this.keeperBadge = createAvatarBadge({
+      nickname: username,
+      avatar: finalAvatar,
+      avatarFallback: `/api/avatar?user=${encodeURIComponent(username)}`
+    }, { size: 0.55, ring: '#ffbe0b', showLabel: false });
+    this.keeperBadge.position.set(0, 2.35, 0);
+    if (this.gameMode === 'keeper') {
+      this.keeperBadge.visible = false;
+    }
+    this.goalkeeper.root.add(this.keeperBadge);
+  }
+
+  setShooterOpponent(player) {
+    if (!player) return;
+    const oppName = player.nickname || player.username || 'Rakip_Oyuncu';
+    if (this.shooterBadge) this.shooter.root.remove(this.shooterBadge);
+    const av = player.avatar || `/api/avatar?user=${encodeURIComponent(oppName)}`;
+    // Kullanıcı İsteği: Pozisyon değiştirildiğinde şutör profil rozeti ekranı kapatmasın (Kompakt ve net)
+    this.shooterBadge = createAvatarBadge({
+      nickname: oppName,
+      avatar: av,
+      avatarFallback: `/api/avatar?user=${encodeURIComponent(oppName)}`
+    }, { size: 0.48, ring: '#00e5ff', showLabel: true });
+    this.shooterBadge.position.set(0, 2.25, 0);
+    this.shooter.root.add(this.shooterBadge);
+
+    // Şutörün formasının sırtında hediye atan rakibin adı yazar
+    this.shooter.setKit({
+      primary: '#0284c7',
+      secondary: '#ffffff',
+      shorts: '#0f172a',
+      socks: '#0284c7',
+      pattern: 'stripes'
+    }, oppName.slice(0, 14).toUpperCase(), '10');
+  }
+
+  swapRoles(toKeeper = true, player = null) {
+    this.isSwapped = toKeeper;
+    this.setGameMode(toKeeper ? 'keeper' : 'shooter');
+    if (toKeeper) {
+      this.setGoalkeeperBroadcaster(this.broadcasterName, this.broadcasterAvatar);
+      if (player) this.setShooterOpponent(player);
+      else this.setShooterOpponent({ nickname: 'Rakip_Şutör' });
+    } else {
+      this.setShooterBroadcaster(this.broadcasterName, this.broadcasterAvatar);
+      this.shooter.setKit({
+        primary: '#e30a17',
+        secondary: '#ffffff',
+        shorts: '#ffffff',
+        socks: '#e30a17',
+        pattern: 'national'
+      }, '@MANGAO7TV', '16');
+      if (player) this.setGoalkeeper(player, 'normal');
+      else this.setGoalkeeper({ nickname: 'Kaleci' }, 'normal');
+    }
+  }
+
+  setGameMode(mode = 'shooter') {
+    this.gameMode = mode;
+    this.keeperCountdown = this.keeperCountdownTotal || 3.5;
+    this.keeperTargetX = 0;
+    this.keeperTargetY = 0;
+    this.isKeeperHolding = false;
+    this.goalkeeper.root.position.set(0, 0, 0.2);
+    if (mode === 'keeper') {
+      // Kaleci modunda izleyicilerin kurduğu baraj korunur ve yenileri kurulabilir!
+      if (this.wallActive) {
+        this.defenseWallGroup.visible = true;
+        this.repositionWallDefenders();
+      }
+      if (this.broadcasterName) {
+        this.setGoalkeeperBroadcaster(this.broadcasterName, this.broadcasterAvatar);
+      }
+      // Kullanıcı İsteği: Kaleci modunda kalecinin kafasındaki rozet kameranın görüşünü ve kaleyi kapatmasın!
+      if (this.keeperBadge) {
+        this.keeperBadge.visible = false;
+      }
+    } else {
+      if (this.broadcasterName) {
+        this.setShooterBroadcaster(this.broadcasterName, this.broadcasterAvatar);
+      }
+      if (this.keeperBadge) {
+        this.keeperBadge.visible = true;
+      }
+    }
+  }
+
+  resetPosition() {
+    this.state = 'idle';
+    this.ballLaunched = false;
+    this.isFreekick = false;
+
+    // Tsubasa alevi ve savunma barajı gol atılana kadar kalıcıdır (Kullanıcı İsteği)
+    if (this.tsubasaActive) {
+      this.createTsubasaFireAura();
+    }
+
+    this.ballPos.set(0, BALL_RADIUS, PENALTY_SPOT);
+    this.ballVel.set(0, 0, 0);
+    this.ballBounceVel.set(0, 0, 0);
+    this.ballSpin = 0;
+    this.currentPower = 0;
+    this.updatePowerUI(0);
+    this.ball.position.copy(this.ballPos);
+    this.ball.rotation.set(0, 0, 0);
+
+    this.keeperCountdown = this.keeperCountdownTotal || 3.5;
+    this.keeperTargetX = 0;
+    this.keeperTargetY = 0;
+
+    // Şutör yerine döner (Doğal açı ve pozisyon)
+    this.shooter.root.position.copy(this.shooterDefaultPos);
+    this.shooter.root.rotation.set(0, Math.PI - 0.28, 0);
+    blendPose(this.shooter, POSES.stand, 1.0);
+
+    // Kaleci yerine döner
+    this.goalkeeper.root.position.set(0, 0, 0.2);
+    this.goalkeeper.body.rotation.set(0, 0, 0);
+    blendPose(this.goalkeeper, POSES.keeper_ready, 1.0);
+
+    // Baraj aktifse penaltı pozisyonuna geri ayarla
+    if (this.wallActive) {
+      this.repositionWallDefenders();
+    }
+
+    this.hideTrajectory();
+  }
+}

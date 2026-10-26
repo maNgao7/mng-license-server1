@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>MNG Duck Hunt - Karnaval Poligon</title>
+  <link rel="stylesheet" href="style.css">
+  <script>
+    window.addEventListener('error', function(e) {
+      console.error('PAGE ERROR:', e.message, 'at', e.filename, 'line:', e.lineno, 'col:', e.colno, e.error);
+    });
+    window.addEventListener('unhandledrejection', function(e) {
+      console.error('PROMISE ERROR:', e.reason);
+    });
+  </script>
+</head>
+<body>
+  <div id="game-container">
+    <!-- Three.js 3D Canvas -->
+    <canvas id="three-canvas"></canvas>
+
+    <!-- Mud Splash Layer (Splattered Mud Patches) -->
+    <div id="mud-layer" class="mud-layer"></div>
+
+    <!-- Bomb Flash Red Overlay -->
+    <div id="bomb-flash" class="bomb-flash"></div>
+
+    <!-- Custom Carnival Target Reticle -->
+    <div id="crosshair">
+      <svg viewBox="0 0 48 48" width="48" height="48" fill="none">
+        <circle cx="24" cy="24" r="18" stroke="#ffde59" stroke-width="2.5" stroke-dasharray="4 2" opacity="0.9" />
+        <circle cx="24" cy="24" r="8" stroke="#ff3b30" stroke-width="2" />
+        <circle cx="24" cy="24" r="2.5" fill="#ff3b30" />
+        <line x1="24" y1="2" x2="24" y2="12" stroke="#ffde59" stroke-width="2" stroke-linecap="round" />
+        <line x1="24" y1="36" x2="24" y2="46" stroke="#ffde59" stroke-width="2" stroke-linecap="round" />
+        <line x1="2" y1="24" x2="12" y2="24" stroke="#ffde59" stroke-width="2" stroke-linecap="round" />
+        <line x1="36" y1="24" x2="46" y2="24" stroke="#ffde59" stroke-width="2" stroke-linecap="round" />
+      </svg>
+      <div id="crosshair-jam-icon" class="crosshair-jam-icon">🔒</div>
+      <div id="crosshair-rapid-icon" class="crosshair-rapid-icon">⚡</div>
+    </div>
+
+    <!-- HUD Layer -->
+    <div class="hud-layer">
+      <!-- Top Bar -->
+      <div class="top-bar">
+        <!-- Brand Info -->
+        <div class="brand-badge hud-interactive">
+          <span class="brand-icon">🦆</span>
+          <div class="brand-text">
+            <span class="brand-title">MNG DUCK HUNT</span>
+            <span class="brand-sub">KARNAVAL POLİGON</span>
+          </div>
+        </div>
+
+        <!-- Center Score & Target Score Plaque -->
+        <div class="score-plaque hud-interactive">
+          <div class="plaque-body">
+            <div class="plaque-row">
+              <div class="score-column">
+                <div class="plaque-label">TOPLAM PUAN</div>
+                <div class="plaque-value" id="score-display">0</div>
+              </div>
+              <div class="round-divider"></div>
+              <div class="round-column">
+                <div class="round-timer-box">
+                  <span class="timer-icon">⏱️</span>
+                  <span id="round-timer">02:00</span>
+                  <button class="timer-pause-btn hud-interactive" id="btn-round-pause" title="Süreyi Duraklat / Devam Ettir (P)">⏸️</button>
+                </div>
+                <div class="target-box">
+                  <span class="target-label">HEDEF PUAN:</span>
+                  <span id="target-counter" class="target-counter">0 / 20.000</span>
+                </div>
+              </div>
+            </div>
+            <!-- Target Score Progress Bar -->
+            <div class="target-progress-track">
+              <div class="target-progress-fill" id="target-progress-bar" style="width: 0%;"></div>
+            </div>
+            <div class="plaque-footer-row">
+              <span class="hit-ratio-pill" id="accuracy-display">İsabet: %100</span>
+              <span class="hit-ratio-pill" id="duck-kill-display">Vurulan: 0</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Top Right Controls & Quick Connect -->
+        <div class="top-right-group hud-interactive">
+          <!-- Quick TikTok Connect Box -->
+          <div class="quick-connect-pill">
+            <span class="status-dot" id="status-dot"></span>
+            <input type="text" class="quick-tiktok-input" id="quick-tiktok-input" placeholder="@kullanici_adi" />
+            <button class="quick-connect-btn" id="btn-quick-connect">🔴 Bağlan</button>
+          </div>
+
+          <button class="icon-btn" id="btn-leaderboard" title="Liderlik Tablosu">🏆</button>
+          <button class="icon-btn" id="btn-sound" title="Ses Aç/Kapat">🔊</button>
+          <button class="icon-btn" id="btn-settings" title="Ayarlar & Hediye Kataloğu">⚙️</button>
+        </div>
+      </div>
+
+      <!-- Gun Jam Alert Banner (Prominent Screen Center Alert) -->
+      <div id="jam-banner">
+        <span class="jam-icon">🔒</span>
+        <div class="jam-text-wrap">
+          <div class="jam-title">TÜFEK KİLİTLENDİ!</div>
+          <div class="jam-sub" id="jam-sub">SABOTAJ! Tüfeğiniz kilitlendi! (3.0 sn)</div>
+        </div>
+      </div>
+
+      <!-- Rapid Fire Banner (Yukarıda - Taramalı Tüfek Modu Aktif) -->
+      <div id="rapid-fire-banner">
+        <span class="rapid-icon">⚡</span>
+        <div class="rapid-text-wrap">
+          <div class="rapid-title">TARAMALI TÜFEK MODU AKTİF! 🚀</div>
+          <div class="rapid-sub" id="rapid-sub">Süre: 10.0 sn</div>
+        </div>
+      </div>
+
+      <!-- Streak / Combo Banner -->
+      <div id="streak-banner">
+        <div class="streak-text" id="streak-title">Streak x4!</div>
+        <div class="streak-sub" id="streak-sub">MÜKEMMEL ATIŞ! 🔥</div>
+      </div>
+
+      <!-- Escape Toast (Permanently Hidden) -->
+      <div id="escape-banner" style="display:none !important;"></div>
+
+      <!-- Bottom Ammo Clip (10 Corks with Auto-Reload indicator) -->
+      <div class="bottom-left-group hud-interactive">
+        <div class="ammo-clip-box">
+          <div class="ammo-header-row">
+            <span class="ammo-label">MERMİ (10)</span>
+            <span class="ammo-auto-tag" id="ammo-status-tag">OTOMATİK YENİLEME</span>
+          </div>
+          <div class="cork-slots" id="cork-slots">
+            <div class="cork-slot"><div class="cork-bullet"></div></div>
+            <div class="cork-slot"><div class="cork-bullet"></div></div>
+            <div class="cork-slot"><div class="cork-bullet"></div></div>
+            <div class="cork-slot"><div class="cork-bullet"></div></div>
+            <div class="cork-slot"><div class="cork-bullet"></div></div>
+            <div class="cork-slot"><div class="cork-bullet"></div></div>
+            <div class="cork-slot"><div class="cork-bullet"></div></div>
+            <div class="cork-slot"><div class="cork-bullet"></div></div>
+            <div class="cork-slot"><div class="cork-bullet"></div></div>
+            <div class="cork-slot"><div class="cork-bullet"></div></div>
+          </div>
+          <span class="ammo-warning" id="ammo-warning">DOLDURULUYOR...</span>
+        </div>
+      </div>
+
+      <!-- Bottom Reload Button (Right) -->
+      <div class="bottom-right-group hud-interactive">
+        <button class="reload-btn" id="btn-reload">
+          <span>🔄</span>
+          <span>DOLDUR</span>
+          <span class="reload-key-tag">R</span>
+        </button>
+      </div>
+
+      <!-- Live Gift Toasts -->
+      <div id="toast-container"></div>
+    </div>
+
+    <!-- START / LOBBY MODAL (Screen Center Before Game Starts) -->
+    <div id="lobby-modal" class="lobby-modal open">
+      <div class="lobby-card">
+        <div class="lobby-icon">🎪🦆</div>
+        <div class="lobby-title">MNG DUCK HUNT</div>
+        <div class="lobby-sub">Karnaval Poligon - TikTok Canlı Yayın Oyunu</div>
+
+        <div class="lobby-connect-box">
+          <label class="lobby-label">TikTok Canlı Yayın Hesabınız</label>
+          <div class="lobby-input-row">
+            <input type="text" class="lobby-input" id="lobby-username-input" placeholder="@kullanici_adi" />
+            <button class="lobby-btn-connect" id="btn-lobby-connect">Yayına Bağlan</button>
+          </div>
+          <div class="lobby-status" id="lobby-status-text">
+            Yayıncı kullanıcı adınızı girip bağlanın veya test modunda doğrudan başlayın.
+          </div>
+        </div>
+
+        <button class="lobby-btn-start" id="btn-lobby-start">
+          🎮 OYUNA BAŞLA
+        </button>
+        <div class="lobby-tip">
+          💡 İpucu: Siz oyuna başlayana kadar ördekler gelmez ve süre sayacı çalışmaz.
+        </div>
+
+        <!-- Hediye Görseli (PNG) İndirme Butonu -->
+        <div class="lobby-download-wrap">
+          <a href="/assets/gift_rules_guide.png" download="TikTok_Hediye_Gorseli.png" class="lobby-download-btn" id="btn-download-guide" title="Hediye Görselini Bilgisayara İndir">
+            <span class="lobby-download-icon">📥</span>
+            <div class="lobby-download-info">
+              <span class="lobby-download-title">Hediye Görseli (PNG)</span>
+              <span class="lobby-download-sub">Bilgisayarına İndir &amp; Yayında / OBS'de Kullan</span>
+            </div>
+            <span class="lobby-download-pill">İNDİR ⬇️</span>
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Settings Modal Backdrop Overlay -->
+    <div id="settings-backdrop" class="settings-backdrop"></div>
+
+    <!-- Wide Full-screen Style Settings Modal -->
+    <div id="settings-drawer">
+      <div class="drawer-header">
+        <div class="drawer-title">⚙️ Oyun & Hediye Ayarları</div>
+        <button class="drawer-close" id="btn-drawer-close">✕</button>
+      </div>
+
+      <!-- Drawer Tabs -->
+      <div class="drawer-tabs">
+        <button class="drawer-tab-btn active" data-tab="tab-general">Genel & Hedef</button>
+        <button class="drawer-tab-btn" data-tab="tab-catalog">🎁 Hediye Kataloğu</button>
+        <button class="drawer-tab-btn" data-tab="tab-test">🎲 Test Paneli</button>
+      </div>
+
+      <!-- TAB 1: Genel & Hedef Puan Ayarları -->
+      <div class="drawer-tab-content active" id="tab-general">
+        <!-- TikTok Connection -->
+        <div class="drawer-section">
+          <div class="section-label">TikTok Canlı Yayın</div>
+          <div class="input-row">
+            <input type="text" class="text-input" id="tiktok-user-input" placeholder="@kullanici_adi">
+            <button class="action-btn" id="btn-tiktok-connect">Bağlan</button>
+          </div>
+        </div>
+
+        <!-- Round Mode Settings -->
+        <div class="drawer-section">
+          <div class="section-label">⏱️ Tur Süresi & Hedef Puan</div>
+          <div class="slider-row">
+            <span>Tur Süresi</span>
+            <select class="select-input" id="select-round-time">
+              <option value="60">1 Dakika (60 sn)</option>
+              <option value="90">1.5 Dakika (90 sn)</option>
+              <option value="120" selected>2 Dakika (120 sn)</option>
+              <option value="180">3 Dakika (180 sn)</option>
+              <option value="0">Sınırsız Süre</option>
+            </select>
+          </div>
+          <div class="slider-row">
+            <span>Hedef Puan</span>
+            <select class="select-input" id="select-round-target-score">
+              <option value="10000">10.000 Puan</option>
+              <option value="20000" selected>20.000 Puan</option>
+              <option value="30000">30.000 Puan</option>
+              <option value="50000">50.000 Puan</option>
+            </select>
+          </div>
+          <div class="slider-row">
+            <span>Tüfek Kilit Süresi</span>
+            <select class="select-input" id="select-jam-duration">
+              <option value="2">2 Saniye</option>
+              <option value="3" selected>3 Saniye</option>
+              <option value="5">5 Saniye</option>
+              <option value="8">8 Saniye</option>
+              <option value="10">10 Saniye</option>
+            </select>
+          </div>
+          <div class="slider-row">
+            <span>Taramalı Tüfek Süresi</span>
+            <select class="select-input" id="select-rapid-duration">
+              <option value="5">5 Saniye</option>
+              <option value="10" selected>10 Saniye</option>
+              <option value="15">15 Saniye</option>
+              <option value="20">20 Saniye</option>
+              <option value="30">30 Saniye</option>
+            </select>
+          </div>
+          <button class="action-btn" id="btn-restart-round" style="width:100%; margin-top:10px; background:#e63946;">
+            🔄 Turu Baştan Başlat
+          </button>
+        </div>
+
+        <!-- Viewer Admission Setting (Kimler Oyuna Dahil Olsun?) -->
+        <div class="drawer-section">
+          <div class="section-label">👥 Parkura Katılım Kuralı (Kimler Dahil Olsun?)</div>
+          <div class="slider-row">
+            <span>Katılım Şartı</span>
+            <select class="select-input" id="select-admission-mode">
+              <option value="likes_only" selected>Sadece Beğenenler (1+ Beğeni, Takipçiler & Hediyeler)</option>
+              <option value="chat_only">Sadece Sohbet Edenler (Yorum Yapanlar & Hediyeler)</option>
+              <option value="all">Herkes (Tüm İzleyiciler & Katılımcılar)</option>
+              <option value="gifts_only">Sadece Hediye Gönderenler</option>
+            </select>
+          </div>
+          <div style="font-size: 11px; color: #a0aec0; margin-top: 6px; line-height: 1.4;">
+            💡 <strong>Sadece Beğenenler (Önerilen):</strong> İzleyici ekrana en az 1 kez çift tıkladığında (beğeni attığında), hediye gönderdiğinde veya takip ettiğinde anında profil fotoğrafı ve ismiyle ördek olarak parkura girer.
+          </div>
+        </div>
+
+        <!-- Interaction Rules (Like & Follow) -->
+        <div class="drawer-section">
+          <div class="section-label">❤️ Beğeni & Takip Kuralları</div>
+          <div class="slider-row">
+            <span>100 Beğeni Gönderildiğinde</span>
+            <select class="select-input" id="select-like-action">
+              <option value="speed_1.2x">+1.2x Hızlandır</option>
+              <option value="speed_1.5x" selected>+1.5x Hızlandır</option>
+              <option value="speed_2x">+2.0x Hızlandır</option>
+              <option value="spawn_gold">Altın Ördek Olarak Doğur</option>
+            </select>
+          </div>
+          <div class="slider-row">
+            <span>Yeni Takipçi Geldiğinde</span>
+            <select class="select-input" id="select-follow-action">
+              <option value="speed_1.5x">+1.5x Hızlandır</option>
+              <option value="speed_2x" selected>+2.0x Hızlandır</option>
+              <option value="spawn_big">Büyük Ördek (2 Can) Olarak Doğur</option>
+              <option value="spawn_gold">Altın Ördek Olarak Doğur</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Sound Settings -->
+        <div class="drawer-section">
+          <div class="section-label">🔊 Ses Düzeyleri & Ambiyans</div>
+          <div class="slider-row">
+            <span>Lunapark Müziği</span>
+            <input type="range" id="slider-music" min="0" max="1" step="0.05" value="0.35">
+          </div>
+          <div class="slider-row">
+            <span>Vuruş & Efekt Sesi</span>
+            <input type="range" id="slider-sfx" min="0" max="1" step="0.05" value="0.6">
+          </div>
+          <div class="slider-row">
+            <span>Ortam Hızı</span>
+            <input type="range" id="slider-speed" min="0.5" max="2.5" step="0.1" value="1.0">
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 2: Hediye Kataloğu & Özel Etkiler -->
+      <div class="drawer-tab-content" id="tab-catalog">
+        <div class="catalog-header-text">
+          Hediyeleri ve görevlerini istediğiniz gibi özelleştirin! Hediyeyi değiştirmek için görseline tıklayın.
+        </div>
+        <div class="catalog-list" id="catalog-list">
+          <!-- Dynamically populated customizable catalog cards -->
+        </div>
+      </div>
+
+      <!-- TAB 3: Test Paneli -->
+      <div class="drawer-tab-content" id="tab-test">
+        <div class="drawer-section">
+          <div class="section-label">🎁 Tanımlı Hediye Testi</div>
+          <div class="test-grid catalog-test-grid" id="test-gifts-grid">
+            <!-- Dynamically populated matching the chosen gifts -->
+          </div>
+        </div>
+
+        <div class="drawer-section">
+          <div class="section-label">⚡ Özel Güç & Tehlike Testi</div>
+          <div class="test-grid">
+            <button class="test-btn" id="test-coffee">☕ Ekrana Çamur At!</button>
+            <button class="test-btn" id="test-rapid">⚡ Taramalı Silah (10 sn)</button>
+            <button class="test-btn" id="test-sabotage">🔒 Tüfeği Kilitle (Sabotaj)</button>
+            <button class="test-btn" id="test-bomb">💣 Bomba Gönder (Tıklama!)</button>
+            <button class="test-btn" id="test-boss">👑 Dev Boss Ördek (3 Can)</button>
+            <button class="test-btn" id="test-gold">⭐ Altın Ördek Gönder</button>
+          </div>
+        </div>
+
+        <div class="drawer-section">
+          <div class="section-label">İzleyici Simülasyonu</div>
+          <div class="test-grid">
+            <button class="test-btn" id="test-like">❤️ 100 Beğeni (Hızlanma)</button>
+            <button class="test-btn" id="test-follow">➕ Yeni Takipçi (Hızlanma)</button>
+            <button class="test-btn" id="test-random">🎲 Rastgele İzleyici (Normal)</button>
+          </div>
+        </div>
+
+        <div class="drawer-section" style="margin-top:auto;">
+          <button class="action-btn" id="btn-reset-score" style="width:100%; background:#4b5563; color:#fff;">
+            Puan ve İstatistikleri Sıfırla
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Leaderboard Modal (Dual: Survivors / Victims) -->
+    <div id="leaderboard-modal">
+      <div class="drawer-header">
+        <div class="drawer-title">🏆 Canlı Liderlik Tablosu</div>
+        <button class="drawer-close" id="btn-leaderboard-close">✕</button>
+      </div>
+      <div class="leaderboard-tab-bar">
+        <button class="lead-tab-btn active" id="btn-tab-survivors">🏃 En Çok Kaçanlar</button>
+        <button class="lead-tab-btn" id="btn-tab-victims">🎯 En Çok Vurulanlar</button>
+      </div>
+
+      <!-- OBS Widget Copy Section -->
+      <div class="obs-copy-section">
+        <button class="obs-copy-btn" id="btn-copy-widget">📋 Bu Widget'ı Kopyala (OBS)</button>
+        <div class="obs-copy-feedback" id="obs-copy-feedback"></div>
+      </div>
+
+      <div class="leaderboard-list" id="leaderboard-list">
+        <!-- Rendered dynamically -->
+      </div>
+    </div>
+
+    <!-- Round Complete / Winner Podium Modal -->
+    <div id="round-complete-modal" class="round-complete-modal">
+      <div class="complete-card">
+        <div class="complete-badge" id="complete-badge">🏆 YAYINCI KAZANDI!</div>
+        <div class="complete-title" id="complete-title">HEDEF PUANA ULAŞILDI! 🎉</div>
+
+        <div class="complete-stats">
+          <div class="cstat-box">
+            <div class="cstat-label">Toplam Puan</div>
+            <div class="cstat-val" id="cstat-score">21.400</div>
+          </div>
+          <div class="cstat-box">
+            <div class="cstat-label">Vurulan Ördek</div>
+            <div class="cstat-val" id="cstat-hits">64</div>
+          </div>
+          <div class="cstat-box">
+            <div class="cstat-label">İsabet Oranı</div>
+            <div class="cstat-val" id="cstat-acc">%88</div>
+          </div>
+          <div class="cstat-box">
+            <div class="cstat-label">Toplam Kaçan</div>
+            <div class="cstat-val" id="cstat-escapes">12</div>
+          </div>
+        </div>
+
+        <!-- PODIUM: TOP 3 ESCAPED VIEWERS (HAYATTA KALANLAR PODYUMU) -->
+        <div class="podium-section">
+          <div class="podium-title">🏃 EN ÇOK KAÇAN İZLEYİCİLER (SURVIVOR ŞAMPİYONLARI)</div>
+          <div class="podium-grid" id="podium-grid">
+            <!-- Rendered dynamically with 1st, 2nd, 3rd podium avatars -->
+          </div>
+        </div>
+
+        <button class="complete-btn" id="btn-complete-restart">🔄 Yeni Tur Başlat</button>
+      </div>
+    </div>
+
+    <!-- GIFT PICKER MODAL (630+ TikTok Hediyesi Seçme) -->
+    <div id="gift-picker-modal" class="gift-picker-modal">
+      <div class="gift-picker-card">
+        <div class="drawer-header">
+          <div class="drawer-title">🎁 Bir TikTok Hediyesi Seçin</div>
+          <button class="drawer-close" id="btn-picker-close">✕</button>
+        </div>
+        <div class="gift-picker-search-wrap">
+          <input type="text" id="gift-picker-search" class="gift-picker-search" placeholder="🔍 Hediye Ara... (Örn: Gül, Asa, Aslan, Kalp, Donut, Para)" />
+        </div>
+        <div class="gift-picker-filter-bar">
+          <div class="gift-picker-sort-row">
+            <span class="gift-sort-label">Sırala:</span>
+            <select id="gift-picker-sort" class="gift-picker-sort-select">
+              <option value="coins_asc">🪙 Coin (Düşükten Yükseğe)</option>
+              <option value="coins_desc">🪙 Coin (Yüksekten Düşüğe)</option>
+              <option value="name_asc">🔤 İsim (A - Z)</option>
+            </select>
+          </div>
+          <div class="gift-picker-chips" id="gift-picker-chips">
+            <button class="gift-chip active" data-range="all">Tümü</button>
+            <button class="gift-chip" data-range="1-10">1-10 🪙</button>
+            <button class="gift-chip" data-range="11-99">11-99 🪙</button>
+            <button class="gift-chip" data-range="100-999">100-999 🪙</button>
+            <button class="gift-chip" data-range="1000+">1000+ 🪙</button>
+          </div>
+        </div>
+        <div class="gift-picker-grid" id="gift-picker-grid">
+          <!-- Populated dynamically with gift cards -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="game.js"></script>
+</body>
+</html>

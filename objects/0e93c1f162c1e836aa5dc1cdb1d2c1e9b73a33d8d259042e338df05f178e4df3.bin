@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="tr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>OBS TikTok VS Widget</title><style>
+*{box-sizing:border-box}html,body{width:100%;height:100%;margin:0;overflow:hidden;background:transparent;color:#fff;font-family:Arial,sans-serif}#bg{position:fixed;inset:0;width:100%;height:100%;object-fit:cover;display:none;z-index:0}#bg.active{display:block}.stage{position:relative;z-index:1;width:100%;height:100%;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:24px;pointer-events:none}.arena{width:min(960px,94vw);display:grid;grid-template-columns:1fr 140px 1fr;align-items:center;gap:18px;padding:26px 34px;border:2px solid rgba(255,255,255,.25);border-radius:28px;background:rgba(10,14,30,.84);box-shadow:0 18px 55px rgba(0,0,0,.72),0 0 32px rgba(254,44,85,.24),0 0 32px rgba(37,244,238,.24);backdrop-filter:blur(14px)}.player{min-width:0;display:flex;flex-direction:column;align-items:center;text-align:center}.avatar{width:150px;height:150px;object-fit:cover;border-radius:50%;border:5px solid #fff;background:#15172a}.left .avatar{border-color:#fe2c55;box-shadow:0 0 28px #fe2c55}.right .avatar{border-color:#25f4ee;box-shadow:0 0 28px #25f4ee}.name{max-width:100%;margin-top:10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:22px;font-weight:800;text-shadow:0 2px 8px #000}.score{min-width:150px;margin-top:9px;padding:7px 20px;border:2px solid;border-radius:20px;background:rgba(0,0,0,.62);font-size:40px;font-weight:900;transition:transform .2s}.score.pop{transform:scale(1.14)}.left .score{color:#fe2c55;border-color:#fe2c55}.right .score{color:#25f4ee;border-color:#25f4ee}.middle{display:flex;flex-direction:column;align-items:center;gap:10px}.timer-label{font-size:11px;letter-spacing:1.6px;font-weight:800;opacity:.8}.timer{min-width:106px;padding:9px 10px;border:2px solid #fff;border-radius:50%;background:rgba(0,0,0,.7);text-align:center;font-size:31px;font-weight:900}.timer.running{border-color:#25f4ee;color:#25f4ee}.timer.warning{border-color:#fe2c55;color:#fe2c55;animation:pulse .7s infinite alternate}.vs{width:68px;height:68px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:900;background:linear-gradient(135deg,#fe2c55,#25f4ee);border:3px solid rgba(255,255,255,.5)}.power{width:min(960px,94vw);height:14px;display:flex;overflow:hidden;margin-top:14px;border:1px solid rgba(255,255,255,.32);border-radius:8px;background:rgba(0,0,0,.66)}.power div{height:100%;transition:width .35s}#powerLeft{background:#fe2c55}#powerRight{background:#25f4ee}.slots{width:min(960px,94vw);display:flex;justify-content:space-between;gap:34px;margin-top:14px}.slot-row{width:360px;padding:9px;display:grid;grid-template-columns:repeat(3,1fr);gap:7px;border-radius:16px;background:rgba(10,14,30,.83);border:1px solid rgba(255,255,255,.18);backdrop-filter:blur(10px)}.slot{display:flex;min-width:0;flex-direction:column;align-items:center;padding:5px 2px;border-radius:9px;background:rgba(255,255,255,.07)}.slot img{width:38px;height:38px;object-fit:contain}.slot span{margin-top:2px;font-size:10px;font-weight:800;color:#ffd600;white-space:nowrap}.winner{position:fixed;z-index:3;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;background:rgba(4,5,16,.72);opacity:0;visibility:hidden;transition:opacity .2s}.winner.show{opacity:1;visibility:visible}.winner img{width:240px;height:240px;object-fit:cover;border-radius:50%;border:7px solid #ffd33d;box-shadow:0 0 50px #ffd33d,0 0 90px #fe2c55;animation:win .55s ease}.winner-name{max-width:80vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#ffd33d;font-size:38px;font-weight:900;text-shadow:0 3px 12px #000}@keyframes pulse{to{transform:scale(1.08)}}@keyframes win{from{transform:scale(.45);opacity:0}to{transform:scale(1);opacity:1}}
+@keyframes gift-anim-karart{0%,100%{opacity:1}50%{opacity:.35}}
+@keyframes gift-anim-nabiz{0%,100%{transform:scale(1)}50%{transform:scale(1.18)}}
+@keyframes gift-anim-acKapa{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(.35);opacity:.25}}
+@keyframes gift-anim-dondur{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+@keyframes gift-anim-salla{0%,100%{transform:rotate(0deg)}25%{transform:rotate(-12deg)}75%{transform:rotate(12deg)}}
+@keyframes gift-anim-zipla{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+@keyframes gift-anim-parla{0%,100%{filter:drop-shadow(0 0 2px gold) brightness(1)}50%{filter:drop-shadow(0 0 12px gold) brightness(1.35)}}
+body.gift-anim-karart .slot img{animation:gift-anim-karart var(--gift-anim-hiz,3s) ease-in-out infinite}
+body.gift-anim-nabiz .slot img{animation:gift-anim-nabiz var(--gift-anim-hiz,3s) ease-in-out infinite}
+body.gift-anim-acKapa .slot img{animation:gift-anim-acKapa var(--gift-anim-hiz,3s) ease-in-out infinite}
+body.gift-anim-dondur .slot img{animation:gift-anim-dondur var(--gift-anim-hiz,3s) linear infinite}
+body.gift-anim-salla .slot img{animation:gift-anim-salla var(--gift-anim-hiz,3s) ease-in-out infinite}
+body.gift-anim-zipla .slot img{animation:gift-anim-zipla var(--gift-anim-hiz,3s) ease-in-out infinite}
+body.gift-anim-parla .slot img{animation:gift-anim-parla var(--gift-anim-hiz,3s) ease-in-out infinite}
+@keyframes gift-anim-beyaz{0%,100%{filter:drop-shadow(0 0 4px rgba(255,255,255,.7)) brightness(1)}50%{filter:drop-shadow(0 0 18px #fff) drop-shadow(0 0 32px rgba(255,255,255,.95)) brightness(1.6)}}
+@keyframes gift-anim-siyahBeyaz{0%,100%{filter:grayscale(100%) contrast(1.15) drop-shadow(0 0 3px rgba(255,255,255,.3))}50%{filter:grayscale(100%) contrast(1.5) brightness(1.25) drop-shadow(0 0 14px rgba(255,255,255,.9))}}
+@keyframes gift-anim-altin{0%,100%{filter:drop-shadow(0 0 4px rgba(255,215,0,.6)) brightness(1)}50%{filter:drop-shadow(0 0 20px #ffd700) drop-shadow(0 0 35px #ff8e53) brightness(1.4) saturate(1.6)}}
+@keyframes gift-anim-neon{0%,100%{filter:drop-shadow(0 0 5px #25f4ee) brightness(1)}50%{filter:drop-shadow(0 0 18px #25f4ee) drop-shadow(0 0 30px #ff2d55) brightness(1.35)}}
+body.gift-anim-beyaz .slot img{animation:gift-anim-beyaz var(--gift-anim-hiz,3s) ease-in-out infinite}
+body.gift-anim-siyahBeyaz .slot img{animation:gift-anim-siyahBeyaz var(--gift-anim-hiz,3s) ease-in-out infinite}
+body.gift-anim-altin .slot img{animation:gift-anim-altin var(--gift-anim-hiz,3s) ease-in-out infinite}
+body.gift-anim-neon .slot img{animation:gift-anim-neon var(--gift-anim-hiz,3s) ease-in-out infinite}
+@media(max-width:760px){.arena{grid-template-columns:1fr 90px 1fr;padding:16px 12px;gap:8px}.avatar{width:90px;height:90px}.name{font-size:14px}.score{min-width:92px;font-size:24px;padding:5px 8px}.timer{min-width:68px;font-size:20px}.vs{width:48px;height:48px;font-size:18px}.slots{gap:8px}.slot-row{width:calc(50% - 4px)}.slot img{width:27px;height:27px}.slot span{font-size:7px}.winner img{width:160px;height:160px}.winner-name{font-size:25px}}</style></head>
+<body><video id="bg" autoplay muted loop playsinline></video><main class="stage"><section class="arena"><div class="player left"><img id="leftAvatar" class="avatar" alt="Sol oyuncu"><div id="leftName" class="name">OYUNCU 1</div><div id="leftScore" class="score">0</div></div><div class="middle"><div class="timer-label">KALAN SURE</div><div id="timer" class="timer">1:00</div><div class="vs">VS</div></div><div class="player right"><img id="rightAvatar" class="avatar" alt="Sağ oyuncu"><div id="rightName" class="name">OYUNCU 2</div><div id="rightScore" class="score">0</div></div></section><div class="power"><div id="powerLeft" style="width:50%"></div><div id="powerRight" style="width:50%"></div></div><section class="slots"><div id="leftSlots" class="slot-row"></div><div id="rightSlots" class="slot-row"></div></section></main><section id="winner" class="winner"><img id="winnerAvatar" alt="Kazanan"><div id="winnerName" class="winner-name">KAZANDI</div></section><script>
+let ws,reconnectTimer,reconnectDelay=1000,battleState=null,lastWinnerKey='',winnerTimer;
+const fallback=side=>'data:image/svg+xml;utf8,'+encodeURIComponent("<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><circle cx='80' cy='80' r='80' fill='#15172a'/><text x='80' y='90' text-anchor='middle' fill='#ffffff' font-size='20' font-family='Arial'>"+(side==='left'?'SOL':'SAG')+'</text></svg>');
+const base=()=>location.protocol==='file:'||!location.host?'http://localhost:3000':location.origin;
+const socketUrl=()=>{
+    const params=new URLSearchParams(location.search);
+    const customPort=params.get('port')||'3000';
+    if(location.protocol==='file:'||!location.host) return 'ws://localhost:'+customPort;
+    return (location.protocol==='https:'?'wss://':'ws://')+location.host;
+};
+const asset=url=>{
+    if(!url)return '';
+    if(/^https?:\/\//i.test(url))return '/api/image?url='+encodeURIComponent(url);
+    if(url.startsWith('/'))return url;
+    return '/'+url;
+};
+const picture=(side,s)=>{
+    if(!s)return fallback(side);
+    const raw=s[side+'PhotoUrl']||s[side+'ProfilePictureUrl']||s[side+'Avatar'];
+    const user=s[side+'PhotoUser']||s[side+'Username']||'';
+    if(raw){
+        if(raw.startsWith('data:')) return raw;
+        if(/^https?:\/\//i.test(raw)){
+            return '/api/image?highres=1&user='+encodeURIComponent(user)+'&url='+encodeURIComponent(raw);
+        }
+        return raw;
+    }
+    if(user && user!=='OYUNCU 1' && user!=='OYUNCU 2'){
+        return '/api/image?user='+encodeURIComponent(user.replace(/^@+/,''));
+    }
+    return fallback(side);
+};
+const time=s=>{
+    const sec=Math.max(0,Math.floor(Number(s)||0));
+    const m=Math.floor(sec/60);
+    const rem=sec%60;
+    return m+':'+(rem<10?'0':'')+rem;
+};
+function retry(){if(reconnectTimer)return;reconnectTimer=setTimeout(()=>{reconnectTimer=null;connect()},reconnectDelay);reconnectDelay=Math.min(reconnectDelay*1.7,10000)}
+function connect(){
+    if(ws&&(ws.readyState===WebSocket.OPEN||ws.readyState===WebSocket.CONNECTING))return;
+    try{
+        ws=new WebSocket(socketUrl());
+        ws.onopen=()=>{
+            reconnectDelay=1000;
+            try{ws.send(JSON.stringify({type:'requestState'}));}catch(_){}
+        };
+        ws.onmessage=e=>{try{receive(JSON.parse(e.data))}catch(_){}};
+        ws.onerror=()=>{try{ws.close()}catch(_){}};
+        ws.onclose=()=>{ws=null;retry()}
+    }catch(_){retry()}
+}
+function applyGiftAnim(tur,hiz){const b=document.body;['gift-anim-yok','gift-anim-karart','gift-anim-nabiz','gift-anim-acKapa','gift-anim-dondur','gift-anim-salla','gift-anim-zipla','gift-anim-parla','gift-anim-beyaz','gift-anim-siyahBeyaz','gift-anim-altin','gift-anim-neon'].forEach(c=>b.classList.remove(c));if(tur&&tur!=='yok')b.classList.add('gift-anim-'+tur);document.documentElement.style.setProperty('--gift-anim-hiz',(hiz||3)+'s');}
+function receive(m){if(m.type==='battleState'&&m.state){battleState=m.state;renderBattle(m.state);applyGiftAnim(m.state.giftAnimasyonTuru,m.state.giftAnimasyonHizi);if(m.state.sonuc)showWinner(m.state.sonuc,false)}if(m.type==='gift-animasyon-ayarla')applyGiftAnim(m.tur,m.hiz);if(m.type==='timerState')renderTimer(m.state||{});if(m.type==='giftSlots')renderSlots(m.slots||{});if(m.type==='battleFinished')showWinner(m.sonuc,true)}
+function renderBattle(s){['left','right'].forEach(side=>{const n=String(s[side+'Username']||(side==='left'?'OYUNCU 1':'OYUNCU 2')).replace(/^@+/,'');document.getElementById(side+'Name').textContent='@'+n;const img=document.getElementById(side+'Avatar');img.onerror=()=>{img.onerror=null;img.src=fallback(side)};img.src=picture(side,s);const score=Number(s[side+'Score'])||0,el=document.getElementById(side+'Score');if(Number(el.dataset.value||0)!==score){el.classList.remove('pop');void el.offsetWidth;el.classList.add('pop');el.dataset.value=String(score)}el.textContent=score.toLocaleString('tr-TR')});const l=Number(s.leftScore)||0,r=Number(s.rightScore)||0,total=l+r,p=total?Math.max(8,Math.min(92,l/total*100)):50;document.getElementById('powerLeft').style.width=p+'%';document.getElementById('powerRight').style.width=(100-p)+'%';background(s.backgroundVideo);applyGiftAnim(s.giftAnimasyonTuru,s.giftAnimasyonHizi)}
+function renderTimer(t){const e=document.getElementById('timer');e.textContent=time(t.kalanSaniye);e.classList.toggle('running',!!t.calisiyorMu);e.classList.toggle('warning',!!t.calisiyorMu&&t.kalanSaniye<=10&&t.kalanSaniye>0)}
+function background(file){const v=document.getElementById('bg');if(!file){v.pause();v.removeAttribute('src');delete v.dataset.src;v.classList.remove('active');return}const src=asset(file);if(v.dataset.src!==src){v.dataset.src=src;v.src=src;v.play().catch(()=>{})}v.classList.add('active')}
+function renderSlots(slots){
+    ['left','right'].forEach(side=>{
+        const root=document.getElementById(side+'Slots');
+        if(!root)return;
+        root.innerHTML='';
+        const gifts=Array.isArray(slots&&slots[side])?slots[side]:[];
+        const defaults=[1,5,20,100,500,1000];
+        for(let i=0;i<6;i++){
+            const gift=gifts[i];
+            const defaultImg='/assets/gifts/'+side+'-'+defaults[i]+'.png';
+            const cell=document.createElement('div');
+            const img=document.createElement('img');
+            const label=document.createElement('span');
+            cell.className='slot';
+            const rawImg=gift&&gift.image?asset(gift.image):defaultImg;
+            img.src=rawImg;
+            img.onerror=()=>{img.onerror=null;img.src=defaultImg};
+            const coins=(gift&&Number(gift.coins))||defaults[i];
+            label.textContent=coins.toLocaleString('tr-TR')+' PUAN';
+            cell.append(img,label);
+            root.appendChild(cell);
+        }
+    });
+}
+function showWinner(side,force){if(!battleState||(side!=='left'&&side!=='right'))return;const key=side+'|'+(battleState[side+'Username']||'')+'|'+(battleState[side+'Score']||0);if(!force&&key===lastWinnerKey)return;lastWinnerKey=key;const img=document.getElementById('winnerAvatar');img.src=picture(side,battleState);img.onerror=()=>{img.onerror=null;img.src=fallback(side)};document.getElementById('winnerName').textContent='🏆 '+String(battleState[side+'Username']||'KAZANDI').replace(/^@+/,'');const o=document.getElementById('winner');o.classList.add('show');clearTimeout(winnerTimer);winnerTimer=setTimeout(()=>o.classList.remove('show'),3000)}
+renderSlots({});connect();
+</script></body></html>

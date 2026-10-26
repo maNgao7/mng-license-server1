@@ -1,0 +1,1002 @@
+// ==========================================================================
+// KULLANICI ARAYÜZÜ (UI) & EYLEM-ÖNCELİKLİ HEDİYE YÖNETİMİ
+// ==========================================================================
+import { ACTIONS, DEFAULT_RULES, TEAMS } from './config.js';
+
+export class UIManager {
+  constructor(app) {
+    this.app = app;
+    this.rules = [...DEFAULT_RULES];
+    this.catalog = [];
+    this.selectedRuleIndexForGift = null;
+
+    this.loadRules();
+    this.initElements();
+  }
+
+  loadRules() {
+    try {
+      const saved = localStorage.getItem('mng_penalty_rules');
+      const version = localStorage.getItem('mng_penalty_rules_version');
+      if (saved && version === '9') {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          this.rules = parsed;
+          return;
+        }
+      }
+    } catch {}
+    this.rules = [...DEFAULT_RULES];
+    this.saveRules();
+  }
+
+  saveRules() {
+    try {
+      localStorage.setItem('mng_penalty_rules', JSON.stringify(this.rules));
+      localStorage.setItem('mng_penalty_rules_version', '9');
+    } catch {}
+    this.renderRulesList();
+  }
+
+  initElements() {
+    // 1. Ayarlar Çekmecesi & Sekmeler
+    const drawer = document.getElementById('settings-drawer');
+    const btnSettings = document.getElementById('btn-settings');
+    const btnCloseSettings = document.getElementById('btn-close-settings');
+
+    if (btnSettings && drawer) btnSettings.addEventListener('click', () => drawer.classList.add('open'));
+    if (btnCloseSettings && drawer) btnCloseSettings.addEventListener('click', () => drawer.classList.remove('open'));
+
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        btn.classList.add('active');
+        const target = document.getElementById(btn.dataset.tab);
+        if (target) target.classList.add('active');
+      });
+    });
+
+    // 2. Yeni Eylem Ekle Butonu
+    const btnAddAction = document.getElementById('btn-add-action-rule');
+    if (btnAddAction) {
+      btnAddAction.addEventListener('click', () => this.openActionPickerModal());
+    }
+
+    // 3. Eylem Seçim Modalı Kapatma
+    const btnCloseActionPicker = document.getElementById('btn-close-action-picker');
+    if (btnCloseActionPicker) {
+      btnCloseActionPicker.addEventListener('click', () => {
+        document.getElementById('action-picker-modal').style.display = 'none';
+      });
+    }
+
+    // 4. Hediye Kataloğu Modalı Kapatma & Arama
+    const btnCloseCatalogModal = document.getElementById('btn-close-catalog-modal');
+    if (btnCloseCatalogModal) {
+      btnCloseCatalogModal.addEventListener('click', () => {
+        document.getElementById('catalog-picker-modal').style.display = 'none';
+      });
+    }
+
+    const searchInput = document.getElementById('catalog-search-input');
+    if (searchInput) {
+      searchInput.addEventListener('input', () => this.filterAndRenderCatalogPicker());
+    }
+
+    document.querySelectorAll('.catalog-filter-pill').forEach(pill => {
+      pill.addEventListener('click', () => {
+        document.querySelectorAll('.catalog-filter-pill').forEach(p => p.classList.remove('active'));
+        pill.classList.add('active');
+        this.filterAndRenderCatalogPicker();
+      });
+    });
+
+    // 5. Test Paneli Butonları
+    this.initTestPanel();
+
+    // 6. Stadyum & Kamera Ayarları Canlı Dinleyicileri
+    this.initSettingsSliders();
+
+    // 7. Giriş Ekranı (Lobi) & Liderlik Tablosu
+    this.initIntroScreen();
+    this.initLeaderboard();
+
+    // 8. Hediye Kataloğunu Sunucudan Çek
+    this.fetchCatalog();
+  }
+
+  async fetchCatalog() {
+    try {
+      const res = await fetch('/api/catalog');
+      if (res.ok) {
+        this.catalog = await res.json();
+        const allFilter = document.querySelector('.catalog-filter-pill[data-filter="all"]');
+        if (allFilter) allFilter.textContent = `Tümü (${this.catalog.length})`;
+        this.renderRulesList();
+        if (this.selectedRuleIndexForGift !== null) {
+          this.filterAndRenderCatalogPicker();
+        }
+      }
+    } catch {}
+  }
+
+  // --------------------------------------------------------------------------
+  // GİRİŞ EKRANI (LOBİ & CANLI YAYINA BAĞLANTI)
+  // --------------------------------------------------------------------------
+  initIntroScreen() {
+    const introScreen = document.getElementById('intro-screen');
+    const inputUname = document.getElementById('intro-username-input');
+    const btnConnect = document.getElementById('btn-intro-connect');
+    const btnStartLive = document.getElementById('btn-intro-start-live');
+    const btnStartOffline = document.getElementById('btn-intro-start-offline');
+
+    if (this.app.settings.username && inputUname) {
+      inputUname.value = this.app.settings.username;
+    }
+
+    const applyBroadcaster = (raw) => {
+      const u = (raw || '').trim().replace(/^@/, '');
+      if (u) {
+        this.app.settings.username = u;
+        this.app.saveSettings();
+        this.app.streamer.username = u;
+        this.app.streamer.avatar = `/api/tiktok-avatar?user=${encodeURIComponent(u)}`;
+        if (this.app.gameplay.gameMode === 'keeper') {
+          this.app.gameplay.setGoalkeeperBroadcaster(u, this.app.streamer.avatar);
+        } else {
+          this.app.gameplay.setShooterBroadcaster(u, this.app.streamer.avatar);
+        }
+        if (this.app.stadium) {
+          this.app.stadium.setBroadcasterUsername(u);
+        }
+        const topInput = document.getElementById('top-tiktok-input');
+        if (topInput) topInput.value = `@${u}`;
+      }
+      return u;
+    };
+
+    const doConnect = () => {
+      const u = applyBroadcaster(inputUname?.value);
+      if (u) {
+        this.onStreamConnecting(u);
+        if (this.app.socket && this.app.socket.readyState === WebSocket.OPEN) {
+          this.app.socket.send(JSON.stringify({ type: 'connect', username: u }));
+        }
+      }
+    };
+
+    if (btnConnect) btnConnect.addEventListener('click', doConnect);
+    if (inputUname) {
+      inputUname.addEventListener('keydown', e => {
+        if (e.key === 'Enter') doConnect();
+      });
+      inputUname.addEventListener('input', () => {
+        const val = (inputUname.value || '').trim().replace(/^@/, '');
+        if (val.length >= 2) {
+          applyBroadcaster(val);
+        }
+      });
+    }
+
+    if (btnStartLive) {
+      btnStartLive.addEventListener('click', () => {
+        applyBroadcaster(inputUname?.value);
+        if (introScreen) introScreen.style.display = 'none';
+        this.app.sound.init();
+      });
+    }
+
+    if (btnStartOffline) {
+      btnStartOffline.addEventListener('click', () => {
+        applyBroadcaster(inputUname?.value);
+        if (introScreen) introScreen.style.display = 'none';
+        this.app.sound.init();
+      });
+    }
+  }
+
+  onStreamConnecting(username) {
+    const dot = document.getElementById('intro-status-dot');
+    const text = document.getElementById('intro-status-text');
+    const btnLive = document.getElementById('btn-intro-start-live');
+    if (dot) dot.className = 'intro-status-dot connecting';
+    if (text) text.textContent = `@${username} yayınına bağlanılıyor...`;
+    if (btnLive) {
+      btnLive.style.display = 'flex';
+      const label = btnLive.querySelector('span:last-child');
+      if (label) label.textContent = `OYUNA GİR (@${username})`;
+    }
+  }
+
+  onStreamConnected(username) {
+    const dot = document.getElementById('intro-status-dot');
+    const text = document.getElementById('intro-status-text');
+    const btnLive = document.getElementById('btn-intro-start-live');
+    const inputUname = document.getElementById('intro-username-input');
+    if (dot) dot.className = 'intro-status-dot connected';
+    if (text) text.textContent = `✅ @${username} yayınına başarıyla bağlandı!`;
+    if (btnLive) {
+      btnLive.style.display = 'flex';
+      const label = btnLive.querySelector('span:last-child');
+      if (label) label.textContent = `OYUNA GİR (@${username} CANLI)`;
+    }
+    if (inputUname) inputUname.value = username;
+
+    const topInput = document.getElementById('top-tiktok-input');
+    if (topInput) topInput.value = `@${username}`;
+  }
+
+  onStreamDisconnected(errorMsg = null) {
+    const dot = document.getElementById('intro-status-dot');
+    const text = document.getElementById('intro-status-text');
+    const btnLive = document.getElementById('btn-intro-start-live');
+    if (dot) dot.className = 'intro-status-dot disconnected';
+    if (text) {
+      text.textContent = errorMsg
+        ? `⚠️ ${errorMsg}`
+        : 'Bağlantı kesildi veya henüz kurulmadı.';
+    }
+    if (btnLive && this.app.settings.username) {
+      btnLive.style.display = 'flex';
+      const label = btnLive.querySelector('span:last-child');
+      if (label) label.textContent = `OYUNA GİR (@${this.app.settings.username})`;
+    }
+  }
+
+  // --------------------------------------------------------------------------
+  // LİDERLİK TABLOSU & OBS WİDGET YÖNETİMİ
+  // --------------------------------------------------------------------------
+  initLeaderboard() {
+    const btnOpen = document.getElementById('btn-leaderboard');
+    const modal = document.getElementById('leaderboard-modal');
+    const btnClose = document.getElementById('btn-close-leaderboard');
+
+    if (btnOpen && modal) {
+      btnOpen.addEventListener('click', () => {
+        modal.style.display = 'flex';
+        this.renderLeaderboardModal();
+      });
+    }
+
+    if (btnClose && modal) {
+      btnClose.addEventListener('click', () => {
+        modal.style.display = 'none';
+      });
+    }
+
+    const tabKeepersBtn = document.getElementById('btn-tab-lead-keepers');
+    const tabTeamsBtn = document.getElementById('btn-tab-lead-teams');
+    const contentKeepers = document.getElementById('lead-tab-keepers');
+    const contentTeams = document.getElementById('lead-tab-teams');
+
+    if (tabKeepersBtn && tabTeamsBtn && contentKeepers && contentTeams) {
+      tabKeepersBtn.addEventListener('click', () => {
+        tabKeepersBtn.classList.add('active');
+        tabTeamsBtn.classList.remove('active');
+        contentKeepers.style.display = 'block';
+        contentTeams.style.display = 'none';
+      });
+
+      tabTeamsBtn.addEventListener('click', () => {
+        tabTeamsBtn.classList.add('active');
+        tabKeepersBtn.classList.remove('active');
+        contentTeams.style.display = 'block';
+        contentKeepers.style.display = 'none';
+      });
+    }
+
+    const copyWidgetUrl = async (btn, mode) => {
+      const small = btn.querySelector('small');
+      btn.disabled = true;
+      try {
+        const response = await fetch('/api/launcher-widget-links', { cache: 'no-store' });
+        const data = await response.json();
+        const url = data.links?.[mode];
+        if (!response.ok || !data.ready || typeof url !== 'string' || new URL(url).protocol !== 'https:') {
+          throw new Error(data.message || 'HTTPS yayın bağlantısı kullanılamıyor.');
+        }
+        if (small) small.textContent = url;
+        try { await navigator.clipboard.writeText(url); }
+        catch { prompt('Widget Linki (Kopyalayın):', url); return; }
+        if (small) small.textContent = 'Kopyalandı!';
+      } catch (error) {
+        if (small) small.textContent = error.message || 'HTTPS yayın hizmetine ulaşılamıyor.';
+      } finally { btn.disabled = false; }
+    };
+
+    const btnKeepers = document.getElementById('btn-copy-keepers-widget');
+    if (btnKeepers) {
+      const small = btnKeepers.querySelector('small');
+      if (small) small.textContent = 'HTTPS yayın bağlantısı';
+      btnKeepers.addEventListener('click', () => copyWidgetUrl(btnKeepers, 'keepers'));
+    }
+
+    const btnTeams = document.getElementById('btn-copy-teams-widget');
+    if (btnTeams) {
+      const small = btnTeams.querySelector('small');
+      if (small) small.textContent = 'HTTPS yayın bağlantısı';
+      btnTeams.addEventListener('click', () => copyWidgetUrl(btnTeams, 'teams'));
+    }
+
+    const btnAll = document.getElementById('btn-copy-obs');
+    if (btnAll) {
+      const small = btnAll.querySelector('small');
+      if (small) small.textContent = 'HTTPS yayın bağlantısı';
+      btnAll.addEventListener('click', () => copyWidgetUrl(btnAll, 'ranking'));
+    }
+
+    // Skorları Sıfırlama Butonları
+    const handleReset = () => {
+      if (confirm('Liderlik tablosundaki tüm kurtarış ve takım gol skorlarını sıfırlamak istiyor musunuz?')) {
+        fetch('/api/leaderboard/reset', { method: 'POST' }).catch(() => {});
+        if (this.app.socket && this.app.socket.readyState === WebSocket.OPEN) {
+          this.app.socket.send(JSON.stringify({ type: 'reset-leaderboard' }));
+        }
+        this.topKeepers = [];
+        this.teamScores = { galatasaray: 0, fenerbahce: 0, besiktas: 0, trabzonspor: 0, amedspor: 0 };
+        this.renderLeaderboardModal();
+      }
+    };
+    const btnReset = document.getElementById('btn-reset-leaderboard');
+    if (btnReset) btnReset.addEventListener('click', handleReset);
+    const btnResetSub = document.getElementById('btn-reset-leaderboard-sub');
+    if (btnResetSub) btnResetSub.addEventListener('click', handleReset);
+  }
+
+  updateLeaderboardData(data) {
+    if (Array.isArray(data.goalkeepers)) {
+      this.topKeepers = data.goalkeepers;
+    }
+    if (data.teams) {
+      this.teamScores = { ...this.teamScores, ...data.teams };
+    }
+    this.renderLeaderboardModal();
+  }
+
+  renderLeaderboardModal() {
+    // 1. Kaleciler Sıralaması
+    const keepersListEl = document.getElementById('lead-keepers-list');
+    if (keepersListEl) {
+      if (!this.topKeepers || this.topKeepers.length === 0) {
+        keepersListEl.innerHTML = '<div class="empty-state">Henüz kurtarış yapılmadı. Penaltı atılınca burada listelenir!</div>';
+      } else {
+        keepersListEl.innerHTML = '';
+        this.topKeepers.slice(0, 10).forEach((k, idx) => {
+          const row = document.createElement('div');
+          row.className = 'lead-row';
+          const typeLabel = k.keeperType === 'boss' ? '👑 DEV BOSS' : (k.keeperType === 'agile' ? '⚡ ÇEVİK' : '🧤 NORMAL');
+          row.innerHTML = `
+            <span class="lead-row-rank">#${idx + 1}</span>
+            <div class="lead-user-wrap">
+              <img class="lead-avatar" src="${k.avatar || `/api/avatar?user=${encodeURIComponent(k.username)}`}" onerror="this.src='/api/avatar?user=Kaleci'" alt="">
+              <div class="lead-name-box">
+                <span class="lead-name">@${k.username}</span>
+                <span class="lead-kit-badge">${typeLabel}</span>
+              </div>
+            </div>
+            <span class="lead-count-badge">${k.saves} Kurtarış</span>
+          `;
+          keepersListEl.appendChild(row);
+        });
+      }
+    }
+
+    // 2. Takım Gol Sıralaması
+    const teamsListEl = document.getElementById('lead-teams-list');
+    if (teamsListEl) {
+      teamsListEl.innerHTML = '';
+      const teamList = [
+        { key: 'galatasaray', name: 'GALATASARAY', star: 'OSIMHEN #45', badge: '🟡🔴', color: '#fdb913' },
+        { key: 'fenerbahce', name: 'FENERBAHÇE', star: 'LUKAKU #9', badge: '🟡🔵', color: '#fedd00' },
+        { key: 'besiktas', name: 'BEŞİKTAŞ', star: 'RAFA SILVA #27', badge: '⚪⚫', color: '#ffffff' },
+        { key: 'trabzonspor', name: 'TRABZONSPOR', star: 'SALAH #11', badge: '🔵🔴', color: '#6cace4' },
+        { key: 'amedspor', name: 'AMEDSPOR', star: 'DIA SABA #10', badge: '🟢🔴', color: '#009639' }
+      ];
+
+      const currentScores = this.teamScores || {};
+      const sortedTeams = teamList.sort((a, b) => (currentScores[b.key] || 0) - (currentScores[a.key] || 0));
+      const maxScore = Math.max(1, ...sortedTeams.map(t => currentScores[t.key] || 0));
+
+      sortedTeams.forEach(t => {
+        const score = currentScores[t.key] || 0;
+        const pct = Math.min(100, Math.round((score / maxScore) * 100));
+        const row = document.createElement('div');
+        row.className = 'team-lead-row';
+        row.style.borderLeft = `3px solid ${t.color}`;
+
+        row.innerHTML = `
+          <div class="team-lead-bar-fill" style="width: ${pct}%;"></div>
+          <div class="team-lead-info">
+            <span class="team-lead-badge">${t.badge}</span>
+            <div class="team-lead-names">
+              <span class="team-lead-title" style="color: ${t.color};">${t.name}</span>
+              <span class="team-lead-star">${t.star}</span>
+            </div>
+          </div>
+          <span class="team-lead-score">${score} GOL</span>
+        `;
+        teamsListEl.appendChild(row);
+      });
+    }
+  }
+
+  // --------------------------------------------------------------------------
+  // EYLEM-ÖNCELİKLİ KURAL LİSTESİ ÇİZİMİ
+  // --------------------------------------------------------------------------
+  renderRulesList() {
+    const container = document.getElementById('action-rules-list');
+    if (!container) return;
+
+    container.innerHTML = '';
+
+    if (this.rules.length === 0) {
+      container.innerHTML = `
+        <div class="empty-rules-box">
+          <p>Henüz atanmış hediye eylemi yok.</p>
+          <span>Aşağıdaki <strong>"+ Yeni Eylem Ekle"</strong> butonuna tıklayarak başlayın!</span>
+        </div>
+      `;
+      return;
+    }
+
+    this.rules.forEach((rule, idx) => {
+      const act = ACTIONS[rule.action] || { icon: '⭐', title: rule.action, desc: '', color: '#ffbe0b' };
+      const legacyGiftNames = {
+        'face-pulling': 'Sıkılan Yanaklar',
+        'turkish coffee': 'Türk kahvesi',
+        'rose': 'Gül',
+        'perfume': 'Parfüm',
+        'united heart': 'Birleşen Kalp',
+        'bouquet': 'Buket',
+        'hat and mustache': 'Şapka ve Bıyık'
+      };
+      const storedGiftName = String(rule.gift || '').toLowerCase();
+      const currentGiftName = legacyGiftNames[storedGiftName]?.toLowerCase() || storedGiftName;
+      const giftItem = this.catalog.find(g => g.name.toLowerCase() === currentGiftName);
+      const giftName = giftItem ? (giftItem.trName || giftItem.name) : (rule.gift || 'Hediye Seçilmedi');
+      const giftCoins = giftItem ? `${giftItem.coins} Jeton` : '';
+      const giftImg = giftItem ? `/catalog-assets/gift-images/${giftItem.file}` : '/api/avatar?user=Gift';
+
+      const card = document.createElement('div');
+      card.className = 'action-rule-card';
+      card.style.borderLeftColor = act.color || '#ffbe0b';
+
+      card.innerHTML = `
+        <div class="rule-action-info">
+          <span class="rule-act-icon">${act.icon}</span>
+          <div class="rule-act-text">
+            <span class="rule-act-title">${act.title}</span>
+            <span class="rule-act-desc">${act.desc}</span>
+          </div>
+        </div>
+
+        <div class="rule-arrow-divider">➔</div>
+
+        <div class="rule-gift-box ${rule.gift ? 'assigned' : 'unassigned'}" data-index="${idx}">
+          <img class="rule-gift-img" src="${giftImg}" onerror="this.src='/api/avatar?user=Gift'" alt="">
+          <div class="rule-gift-text">
+            <span class="rule-gift-name">${giftName}</span>
+            <span class="rule-gift-coins">${giftCoins}</span>
+          </div>
+          <button class="btn-change-gift" title="Hediyeyi Değiştir">🎁 Değiştir</button>
+        </div>
+
+        <button class="btn-delete-rule" data-index="${idx}" title="Kuralı Sil">✕</button>
+      `;
+
+      // Hediye seç butonuna tıklama
+      card.querySelector('.rule-gift-box').addEventListener('click', () => {
+        this.openGiftCatalogPicker(idx);
+      });
+
+      // Kuralı silme
+      card.querySelector('.btn-delete-rule').addEventListener('click', e => {
+        e.stopPropagation();
+        this.rules.splice(idx, 1);
+        this.saveRules();
+      });
+
+      container.appendChild(card);
+    });
+  }
+
+  // --------------------------------------------------------------------------
+  // MODAL 1: EYLEM SEÇİCİ (Action Picker)
+  // --------------------------------------------------------------------------
+  openActionPickerModal() {
+    const modal = document.getElementById('action-picker-modal');
+    const grid = document.getElementById('action-picker-grid');
+    if (!modal || !grid) return;
+
+    grid.innerHTML = '';
+
+    // Eylemleri gruplara ayırarak listele
+    const groups = {};
+    Object.values(ACTIONS).forEach(act => {
+      if (!groups[act.group]) groups[act.group] = [];
+      groups[act.group].push(act);
+    });
+
+    Object.entries(groups).forEach(([grpName, acts]) => {
+      const section = document.createElement('div');
+      section.className = 'action-picker-group';
+      section.innerHTML = `<div class="action-picker-group-title">${grpName}</div>`;
+
+      const actsGrid = document.createElement('div');
+      actsGrid.className = 'action-cards-grid';
+
+      acts.forEach(act => {
+        const item = document.createElement('button');
+        item.className = 'action-select-card';
+        item.innerHTML = `
+          <span class="act-card-icon">${act.icon}</span>
+          <div class="act-card-info">
+            <span class="act-card-title">${act.title}</span>
+            <span class="act-card-desc">${act.desc}</span>
+          </div>
+        `;
+
+        item.addEventListener('click', () => {
+          modal.style.display = 'none';
+          // Yeni kuralı ekle ve hemen hediye kataloğunu aç
+          this.rules.push({ action: act.id, gift: '' });
+          this.saveRules();
+          this.openGiftCatalogPicker(this.rules.length - 1);
+        });
+
+        actsGrid.appendChild(item);
+      });
+
+      section.appendChild(actsGrid);
+      grid.appendChild(section);
+    });
+
+    modal.style.display = 'flex';
+  }
+
+  // --------------------------------------------------------------------------
+  // MODAL 2: HEDİYE KATALOĞU SEÇİCİ (Gift Catalog Picker)
+  // --------------------------------------------------------------------------
+  openGiftCatalogPicker(ruleIndex) {
+    this.selectedRuleIndexForGift = ruleIndex;
+    const modal = document.getElementById('catalog-picker-modal');
+    if (!modal) return;
+
+    const rule = this.rules[ruleIndex];
+    const act = ACTIONS[rule?.action];
+    const targetLabel = document.getElementById('catalog-target-action-label');
+    if (targetLabel && act) {
+      targetLabel.textContent = `Atanan Eylem: ${act.icon} ${act.title}`;
+    }
+
+    modal.style.display = 'flex';
+    this.filterAndRenderCatalogPicker();
+  }
+
+  filterAndRenderCatalogPicker() {
+    const grid = document.getElementById('catalog-picker-grid');
+    const searchInput = document.getElementById('catalog-search-input');
+    const activeFilter = document.querySelector('.catalog-filter-pill.active')?.dataset.filter || 'all';
+
+    if (!grid) return;
+    grid.innerHTML = '';
+
+    const query = (searchInput?.value || '').toLowerCase().trim();
+
+    const filtered = this.catalog.filter(item => {
+      // 1. Arama filtresi
+      const matchName = item.name.toLowerCase().includes(query) || (item.trName && item.trName.toLowerCase().includes(query));
+      if (!matchName) return false;
+
+      // 2. Jeton filtresi
+      if (activeFilter === '1') return item.coins === 1;
+      if (activeFilter === 'tier2') return item.coins >= 2 && item.coins <= 99;
+      if (activeFilter === 'tier3') return item.coins >= 100 && item.coins <= 999;
+      if (activeFilter === 'expensive') return item.coins >= 1000;
+      return true;
+    });
+
+    // Jeton değerine göre küçükten büyüğe sırala (1 coin en üstte, pahalılar aşağıda)
+    filtered.sort((a, b) => {
+      const ca = Number(a.coins) || 1;
+      const cb = Number(b.coins) || 1;
+      if (ca !== cb) return ca - cb;
+      return (a.trName || a.name).localeCompare(b.trName || b.name);
+    });
+
+    const modalTitle = document.querySelector('#catalog-picker-modal .modal-title');
+    if (modalTitle) {
+      modalTitle.textContent = `Hediye Kataloğu (${filtered.length} Hediye)`;
+    }
+
+    // Tüm hediyeleri listele (kesme sınırı olmadan 630+ hediye)
+    filtered.forEach(item => {
+      const card = document.createElement('div');
+      card.className = 'catalog-gift-pick-card';
+      const imgSrc = `/catalog-assets/gift-images/${item.file}`;
+
+      card.innerHTML = `
+        <img class="pick-gift-img" src="${imgSrc}" onerror="this.src='/api/avatar?user=${encodeURIComponent(item.name)}'" alt="">
+        <span class="pick-gift-name">${item.trName || item.name}</span>
+        <span class="pick-gift-coins">🪙 ${item.coins}</span>
+      `;
+
+      card.addEventListener('click', () => {
+        if (this.selectedRuleIndexForGift !== null && this.rules[this.selectedRuleIndexForGift]) {
+          this.rules[this.selectedRuleIndexForGift].gift = item.name;
+          this.rules[this.selectedRuleIndexForGift].giftId = String(item.id || '');
+          this.rules[this.selectedRuleIndexForGift].giftIds = [];
+          this.saveRules();
+        }
+        document.getElementById('catalog-picker-modal').style.display = 'none';
+      });
+
+      grid.appendChild(card);
+    });
+  }
+
+  // --------------------------------------------------------------------------
+  // TEST PANELİ (Canlı Canlı Test Etme)
+  // --------------------------------------------------------------------------
+  initTestPanel() {
+    // 1. Forma Testleri
+    const teams = ['gs', 'fb', 'bjk', 'ts', 'amed'];
+    const teamKeys = { gs: 'galatasaray', fb: 'fenerbahce', bjk: 'besiktas', ts: 'trabzonspor', amed: 'amedspor' };
+
+    teams.forEach(t => {
+      const btn = document.getElementById(`test-${t}`);
+      if (btn) {
+        btn.addEventListener('click', () => {
+          this.app.gameplay.setShooterJersey(teamKeys[t], { nickname: 'Yayıncı' });
+          this.updateHudTeamBadge(teamKeys[t]);
+        });
+      }
+    });
+
+    // 2. Kaleci Testleri
+    const btnKeeperNormal = document.getElementById('test-keeper-normal');
+    if (btnKeeperNormal) {
+      btnKeeperNormal.addEventListener('click', () => {
+        this.app.executeAction('keeper_normal', { nickname: 'Ahmet_Kaleci' });
+      });
+    }
+
+    const btnKeeperAgile = document.getElementById('test-keeper-agile');
+    if (btnKeeperAgile) {
+      btnKeeperAgile.addEventListener('click', () => {
+        this.app.executeAction('keeper_agile', { nickname: 'Panter_Mehmet' });
+      });
+    }
+
+    const btnKeeperBoss = document.getElementById('test-keeper-boss');
+    if (btnKeeperBoss) {
+      btnKeeperBoss.addEventListener('click', () => {
+        this.app.executeAction('keeper_boss', { nickname: 'Dev_Canavar' });
+      });
+    }
+
+    // 3. Güç Testleri
+    const btnShrink50 = document.getElementById('test-keeper-shrink50');
+    if (btnShrink50) {
+      btnShrink50.addEventListener('click', () => {
+        const dur = parseInt(document.getElementById('input-shrink-duration')?.value || '45', 10);
+        this.app.gameplay.activateShrink(50, dur);
+      });
+    }
+
+    const btnShrink80 = document.getElementById('test-keeper-shrink80');
+    if (btnShrink80) {
+      btnShrink80.addEventListener('click', () => {
+        const dur = parseInt(document.getElementById('input-shrink-duration')?.value || '45', 10);
+        this.app.gameplay.activateShrink(80, dur);
+      });
+    }
+
+    const btnWall = document.getElementById('test-defense-wall');
+    if (btnWall) {
+      btnWall.addEventListener('click', () => {
+        const dur = parseInt(document.getElementById('input-wall-duration')?.value || '10', 10);
+        this.app.gameplay.activateDefenseWall(dur, { nickname: 'Baraj_Lideri' });
+      });
+    }
+
+    const btnAddLikeDef = document.getElementById('test-add-like-defender');
+    if (btnAddLikeDef) {
+      btnAddLikeDef.addEventListener('click', () => {
+        const randNum = Math.floor(Math.random() * 900 + 100);
+        const player = { nickname: `Beğeni_${randNum}` };
+        this.app.gameplay.addLikeWallDefender(player);
+        this.app.showToast(player, '🧱 Baraj kurdu!', 'wall');
+      });
+    }
+
+    const btnFollowWall = document.getElementById('test-follow-wall');
+    if (btnFollowWall) {
+      btnFollowWall.addEventListener('click', () => {
+        const randNum = Math.floor(Math.random() * 900 + 100);
+        const player = { nickname: `Takipçi_${randNum}` };
+        this.app.stadium.assignViewerToCrowd(player);
+        this.app.gameplay.addLikeWallDefender(player);
+        this.app.showToast(player, '🧱 Baraj kurdu!', 'wall');
+      });
+    }
+
+    const btnFreekick = document.getElementById('test-freekick');
+    if (btnFreekick) {
+      btnFreekick.addEventListener('click', () => {
+        this.app.executeAction('freekick', { nickname: 'Frikik_Ustasi' });
+      });
+    }
+
+    const btnTsubasa = document.getElementById('test-tsubasa');
+    if (btnTsubasa) {
+      btnTsubasa.addEventListener('click', () => {
+        this.app.gameplay.activateTsubasa();
+      });
+    }
+
+    const btnAddSpectator = document.getElementById('test-add-spectator');
+    if (btnAddSpectator) {
+      btnAddSpectator.addEventListener('click', () => {
+        this.app.stadium.assignViewerToCrowd({
+          nickname: `Taraftar_${Math.floor(Math.random() * 999)}`,
+          avatar: ''
+        });
+      });
+    }
+
+    const btnLikeHearts = document.getElementById('test-like-hearts');
+    if (btnLikeHearts) {
+      btnLikeHearts.addEventListener('click', () => {
+        this.app.stadium.triggerSpectatorLike({ nickname: 'Canlı_İzleyici' }, 10);
+      });
+    }
+
+    const btnAutoShoot = document.getElementById('test-auto-shoot');
+    if (btnAutoShoot) {
+      btnAutoShoot.addEventListener('click', () => {
+        this.app.gameplay.aimTarget.set((Math.random() - 0.5) * 4.0, 1.2 + Math.random() * 0.8, 0);
+        this.app.gameplay.aimCurve = (Math.random() - 0.5) * 0.6;
+        this.app.gameplay.executeRunUpAndKick();
+      });
+    }
+
+    const btnResetField = document.getElementById('test-clear-field');
+    if (btnResetField) {
+      btnResetField.addEventListener('click', () => {
+        this.app.gameplay.resetPosition();
+      });
+    }
+
+    const btnSwapRoles = document.getElementById('test-swap-roles');
+    if (btnSwapRoles) {
+      btnSwapRoles.addEventListener('click', () => {
+        this.app.executeAction('role_swap_keeper', { nickname: 'Rakip_Şutör' });
+      });
+    }
+  }
+
+  // --------------------------------------------------------------------------
+  // STADYUM & KAMERA AYARLARI CANLI GÜNCELLEME
+  // --------------------------------------------------------------------------
+  initSettingsSliders() {
+    // 1. Kamera Açısı (FOV) Canlı Değişimi
+    const sliderFov = document.getElementById('slider-fov');
+    const valFov = document.getElementById('val-cam-fov');
+    if (sliderFov) {
+      sliderFov.value = this.app.settings.fov || 52;
+      if (valFov) valFov.textContent = `${sliderFov.value}°`;
+      sliderFov.addEventListener('input', e => {
+        const fov = parseInt(e.target.value, 10);
+        if (valFov) valFov.textContent = `${fov}°`;
+        this.app.camera.fov = fov;
+        this.app.camera.updateProjectionMatrix();
+        this.app.settings.fov = fov;
+        this.app.saveSettings();
+      });
+    }
+
+    // 2. Kamera Yüksekliği Canlı Değişimi
+    const sliderHeight = document.getElementById('slider-cam-height');
+    const valHeight = document.getElementById('val-cam-height');
+    if (sliderHeight) {
+      sliderHeight.value = this.app.settings.camHeight || 2.4;
+      if (valHeight) valHeight.textContent = `${parseFloat(sliderHeight.value).toFixed(1)}m`;
+      sliderHeight.addEventListener('input', e => {
+        const h = parseFloat(e.target.value);
+        if (valHeight) valHeight.textContent = `${h.toFixed(1)}m`;
+        this.app.settings.camHeight = h;
+        this.app.baseCamPos.y = h;
+        this.app.camera.position.y = h;
+        this.app.saveSettings();
+      });
+    }
+
+    // 3. Atmosfer Seçimi (Gündüz, Gün Batımı, Gece Maçı)
+    const selectAtmo = document.getElementById('select-atmosphere');
+    if (selectAtmo) {
+      if (this.app.settings.atmosphere) selectAtmo.value = this.app.settings.atmosphere;
+      selectAtmo.addEventListener('change', e => {
+        this.app.setAtmosphere(e.target.value);
+      });
+    }
+
+    // 4. Grafik Kalitesi
+    const selectQuality = document.getElementById('select-quality');
+    if (selectQuality) {
+      if (this.app.settings.quality) selectQuality.value = this.app.settings.quality;
+      selectQuality.addEventListener('change', e => {
+        this.app.setQuality(e.target.value);
+      });
+    }
+
+    // 5. Ana Ses Seviyesi Slider
+    const sliderVol = document.getElementById('slider-sound-vol');
+    const valVol = document.getElementById('val-sound-vol');
+    if (sliderVol) {
+      sliderVol.value = this.app.settings.soundVolume !== undefined ? this.app.settings.soundVolume : 80;
+      if (valVol) valVol.textContent = `${sliderVol.value}%`;
+      sliderVol.addEventListener('input', e => {
+        const vol = parseInt(e.target.value, 10);
+        if (valVol) valVol.textContent = `${vol}%`;
+        this.app.sound.setVolume(vol);
+        this.app.settings.soundVolume = vol;
+        this.app.saveSettings();
+      });
+    }
+
+    const soundButton = document.getElementById('btn-sound');
+    const syncSoundButton = () => {
+      if (!soundButton) return;
+      soundButton.textContent = this.app.settings.soundEnabled === false ? '🔇' : '🔊';
+      soundButton.title = this.app.settings.soundEnabled === false ? 'Sesi Aç' : 'Sesi Kapat';
+      soundButton.setAttribute('aria-pressed', this.app.settings.soundEnabled === false ? 'true' : 'false');
+    };
+    this.app.sound.setVolume(this.app.settings.soundVolume ?? 80);
+    this.app.sound.setEnabled(this.app.settings.soundEnabled !== false);
+    syncSoundButton();
+    if (soundButton) {
+      soundButton.addEventListener('click', event => {
+        event.preventDefault();
+        event.stopPropagation();
+        this.app.sound.init();
+        this.app.settings.soundEnabled = !(this.app.settings.soundEnabled !== false);
+        this.app.sound.setEnabled(this.app.settings.soundEnabled);
+        this.app.saveSettings();
+        syncSoundButton();
+      });
+    }
+
+    // 6. Oyun Modu Seçimi (Ayarlar & Hızlı Başlık Butonu)
+    const selectMode = document.getElementById('select-game-mode');
+    if (selectMode) {
+      selectMode.value = this.app.settings.gameMode || 'shooter';
+      selectMode.addEventListener('change', e => {
+        this.app.setGameMode(e.target.value);
+      });
+    }
+
+    const btnQuickMode = document.getElementById('btn-quick-mode');
+    if (btnQuickMode) {
+      btnQuickMode.addEventListener('click', () => {
+        const nextMode = (this.app.settings.gameMode === 'keeper') ? 'shooter' : 'keeper';
+        this.app.setGameMode(nextMode);
+      });
+    }
+
+    // 7. Kaleci Modu Şutör Bekleme Süresi
+    const inputKeeperDelay = document.getElementById('input-keeper-delay');
+    if (inputKeeperDelay) {
+      inputKeeperDelay.value = this.app.settings.keeperStrikeDelay || 3.5;
+      inputKeeperDelay.addEventListener('change', e => {
+        const delay = parseFloat(e.target.value) || 3.5;
+        this.app.settings.keeperStrikeDelay = delay;
+        if (this.app.gameplay) this.app.gameplay.keeperCountdownTotal = delay;
+        this.app.saveSettings();
+      });
+    }
+
+    // 8. Canlı Yayın Beğeni Eylemi ve Eşik
+    const selectLikeAct = document.getElementById('select-like-action');
+    const inputLikeThreshold = document.getElementById('input-like-threshold');
+    if (selectLikeAct) {
+      selectLikeAct.value = this.app.settings.likeAction || 'keeper_shrink50';
+      selectLikeAct.addEventListener('change', e => {
+        this.app.settings.likeAction = e.target.value;
+        this.app.saveSettings();
+      });
+    }
+    if (inputLikeThreshold) {
+      inputLikeThreshold.value = this.app.settings.likeThreshold || 100;
+      inputLikeThreshold.addEventListener('change', e => {
+        const th = parseInt(e.target.value, 10) || 100;
+        this.app.settings.likeThreshold = th;
+        this.app.saveSettings();
+      });
+    }
+
+    // 9. Canlı Yayın Takip Eylemi
+    const selectFollowAct = document.getElementById('select-follow-action');
+    if (selectFollowAct) {
+      selectFollowAct.value = this.app.settings.followAction || 'defense_wall';
+      selectFollowAct.addEventListener('change', e => {
+        this.app.settings.followAction = e.target.value;
+        this.app.saveSettings();
+      });
+    }
+  }
+
+  updateGameModeUI(mode) {
+    const icon = document.getElementById('top-mode-icon');
+    const label = document.getElementById('top-mode-label');
+    const selectMode = document.getElementById('select-game-mode');
+    const promptText = document.querySelector('.bottom-prompt-pill .prompt-text');
+    if (mode === 'keeper') {
+      if (icon) icon.textContent = '🧤';
+      if (label) label.textContent = 'KALECİ MODU';
+      if (selectMode) selectMode.value = 'keeper';
+      if (promptText) promptText.textContent = 'Kaleci Sizsiniz! Mouse ile kaleciyi yönlendirip gelen şutları kurtarın!';
+    } else {
+      if (icon) icon.textContent = '⚽';
+      if (label) label.textContent = 'ŞUTÖR MODU';
+      if (selectMode) selectMode.value = 'shooter';
+      if (promptText) promptText.textContent = 'Topu kaleye doğru sürükleyin. Falso vermek için kavislendirin ve bırakın!';
+    }
+  }
+
+  updateHudTeamBadge(teamKey) {
+    const team = TEAMS[teamKey];
+    if (!team) return;
+    const circle = document.getElementById('hud-team-circle');
+    const name = document.getElementById('hud-team-name');
+    const player = document.getElementById('hud-player-name');
+
+    if (circle) circle.textContent = team.badge;
+    if (name) name.textContent = team.name;
+    if (player) player.textContent = `#${team.number} ${team.starPlayer || 'YAYINCI'}`;
+  }
+
+  updateHudKeeperCard(username, tag = 'NORMAL', avatarUrl = null) {
+    const userEl = document.getElementById('keeper-username');
+    const tagEl = document.getElementById('keeper-badge-tag');
+    const imgEl = document.getElementById('keeper-avatar-img');
+
+    if (userEl) userEl.textContent = `@${username}`;
+    if (tagEl) tagEl.textContent = tag;
+    if (imgEl) {
+      const src = avatarUrl && avatarUrl.startsWith('http')
+        ? `/api/avatar?user=${encodeURIComponent(username)}&url=${encodeURIComponent(avatarUrl)}`
+        : `/api/tiktok-avatar?user=${encodeURIComponent(username)}`;
+      imgEl.src = src;
+      imgEl.onerror = () => {
+        imgEl.src = `/api/avatar?user=${encodeURIComponent(username)}`;
+      };
+    }
+  }
+
+  updateScore(goals, saves) {
+    const goalsEl = document.getElementById('score-goals');
+    const savesEl = document.getElementById('score-saves');
+    if (goalsEl) goalsEl.textContent = goals;
+    if (savesEl) savesEl.textContent = saves;
+  }
+
+  updateBuffCountdowns(shrinkSec, wallSec, isTsubasa) {
+    const bar = document.getElementById('active-buffs-bar');
+    if (!bar) return;
+
+    let html = '';
+    if (isTsubasa) {
+      html += `<div class="buff-badge tsubasa"><span>🔥</span><span>TSUBASA ALEVLİ ŞUT</span></div>`;
+    }
+    if (wallSec > 0) {
+      html += `<div class="buff-badge wall"><span>🧱</span><span>SAVUNMA BARAJI (${Math.ceil(wallSec)}s)</span></div>`;
+    }
+    if (shrinkSec > 0) {
+      html += `<div class="buff-badge shrink"><span>🤏</span><span>MİNİ KALECİ (${Math.ceil(shrinkSec)}s)</span></div>`;
+    }
+
+    bar.innerHTML = html;
+  }
+}

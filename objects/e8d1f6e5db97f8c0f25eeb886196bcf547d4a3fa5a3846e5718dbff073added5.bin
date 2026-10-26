@@ -1,0 +1,12 @@
+* { box-sizing: border-box; }
+body { margin: 0; overflow: hidden; background: transparent; color: #eff6ff; font-family: Inter, Segoe UI, Arial, sans-serif; }
+.widget { width: 330px; padding: 18px; border: 1px solid rgba(131,207,224,.4); border-radius: 8px; background: rgba(5,13,34,.88); box-shadow: 0 16px 40px rgba(0,0,0,.28); }
+p { margin: 0; color: #8ca1cb; font-size: 11px; font-weight: 800; letter-spacing: 1.7px; }
+h1 { margin: 5px 0 14px; font-size: 20px; }
+ol { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+li { display: flex; align-items: center; gap: 10px; min-height: 39px; font-size: 13px; }
+li b { width: 17px; color: #64e2d3; text-align: center; }
+img, .avatar { width: 31px; height: 31px; display: grid; place-items: center; object-fit: cover; border: 2px solid rgba(100,226,211,.54); border-radius: 50%; background: #20355a; font-size: 12px; font-weight: 800; }
+.name { overflow: hidden; flex: 1; text-overflow: ellipsis; white-space: nowrap; }
+.mass { color: #b7c7e4; font-variant-numeric: tabular-nums; }
+.winner-widget{text-align:center}.winner-widget>img{width:86px;height:86px;display:block;margin:7px auto;object-fit:cover;border:3px solid #ffdf75;border-radius:50%;box-shadow:0 0 24px rgba(255,211,94,.45)}.winner-widget h1{font-size:22px}.winner-widget strong{display:block;color:#ffdf75;font-size:29px;text-shadow:0 0 14px rgba(255,211,94,.65)}

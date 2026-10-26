@@ -1,0 +1,25 @@
+@echo off
+chcp 65001 >nul
+cd /d "%~dp0"
+title Savas Oyunu
+if not exist "index.html" (
+  echo HATA: index.html bulunamadi.
+  echo Zip'in icinden calistirmis olabilirsin. Zip'e sag tik ^> Tumunu ayikla, sonra ayiklanan klasorden ac.
+  pause & exit /b
+)
+echo %~dp0 | findstr /i "\.zip \\Temp\\" >nul && (
+  echo HATA: Zip icinden calisiyor. Once Tumunu ayikla yap, sonra ayiklanan klasorden ac.
+  pause & exit /b
+)
+set RUN=
+where python >nul 2>nul && set RUN=python -m http.server 8000
+if "%RUN%"=="" where py >nul 2>nul && set RUN=py -m http.server 8000
+if "%RUN%"=="" where node >nul 2>nul && set RUN=node sunucu.js
+if "%RUN%"=="" (
+  echo HATA: Python veya Node.js kurulu degil. python.org veya nodejs.org'dan birini kur.
+  pause & exit /b
+)
+start "Sunucu (kapatinca oyun durur)" %RUN%
+timeout /t 2 >nul
+start "" "http://localhost:8000/?r=%RANDOM%"
+exit

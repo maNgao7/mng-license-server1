@@ -1,0 +1,161 @@
+import express from 'express';
+import { createRequire } from 'node:module';
+import { WebSocketServer } from 'ws';
+import { createServer } from 'node:http';
+import { randomBytes } from 'node:crypto';
+import { readFileSync, existsSync, mkdirSync, writeFileSync, renameSync } from 'node:fs';
+import { resolve, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { TikTokLiveConnection, WebcastEvent } from 'tiktok-live-connector';
+import { Race } from '../shared/race.js';
+import { GiftNormalizer, profileFrom } from './live-events.js';
+import { openTunnel, closeTunnel } from './tunnel.js';
+import { Audience } from './audience.js';
+import { validAvatarUrl, imageResolution, fetchAvatar, createProfileResolver } from './avatar-source.js';
+
+const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+const appRevision = 'pony-layout-1.0.6';
+const port = Number(process.env.PONY_PORT || 4190), widgetPort = Number(process.env.PONY_WIDGET_PORT || 4191);
+const stateFile = process.env.PONY_STATE_FILE || resolve(root, 'data/pony-live.json');
+let saved = {}; try { saved = JSON.parse(readFileSync(stateFile, 'utf8')); } catch { /* First launch. */ }
+const race = new Race(saved), token = randomBytes(32).toString('hex');
+const audience = new Audience();
+let connection, generation = 0, live = { status: 'disconnected', username: '', message: '' }, publicWidgetUrl = '', tunnelMessage = '';
+const app = express(), server = createServer(app), sockets = new WebSocketServer({ noServer: true, maxPayload:16384 });
+createRequire(import.meta.url)('../launcher-widget-links.cjs').mountWidgetLinks(app, { gameId: 'pony-life' });
+app.use(express.json({ limit: '16kb' }));
+function persist() { mkdirSync(dirname(stateFile), { recursive: true }); writeFileSync(stateFile + '.tmp', JSON.stringify({ settings: race.settings, wins: race.wins, lastPodium:race.lastPodium })); renameSync(stateFile + '.tmp', stateFile); }
+function snapshot() { return { ...race.snapshot(Date.now()), audience: audience.snapshot(), presenceMode:'recent-activity', live, widgetUrl: publicWidgetUrl || `http://localhost:${widgetPort}/widget.html`, tunnelMessage }; }
+let broadcastTimer;
+function broadcast() {
+  if (broadcastTimer) return;
+  broadcastTimer=setTimeout(()=>{broadcastTimer=null;const s=JSON.stringify(snapshot());for(const ws of sockets.clients)if(ws.readyState===1 && ws.authenticated && ws.bufferedAmount<512000)ws.send(s);},25);
+}
+function signerKey() {
+  if (process.env.EULER_API_KEY) return process.env.EULER_API_KEY.trim();
+  for (const p of [resolve(root, 'euler-api-key.txt'), resolve(process.env.USERPROFILE || '', 'Desktop/MNG-TikTok-Game/apps/mng-orbit/euler-api-key.txt'), resolve(process.env.USERPROFILE || '', 'Desktop/MNG-TikTok-Game/apps/tiktok-vs/euler-api-key.txt')]) {
+    try { const key = readFileSync(p, 'utf8').trim(); if (key) return key; } catch { /* Try the next existing runtime configuration. */ }
+  }
+  return undefined;
+}
+async function connect(username) {
+  const name = String(username || '').replace(/^@/, '').trim();
+  if (!/^[\w.]{2,60}$/.test(name)) throw new Error('Geçerli TikTok kullanıcı adı girin.');
+  if (race.phase !== 'lobby') throw new Error('Hesabı değiştirmek için yeni lobi açın.');
+  const current = ++generation; try { connection?.disconnect(); } catch { /* Already disconnected. */ }
+  audience.clear();
+  live = { status: 'connecting', username: name, message: 'Canlı yayına bağlanılıyor...' }; broadcast();
+  const c = new TikTokLiveConnection(name, { signApiKey: signerKey() }); connection = c;
+  const normalizer = new GiftNormalizer();
+  const guard = fn => data => { if (current !== generation) return; try { fn(data); broadcast(); } catch (e) { console.warn('Olay işlenemedi:', e.message); } };
+  c.on(WebcastEvent.MEMBER, guard(d => { audience.touch(profileFrom(d)); }));
+  c.on(WebcastEvent.CHAT, guard(d => { audience.touch(profileFrom(d)); }));
+  c.on(WebcastEvent.GIFT, guard(d => { const event = normalizer.read(d); if (event) { audience.touch(event.profile); race.gift(event.profile, event.coins); } }));
+  c.on(WebcastEvent.LIKE, guard(d => { const p = profileFrom(d), count=Number(d.likeCount ?? d.count ?? 0); if (p) { audience.touch(p,'like',count); race.like(p,count); } }));
+  c.on(WebcastEvent.FOLLOW, guard(d => { const p = profileFrom(d); if (p) { audience.touch(p); race.follow(p); } }));
+  c.on(WebcastEvent.SOCIAL, guard(d => { if (/follow|takip/i.test(String(d.label || d.displayType || d.event || ''))) { const p = profileFrom(d); if (p) race.follow(p); } }));
+  c.on(WebcastEvent.DISCONNECTED, guard(() => { audience.clear(); live.status = 'disconnected'; live.message = 'Yayın bağlantısı kesildi.'; }));
+  c.on(WebcastEvent.ERROR, guard(() => { live.status = 'error'; live.message = 'TikTok bağlantı hatası. Yayının açık olduğunu ve bağlantı hizmetini kontrol edin.'; }));
+  try {
+    await c.connect(); if (current !== generation) { c.disconnect(); return; }
+    const host = profileFrom(c.roomInfo?.owner || c.roomInfo?.data?.owner || {});
+    race.setHost(name, host?.avatar || '', host?.avatarQuality || 1); live = { status: 'connected', username: name, message: 'Canlı yayına bağlandı' };
+  } catch {
+    if (current !== generation) return;
+    try { c.disconnect(); } catch { /* A failed handshake may already be closed. */ }
+    live = { status: 'error', username: name, message: 'Bağlanılamadı. Yayın açık olmalı; bağlantı hizmeti/anahtar yetkisi de geçerli olmalı.' };
+  }
+  broadcast();
+}
+function local(req) { return ['127.0.0.1', '::1', '::ffff:127.0.0.1'].includes(req.socket.remoteAddress); }
+app.get('/api/session', (req, res) => { res.set('Cache-Control', 'no-store'); if (!local(req)) return res.sendStatus(403); res.json({ token, state: snapshot() }); });
+app.get('/api/health', (_, res) => res.json({ app: 'mng-pony-live', revision: appRevision, port, widgetPort }));
+const avatarCache = new Map(), avatarPending = new Map(); let avatarBytes = 0;
+const resolveProfileAvatar=createProfileResolver();
+const avatarDirectory=resolve(dirname(stateFile),'avatar-cache');
+async function avatar(req, res) {
+  let url; try { url = new URL(String(req.query.url)); } catch { return res.sendStatus(400); }
+  if (!validAvatarUrl(url.href)) return res.sendStatus(403);
+  const username=String(req.query.user||'').replace(/[^a-zA-Z0-9_.-]/g,'_').slice(0,80);
+  const highres=req.query.highres==='1';
+  const cacheKey=username+':'+url.href+':'+highres, cached=avatarCache.get(cacheKey);
+  const respond=(buffer,type)=>res.set({'Content-Type':type,'Cache-Control':'public,max-age=900'}).send(buffer);
+  if(cached && Date.now()-cached.at<900000)return respond(cached.buffer,cached.type);
+  if(!avatarPending.has(cacheKey))avatarPending.set(cacheKey,(async()=>{
+    let best=await fetchAvatar(url.href);
+    const base=resolve(avatarDirectory,'user_'+username.toLowerCase());
+    if(highres&&username){
+      try{
+        const metadata=JSON.parse(readFileSync(base+'.json','utf8')),buffer=readFileSync(base+'.bin');
+        const resolution=imageResolution(buffer);
+        if(Date.now()-metadata.at<86400000&&resolution>(best?.resolution||0)&&buffer.length<=5e6&&/^image\/(jpeg|png|webp|gif)/.test(metadata.type))best={buffer,type:metadata.type,resolution};
+      }catch{/* First visit for this profile. */}
+      if((best?.resolution||0)<512){
+        const largeUrl=await resolveProfileAvatar(username);
+        if(largeUrl&&largeUrl!==url.href){const large=await fetchAvatar(largeUrl);if(large&&large.resolution>(best?.resolution||0))best=large;}
+      }
+      if(best?.resolution>=320){try{mkdirSync(avatarDirectory,{recursive:true});writeFileSync(base+'.bin',best.buffer);writeFileSync(base+'.json',JSON.stringify({type:best.type,at:Date.now()}));}catch{/* Memory cache remains available if disk is read-only. */}}
+    }
+    if(best){
+      const old=avatarCache.get(cacheKey);if(old)avatarBytes-=old.buffer.length;
+      avatarCache.set(cacheKey,{...best,at:Date.now()});avatarBytes+=best.buffer.length;
+      while(avatarBytes>32e6||avatarCache.size>200){const key=avatarCache.keys().next().value;avatarBytes-=avatarCache.get(key).buffer.length;avatarCache.delete(key);}
+    }
+    return best;
+  })().finally(()=>avatarPending.delete(cacheKey)));
+  const result=await avatarPending.get(cacheKey);
+  if(result)return respond(result.buffer,result.type);
+  res.sendStatus(404);
+}
+app.get('/api/avatar', avatar);
+app.use(express.static(resolve(root, 'dist')));
+server.on('upgrade', (req, socket, head) => {
+  let origin; try { origin = new URL(req.headers.origin); } catch { socket.destroy(); return; }
+  if (!local(req) || !['localhost', '127.0.0.1'].includes(origin.hostname) || req.url !== '/live') { socket.destroy(); return; }
+  sockets.handleUpgrade(req, socket, head, ws => sockets.emit('connection', ws));
+});
+sockets.on('connection', ws => {
+  let authenticated = false, lastShot = 0;
+  ws.on('message', raw => {
+    if (raw.length > 16384) return ws.close();
+    try {
+      const m = JSON.parse(raw); if (!authenticated) { if (m.token !== token) return ws.close(); authenticated = true; ws.authenticated = true; ws.send(JSON.stringify(snapshot())); return; }
+      if (m.type === 'connect') connect(m.username).catch(e => ws.send(JSON.stringify({ error: e.message })));
+      if (m.type === 'start') race.start(Date.now());
+      if (m.type === 'finish-race' && race.finish(Date.now())) persist();
+      if (m.type === 'new-lobby') race.newLobby();
+      if (m.type === 'adjust-win' && race.adjustWin(m.id,m.delta)) persist();
+      if (m.type === 'settings') { race.configure(m.settings); persist(); }
+      if (m.type === 'publish-widget') openTunnel(root, widgetPort, message => { tunnelMessage = message; if (message.startsWith('Tünel kapandı')) publicWidgetUrl = ''; broadcast(); }).then(url => { publicWidgetUrl = url + '/widget.html'; tunnelMessage = 'HTTPS bağlantısı hazır. Oyun kapatılınca bağlantı kapanır.'; broadcast(); }).catch(e => { tunnelMessage = e.message; broadcast(); });
+      if (m.type === 'stop-widget') { closeTunnel(); publicWidgetUrl=''; tunnelMessage='HTTPS bağlantısı kapatıldı.'; }
+      if (m.type === 'remove') race.remove(m.id);
+      if (m.type === 'local') { if (race.phase === 'lobby' && live.status !== 'connected') race.setHost(String(m.username || 'yayinci').slice(0, 60)); }
+      if (m.type === 'shot' && race.phase === 'running' && Date.now() - lastShot > 500) { lastShot = Date.now(); race.hostScore(m.value); }
+      if (m.type.startsWith('test-') && live.status !== 'connected') {
+        const p = { id: String(m.username || 'test').slice(0,60), username: String(m.username || 'test').slice(0,60) };
+        if (m.type === 'test-leave') audience.leave(p.id);
+        else audience.touch(p,m.type==='test-like'?'like':'member',Number(m.count)||0);
+        if (m.type === 'test-gift') race.gift(p, m.count);
+        if (m.type === 'test-like') race.like(p, m.count);
+        if (m.type === 'test-follow') race.follow(p);
+      }
+      broadcast();
+    } catch { ws.send(JSON.stringify({ error: 'İstek işlenemedi.' })); }
+  });
+});
+const widgets = express();
+widgets.get('/api/widget-state', (_, res) => {
+  const state = race.snapshot(Date.now());
+  const identity = p => ({ id: p.id, username: p.username, avatar: p.avatar });
+  res.set('Cache-Control', 'no-store').json({
+    settings: { trackLength: state.settings.trackLength },
+    players: state.players.filter(Boolean).map(p => ({ ...identity(p), distance: p.distance, speed: p.speed, host: p.host })),
+    wins: state.wins.map(p => ({ ...identity(p), count: p.count }))
+  });
+});
+widgets.get('/api/avatar', avatar);
+widgets.use(express.static(resolve(root, 'public'), { index: false }));
+widgets.listen(widgetPort, '127.0.0.1', () => console.log(`Widget: http://localhost:${widgetPort}/widget.html`));
+let previous = Date.now(), tick = 0;
+setInterval(() => { const now = Date.now(); if (race.step(Math.min(.1, (now - previous) / 1000), now)) persist(); previous = now; if (++tick % 2 === 0) broadcast(); }, 50);
+server.listen(port, '127.0.0.1', () => console.log(`MNG Pony Life: http://localhost:${port}`));

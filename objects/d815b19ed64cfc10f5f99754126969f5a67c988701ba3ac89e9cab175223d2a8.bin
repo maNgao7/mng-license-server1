@@ -1,0 +1,246 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>MNG Crowd Control - Canlı Sıralama Widget'ı</title>
+  <style>
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: transparent !important;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      color: #ffffff;
+      user-select: none;
+    }
+    .panel {
+      width: 360px;
+      margin: 18px;
+      padding: 16px 18px;
+      border: 1px solid rgba(255, 77, 109, 0.55);
+      border-radius: 16px;
+      background: rgba(14, 18, 42, 0.9);
+      box-shadow: 0 10px 35px rgba(0, 0, 0, 0.75), 0 0 20px rgba(255, 77, 109, 0.2);
+      backdrop-filter: blur(10px);
+    }
+    .panel-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      padding-bottom: 8px;
+    }
+    h1 {
+      margin: 0;
+      color: #ff4d6d;
+      font-size: 15px;
+      font-weight: 900;
+      letter-spacing: 1.2px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .subtext {
+      color: #ffd166;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+    }
+    .list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      max-height: 520px;
+      overflow-y: hidden;
+    }
+    .row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-height: 42px;
+      padding: 6px 12px;
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      transition: all 0.3s ease;
+      animation: slideIn 0.35s ease;
+    }
+    .row:first-child {
+      background: linear-gradient(90deg, rgba(255, 77, 109, 0.25), rgba(255, 255, 255, 0.06));
+      border: 1px solid rgba(255, 77, 109, 0.5);
+      box-shadow: 0 0 14px rgba(255, 77, 109, 0.3);
+    }
+    .rank-badge {
+      font-size: 13px;
+      font-weight: 900;
+      color: #ff8e53;
+      width: 18px;
+      text-align: center;
+    }
+    .row:first-child .rank-badge {
+      color: #ffd166;
+    }
+    .row-avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 2px solid rgba(255, 77, 109, 0.6);
+      background: #1e293b;
+      flex-shrink: 0;
+    }
+    .row:first-child .row-avatar {
+      border-color: #ffd166;
+      box-shadow: 0 0 8px rgba(255, 209, 102, 0.4);
+    }
+    .row-name {
+      flex: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-size: 14px;
+      font-weight: 700;
+      color: #f1f5f9;
+    }
+    .row-score {
+      margin-left: 8px;
+      color: #ffd166;
+      font-size: 16px;
+      font-weight: 900;
+      white-space: nowrap;
+      letter-spacing: 0.5px;
+      text-shadow: 0 0 8px rgba(255, 209, 102, 0.4);
+    }
+    .empty {
+      opacity: 0.72;
+      font-size: 13px;
+      text-align: center;
+      padding: 16px 0;
+      color: #94a3b8;
+    }
+    @keyframes slideIn {
+      from { transform: translateY(-8px); opacity: 0; }
+      to { transform: none; opacity: 1; }
+    }
+  </style>
+</head>
+<body>
+  <section class="panel">
+    <div class="panel-head">
+      <h1>💀 EN ÇOK ELEME</h1>
+      <span class="subtext">CROWD CONTROL</span>
+    </div>
+    <div id="list" class="list">
+      <div class="empty">Henüz yayıncı elenmedi.</div>
+    </div>
+  </section>
+
+  <script>
+    function uretVarsayilanAvatarSvg(isim) {
+      const harf = (isim || "?").trim().charAt(0).toUpperCase() || "?";
+      let hash = 0;
+      for (let i = 0; i < (isim || "").length; i++) {
+        hash = (hash << 5) - hash + (isim || "").charCodeAt(i);
+        hash |= 0;
+      }
+      const renkler = ["#ef4444", "#f97316", "#f59e0b", "#10b981", "#06b6d4", "#3b82f6", "#8b5cf6", "#ec4899", "#ff4d6d"];
+      const bg = renkler[Math.abs(hash) % renkler.length];
+      const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128"><circle cx="64" cy="64" r="64" fill="${bg}"/><text x="64" y="80" font-size="64" font-weight="900" font-family="system-ui, sans-serif" fill="#ffffff" text-anchor="middle" dominant-baseline="central">${harf}</text></svg>`;
+      return "data:image/svg+xml;utf8," + encodeURIComponent(svg);
+    }
+
+    function fotoProxyUrl(rawUrl, username) {
+      if (!rawUrl || !rawUrl.trim()) return uretVarsayilanAvatarSvg(username);
+      if (rawUrl.startsWith("/") || rawUrl.startsWith("data:") || rawUrl.startsWith("blob:")) return rawUrl;
+      return "/api/avatar?user=" + encodeURIComponent(username || "") + "&url=" + encodeURIComponent(rawUrl);
+    }
+
+    const listEl = document.getElementById("list");
+    const escapeHTML = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+    function renderKillers(entries) {
+      document.querySelector("h1").textContent = "💀 EN ÇOK ELEME";
+      if (!Array.isArray(entries) || !entries.length) {
+        listEl.innerHTML = '<div class="empty">Henüz yayıncı elenmedi.</div>';
+        return;
+      }
+
+      listEl.innerHTML = entries.slice(0, 10).map((entry, index) => {
+        const rank = index + 1;
+        const rankIcon = rank === 1 ? "🥇" : rank === 2 ? "🥈" : rank === 3 ? "🥉" : rank;
+        const name = (entry.nickname || entry.id || "İzleyici").slice(0, 20);
+        const avatarSrc = fotoProxyUrl(entry.avatar, name);
+        const kills = entry.kills || 1;
+        const svgFallback = uretVarsayilanAvatarSvg(name);
+
+        return `
+          <div class="row">
+            <span class="rank-badge">${rankIcon}</span>
+            <img class="row-avatar" src="${escapeHTML(avatarSrc)}" data-fallback="${escapeHTML(svgFallback)}" onerror="this.onerror=null;this.src=this.dataset.fallback" alt="${escapeHTML(name)}">
+            <span class="row-name">@${escapeHTML(name)}</span>
+            <span class="row-score">${Number(kills) || 0}x Eleme</span>
+          </div>
+        `;
+      }).join("");
+    }
+
+    let socket;
+    let supporters = [];
+    let killers = [];
+    function renderRanking() {
+      if (killers.length) renderKillers(killers);
+      else if (supporters.length) renderSupporters(supporters);
+      else renderKillers([]);
+    }
+    function connectWs() {
+      const proto = location.protocol === "https:" ? "wss:" : "ws:";
+      socket = new WebSocket(`${proto}//${location.host}`);
+
+      socket.addEventListener("message", (e) => {
+        try {
+          const msg = JSON.parse(e.data);
+          if (msg.type === "killers") {
+            killers = Array.isArray(msg.entries) ? msg.entries : [];
+            renderRanking();
+          } else if (msg.type === "leaderboard") {
+            supporters = Array.isArray(msg.entries) ? msg.entries : [];
+            renderRanking();
+          }
+        } catch {}
+      });
+
+      socket.addEventListener("close", () => setTimeout(connectWs, 2000));
+      socket.addEventListener("error", () => socket.close());
+    }
+
+    function renderSupporters(entries) {
+      if (!Array.isArray(entries) || !entries.length) return;
+      document.querySelector("h1").textContent = "⭐ DESTEKÇİLER";
+      listEl.innerHTML = entries.slice(0, 10).map((entry, index) => {
+        const rank = index + 1;
+        const rankIcon = rank === 1 ? "🥇" : rank === 2 ? "🥈" : rank === 3 ? "🥉" : rank;
+        const name = (entry.nickname || "İzleyici").slice(0, 20);
+        const avatarSrc = fotoProxyUrl(entry.avatar, name);
+        const pts = entry.pts || 1;
+        const svgFallback = uretVarsayilanAvatarSvg(name);
+
+        return `
+          <div class="row">
+            <span class="rank-badge">${rankIcon}</span>
+            <img class="row-avatar" src="${escapeHTML(avatarSrc)}" data-fallback="${escapeHTML(svgFallback)}" onerror="this.onerror=null;this.src=this.dataset.fallback" alt="${escapeHTML(name)}">
+            <span class="row-name">@${escapeHTML(name)}</span>
+            <span class="row-score">${Number(pts) || 0} Puan</span>
+          </div>
+        `;
+      }).join("");
+    }
+
+    connectWs();
+  </script>
+</body>
+</html>

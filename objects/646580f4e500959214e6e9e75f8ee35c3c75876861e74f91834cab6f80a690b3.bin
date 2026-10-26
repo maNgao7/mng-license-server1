@@ -1,0 +1,857 @@
+// ==========================================================================
+// KARAKTERLER - Yuvarlatılmış hatlı, iskeletli (rig) futbolcu modelleri
+// Yön: karakterin önü +Z. Sağ eli -X tarafındadır.
+// ==========================================================================
+import * as THREE from 'three';
+import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
+
+const geoCache = new Map();
+export function rbox(w, h, d, r = 0.04, seg = 3) {
+  const key = `${w}|${h}|${d}|${r}|${seg}`;
+  if (!geoCache.has(key)) geoCache.set(key, new RoundedBoxGeometry(w, h, d, seg, r));
+  return geoCache.get(key);
+}
+const sphereGeo = new THREE.SphereGeometry(1, 16, 12);
+
+const matCache = new Map();
+export function stdMat(color, rough = 0.75, metal = 0, extra = {}) {
+  const key = `${color}|${rough}|${metal}|${JSON.stringify(extra)}`;
+  if (!matCache.has(key)) {
+    matCache.set(key, new THREE.MeshStandardMaterial({ color: new THREE.Color(color), roughness: rough, metalness: metal, ...extra }));
+  }
+  return matCache.get(key);
+}
+
+export const SKIN_TONES = ['#f1c7a3', '#e0ac85', '#c98e64', '#a86f48', '#7d4f32', '#f6d4b8', '#d39a72'];
+export const HAIR_COLORS = ['#1f140d', '#2b1a10', '#3d2616', '#0d0d0d', '#5a3a1e', '#7a5530', '#141414'];
+
+// --------------------------------------------------------------------------
+// FORMA DOKULARI
+// --------------------------------------------------------------------------
+function drawPattern(ctx, w, h, team, mirror = false) {
+  const p = team.primary, s = team.secondary;
+  ctx.fillStyle = p;
+  ctx.fillRect(0, 0, w, h);
+  if (team.pattern === 'halves') {
+    ctx.fillStyle = s;
+    if (mirror) ctx.fillRect(0, 0, w / 2, h); else ctx.fillRect(w / 2, 0, w / 2, h);
+  } else if (team.pattern === 'stripes') {
+    const n = 7;
+    const sw = w / n;
+    ctx.fillStyle = s;
+    for (let i = 1; i < n; i += 2) ctx.fillRect(i * sw, 0, sw, h);
+  } else if (team.pattern === 'national') {
+    ctx.fillStyle = 'rgba(255,255,255,0.10)';
+    for (let i = 0; i < 6; i++) ctx.fillRect(0, h * 0.18 + i * h * 0.13, w, h * 0.035);
+    ctx.fillStyle = s;
+    ctx.fillRect(0, h - h * 0.05, w, h * 0.05);
+  } else if (team.pattern === 'keeper') {
+    const g = ctx.createLinearGradient(0, 0, w, h);
+    g.addColorStop(0, p);
+    g.addColorStop(1, s);
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, w, h);
+    ctx.strokeStyle = 'rgba(0,0,0,0.18)';
+    ctx.lineWidth = 6;
+    for (let i = -h; i < w; i += 28) {
+      ctx.beginPath(); ctx.moveTo(i, h); ctx.lineTo(i + h, 0); ctx.stroke();
+    }
+  }
+  // Kumaş gölgelendirme
+  const shade = ctx.createLinearGradient(0, 0, w, 0);
+  shade.addColorStop(0, 'rgba(0,0,0,0.18)');
+  shade.addColorStop(0.2, 'rgba(0,0,0,0)');
+  shade.addColorStop(0.8, 'rgba(0,0,0,0)');
+  shade.addColorStop(1, 'rgba(0,0,0,0.18)');
+  ctx.fillStyle = shade;
+  ctx.fillRect(0, 0, w, h);
+}
+
+function strokeText(ctx, text, x, y, font, fill, stroke, lw) {
+  ctx.font = font;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.lineJoin = 'round';
+  ctx.lineWidth = lw;
+  ctx.strokeStyle = stroke;
+  ctx.strokeText(text, x, y);
+  ctx.fillStyle = fill;
+  ctx.fillText(text, x, y);
+}
+
+function fitFont(ctx, text, maxW, size, weight = 900, family = 'Teko, Montserrat, sans-serif') {
+  let s = size;
+  ctx.font = `${weight} ${s}px ${family}`;
+  while (ctx.measureText(text).width > maxW && s > 12) {
+    s -= 2;
+    ctx.font = `${weight} ${s}px ${family}`;
+  }
+  return `${weight} ${s}px ${family}`;
+}
+
+function contrastOf(hex) {
+  const c = new THREE.Color(hex);
+  const l = 0.299 * c.r + 0.587 * c.g + 0.114 * c.b;
+  return l > 0.55 ? '#111111' : '#ffffff';
+}
+
+export function makeJerseyTextures(team, backName, number, opts = {}) {
+  const W = 256, H = 320;
+  const mk = () => {
+    const c = document.createElement('canvas');
+    c.width = W; c.height = H;
+    return c;
+  };
+  const textFill = team.text || '#ffffff';
+  const textStroke = contrastOf(textFill);
+
+  // ÖN
+  const front = mk();
+  let ctx = front.getContext('2d');
+  drawPattern(ctx, W, H, team, true);
+  // yaka
+  ctx.fillStyle = team.secondary;
+  ctx.beginPath();
+  ctx.moveTo(W * 0.36, 0); ctx.quadraticCurveTo(W * 0.5, H * 0.12, W * 0.64, 0); ctx.closePath();
+  ctx.fill();
+  if (team.pattern === 'national') {
+    // Ay yıldız arması
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath(); ctx.arc(W * 0.7, H * 0.25, 22, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = team.primary;
+    ctx.beginPath(); ctx.arc(W * 0.725, H * 0.25, 18, 0, Math.PI * 2); ctx.fill();
+    drawStar(ctx, W * 0.765, H * 0.25, 8, '#ffffff');
+  } else {
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath(); ctx.arc(W * 0.7, H * 0.24, 20, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = team.secondary; ctx.lineWidth = 5; ctx.stroke();
+    strokeText(ctx, team.short || '', W * 0.7, H * 0.245, '900 15px Montserrat, sans-serif', team.secondary === '#ffffff' ? team.primary : team.secondary, '#ffffff', 1);
+  }
+  // sponsor
+  strokeText(ctx, opts.sponsor || 'MNG', W * 0.5, H * 0.5, '900 44px Teko, Montserrat, sans-serif', textFill, textStroke, 5);
+  strokeText(ctx, number, W * 0.3, H * 0.25, '900 40px Teko, Montserrat, sans-serif', textFill, textStroke, 5);
+
+  // ARKA
+  const back = mk();
+  ctx = back.getContext('2d');
+  drawPattern(ctx, W, H, team, false);
+  ctx.fillStyle = team.secondary;
+  ctx.fillRect(W * 0.3, 0, W * 0.4, H * 0.035);
+  const name = String(backName || '@MANGAO7TV').toUpperCase().slice(0, 16);
+  strokeText(ctx, name, W * 0.5, H * 0.19, fitFont(ctx, name, W * 0.88, 52), textFill, textStroke, 7);
+  strokeText(ctx, String(number || '16'), W * 0.5, H * 0.56, '900 170px Teko, Montserrat, sans-serif', textFill, textStroke, 10);
+
+  // YAN
+  const side = mk();
+  ctx = side.getContext('2d');
+  drawPattern(ctx, W, H, team, false);
+  ctx.fillStyle = team.secondary;
+  ctx.fillRect(W * 0.42, 0, W * 0.16, H);
+
+  const toTex = c => {
+    const t = new THREE.CanvasTexture(c);
+    t.colorSpace = THREE.SRGBColorSpace;
+    t.anisotropy = 8;
+    return t;
+  };
+  return { front: toTex(front), back: toTex(back), side: toTex(side), top: null };
+}
+
+function drawStar(ctx, cx, cy, r, color) {
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  for (let i = 0; i < 10; i++) {
+    const a = -Math.PI / 2 + i * Math.PI / 5;
+    const rr = i % 2 === 0 ? r : r * 0.45;
+    ctx.lineTo(cx + Math.cos(a) * rr, cy + Math.sin(a) * rr);
+  }
+  ctx.closePath();
+  ctx.fill();
+}
+
+function jerseyMaterials(tex, team) {
+  const mk = map => new THREE.MeshStandardMaterial({ map, roughness: 0.62, metalness: 0.0 });
+  const plain = new THREE.MeshStandardMaterial({ color: team.primary, roughness: 0.62 });
+  // BoxGeometry grupları: +x, -x, +y, -y, +z(ön), -z(arka)
+  return [mk(tex.side), mk(tex.side), plain, plain, mk(tex.front), mk(tex.back)];
+}
+
+// --------------------------------------------------------------------------
+// İNSAN MODELİ (Gelişmiş Atletik Futbolcu ve Kaleci)
+// --------------------------------------------------------------------------
+export function createHumanoid(opt = {}) {
+  const team = opt.team || { primary: '#cccccc', secondary: '#888888', shorts: '#333333', socks: '#ffffff', pattern: 'plain', text: '#fff' };
+  const skin = opt.skin || SKIN_TONES[Math.floor(Math.random() * SKIN_TONES.length)];
+  const hairColor = opt.hair || HAIR_COLORS[Math.floor(Math.random() * HAIR_COLORS.length)];
+  const cast = opt.castShadow !== false;
+
+  const skinMat = stdMat(skin, 0.55);
+  const hairMat = stdMat(hairColor, 0.85);
+  const shortsMat = stdMat(team.shorts, 0.65);
+  const sockMat = stdMat(team.socks, 0.65);
+  const bootMat = stdMat(opt.boots || '#111111', 0.3, 0.1);
+  const bootSoleMat = stdMat('#f8fafc', 0.25, 0.1);
+  const bootSwooshMat = stdMat(team.secondary === '#ffffff' ? team.primary : '#ffffff', 0.4);
+  const sleeveMat = new THREE.MeshStandardMaterial({ color: team.primary, roughness: 0.62 });
+  const trimMat = stdMat(team.secondary || '#ffffff', 0.6);
+
+  const root = new THREE.Group();
+  const body = new THREE.Group();
+  root.add(body);
+
+  const hips = new THREE.Group();
+  hips.position.y = 0.93;
+  body.add(hips);
+
+  const add = (parent, geo, mat, x, y, z) => {
+    const m = new THREE.Mesh(geo, mat);
+    m.position.set(x, y, z);
+    m.castShadow = cast;
+    m.receiveShadow = false;
+    parent.add(m);
+    return m;
+  };
+
+  // 1. Şort (Kenar şeritli profesyonel futbol şortu)
+  add(hips, rbox(0.48, 0.26, 0.28, 0.07), shortsMat, 0, -0.02, 0);
+  // Şort yan şeritleri
+  [-0.242, 0.242].forEach(sx => {
+    add(hips, rbox(0.015, 0.22, 0.24, 0.01), trimMat, sx, -0.02, 0);
+  });
+
+  // 2. Atletik Gövde & Forma
+  const torso = new THREE.Group();
+  torso.position.y = 0.06;
+  hips.add(torso);
+  const tex = opt.jerseyTex || makeJerseyTextures(team, opt.backName || '', opt.number || '10', opt);
+  const torsoMesh = add(torso, rbox(0.50, 0.64, 0.29, 0.09, 4), jerseyMaterials(tex, team), 0, 0.3, 0);
+
+  // Yaka (V-Neck / Ribbed Collar)
+  add(torso, rbox(0.26, 0.05, 0.24, 0.02), trimMat, 0, 0.61, 0.02);
+
+  // 3. Boyun + Kafa
+  add(torso, new THREE.CylinderGeometry(0.065, 0.075, 0.11, 10), skinMat, 0, 0.65, 0);
+  const head = new THREE.Group();
+  head.position.y = 0.70;
+  torso.add(head);
+  add(head, rbox(0.32, 0.34, 0.31, 0.12, 5), skinMat, 0, 0.17, 0);
+
+  // Saç (Katmanlı modern fade saç stili)
+  const hairStyle = opt.hairStyle ?? 1;
+  if (hairStyle === 0) {
+    add(head, rbox(0.34, 0.15, 0.33, 0.08, 4), hairMat, 0, 0.30, -0.01);
+  } else if (hairStyle === 1) {
+    add(head, rbox(0.34, 0.14, 0.33, 0.07, 4), hairMat, 0, 0.31, -0.01);
+    add(head, rbox(0.33, 0.24, 0.12, 0.05, 3), hairMat, 0, 0.20, -0.12);
+  } else {
+    add(head, rbox(0.34, 0.10, 0.33, 0.05, 3), hairMat, 0, 0.32, 0);
+  }
+
+  // Yüz Detayları
+  const eyeMat = stdMat('#151515', 0.25);
+  const eyeWhiteMat = stdMat('#ffffff', 0.3);
+  // Göz akı + göz bebeği
+  [-0.07, 0.07].forEach(ex => {
+    const ew = add(head, sphereGeo, eyeWhiteMat, ex, 0.19, 0.156);
+    ew.scale.set(0.034, 0.034, 0.015);
+    const ep = add(head, sphereGeo, eyeMat, ex, 0.19, 0.165);
+    ep.scale.setScalar(0.020);
+  });
+  const browMat = stdMat(hairColor, 0.85);
+  add(head, rbox(0.075, 0.02, 0.02, 0.008, 1), browMat, 0.07, 0.238, 0.16);
+  add(head, rbox(0.075, 0.02, 0.02, 0.008, 1), browMat, -0.07, 0.238, 0.16);
+  add(head, rbox(0.05, 0.065, 0.05, 0.02, 2), skinMat, 0, 0.15, 0.17);
+  add(head, rbox(0.09, 0.018, 0.02, 0.008, 1), stdMat('#7a3b2e', 0.6), 0, 0.085, 0.16);
+  // Kulaklar
+  add(head, rbox(0.04, 0.08, 0.06, 0.02, 2), skinMat, 0.168, 0.17, 0);
+  add(head, rbox(0.04, 0.08, 0.06, 0.02, 2), skinMat, -0.168, 0.17, 0);
+
+  // 4. Kollar (Forma kol manşetleri ve profesyonel kaleci eldiveni)
+  const makeArm = side => {
+    const sh = new THREE.Group();
+    sh.position.set(side * 0.30, 0.54, 0);
+    torso.add(sh);
+
+    // Omuz / Üst kol
+    add(sh, rbox(0.16, 0.32, 0.16, 0.06), sleeveMat, 0, -0.13, 0);
+    // Kol ucu manşet şeridi
+    add(sh, rbox(0.165, 0.04, 0.165, 0.02), trimMat, 0, -0.27, 0);
+
+    const el = new THREE.Group();
+    el.position.y = -0.29;
+    sh.add(el);
+
+    // Ön kol (ten rengi veya uzun kollu)
+    add(el, rbox(0.13, 0.27, 0.13, 0.05), opt.longSleeves ? sleeveMat : skinMat, 0, -0.13, 0);
+
+    if (opt.gloves) {
+      // PROFESYONEL KALECİ ELDİVENİ
+      const gloveColor = opt.gloves || '#f97316';
+      const gloveMat = stdMat(gloveColor, 0.45);
+      const palmMat = stdMat('#f8fafc', 0.35); // Beyaz latex avuç içi
+      const strapMat = stdMat('#0f172a', 0.6); // Bileklik cırt cırtı
+
+      const gloveGroup = new THREE.Group();
+      gloveGroup.position.set(0, -0.34, 0);
+      el.add(gloveGroup);
+
+      // Ana eldiven gövdesi
+      add(gloveGroup, rbox(0.16, 0.18, 0.11, 0.04), gloveMat, 0, 0, 0);
+      // Lateks avuç içi pedi (+Z yönünde)
+      add(gloveGroup, rbox(0.14, 0.16, 0.03, 0.015), palmMat, 0, 0, 0.05);
+      // Parmak dolguları
+      [-0.05, -0.018, 0.018, 0.05].forEach(fx => {
+        add(gloveGroup, rbox(0.028, 0.06, 0.05, 0.012), gloveMat, fx, -0.09, 0);
+      });
+      // Başparmak
+      add(gloveGroup, rbox(0.04, 0.07, 0.05, 0.015), gloveMat, side * 0.09, -0.04, 0.02);
+      // Bilek cırt cırt bandı
+      add(gloveGroup, rbox(0.168, 0.05, 0.125, 0.02), strapMat, 0, 0.08, 0);
+    } else {
+      // Futbolcu eli
+      const handGroup = new THREE.Group();
+      handGroup.position.set(0, -0.31, 0);
+      el.add(handGroup);
+      add(handGroup, rbox(0.11, 0.13, 0.07, 0.03), skinMat, 0, 0, 0);
+      // Başparmak
+      add(handGroup, rbox(0.035, 0.055, 0.04, 0.015), skinMat, side * 0.06, 0.01, 0.02);
+    }
+    return { sh, el };
+  };
+  const L = makeArm(1), R = makeArm(-1);
+
+  // 5. Bacaklar, Çoraplar & Kramponlar (Soccer Cleats with Studs)
+  const makeLeg = side => {
+    const hp = new THREE.Group();
+    hp.position.set(side * 0.12, -0.04, 0);
+    hips.add(hp);
+
+    // Üst bacak (şort altı)
+    add(hp, rbox(0.17, 0.24, 0.18, 0.06), shortsMat, 0, -0.08, 0);
+    // Çıplak uyluk
+    add(hp, rbox(0.155, 0.30, 0.155, 0.06), skinMat, 0, -0.27, 0);
+
+    const kn = new THREE.Group();
+    kn.position.y = -0.42;
+    hp.add(kn);
+
+    // Profesyonel futbol çorabı
+    add(kn, rbox(0.15, 0.40, 0.15, 0.06), sockMat, 0, -0.20, 0);
+    // Diz altı kıvrık çorap manşeti (Turnover Cuff)
+    add(kn, rbox(0.158, 0.07, 0.158, 0.025), trimMat, 0, -0.04, 0);
+
+    // AYAK & KRAMPON (Molded Football Boot)
+    const ft = new THREE.Group();
+    ft.position.y = -0.42;
+    kn.add(ft);
+
+    const bootGroup = new THREE.Group();
+    ft.add(bootGroup);
+
+    // Krampon ana gövdesi
+    add(bootGroup, rbox(0.145, 0.10, 0.30, 0.04), bootMat, 0, -0.035, 0.05);
+    // Yan spor çizgisi / Swoosh
+    [-0.075, 0.075].forEach(bx => {
+      add(bootGroup, rbox(0.01, 0.03, 0.16, 0.01), bootSwooshMat, bx, -0.03, 0.05);
+    });
+    // Krampon beyaz/neon taban plakası (Soleplate)
+    add(bootGroup, rbox(0.146, 0.02, 0.31, 0.015), bootSoleMat, 0, -0.09, 0.05);
+    // Krampon çivileri (Studs)
+    const studGeo = new THREE.CylinderGeometry(0.014, 0.010, 0.022, 8);
+    const studMat = stdMat('#cbd5e1', 0.2, 0.3);
+    [[-0.04, 0.14], [0.04, 0.14], [-0.04, 0.0], [0.04, 0.0], [-0.04, -0.06], [0.04, -0.06]].forEach(([sx, sz]) => {
+      add(bootGroup, studGeo, studMat, sx, -0.105, sz);
+    });
+
+    return { hp, kn, ft };
+  };
+  const LL = makeLeg(1), RL = makeLeg(-1);
+
+  const rig = {
+    root, body, hips, torso, head,
+    lShoulder: L.sh, lElbow: L.el, rShoulder: R.sh, rElbow: R.el,
+    lHip: LL.hp, lKnee: LL.kn, lFoot: LL.ft, rHip: RL.hp, rKnee: RL.kn, rFoot: RL.ft,
+    torsoMesh, sleeveMat, shortsMat, sockMat, team
+  };
+
+  rig.setKit = (newTeam, backName, number, o = {}) => {
+    const t = makeJerseyTextures(newTeam, backName, number, o);
+    const old = torsoMesh.material;
+    torsoMesh.material = jerseyMaterials(t, newTeam);
+    if (Array.isArray(old)) old.forEach(m => { m.map?.dispose(); m.dispose(); });
+    sleeveMat.color.set(newTeam.primary);
+    rig.shortsMatInstance = rig.shortsMatInstance || null;
+    hips.traverse(o2 => {
+      if (o2.isMesh && o2.material === shortsMat) o2.material = stdMat(newTeam.shorts, 0.65);
+    });
+    root.traverse(o2 => {
+      if (o2.isMesh && o2.material === sockMat) o2.material = stdMat(newTeam.socks, 0.65);
+    });
+    rig.team = newTeam;
+  };
+
+  return rig;
+}
+
+// --------------------------------------------------------------------------
+// RESMİ HAKEM MODELİ (Siyah Formalı, Düdüklü, Kartlı Saha Hakemi)
+// --------------------------------------------------------------------------
+export function createReferee() {
+  const ref = createHumanoid({
+    team: {
+      primary: '#111827',
+      secondary: '#f9fafb',
+      shorts: '#0f172a',
+      socks: '#111827',
+      pattern: 'stripes'
+    },
+    backName: 'HAKEM',
+    number: 'FIFA',
+    boots: '#09090b',
+    skin: '#e0ac85',
+    hair: '#1c1917'
+  });
+
+  // Göğüste gümüş düdük
+  const whistleGeo = new THREE.CylinderGeometry(0.016, 0.02, 0.04, 10);
+  const whistleMat = stdMat('#e2e8f0', 0.2, 0.9);
+  const whistle = new THREE.Mesh(whistleGeo, whistleMat);
+  whistle.rotation.x = Math.PI / 3;
+  whistle.position.set(0, 0.44, 0.16);
+  ref.torso.add(whistle);
+
+  // Göğüs cebinden çıkan sarı ve kırmızı kart
+  const yellowCard = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.05, 0.005), stdMat('#facc15', 0.3));
+  yellowCard.position.set(0.12, 0.46, 0.16);
+  yellowCard.rotation.z = -0.15;
+  ref.torso.add(yellowCard);
+
+  const redCard = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.05, 0.005), stdMat('#ef4444', 0.3));
+  redCard.position.set(0.14, 0.45, 0.158);
+  redCard.rotation.z = 0.1;
+  ref.torso.add(redCard);
+
+  return ref;
+}
+
+// --------------------------------------------------------------------------
+// POZ SİSTEMİ
+// --------------------------------------------------------------------------
+const JOINTS = ['hips', 'torso', 'head', 'lShoulder', 'lElbow', 'rShoulder', 'rElbow', 'lHip', 'lKnee', 'lFoot', 'rHip', 'rKnee', 'rFoot'];
+
+export function blendPose(rig, pose, k) {
+  if (!rig || !pose) return;
+  for (const j of JOINTS) {
+    const target = pose[j];
+    const obj = rig[j];
+    if (!obj || !target) continue;
+    const tx = target?.[0] ?? 0, ty = target?.[1] ?? 0, tz = target?.[2] ?? 0;
+    obj.rotation.x += (tx - obj.rotation.x) * k;
+    obj.rotation.y += (ty - obj.rotation.y) * k;
+    obj.rotation.z += (tz - obj.rotation.z) * k;
+  }
+  if (pose.hipsY !== undefined && rig.hips) rig.hips.position.y += (pose.hipsY - rig.hips.position.y) * k;
+}
+
+export const POSES = {
+  stand: { lShoulder: [0, 0, 0.12], rShoulder: [0, 0, -0.12], lElbow: [-0.15, 0, 0], rElbow: [-0.15, 0, 0], hipsY: 0.93 },
+  run: {
+    torso: [0.18, -0.12, 0], head: [-0.1, 0.08, 0],
+    lShoulder: [-0.65, 0, 0.3], rShoulder: [0.65, 0, -0.3],
+    lHip: [0.7, 0, 0.05], lKnee: [0.6, 0, 0],
+    rHip: [-0.65, 0, -0.05], rKnee: [0.15, 0, 0],
+    hipsY: 0.93
+  },
+  arms_up: { lShoulder: [-0.2, 0, 2.7], rShoulder: [-0.2, 0, -2.7], lElbow: [-0.2, 0, 0], rElbow: [-0.2, 0, 0], hipsY: 0.93 },
+  goal_cheer: {
+    torso: [-0.12, 0, 0], head: [-0.3, 0, 0],
+    lShoulder: [-0.1, 0, 2.85], rShoulder: [-0.1, 0, -2.85],
+    lElbow: [0, 0, 0], rElbow: [0, 0, 0],
+    lHip: [0, 0, 0.1], rHip: [0, 0, -0.1],
+    hipsY: 0.98
+  },
+  run_stride_1: {
+    torso: [0.18, -0.12, 0], head: [-0.1, 0.08, 0],
+    lShoulder: [-0.65, 0, 0.3], rShoulder: [0.65, 0, -0.3],
+    lHip: [0.7, 0, 0.05], lKnee: [0.6, 0, 0],
+    rHip: [-0.65, 0, -0.05], rKnee: [0.15, 0, 0],
+    hipsY: 0.93
+  },
+  run_stride_2: {
+    torso: [0.18, 0.12, 0], head: [-0.1, -0.08, 0],
+    lShoulder: [0.65, 0, 0.3], rShoulder: [-0.65, 0, -0.3],
+    lHip: [-0.65, 0, -0.05], lKnee: [0.15, 0, 0],
+    rHip: [0.7, 0, 0.05], rKnee: [0.6, 0, 0],
+    hipsY: 0.93
+  },
+  kick_windup: {
+    torso: [-0.15, 0.25, 0], head: [0.1, -0.18, 0],
+    lShoulder: [-0.3, 0, 0.85], rShoulder: [0.2, 0, -0.85],
+    lHip: [0.25, 0, -0.1], lKnee: [0.3, 0, 0],
+    rHip: [-0.85, 0, 0.15], rKnee: [1.15, 0, 0],
+    hipsY: 0.91
+  },
+  kick_strike: {
+    torso: [0.22, -0.18, 0], head: [-0.15, 0.12, 0],
+    lShoulder: [0.2, 0, -0.75], rShoulder: [-0.4, 0, 0.95],
+    lHip: [-0.2, 0, 0.05], lKnee: [0.4, 0, 0],
+    rHip: [0.95, 0, -0.1], rKnee: [0.1, 0, 0],
+    hipsY: 0.94
+  },
+  hands_head: { lShoulder: [-0.6, 0, 2.3], rShoulder: [-0.6, 0, -2.3], lElbow: [-2.3, 0, 0], rElbow: [-2.3, 0, 0], head: [0.25, 0, 0], hipsY: 0.93 },
+  keeper_ready: {
+    torso: [0.32, 0, 0], head: [-0.25, 0, 0],
+    lShoulder: [-0.5, 0, 0.75], rShoulder: [-0.5, 0, -0.75], lElbow: [-0.6, 0, 0], rElbow: [-0.6, 0, 0],
+    lHip: [-0.55, 0, 0.12], rHip: [-0.55, 0, -0.12], lKnee: [0.85, 0, 0], rKnee: [0.85, 0, 0], lFoot: [-0.3, 0, 0], rFoot: [-0.3, 0, 0],
+    hipsY: 0.8
+  },
+  keeper_dive_top_right: {
+    torso: [0, 0, -0.25], head: [0, 0, -0.2],
+    lShoulder: [0, 0, 2.8], rShoulder: [0, 0, -3.0], lElbow: [0, 0, 0], rElbow: [0, 0, 0],
+    lHip: [-0.2, 0, 0.25], rHip: [0.3, 0, -0.15], lKnee: [0.25, 0, 0], rKnee: [0.65, 0, 0],
+    hipsY: 1.35
+  },
+  keeper_dive_top_left: {
+    torso: [0, 0, 0.25], head: [0, 0, 0.2],
+    lShoulder: [0, 0, 3.0], rShoulder: [0, 0, -2.8], lElbow: [0, 0, 0], rElbow: [0, 0, 0],
+    lHip: [0.3, 0, 0.15], rHip: [-0.2, 0, -0.25], lKnee: [0.65, 0, 0], rKnee: [0.25, 0, 0],
+    hipsY: 1.35
+  },
+  keeper_dive_low_right: {
+    torso: [0.1, 0, -0.45], head: [0, 0, -0.2],
+    lShoulder: [0, 0, 1.8], rShoulder: [0, 0, -2.8],
+    lHip: [-0.4, 0, 0.3], rHip: [0.1, 0, -0.2], lKnee: [0.6, 0, 0], rKnee: [0.3, 0, 0],
+    hipsY: 0.45
+  },
+  keeper_dive_low_left: {
+    torso: [0.1, 0, 0.45], head: [0, 0, 0.2],
+    lShoulder: [0, 0, 2.8], rShoulder: [0, 0, -1.8],
+    lHip: [0.1, 0, 0.2], rHip: [-0.4, 0, -0.3], lKnee: [0.3, 0, 0], rKnee: [0.6, 0, 0],
+    hipsY: 0.45
+  },
+  keeper_dive: {
+    torso: [0, 0, 0], head: [0, 0, 0],
+    lShoulder: [0, 0, 2.95], rShoulder: [0, 0, -2.95], lElbow: [0, 0, 0], rElbow: [0, 0, 0],
+    lHip: [-0.15, 0, 0.15], rHip: [0.2, 0, -0.15], lKnee: [0.35, 0, 0], rKnee: [0.6, 0, 0], hipsY: 0.93
+  },
+  wall_guard: {
+    lShoulder: [-0.35, 0, 0.35], rShoulder: [-0.35, 0, -0.35], lElbow: [-1.0, 0, -0.6], rElbow: [-1.0, 0, 0.6],
+    lHip: [0, 0, 0.04], rHip: [0, 0, -0.04], hipsY: 0.93
+  },
+  wall_jump: {
+    lShoulder: [-0.2, 0, 0.5], rShoulder: [-0.2, 0, -0.5], lElbow: [-0.9, 0, -0.5], rElbow: [-0.9, 0, 0.5],
+    lHip: [-0.3, 0, 0.05], rHip: [-0.3, 0, -0.05], lKnee: [0.7, 0, 0], rKnee: [0.7, 0, 0], hipsY: 0.93
+  },
+  sad: { torso: [0.35, 0, 0], head: [0.45, 0, 0], lShoulder: [0.1, 0, 0.05], rShoulder: [0.1, 0, -0.05], hipsY: 0.93 }
+};
+
+// --------------------------------------------------------------------------
+// SEVİMLİ PELUŞ AYICIK (Videodaki gibi kalenin sağında sevinir)
+// --------------------------------------------------------------------------
+export function createTeddyBear() {
+  const root = new THREE.Group();
+  const furMat = stdMat('#9b6138', 0.82);
+  const bellyMat = stdMat('#f0dec5', 0.8);
+  const darkMat = stdMat('#1f140d', 0.9);
+  const bowMat = stdMat('#e30a17', 0.55);
+
+  const body = new THREE.Group();
+  root.add(body);
+
+  // Gövde (Tombul sevimli ayı)
+  const torso = new THREE.Mesh(new THREE.SphereGeometry(0.55, 20, 16), furMat);
+  torso.scale.set(1.0, 1.25, 0.9);
+  torso.position.y = 1.05;
+  torso.castShadow = true;
+  body.add(torso);
+
+  // Göbek
+  const belly = new THREE.Mesh(new THREE.SphereGeometry(0.36, 16, 14), bellyMat);
+  belly.scale.set(0.9, 1.1, 0.4);
+  belly.position.set(0, 1.0, 0.38);
+  body.add(belly);
+
+  // Kafa
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.42, 20, 16), furMat);
+  head.position.set(0, 1.82, 0.05);
+  head.castShadow = true;
+  body.add(head);
+
+  // Kulaklar
+  [-0.32, 0.32].forEach(x => {
+    const ear = new THREE.Mesh(new THREE.SphereGeometry(0.14, 14, 12), furMat);
+    ear.position.set(x, 2.15, 0);
+    body.add(ear);
+    const inEar = new THREE.Mesh(new THREE.SphereGeometry(0.08, 12, 10), bellyMat);
+    inEar.position.set(x, 2.15, 0.06);
+    body.add(inEar);
+  });
+
+  // Burun / Ağız bölgesi
+  const snout = new THREE.Mesh(new THREE.SphereGeometry(0.18, 14, 12), bellyMat);
+  snout.scale.set(1.1, 0.8, 1.0);
+  snout.position.set(0, 1.76, 0.34);
+  body.add(snout);
+
+  const nose = new THREE.Mesh(new THREE.SphereGeometry(0.06, 10, 8), darkMat);
+  nose.position.set(0, 1.82, 0.48);
+  body.add(nose);
+
+  // Gözler
+  [-0.14, 0.14].forEach(x => {
+    const eye = new THREE.Mesh(new THREE.SphereGeometry(0.038, 10, 8), darkMat);
+    eye.position.set(x, 1.9, 0.4);
+    body.add(eye);
+  });
+
+  // Kırmızı Papyon
+  const bow = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.1, 0.08), bowMat);
+  bow.position.set(0, 1.48, 0.42);
+  body.add(bow);
+
+  // Bacaklar
+  [-0.26, 0.26].forEach(x => {
+    const leg = new THREE.Mesh(new THREE.CapsuleGeometry(0.18, 0.35, 8, 14), furMat);
+    leg.position.set(x, 0.32, 0);
+    leg.castShadow = true;
+    body.add(leg);
+  });
+
+  // Hareketli Kollar (Golde havaya kalkan kollar)
+  const lArm = new THREE.Group();
+  lArm.position.set(-0.54, 1.35, 0);
+  const lArmMesh = new THREE.Mesh(new THREE.CapsuleGeometry(0.14, 0.45, 8, 14), furMat);
+  lArmMesh.position.set(0, -0.22, 0);
+  lArmMesh.castShadow = true;
+  lArm.add(lArmMesh);
+  body.add(lArm);
+
+  const rArm = new THREE.Group();
+  rArm.position.set(0.54, 1.35, 0);
+  const rArmMesh = new THREE.Mesh(new THREE.CapsuleGeometry(0.14, 0.45, 8, 14), furMat);
+  rArmMesh.position.set(0, -0.22, 0);
+  rArmMesh.castShadow = true;
+  rArm.add(rArmMesh);
+  body.add(rArm);
+
+  return {
+    root,
+    body,
+    lArm,
+    rArm,
+    update(isGoal, timeSec) {
+      if (isGoal) {
+        lArm.rotation.z = Math.PI * 0.78 + Math.sin(timeSec * 8) * 0.2;
+        rArm.rotation.z = -Math.PI * 0.78 - Math.sin(timeSec * 8) * 0.2;
+        body.position.y = Math.abs(Math.sin(timeSec * 6)) * 0.25;
+      } else {
+        lArm.rotation.z = 0.25 + Math.sin(timeSec * 1.5) * 0.05;
+        rArm.rotation.z = -0.25 - Math.sin(timeSec * 1.5) * 0.05;
+        body.position.y = 0;
+      }
+    }
+  };
+}
+
+// --------------------------------------------------------------------------
+// AVATAR (PROFİL FOTOĞRAFI) & İSİM ETİKETLERİ
+// --------------------------------------------------------------------------
+const imageCache = new Map();
+export function loadImage(url) {
+  if (!url) return Promise.reject(new Error('no url'));
+  if (imageCache.has(url)) return imageCache.get(url);
+  const p = new Promise((resolve, reject) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.decoding = 'async';
+    img.onload = () => resolve(img);
+    img.onerror = reject;
+    img.src = url;
+  });
+  imageCache.set(url, p);
+  p.catch(() => imageCache.delete(url));
+  return p;
+}
+
+export function avatarUrlFor(player) {
+  if (!player) return '/api/tiktok-avatar?user=MNG';
+  if (player.avatarUrl) return player.avatarUrl;
+  const nick = String(player.nickname || player.username || player.uniqueId || 'İzleyici').replace(/^@/, '').trim();
+  const raw = String(player.avatar || '').trim();
+
+  // Zaten yerel bir API ise doğrudan kullan
+  if (raw.startsWith('/api/')) return raw;
+
+  // Harici TikTok / CDN resmi ise, yerel proxy üzerinden güvenle çek (CORS ve Hotlink korumasını aşar)
+  if (raw.startsWith('http://') || raw.startsWith('https://')) {
+    return `/api/avatar?user=${encodeURIComponent(nick)}&url=${encodeURIComponent(raw)}`;
+  }
+
+  // URL verilmemişse doğrudan TikTok profil servisinden HD avatar çek
+  return `/api/tiktok-avatar?user=${encodeURIComponent(nick)}`;
+}
+
+export function drawAvatarCircle(ctx, img, size, ring = '#ffd34d', ringW = null, letter = 'U') {
+  const r = size / 2;
+  const rw = ringW ?? Math.max(5, size * 0.075);
+  ctx.clearRect(0, 0, size, size);
+
+  // 1. Dış parlama ve neon aura
+  ctx.save();
+  ctx.shadowColor = ring;
+  ctx.shadowBlur = size * 0.08;
+  ctx.beginPath();
+  ctx.arc(r, r, r - rw * 0.5 - size * 0.02, 0, Math.PI * 2);
+  ctx.fillStyle = ring;
+  ctx.fill();
+  ctx.restore();
+
+  // 2. İç Fotoğraf veya Baş Harf Alanı
+  ctx.save();
+  ctx.beginPath();
+  ctx.arc(r, r, r - rw - size * 0.02, 0, Math.PI * 2);
+  ctx.clip();
+  if (img && img.width > 0 && img.height > 0) {
+    const s = Math.min(img.width, img.height);
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
+    ctx.drawImage(img, (img.width - s) / 2, (img.height - s) / 2, s, s, 0, 0, size, size);
+  } else {
+    // Yüklenene kadar şık renkli gradyan ve baş harf
+    const bgGrad = ctx.createLinearGradient(0, 0, size, size);
+    bgGrad.addColorStop(0, '#1e293b');
+    bgGrad.addColorStop(1, '#0f172a');
+    ctx.fillStyle = bgGrad;
+    ctx.fillRect(0, 0, size, size);
+
+    ctx.fillStyle = '#ffffff';
+    ctx.font = `bold ${Math.round(size * 0.42)}px "Montserrat", sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText((letter || 'U').toUpperCase(), r, r + size * 0.02);
+  }
+  ctx.restore();
+
+  // 3. Parlak Metalik / Neon Kenarlık Çerçevesi
+  ctx.save();
+  ctx.beginPath();
+  ctx.arc(r, r, r - rw * 0.5 - size * 0.02, 0, Math.PI * 2);
+  ctx.lineWidth = rw;
+  const g = ctx.createLinearGradient(0, 0, size, size);
+  g.addColorStop(0, '#ffffff');
+  g.addColorStop(0.35, ring);
+  g.addColorStop(1, ring);
+  ctx.strokeStyle = g;
+  ctx.stroke();
+  ctx.restore();
+}
+
+export function createAvatarTexture(url, ring = '#ffd34d', size = 512, fallbackUrl = null, letter = 'U') {
+  const c = document.createElement('canvas');
+  c.width = c.height = size;
+  const ctx = c.getContext('2d');
+  drawAvatarCircle(ctx, null, size, ring, null, letter);
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.anisotropy = 8;
+  tex.generateMipmaps = true;
+  tex.minFilter = THREE.LinearMipmapLinearFilter;
+  const apply = img => {
+    drawAvatarCircle(ctx, img, size, ring, null, letter);
+    tex.needsUpdate = true;
+  };
+  loadImage(url)
+    .then(apply)
+    .catch(() => {
+      if (fallbackUrl) {
+        loadImage(fallbackUrl).then(apply).catch(() => {});
+      }
+    });
+  return tex;
+}
+
+export function createLabelTexture(text, opts = {}) {
+  const c = document.createElement('canvas');
+  const W = opts.width || 640, H = opts.height || 140;
+  c.width = W; c.height = H;
+  const ctx = c.getContext('2d');
+  
+  // Keskin ve okunaklı font
+  const font = fitFont(ctx, text, W * 0.88, opts.size || 64, 900, 'Montserrat, sans-serif');
+  ctx.font = font;
+  const tw = Math.min(W - 12, ctx.measureText(text).width + H * 0.75);
+  const x = (W - tw) / 2;
+  const rr = H * 0.44;
+  
+  // Derin siyah-lacivert arka plan (Yüksek kontrast)
+  ctx.fillStyle = opts.bg || 'rgba(6, 10, 20, 0.95)';
+  ctx.shadowColor = 'rgba(0,0,0,0.85)';
+  ctx.shadowBlur = 12;
+  ctx.beginPath();
+  if (ctx.roundRect) ctx.roundRect(x, H * 0.08, tw, H * 0.84, rr);
+  else ctx.rect(x, H * 0.08, tw, H * 0.84);
+  ctx.fill();
+  
+  // Parlak neon çerçeve
+  ctx.shadowBlur = 0;
+  ctx.lineWidth = 6;
+  ctx.strokeStyle = opts.border || 'rgba(255, 211, 77, 0.98)';
+  ctx.stroke();
+  
+  // Net, parıldayan beyaz metin
+  ctx.fillStyle = opts.color || '#ffffff';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.shadowColor = '#000000';
+  ctx.shadowBlur = 6;
+  ctx.fillText(text, W / 2, H * 0.52);
+  
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.anisotropy = 8;
+  return tex;
+}
+
+export function createAvatarBadge(player, opts = {}) {
+  const group = new THREE.Group();
+  const ring = opts.ring || '#ffd34d';
+  const nick = String(player?.nickname || player?.username || player?.uniqueId || opts.fallbackName || 'İzleyici').replace(/^@/, '');
+  const url = avatarUrlFor(player);
+  const fb = player?.avatarFallback
+    ? avatarUrlFor({ ...player, avatar: player.avatarFallback })
+    : `/api/tiktok-avatar?user=${encodeURIComponent(nick)}`;
+  const avatarTex = createAvatarTexture(url, ring, 512, fb, nick.charAt(0));
+  const avatar = new THREE.Sprite(new THREE.SpriteMaterial({
+    map: avatarTex,
+    depthTest: true,
+    depthWrite: false,
+    transparent: true
+  }));
+  const size = opts.size || 0.85;
+  avatar.scale.set(size, size, 1);
+  avatar.renderOrder = 10;
+  group.add(avatar);
+
+  // Kullanıcı İsteği: "topa vuran kişi, onu da kullanıcı adı yazmasına gerek yok, sadece profil fotoğrafı olsa yeter ama diğer herkesin kullanıcı adı da yazsın."
+  const showLabel = opts.showLabel !== false && opts.label !== false && opts.label !== null;
+  const name = showLabel ? (opts.label ?? `@${nick}`) : null;
+
+  if (name) {
+    const labelTex = createLabelTexture(name, { border: ring, size: 62 });
+    const label = new THREE.Sprite(new THREE.SpriteMaterial({
+      map: labelTex,
+      depthTest: true,
+      depthWrite: false,
+      transparent: true
+    }));
+    label.scale.set(size * 2.0, size * 2.0 * (140 / 640), 1);
+    label.position.y = -size * 0.65;
+    label.renderOrder = 11;
+    group.add(label);
+  }
+
+  group.userData.dispose = () => {
+    group.traverse(o => { if (o.isSprite) { o.material.map?.dispose(); o.material.dispose(); } });
+  };
+  return group;
+}

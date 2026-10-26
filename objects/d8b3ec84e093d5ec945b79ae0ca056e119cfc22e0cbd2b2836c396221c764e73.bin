@@ -1,0 +1,22 @@
+{
+  "name": "tiktok-vs-battle",
+  "version": "5.0.1",
+  "private": true,
+  "type": "module",
+  "description": "TikTok VS Battle - canlı yayın chat entegrasyonlu skor uygulaması",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "kur": "npm install",
+    "guncelle": "npm install tiktok-live-connector@latest"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "ws": "^8.17.0",
+    "tiktok-live-connector": "^2.4.4",
+    "puppeteer": "^23.0.0"
+  }
+}

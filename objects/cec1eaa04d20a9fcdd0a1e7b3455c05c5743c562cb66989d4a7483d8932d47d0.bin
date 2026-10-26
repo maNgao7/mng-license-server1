@@ -1,0 +1,3343 @@
+import * as THREE from './libs/three.module.js';
+
+// =====================================================================
+// MNG DUCK HUNT - 3D KARNAVAL & LUNAPARK POLİGON OYUNU
+// =====================================================================
+
+// DOM Elements
+const canvas = document.getElementById('three-canvas');
+const crosshairEl = document.getElementById('crosshair');
+const scoreDisplay = document.getElementById('score-display');
+const accuracyDisplay = document.getElementById('accuracy-display');
+const duckKillDisplay = document.getElementById('duck-kill-display');
+const roundTimerEl = document.getElementById('round-timer');
+const targetCounterEl = document.getElementById('target-counter');
+const targetProgressBar = document.getElementById('target-progress-bar');
+const statusDot = document.getElementById('status-dot');
+const quickTiktokInput = document.getElementById('quick-tiktok-input');
+const btnQuickConnect = document.getElementById('btn-quick-connect');
+
+// Mud & Bomb Layers
+const mudLayer = document.getElementById('mud-layer');
+const bombFlash = document.getElementById('bomb-flash');
+
+// Banners
+const streakBanner = document.getElementById('streak-banner');
+const streakTitle = document.getElementById('streak-title');
+const streakSub = document.getElementById('streak-sub');
+const jamBanner = document.getElementById('jam-banner');
+const jamSub = document.getElementById('jam-sub');
+const rapidFireBanner = document.getElementById('rapid-fire-banner');
+const rapidSub = document.getElementById('rapid-sub');
+const escapeBanner = document.getElementById('escape-banner');
+
+// Ammo & Reload
+const corkSlots = document.querySelectorAll('.cork-slot');
+const ammoWarning = document.getElementById('ammo-warning');
+const ammoStatusTag = document.getElementById('ammo-status-tag');
+const btnReload = document.getElementById('btn-reload');
+const toastContainer = document.getElementById('toast-container');
+
+// Lobby Modal Elements
+const lobbyModal = document.getElementById('lobby-modal');
+const lobbyUsernameInput = document.getElementById('lobby-username-input');
+const btnLobbyConnect = document.getElementById('btn-lobby-connect');
+const lobbyStatusText = document.getElementById('lobby-status-text');
+const btnLobbyStart = document.getElementById('btn-lobby-start');
+
+// Settings Drawer / Modal Elements
+const settingsDrawer = document.getElementById('settings-drawer');
+const settingsBackdrop = document.getElementById('settings-backdrop');
+const btnSettings = document.getElementById('btn-settings');
+const btnDrawerClose = document.getElementById('btn-drawer-close');
+const btnRoundPause = document.getElementById('btn-round-pause');
+let isRoundPaused = false;
+const tiktokUserInput = document.getElementById('tiktok-user-input');
+const btnTiktokConnect = document.getElementById('btn-tiktok-connect');
+const selectRoundTime = document.getElementById('select-round-time');
+const selectRoundTargetScore = document.getElementById('select-round-target-score');
+const selectJamDuration = document.getElementById('select-jam-duration');
+const selectRapidDuration = document.getElementById('select-rapid-duration');
+const selectAdmissionMode = document.getElementById('select-admission-mode');
+const selectLikeAction = document.getElementById('select-like-action');
+const selectFollowAction = document.getElementById('select-follow-action');
+const btnRestartRound = document.getElementById('btn-restart-round');
+const sliderSpeed = document.getElementById('slider-speed');
+const sliderMusic = document.getElementById('slider-music');
+const sliderSfx = document.getElementById('slider-sfx');
+const btnResetScore = document.getElementById('btn-reset-score');
+const btnSound = document.getElementById('btn-sound');
+const btnLeaderboard = document.getElementById('btn-leaderboard');
+const leaderboardModal = document.getElementById('leaderboard-modal');
+const btnLeaderboardClose = document.getElementById('btn-leaderboard-close');
+const btnTabSurvivors = document.getElementById('btn-tab-survivors');
+const btnTabVictims = document.getElementById('btn-tab-victims');
+const leaderboardList = document.getElementById('leaderboard-list');
+const btnCopyWidget = document.getElementById('btn-copy-widget');
+const obsCopyFeedback = document.getElementById('obs-copy-feedback');
+
+// Gift Picker Modal Elements
+const giftPickerModal = document.getElementById('gift-picker-modal');
+const btnPickerClose = document.getElementById('btn-picker-close');
+const giftPickerSearch = document.getElementById('gift-picker-search');
+const giftPickerSort = document.getElementById('gift-picker-sort');
+const giftPickerChips = document.getElementById('gift-picker-chips');
+const giftPickerGrid = document.getElementById('gift-picker-grid');
+let selectedPickerChipRange = 'all';
+
+// Round Complete & Podium Elements
+const roundCompleteModal = document.getElementById('round-complete-modal');
+const completeBadge = document.getElementById('complete-badge');
+const completeTitle = document.getElementById('complete-title');
+const cstatHits = document.getElementById('cstat-hits');
+const cstatScore = document.getElementById('cstat-score');
+const cstatAcc = document.getElementById('cstat-acc');
+const cstatEscapes = document.getElementById('cstat-escapes');
+const podiumGrid = document.getElementById('podium-grid');
+const btnCompleteRestart = document.getElementById('btn-complete-restart');
+
+// Test Panel Container
+const testGiftsGrid = document.getElementById('test-gifts-grid');
+const btnTestCoffee = document.getElementById('test-coffee');
+const btnTestRapid = document.getElementById('test-rapid');
+const btnTestSabotage = document.getElementById('test-sabotage');
+const btnTestBomb = document.getElementById('test-bomb');
+const btnTestBoss = document.getElementById('test-boss');
+const btnTestGold = document.getElementById('test-gold');
+const btnTestLike = document.getElementById('test-like');
+const btnTestFollow = document.getElementById('test-follow');
+const btnTestRandom = document.getElementById('test-random');
+
+// =====================================================================
+// GAME STATE & AUDIO
+// =====================================================================
+let gameState = 'lobby'; // 'lobby' | 'playing'
+let score = 0;
+let totalShots = 0;
+let totalHits = 0;
+let currentStreak = 0;
+
+let maxAmmo = 10;
+let currentAmmo = 10;
+let isReloading = false;
+
+let soundEnabled = true;
+let musicVolume = 0.35;
+let sfxVolume = 0.6;
+let autoSpawnEnabled = false;
+let gameSpeedMultiplier = 1.0;
+let isAimingDuck = false;
+
+// Round / Target Score Settings
+let roundDuration = 120; // seconds
+let roundTimeLeft = 120;
+let roundTargetScore = 20000;
+let roundActive = false;
+let roundCompleted = false;
+
+// Interaction Durations & Actions
+let jamDurationSetting = 3;
+let rapidDurationSetting = 10;
+let viewerAdmissionMode = 'likes_only'; // 'likes_only' | 'all' | 'gifts_only'
+let likeActionSetting = 'speed_1.5x';
+let followActionSetting = 'speed_2x';
+
+// Sabotage & Rapid Fire Flags
+let isGunJammed = false;
+let gunJamTimer = 0;
+let currentJamSource = '';
+let isRapidFire = false;
+let rapidFireTimer = 0;
+let isMouseDown = false;
+let rapidFireInterval = null;
+
+// Active Viewers & Leaderboards
+const ACTIVE_VIEWERS = new Map();
+let currentLeadTab = 'survivors'; // 'survivors' | 'victims'
+let connectedStreamer = '';
+
+// ALL TIKTOK GIFTS FROM SERVER (630 gifts)
+let fullGiftCatalog = [];
+let activeSlotIndexForPicker = 0;
+
+// Configurable Gift Slots (Kullanıcının belirlediği 9 Sabit Standart Hediye & Görev Düzeni)
+const DEFAULT_GIFT_SLOTS = [
+  { name: 'Rose', trName: 'Gül', file: 'Rose.png', action: 'speed_1.2x', coins: 1, jamDuration: 3, mudDuration: 10, rapidDuration: 10 },
+  { name: 'Blue Bead', trName: 'Nazar Boncuğu', file: 'Blue_Bead.png', action: 'speed_1.5x', coins: 5, jamDuration: 3, mudDuration: 10, rapidDuration: 10 },
+  { name: 'Roses', trName: 'Kırmızı Gül', file: 'Roses.png', action: 'speed_3x', coins: 500, jamDuration: 3, mudDuration: 10, rapidDuration: 10 },
+  { name: 'Bouquet', trName: 'Çiçek Buketi', file: 'Bouquet.png', action: 'rapid_fire', coins: 20, jamDuration: 3, mudDuration: 10, rapidDuration: 10 },
+  { name: 'Perfume', trName: 'Parfüm', file: 'Perfume.png', action: 'mud_splash', coins: 20, jamDuration: 3, mudDuration: 10, rapidDuration: 10 },
+  { name: 'Doughnut', trName: 'Donut', file: 'Doughnut.png', action: 'spawn_gold', coins: 30, jamDuration: 3, mudDuration: 10, rapidDuration: 10 },
+  { name: 'Tea', trName: 'Çay', file: 'Tea.png', action: 'jam_gun', coins: 50, jamDuration: 3, mudDuration: 10, rapidDuration: 10 },
+  { name: 'Heart Me', trName: 'Kalp', file: 'Heart_Me.png', action: 'rapid_fire', coins: 1, jamDuration: 3, mudDuration: 10, rapidDuration: 10 },
+  { name: 'Hat and Mustache', trName: 'Şapka & Bıyık', file: 'Hat_and_Mustache.png', action: 'spawn_boss', coins: 99, jamDuration: 3, mudDuration: 10, rapidDuration: 10 }
+];
+
+let CUSTOM_GIFT_SLOTS = JSON.parse(JSON.stringify(DEFAULT_GIFT_SLOTS));
+
+// Load Saved Settings from localStorage
+function loadSavedSettings() {
+  try {
+    const raw = localStorage.getItem('mng_duck_hunt_v5_cfg');
+    if (raw) {
+      const cfg = JSON.parse(raw);
+      if (cfg.roundDuration !== undefined) roundDuration = Number(cfg.roundDuration);
+      if (cfg.roundTargetScore !== undefined) roundTargetScore = Number(cfg.roundTargetScore);
+      if (cfg.jamDurationSetting !== undefined) jamDurationSetting = Number(cfg.jamDurationSetting);
+      if (cfg.rapidDurationSetting !== undefined) rapidDurationSetting = Number(cfg.rapidDurationSetting);
+      if (cfg.viewerAdmissionMode) viewerAdmissionMode = cfg.viewerAdmissionMode;
+      if (cfg.likeActionSetting) likeActionSetting = cfg.likeActionSetting;
+      if (cfg.followActionSetting) followActionSetting = cfg.followActionSetting;
+      if (cfg.gameSpeedMultiplier !== undefined) gameSpeedMultiplier = Number(cfg.gameSpeedMultiplier);
+      if (cfg.musicVolume !== undefined) musicVolume = Number(cfg.musicVolume);
+      if (cfg.sfxVolume !== undefined) sfxVolume = Number(cfg.sfxVolume);
+      if (cfg.soundEnabled !== undefined) soundEnabled = Boolean(cfg.soundEnabled);
+    }
+
+    const savedSlots = localStorage.getItem('mng_duck_hunt_v5_slots');
+    if (savedSlots) {
+      const parsedSlots = JSON.parse(savedSlots);
+      if (Array.isArray(parsedSlots) && parsedSlots.length) {
+        CUSTOM_GIFT_SLOTS = parsedSlots.map(s => ({
+          ...s,
+          coins: s.coins || 1,
+          jamDuration: s.jamDuration || 3,
+          mudDuration: s.mudDuration || 10,
+          rapidDuration: s.rapidDuration || 10
+        }));
+      }
+    }
+  } catch {}
+
+  roundTimeLeft = roundDuration;
+  if (selectRoundTime) selectRoundTime.value = String(roundDuration);
+  if (selectRoundTargetScore) selectRoundTargetScore.value = String(roundTargetScore);
+  if (selectJamDuration) selectJamDuration.value = String(jamDurationSetting);
+  if (selectRapidDuration) selectRapidDuration.value = String(rapidDurationSetting);
+  if (selectAdmissionMode) selectAdmissionMode.value = viewerAdmissionMode;
+  if (selectLikeAction) selectLikeAction.value = likeActionSetting;
+  if (selectFollowAction) selectFollowAction.value = followActionSetting;
+  if (sliderSpeed) sliderSpeed.value = String(gameSpeedMultiplier);
+  if (sliderMusic) sliderMusic.value = String(musicVolume);
+  if (sliderSfx) sliderSfx.value = String(sfxVolume);
+  if (btnSound) btnSound.textContent = soundEnabled ? '🔊' : '🔇';
+  updateRoundTargetHUD();
+}
+
+function saveSettings() {
+  try {
+    const cfg = {
+      roundDuration,
+      roundTargetScore,
+      jamDurationSetting,
+      rapidDurationSetting,
+      viewerAdmissionMode,
+      likeActionSetting,
+      followActionSetting,
+      gameSpeedMultiplier,
+      musicVolume,
+      sfxVolume,
+      soundEnabled
+    };
+    localStorage.setItem('mng_duck_hunt_v5_cfg', JSON.stringify(cfg));
+    localStorage.setItem('mng_duck_hunt_v5_slots', JSON.stringify(CUSTOM_GIFT_SLOTS));
+  } catch {}
+}
+
+if (selectAdmissionMode) {
+  selectAdmissionMode.addEventListener('change', (e) => {
+    viewerAdmissionMode = e.target.value;
+    saveSettings();
+  });
+}
+
+loadSavedSettings();
+
+// =====================================================================
+// EXACT POINT SCORING SYSTEM (Kullanıcının Verdiği Kesin Değerler)
+// Normal: 200, 1.2x: 250, 1.5x: 300, 2x: 350, 3x: 400, 5x: 500,
+// Altın: 300, Büyük Ördek (2 Can): 500, Dev Boss (3 Can): 1000
+// =====================================================================
+function calculateDuckPoints(duck) {
+  if (duck.duckType === 'boss') return 1000;
+  if (duck.duckType === 'big') return 500;
+  if (duck.duckType === 'golden') return 300;
+
+  // Speed-based points for boosted ducks
+  const spd = duck.speedMultiplier;
+  if (spd >= 4.5) return 500; // 5x Roket
+  if (spd >= 2.8) return 400; // 3x
+  if (spd >= 1.8) return 350; // 2x
+  if (spd >= 1.4) return 300; // 1.5x
+  if (spd >= 1.15) return 250; // 1.2x
+  return 200; // Normal izleyici ördeği
+}
+
+// =====================================================================
+// PROCEDURAL AUDIO SYNTHESIZER & CARNIVAL MUSIC
+// =====================================================================
+let audioCtx = null;
+let musicInterval = null;
+let musicStep = 0;
+
+function initAudio() {
+  if (!audioCtx) {
+    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+    if (AudioContextClass) audioCtx = new AudioContextClass();
+  }
+  if (audioCtx && audioCtx.state === 'suspended') {
+    audioCtx.resume();
+  }
+  startCarnivalMusic();
+}
+
+// Background Carnival Organ Melody (Eğlenceli Lunapark Karusel Melodisi)
+function startCarnivalMusic() {
+  if (musicInterval || !soundEnabled) return;
+  // Cheerful, catchy fairground waltz tune
+  const melodyNotes = [
+    523.25, 659.25, 783.99, 659.25, 523.25, 659.25, 783.99, 880.00,
+    783.99, 659.25, 587.33, 659.25, 587.33, 523.25, 493.88, 523.25
+  ];
+
+  musicInterval = setInterval(() => {
+    if (!soundEnabled || musicVolume <= 0.01 || !audioCtx) return;
+    try {
+      const freq = melodyNotes[musicStep % melodyNotes.length];
+      musicStep++;
+      const t = audioCtx.currentTime;
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      const filter = audioCtx.createBiquadFilter();
+
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(freq, t);
+
+      filter.type = 'lowpass';
+      filter.frequency.setValueAtTime(1200, t);
+
+      gain.gain.setValueAtTime(0.001, t);
+      gain.gain.linearRampToValueAtTime(0.08 * musicVolume, t + 0.05);
+      gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.38);
+
+      osc.connect(filter);
+      filter.connect(gain);
+      gain.connect(audioCtx.destination);
+
+      osc.start(t);
+      osc.stop(t + 0.4);
+    } catch {}
+  }, 380);
+}
+
+function stopCarnivalMusic() {
+  if (musicInterval) {
+    clearInterval(musicInterval);
+    musicInterval = null;
+  }
+}
+
+// Cork Pop Sound
+function playCorkPop() {
+  if (!soundEnabled || sfxVolume <= 0.01 || !audioCtx) return;
+  try {
+    const t = audioCtx.currentTime;
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(260, t);
+    osc.frequency.exponentialRampToValueAtTime(45, t + 0.1);
+    gain.gain.setValueAtTime(0.55 * sfxVolume, t);
+    gain.gain.exponentialRampToValueAtTime(0.01, t + 0.11);
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.start(t);
+    osc.stop(t + 0.11);
+  } catch {}
+}
+
+// Duck Hit Sound (Yumuşatılmış & Kısılabilir Vuruş Sesi)
+function playDuckHit() {
+  if (!soundEnabled || sfxVolume <= 0.01 || !audioCtx) return;
+  try {
+    const t = audioCtx.currentTime;
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(1150, t);
+    osc.frequency.exponentialRampToValueAtTime(800, t + 0.16);
+    gain.gain.setValueAtTime(0.35 * sfxVolume, t); // Softened pleasant chime
+    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.18);
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.start(t);
+    osc.stop(t + 0.18);
+  } catch {}
+}
+
+// Duck Damage Bonk Sound
+function playDuckBonk() {
+  if (!soundEnabled || sfxVolume <= 0.01 || !audioCtx) return;
+  try {
+    const t = audioCtx.currentTime;
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(440, t);
+    osc.frequency.exponentialRampToValueAtTime(160, t + 0.14);
+    gain.gain.setValueAtTime(0.45 * sfxVolume, t);
+    gain.gain.exponentialRampToValueAtTime(0.01, t + 0.15);
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.start(t);
+    osc.stop(t + 0.15);
+  } catch {}
+}
+
+// Playful Quack
+function playDuckQuack() {
+  if (!soundEnabled || sfxVolume <= 0.01 || !audioCtx) return;
+  try {
+    const t = audioCtx.currentTime;
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    const filter = audioCtx.createBiquadFilter();
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(360, t);
+    osc.frequency.linearRampToValueAtTime(440, t + 0.06);
+    osc.frequency.exponentialRampToValueAtTime(240, t + 0.2);
+    filter.type = 'bandpass';
+    filter.frequency.setValueAtTime(820, t);
+    filter.Q.value = 3.5;
+    gain.gain.setValueAtTime(0.28 * sfxVolume, t);
+    gain.gain.exponentialRampToValueAtTime(0.01, t + 0.22);
+    osc.connect(filter);
+    filter.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.start(t);
+    osc.stop(t + 0.22);
+  } catch {}
+}
+
+// Bomb Explosion
+function playBombExplosion() {
+  if (!soundEnabled || sfxVolume <= 0.01 || !audioCtx) return;
+  try {
+    const t = audioCtx.currentTime;
+    const subOsc = audioCtx.createOscillator();
+    const subGain = audioCtx.createGain();
+    subOsc.type = 'sine';
+    subOsc.frequency.setValueAtTime(140, t);
+    subOsc.frequency.exponentialRampToValueAtTime(25, t + 0.45);
+    subGain.gain.setValueAtTime(0.9 * sfxVolume, t);
+    subGain.gain.exponentialRampToValueAtTime(0.001, t + 0.5);
+    subOsc.connect(subGain);
+    subGain.connect(audioCtx.destination);
+    subOsc.start(t);
+    subOsc.stop(t + 0.5);
+  } catch {}
+}
+
+// Wet Mud Splat Sound
+function playMudSplat() {
+  if (!soundEnabled || sfxVolume <= 0.01 || !audioCtx) return;
+  try {
+    const t = audioCtx.currentTime;
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(260, t);
+    osc.frequency.exponentialRampToValueAtTime(60, t + 0.2);
+    gain.gain.setValueAtTime(0.6 * sfxVolume, t);
+    gain.gain.exponentialRampToValueAtTime(0.01, t + 0.22);
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.start(t);
+    osc.stop(t + 0.22);
+  } catch {}
+}
+
+// Fanfare Chimes
+function playFanfare() {
+  if (!soundEnabled || sfxVolume <= 0.01 || !audioCtx) return;
+  try {
+    const notes = [523.25, 659.25, 783.99, 1046.5];
+    notes.forEach((freq, idx) => {
+      const t = audioCtx.currentTime + idx * 0.1;
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = 'triangle';
+      osc.frequency.value = freq;
+      gain.gain.setValueAtTime(0.4 * sfxVolume, t);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + 0.38);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start(t);
+      osc.stop(t + 0.38);
+    });
+  } catch {}
+}
+
+// Gun Jam / Sabotage Click Sound (Mekanik kilitlenme / tıkırtı sesi)
+function playJamSound() {
+  if (!soundEnabled || sfxVolume <= 0.01 || !audioCtx) return;
+  try {
+    const t = audioCtx.currentTime;
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = 'square';
+    osc.frequency.setValueAtTime(170, t);
+    osc.frequency.exponentialRampToValueAtTime(60, t + 0.11);
+    gain.gain.setValueAtTime(0.45 * sfxVolume, t);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.12);
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.start(t);
+    osc.stop(t + 0.12);
+  } catch {}
+}
+
+// =====================================================================
+// THREE.JS SCENE, REAL LUNAPARK BACKDROP & TIKTOK MARQUEE
+// =====================================================================
+const scene = new THREE.Scene();
+
+const camera = new THREE.PerspectiveCamera(48, window.innerWidth / window.innerHeight, 0.1, 100);
+camera.position.set(0, 0.35, 13.8);
+
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false });
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFShadowMap;
+
+// Lighting
+const ambientLight = new THREE.AmbientLight(0xfffaea, 1.25);
+scene.add(ambientLight);
+
+const dirLight = new THREE.DirectionalLight(0xffeedd, 1.2);
+dirLight.position.set(5, 12, 10);
+dirLight.castShadow = true;
+scene.add(dirLight);
+
+const neonLightL = new THREE.PointLight(0x00f2fe, 0.8, 18);
+neonLightL.position.set(-6, 4.5, 4);
+scene.add(neonLightL);
+
+const neonLightR = new THREE.PointLight(0xfe0979, 0.8, 18);
+neonLightR.position.set(6, 4.5, 4);
+scene.add(neonLightR);
+
+// REAL LUNAPARK PANORAMIC BACKDROP (Gerçek Işıltılı Lunapark Arka Planı)
+const textureLoader = new THREE.TextureLoader();
+textureLoader.load('/assets/lunapark_bg.jpg', (bgTex) => {
+  bgTex.encoding = THREE.sRGBEncoding || 3001;
+  const bgGeo = new THREE.PlaneGeometry(38, 20);
+  const bgMat = new THREE.MeshBasicMaterial({ map: bgTex });
+  const bgMesh = new THREE.Mesh(bgGeo, bgMat);
+  bgMesh.position.set(0, 1.2, -6.8);
+  scene.add(bgMesh);
+});
+
+// Striped Pillar Texture
+function createStripedTexture(colorA, colorB, stripes = 8) {
+  const c = document.createElement('canvas');
+  c.width = 256;
+  c.height = 256;
+  const ctx = c.getContext('2d');
+  const w = c.width / stripes;
+  for (let i = 0; i < stripes; i++) {
+    ctx.fillStyle = i % 2 === 0 ? colorA : colorB;
+    ctx.fillRect(i * w, 0, w, c.height);
+  }
+  const tex = new THREE.CanvasTexture(c);
+  tex.wrapS = THREE.RepeatWrapping;
+  tex.wrapT = THREE.RepeatWrapping;
+  return tex;
+}
+const candyStripeTexture = createStripedTexture('#e63946', '#ffffff', 8);
+candyStripeTexture.repeat.set(1, 6);
+
+// Mechanical Chain Texture
+function createChainTexture() {
+  const c = document.createElement('canvas');
+  c.width = 128;
+  c.height = 32;
+  const ctx = c.getContext('2d');
+  ctx.fillStyle = '#1e1e1e';
+  ctx.fillRect(0, 0, 128, 32);
+  ctx.fillStyle = '#666666';
+  for (let x = 0; x < 128; x += 16) {
+    ctx.fillRect(x + 2, 4, 12, 24);
+    ctx.fillStyle = '#aaaaaa';
+    ctx.fillRect(x + 5, 8, 6, 16);
+    ctx.fillStyle = '#666666';
+  }
+  const tex = new THREE.CanvasTexture(c);
+  tex.wrapS = THREE.RepeatWrapping;
+  tex.repeat.set(8, 1);
+  return tex;
+}
+const chainTexture = createChainTexture();
+
+const ARENA_WIDTH = 15.0;
+const boothGroup = new THREE.Group();
+scene.add(boothGroup);
+
+// Canopy Roof (y = 5.22)
+const canopyRoof = new THREE.Mesh(
+  new THREE.BoxGeometry(ARENA_WIDTH + 2.8, 0.86, 2.4),
+  new THREE.MeshLambertMaterial({ color: 0xd90429 })
+);
+canopyRoof.position.set(0, 5.22, 0.4);
+boothGroup.add(canopyRoof);
+
+// GÖSTERİŞLİ TIKTOK & KARNAVALI MARQUEE TABELALARI (Solda TikTok, Sağda Karnavalı)
+function createCarnivalMarquee(text, theme = 'tiktok') {
+  const c = document.createElement('canvas');
+  c.width = 1200;
+  c.height = 200;
+  const ctx = c.getContext('2d');
+  const w = c.width;
+  const h = c.height;
+  const radius = 24;
+
+  // Tabela Gövdesi ve Kesim Maskesi
+  ctx.save();
+  ctx.beginPath();
+  if (typeof ctx.roundRect === 'function') {
+    ctx.roundRect(10, 10, w - 20, h - 20, radius);
+  } else {
+    ctx.rect(10, 10, w - 20, h - 20);
+  }
+  ctx.closePath();
+  ctx.clip();
+
+  // Gösterişli Kadife Arka Plan
+  const bgGrad = ctx.createLinearGradient(0, 0, 0, h);
+  if (theme === 'tiktok') {
+    bgGrad.addColorStop(0, '#160515');
+    bgGrad.addColorStop(0.5, '#0b020c');
+    bgGrad.addColorStop(1, '#1b0416');
+  } else {
+    bgGrad.addColorStop(0, '#1c0800');
+    bgGrad.addColorStop(0.5, '#0a0200');
+    bgGrad.addColorStop(1, '#240a00');
+  }
+  ctx.fillStyle = bgGrad;
+  ctx.fillRect(0, 0, w, h);
+
+  // İnce Karnaval Çizgi Dokusu
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.035)';
+  for (let x = 0; x < w; x += 36) {
+    ctx.fillRect(x, 0, 18, h);
+  }
+  ctx.restore();
+
+  // 3D Altın Varaklı Dış Çerçeve
+  ctx.beginPath();
+  if (typeof ctx.roundRect === 'function') {
+    ctx.roundRect(10, 10, w - 20, h - 20, radius);
+  } else {
+    ctx.rect(10, 10, w - 20, h - 20);
+  }
+  ctx.strokeStyle = '#ffd700';
+  ctx.lineWidth = 8;
+  ctx.shadowColor = '#ffb700';
+  ctx.shadowBlur = 15;
+  ctx.stroke();
+
+  // İç Neon Hat Çerçevesi
+  ctx.beginPath();
+  if (typeof ctx.roundRect === 'function') {
+    ctx.roundRect(22, 22, w - 44, h - 44, radius - 6);
+  } else {
+    ctx.rect(22, 22, w - 44, h - 44);
+  }
+  ctx.strokeStyle = theme === 'tiktok' ? '#00f2fe' : '#ff0055';
+  ctx.lineWidth = 3.5;
+  ctx.shadowColor = theme === 'tiktok' ? '#00f2fe' : '#ff0055';
+  ctx.shadowBlur = 12;
+  ctx.stroke();
+
+  ctx.shadowBlur = 0;
+
+  // Işıltılı Karnaval Ampulleri (Marquee Light Bulbs)
+  const bulbSpacing = 44;
+  const bulbs = [];
+  for (let x = 36; x <= w - 36; x += bulbSpacing) bulbs.push({ x, y: 16 });
+  for (let x = 36; x <= w - 36; x += bulbSpacing) bulbs.push({ x, y: h - 16 });
+  for (let y = 36; y <= h - 36; y += bulbSpacing) bulbs.push({ x: 16, y });
+  for (let y = 36; y <= h - 36; y += bulbSpacing) bulbs.push({ x: w - 16, y });
+
+  const colorsTiktok = ['#ffea00', '#00f2fe', '#fe2c55', '#ffffff'];
+  const colorsCarnival = ['#ffd700', '#ff6d00', '#ff0055', '#ffffff'];
+  const palette = theme === 'tiktok' ? colorsTiktok : colorsCarnival;
+
+  bulbs.forEach((b, idx) => {
+    const col = palette[idx % palette.length];
+    const radG = ctx.createRadialGradient(b.x, b.y, 1, b.x, b.y, 13);
+    radG.addColorStop(0, col);
+    radG.addColorStop(0.45, col);
+    radG.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = radG;
+    ctx.beginPath();
+    ctx.arc(b.x, b.y, 13, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath();
+    ctx.arc(b.x, b.y, 4, 0, Math.PI * 2);
+    ctx.fill();
+  });
+
+  // Tipografi (Gösterişli Kalın Karnaval Yazısı)
+  ctx.font = '900 104px "Lilita One", "Fredoka", sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+
+  const textX = w / 2;
+  const textY = h / 2 + 5;
+
+  // 3D Gölgelendirme Katmanları
+  for (let s = 10; s >= 1; s--) {
+    ctx.fillStyle = theme === 'tiktok' ? '#040b14' : '#140300';
+    ctx.fillText(text, textX, textY + s);
+  }
+
+  // Neon Parıltı ve Gradyan Renklendirme
+  if (theme === 'tiktok') {
+    ctx.shadowColor = '#00f2fe';
+    ctx.shadowBlur = 28;
+    ctx.fillStyle = '#00f2fe';
+    ctx.fillText(text, textX - 4, textY);
+
+    ctx.shadowColor = '#fe2c55';
+    ctx.shadowBlur = 24;
+    ctx.fillStyle = '#fe2c55';
+    ctx.fillText(text, textX + 4, textY);
+
+    const textGrad = ctx.createLinearGradient(0, textY - 50, 0, textY + 50);
+    textGrad.addColorStop(0, '#ffffff');
+    textGrad.addColorStop(0.45, '#e0f7fa');
+    textGrad.addColorStop(0.7, '#80deea');
+    textGrad.addColorStop(1, '#00e5ff');
+    ctx.shadowColor = '#ffffff';
+    ctx.shadowBlur = 14;
+    ctx.fillStyle = textGrad;
+    ctx.fillText(text, textX, textY);
+  } else {
+    ctx.shadowColor = '#ffd700';
+    ctx.shadowBlur = 32;
+    ctx.fillStyle = '#ff6d00';
+    ctx.fillText(text, textX, textY + 2);
+
+    const textGrad = ctx.createLinearGradient(0, textY - 50, 0, textY + 50);
+    textGrad.addColorStop(0, '#ffffff');
+    textGrad.addColorStop(0.3, '#fff9c4');
+    textGrad.addColorStop(0.7, '#ffd700');
+    textGrad.addColorStop(1, '#ff9100');
+    ctx.shadowColor = '#ffd700';
+    ctx.shadowBlur = 18;
+    ctx.fillStyle = textGrad;
+    ctx.fillText(text, textX, textY);
+  }
+
+  // Parlak Beyaz Kenarlık
+  ctx.shadowBlur = 0;
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)';
+  ctx.lineWidth = 3.5;
+  ctx.strokeText(text, textX, textY);
+
+  const tex = new THREE.CanvasTexture(c);
+  if (THREE.sRGBEncoding) tex.encoding = THREE.sRGBEncoding;
+  return tex;
+}
+
+// SOL: TIKTOK TABELASI
+const leftMarqueeTex = createCarnivalMarquee('🎵 TIKTOK 🎵', 'tiktok');
+const leftMarqueeMat = new THREE.SpriteMaterial({ map: leftMarqueeTex, transparent: true, depthTest: false });
+const leftMarqueeSprite = new THREE.Sprite(leftMarqueeMat);
+leftMarqueeSprite.renderOrder = 130;
+leftMarqueeSprite.scale.set(5.6, 0.95, 1);
+leftMarqueeSprite.position.set(-5.05, 5.22, 1.65);
+boothGroup.add(leftMarqueeSprite);
+
+// SAĞ: KARNAVALI TABELASI
+const rightMarqueeTex = createCarnivalMarquee('🎪 KARNAVALI 🦆', 'carnival');
+const rightMarqueeMat = new THREE.SpriteMaterial({ map: rightMarqueeTex, transparent: true, depthTest: false });
+const rightMarqueeSprite = new THREE.Sprite(rightMarqueeMat);
+rightMarqueeSprite.renderOrder = 130;
+rightMarqueeSprite.scale.set(5.6, 0.95, 1);
+rightMarqueeSprite.position.set(5.05, 5.22, 1.65);
+boothGroup.add(rightMarqueeSprite);
+
+// Candy-Cane Striped Outer Pillars (Dışarıya Taşındı: x = ±8.9)
+const pillarGeo = new THREE.CylinderGeometry(0.3, 0.3, 8.4, 20);
+const pillarMat = new THREE.MeshLambertMaterial({ map: candyStripeTexture });
+const leftPillar = new THREE.Mesh(pillarGeo, pillarMat);
+leftPillar.position.set(-8.9, 1.1, 0.6);
+boothGroup.add(leftPillar);
+
+const rightPillar = new THREE.Mesh(pillarGeo, pillarMat);
+rightPillar.position.set(8.9, 1.1, 0.6);
+boothGroup.add(rightPillar);
+
+// =====================================================================
+// SAĞDA VE SOLDA NET GÖRÜNEN AYICIKLAR & ÖDÜL SERGİSİ (x = ±7.4, z = 0.9)
+// Kolonların içinde DEĞİL, kolonların yanında net ve sevimli şekilde durur!
+// =====================================================================
+function createCuteBear(colorHex, bowColorHex) {
+  const g = new THREE.Group();
+  const mat = new THREE.MeshLambertMaterial({ color: colorHex });
+  const innerMat = new THREE.MeshLambertMaterial({ color: 0xffe3d8 });
+  const eyeMat = new THREE.MeshBasicMaterial({ color: 0x111111 });
+  const bowMat = new THREE.MeshLambertMaterial({ color: bowColorHex });
+
+  // Chubby Body
+  const body = new THREE.Mesh(new THREE.SphereGeometry(0.38, 14, 14), mat);
+  body.scale.set(1.0, 1.15, 0.9);
+  g.add(body);
+
+  // Big Cute Head
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.32, 14, 14), mat);
+  head.position.set(0, 0.48, 0.05);
+  g.add(head);
+
+  // Round Ears with Inner Color
+  const earL = new THREE.Mesh(new THREE.SphereGeometry(0.12, 10, 10), mat);
+  earL.position.set(-0.25, 0.74, 0.02);
+  const innerEarL = new THREE.Mesh(new THREE.SphereGeometry(0.07, 8, 8), innerMat);
+  innerEarL.position.set(-0.25, 0.74, 0.08);
+
+  const earR = new THREE.Mesh(new THREE.SphereGeometry(0.12, 10, 10), mat);
+  earR.position.set(0.25, 0.74, 0.02);
+  const innerEarR = new THREE.Mesh(new THREE.SphereGeometry(0.07, 8, 8), innerMat);
+  innerEarR.position.set(0.25, 0.74, 0.08);
+  g.add(earL, innerEarL, earR, innerEarR);
+
+  // Snout & Button Nose
+  const snout = new THREE.Mesh(new THREE.SphereGeometry(0.13, 10, 10), innerMat);
+  snout.position.set(0, 0.44, 0.28);
+  snout.scale.set(1.2, 0.9, 0.8);
+  const nose = new THREE.Mesh(new THREE.SphereGeometry(0.045, 8, 8), eyeMat);
+  nose.position.set(0, 0.48, 0.38);
+  g.add(snout, nose);
+
+  // Big Shiny Eyes
+  const eyeL = new THREE.Mesh(new THREE.SphereGeometry(0.045, 8, 8), eyeMat);
+  eyeL.position.set(-0.11, 0.54, 0.3);
+  const eyeR = new THREE.Mesh(new THREE.SphereGeometry(0.045, 8, 8), eyeMat);
+  eyeR.position.set(0.11, 0.54, 0.3);
+  g.add(eyeL, eyeR);
+
+  // Festive Bow Tie
+  const bowCenter = new THREE.Mesh(new THREE.SphereGeometry(0.06, 8, 8), bowMat);
+  bowCenter.position.set(0, 0.22, 0.35);
+  const bowL = new THREE.Mesh(new THREE.ConeGeometry(0.1, 0.16, 6), bowMat);
+  bowL.rotation.z = Math.PI / 2;
+  bowL.position.set(-0.1, 0.22, 0.35);
+  const bowR = new THREE.Mesh(new THREE.ConeGeometry(0.1, 0.16, 6), bowMat);
+  bowR.rotation.z = -Math.PI / 2;
+  bowR.position.set(0.1, 0.22, 0.35);
+  g.add(bowCenter, bowL, bowR);
+
+  return g;
+}
+
+const plushieSideGroup = new THREE.Group();
+boothGroup.add(plushieSideGroup);
+
+// Left & Right Stand Tiers (x = -7.4 & x = +7.4, z = 0.9)
+const plushieColorsL = [0x3a86ff, 0xff006e, 0x06d6a0];
+const plushieColorsR = [0xffbe0b, 0x8338ec, 0xff5400];
+const bowColors = [0xffeb3b, 0x00f2fe, 0xff0055];
+const shelfYPositions = [-1.9, 0.4, 2.7];
+
+shelfYPositions.forEach((sy, idx) => {
+  // Left plushie stand
+  const shelfL = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.14, 0.9), new THREE.MeshLambertMaterial({ color: 0x3d2817 }));
+  shelfL.position.set(-7.4, sy - 0.45, 0.9);
+  plushieSideGroup.add(shelfL);
+
+  const bearL = createCuteBear(plushieColorsL[idx], bowColors[idx]);
+  bearL.position.set(-7.4, sy - 0.05, 0.9);
+  bearL.rotation.y = 0.4;
+  plushieSideGroup.add(bearL);
+
+  // Right plushie stand
+  const shelfR = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.14, 0.9), new THREE.MeshLambertMaterial({ color: 0x3d2817 }));
+  shelfR.position.set(7.4, sy - 0.45, 0.9);
+  plushieSideGroup.add(shelfR);
+
+  const bearR = createCuteBear(plushieColorsR[idx], bowColors[(idx + 1) % 3]);
+  bearR.position.set(7.4, sy - 0.05, 0.9);
+  bearR.rotation.y = -0.4;
+  plushieSideGroup.add(bearR);
+});
+
+// =====================================================================
+// THE 3 EXPANDED CONVEYOR SHELVES (Geniş Raf Açıklığı)
+// Üst Raf: y = 2.7, Orta Raf: y = 0.2, Alt Raf: y = -2.3
+// =====================================================================
+const SHELVES_CONFIG = [
+  { y: 2.7, direction: 1, speed: 1.45, name: 'upper' },
+  { y: 0.2, direction: -1, speed: 1.65, name: 'middle' },
+  { y: -2.3, direction: 1, speed: 1.35, name: 'lower' }
+];
+
+const conveyorMeshes = [];
+
+SHELVES_CONFIG.forEach(cfg => {
+  const ledge = new THREE.Mesh(
+    new THREE.BoxGeometry(ARENA_WIDTH, 0.26, 1.2),
+    new THREE.MeshLambertMaterial({ color: 0x8b4513 })
+  );
+  ledge.position.set(0, cfg.y - 0.13, 0.1);
+  ledge.receiveShadow = true;
+  boothGroup.add(ledge);
+
+  const trim = new THREE.Mesh(
+    new THREE.BoxGeometry(ARENA_WIDTH, 0.08, 0.1),
+    new THREE.MeshStandardMaterial({ color: 0xffd700, metalness: 0.85, roughness: 0.2 })
+  );
+  trim.position.set(0, cfg.y, 0.7);
+  boothGroup.add(trim);
+
+  const chain = new THREE.Mesh(
+    new THREE.BoxGeometry(ARENA_WIDTH - 0.2, 0.06, 0.8),
+    new THREE.MeshLambertMaterial({ map: chainTexture })
+  );
+  chain.position.set(0, cfg.y + 0.03, 0.1);
+  boothGroup.add(chain);
+  conveyorMeshes.push({ mesh: chain, direction: cfg.direction });
+
+  if (cfg.name === 'lower') {
+    const water = new THREE.Mesh(
+      new THREE.BoxGeometry(ARENA_WIDTH - 0.2, 0.05, 0.75),
+      new THREE.MeshStandardMaterial({ color: 0x00b4d8, roughness: 0.1, metalness: 0.2, transparent: true, opacity: 0.85 })
+    );
+    water.position.set(0, cfg.y + 0.06, 0.1);
+    boothGroup.add(water);
+  }
+});
+
+// =====================================================================
+// DUCK & BOMB MODEL GENERATOR
+// İsimler ve Avatarlar Tamamen Önde (z = 0.38) & Yüksek Çözünürlüklü
+// =====================================================================
+const DUCKS = [];
+const duckTextureCache = new Map();
+
+function createAvatarTexture(nickname, avatarUrl, isGold = false) {
+  const cacheKey = `${nickname}_${isGold}`;
+  if (duckTextureCache.has(cacheKey)) return duckTextureCache.get(cacheKey);
+
+  const c = document.createElement('canvas');
+  c.width = 256;
+  c.height = 256;
+  const ctx = c.getContext('2d');
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = 'high';
+
+  ctx.save();
+  ctx.beginPath();
+  ctx.arc(128, 128, 120, 0, Math.PI * 2);
+  ctx.clip();
+
+  const grad = ctx.createLinearGradient(0, 0, 256, 256);
+  if (isGold) {
+    grad.addColorStop(0, '#ffe066');
+    grad.addColorStop(0.5, '#f59e0b');
+    grad.addColorStop(1, '#b45309');
+  } else {
+    let hash = 0;
+    for (let i = 0; i < nickname.length; i++) hash = nickname.charCodeAt(i) + ((hash << 5) - hash);
+    const hues = [210, 260, 320, 160, 35, 185];
+    const h = hues[Math.abs(hash) % hues.length];
+    grad.addColorStop(0, `hsl(${h}, 90%, 60%)`);
+    grad.addColorStop(1, `hsl(${h + 30}, 85%, 35%)`);
+  }
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, 256, 256);
+
+  const initial = (nickname.replace(/^@/, '').charAt(0) || 'U').toUpperCase();
+  ctx.fillStyle = '#ffffff';
+  ctx.font = 'bold 120px "Fredoka", "Arial Black", sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.shadowColor = 'rgba(0, 0, 0, 0.45)';
+  ctx.shadowBlur = 12;
+  ctx.fillText(initial, 128, 134);
+  ctx.restore();
+
+  // Crisp glowing border ring
+  ctx.save();
+  ctx.beginPath();
+  ctx.arc(128, 128, 118, 0, Math.PI * 2);
+  ctx.lineWidth = 10;
+  ctx.strokeStyle = isGold ? '#ffd700' : 'rgba(255, 255, 255, 0.9)';
+  ctx.stroke();
+  ctx.restore();
+
+  const tex = new THREE.CanvasTexture(c);
+  tex.generateMipmaps = true;
+  tex.minFilter = THREE.LinearMipmapLinearFilter;
+  tex.magFilter = THREE.LinearFilter;
+  duckTextureCache.set(cacheKey, tex);
+
+  if (avatarUrl) {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => {
+      ctx.clearRect(0, 0, 256, 256);
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(128, 128, 120, 0, Math.PI * 2);
+      ctx.clip();
+      ctx.drawImage(img, 0, 0, 256, 256);
+      ctx.restore();
+
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(128, 128, 118, 0, Math.PI * 2);
+      ctx.lineWidth = 10;
+      ctx.strokeStyle = isGold ? '#ffd700' : 'rgba(255, 255, 255, 0.92)';
+      ctx.stroke();
+      ctx.restore();
+
+      tex.needsUpdate = true;
+    };
+    img.src = avatarUrl;
+  }
+
+  return tex;
+}
+
+function createTextTag(text) {
+  const c = document.createElement('canvas');
+  c.width = 512;
+  c.height = 112;
+  const ctx = c.getContext('2d');
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = 'high';
+
+  ctx.fillStyle = 'rgba(14, 18, 28, 0.94)';
+  if (typeof ctx.roundRect === 'function') {
+    ctx.beginPath();
+    ctx.roundRect(10, 10, 492, 92, 46);
+    ctx.fill();
+  } else {
+    ctx.beginPath();
+    ctx.rect(10, 10, 492, 92);
+    ctx.fill();
+  }
+  ctx.strokeStyle = '#ffcc00';
+  ctx.lineWidth = 6;
+  ctx.stroke();
+
+  ctx.fillStyle = '#ffffff';
+  ctx.font = 'bold 44px "Fredoka", sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  const displayNick = text.length > 15 ? text.substring(0, 14) + '..' : text;
+  ctx.fillText(displayNick, 256, 58);
+
+  const tex = new THREE.CanvasTexture(c);
+  tex.generateMipmaps = true;
+  tex.minFilter = THREE.LinearMipmapLinearFilter;
+  const spriteMat = new THREE.SpriteMaterial({ map: tex, transparent: true, depthTest: false });
+  const sprite = new THREE.Sprite(spriteMat);
+  sprite.renderOrder = 100;
+  sprite.scale.set(1.7, 0.42, 1);
+  return sprite;
+}
+
+function createHealthTag(currentHP, maxHP) {
+  const c = document.createElement('canvas');
+  c.width = 160;
+  c.height = 48;
+  const ctx = c.getContext('2d');
+
+  ctx.font = '26px sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+
+  let heartStr = '';
+  for (let i = 0; i < maxHP; i++) {
+    heartStr += i < currentHP ? '❤️' : '🖤';
+  }
+  ctx.fillText(heartStr, 80, 24);
+
+  const tex = new THREE.CanvasTexture(c);
+  const spriteMat = new THREE.SpriteMaterial({ map: tex, transparent: true, depthTest: false });
+  const sprite = new THREE.Sprite(spriteMat);
+  sprite.renderOrder = 101;
+  sprite.scale.set(0.9, 0.28, 1);
+  return { sprite, tex, canvas: c, ctx };
+}
+
+// Spawner: Duck or Bomb
+function spawnDuck(shelfIndex = 0, sender = null, duckType = 'normal') {
+  const shelf = SHELVES_CONFIG[shelfIndex];
+  const isGold = duckType === 'golden';
+  const isBig = duckType === 'big';
+  const isBoss = duckType === 'boss';
+  const isBomb = duckType === 'bomb';
+
+  const defaultNicknames = ['Ahmet_TR', 'Selin_07', 'Can_Gamer', 'Ece_Yildiz', 'Kral_Avci', 'Bahar_Can', 'Emre_Pro', 'Deniz_Mavi'];
+  const nick = isBomb ? 'BOMBA!' : (sender?.nickname || defaultNicknames[Math.floor(Math.random() * defaultNicknames.length)]);
+  const avatarUrl = sender?.avatar || `/api/avatar?user=${encodeURIComponent(nick)}`;
+
+  const maxHP = isBoss ? 3 : isBig ? 2 : 1;
+  let currentHP = maxHP;
+
+  const duckGroup = new THREE.Group();
+
+  // Root Stand
+  const stand = new THREE.Mesh(
+    new THREE.BoxGeometry(0.7, 0.12, 0.45),
+    new THREE.MeshLambertMaterial({ color: isBomb ? 0x222222 : 0x4a3b32 })
+  );
+  duckGroup.add(stand);
+
+  // Hinge Pivot
+  const hingePivot = new THREE.Group();
+  hingePivot.position.set(0, 0.06, 0);
+  duckGroup.add(hingePivot);
+
+  const hingePin = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.04, 0.04, 0.5, 8),
+    new THREE.MeshStandardMaterial({ color: 0xcccccc, metalness: 0.9 })
+  );
+  hingePin.rotation.z = Math.PI / 2;
+  hingePivot.add(hingePin);
+
+  let avatarDisc = null;
+  let healthDisplay = null;
+  let duckMat = null;
+
+  if (isBomb) {
+    // BOMBA MODELİ (Kıvılcımlı fitil)
+    const bombMat = new THREE.MeshStandardMaterial({ color: 0x1a1a1a, metalness: 0.8, roughness: 0.25 });
+    const bombBody = new THREE.Mesh(new THREE.SphereGeometry(0.42, 16, 16), bombMat);
+    bombBody.position.set(0, 0.48, 0);
+    hingePivot.add(bombBody);
+
+    const collar = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.12, 0.14, 0.12, 12),
+      new THREE.MeshStandardMaterial({ color: 0xd4af37, metalness: 0.9 })
+    );
+    collar.position.set(0, 0.92, 0);
+    hingePivot.add(collar);
+
+    const fuse = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.03, 0.03, 0.2, 8),
+      new THREE.MeshLambertMaterial({ color: 0xffffff })
+    );
+    fuse.position.set(0, 1.05, 0);
+    hingePivot.add(fuse);
+
+    const spark = new THREE.Mesh(
+      new THREE.SphereGeometry(0.08, 8, 8),
+      new THREE.MeshBasicMaterial({ color: 0xff7b00 })
+    );
+    spark.position.set(0, 1.15, 0);
+    hingePivot.add(spark);
+
+    const bombTag = createTextTag('💣 DİKKAT! BOMBA!');
+    bombTag.position.set(0, 1.45, 0.38);
+    hingePivot.add(bombTag);
+
+  } else {
+    // DUCK MODELİ (Yana Bakan & Can Barı)
+    const duckModelGroup = new THREE.Group();
+    const faceAngle = shelf.direction === 1 ? Math.PI * 0.42 : -Math.PI * 0.42;
+    duckModelGroup.rotation.y = faceAngle;
+    hingePivot.add(duckModelGroup);
+
+    const duckBodyColor = isBoss ? 0xff0055 : isBig ? 0xff6b35 : isGold ? 0xffd700 : 0xffde59;
+    duckMat = new THREE.MeshStandardMaterial({
+      color: duckBodyColor,
+      roughness: isGold ? 0.2 : 0.4,
+      metalness: isGold ? 0.7 : 0.05
+    });
+    const beakMat = new THREE.MeshLambertMaterial({ color: 0xf77f00 });
+    const eyeMat = new THREE.MeshBasicMaterial({ color: 0x111111 });
+    const whiteMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+
+    // Body
+    const body = new THREE.Mesh(new THREE.SphereGeometry(0.38, 16, 16), duckMat);
+    body.scale.set(1.0, 0.9, 1.3);
+    body.position.set(0, 0.42, 0);
+    body.castShadow = true;
+    duckModelGroup.add(body);
+
+    // Head
+    const head = new THREE.Mesh(new THREE.SphereGeometry(0.28, 16, 16), duckMat);
+    head.position.set(0, 0.85, 0.28);
+    head.castShadow = true;
+    duckModelGroup.add(head);
+
+    // Beak
+    const beak = new THREE.Mesh(new THREE.ConeGeometry(0.12, 0.26, 12), beakMat);
+    beak.rotation.x = Math.PI / 2;
+    beak.position.set(0, 0.82, 0.56);
+    duckModelGroup.add(beak);
+
+    // Eyes
+    const eyeL = new THREE.Mesh(new THREE.SphereGeometry(0.045, 8, 8), eyeMat);
+    eyeL.position.set(-0.11, 0.92, 0.48);
+    const eyeR = new THREE.Mesh(new THREE.SphereGeometry(0.045, 8, 8), eyeMat);
+    eyeR.position.set(0.11, 0.92, 0.48);
+    const twL = new THREE.Mesh(new THREE.SphereGeometry(0.015, 6, 6), whiteMat);
+    twL.position.set(-0.1, 0.93, 0.52);
+    const twR = new THREE.Mesh(new THREE.SphereGeometry(0.015, 6, 6), whiteMat);
+    twR.position.set(0.12, 0.93, 0.52);
+    duckModelGroup.add(eyeL, eyeR, twL, twR);
+
+    // Wings
+    const wingL = new THREE.Mesh(new THREE.SphereGeometry(0.2, 12, 12), duckMat);
+    wingL.scale.set(0.2, 0.6, 1.0);
+    wingL.position.set(-0.38, 0.45, 0);
+    const wingR = new THREE.Mesh(new THREE.SphereGeometry(0.2, 12, 12), duckMat);
+    wingR.scale.set(0.2, 0.6, 1.0);
+    wingR.position.set(0.38, 0.45, 0);
+    duckModelGroup.add(wingL, wingR);
+
+    // Tail Feather
+    const tail = new THREE.Mesh(new THREE.ConeGeometry(0.1, 0.25, 8), duckMat);
+    tail.rotation.x = -Math.PI / 3;
+    tail.position.set(0, 0.58, -0.48);
+    duckModelGroup.add(tail);
+
+    // Floating Avatar & Username (Önde z = 0.38)
+    const avatarTex = createAvatarTexture(nick, avatarUrl, isGold || isBoss);
+    avatarDisc = new THREE.Mesh(
+      new THREE.CircleGeometry(0.28, 24),
+      new THREE.MeshBasicMaterial({ map: avatarTex, side: THREE.DoubleSide, depthTest: false })
+    );
+    avatarDisc.renderOrder = 95;
+
+    const ring = new THREE.Mesh(
+      new THREE.RingGeometry(0.27, 0.31, 24),
+      new THREE.MeshBasicMaterial({
+        color: isGold ? 0xffea00 : isBoss ? 0xff0055 : isBig ? 0xff7b00 : 0x00e676,
+        side: THREE.DoubleSide
+      })
+    );
+    ring.position.z = 0.005;
+    avatarDisc.add(ring);
+
+    avatarDisc.position.set(0, 1.08, 0.38);
+    hingePivot.add(avatarDisc);
+
+    // Floating Username Tag
+    const tagSprite = createTextTag(nick);
+    tagSprite.position.set(0, 1.48, 0.38);
+    hingePivot.add(tagSprite);
+
+    // HP Hearts for Big / Boss Duck
+    if (maxHP > 1) {
+      healthDisplay = createHealthTag(currentHP, maxHP);
+      healthDisplay.sprite.position.set(0, 1.88, 0.38);
+      hingePivot.add(healthDisplay.sprite);
+    }
+
+    // Crown for Boss Duck
+    if (isBoss) {
+      const crown = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.24, 0.18, 0.22, 5, 1, true),
+        new THREE.MeshStandardMaterial({ color: 0xffd700, metalness: 0.9, roughness: 0.1, side: THREE.DoubleSide })
+      );
+      crown.position.set(0, 1.42, 0.15);
+      hingePivot.add(crown);
+      duckGroup.scale.set(1.65, 1.65, 1.65);
+    } else if (isBig) {
+      duckGroup.scale.set(1.35, 1.35, 1.35);
+    } else if (isGold) {
+      duckGroup.scale.set(1.15, 1.15, 1.15);
+    }
+  }
+
+  // Speed Boost Aura Ring
+  const speedRingMat = new THREE.MeshBasicMaterial({
+    color: 0xff7b00,
+    transparent: true,
+    opacity: 0,
+    side: THREE.DoubleSide
+  });
+  const speedRing = new THREE.Mesh(new THREE.RingGeometry(0.4, 0.55, 16), speedRingMat);
+  speedRing.position.set(0, 0.45, 0);
+  speedRing.rotation.x = Math.PI / 2;
+  hingePivot.add(speedRing);
+
+  // Initial Placement along conveyor
+  const startX = shelf.direction === 1 ? -9.2 : 9.2;
+  duckGroup.position.set(startX, shelf.y, 0.1);
+  scene.add(duckGroup);
+
+  const duckBaseSpeed = isBoss ? shelf.speed * 0.60 : isBig ? shelf.speed * 0.75 : shelf.speed;
+
+  const duckData = {
+    group: duckGroup,
+    hingePivot,
+    avatarDisc,
+    speedRingMat,
+    duckMat,
+    shelfIndex,
+    direction: shelf.direction,
+    baseSpeed: duckBaseSpeed,
+    speedMultiplier: 1.0,
+    nickname: nick,
+    userId: sender?.id || nick.toLowerCase(),
+    avatarUrl,
+    duckType,
+    maxHP,
+    currentHP,
+    healthDisplay,
+    hit: false,
+    tipAngle: 0,
+    tipVelocity: 0,
+    wobblePhase: Math.random() * Math.PI * 2,
+    hasEscaped: false
+  };
+
+  DUCKS.push(duckData);
+  return duckData;
+}
+
+function spawnInitialDucks() {
+  DUCKS.forEach(d => scene.remove(d.group));
+  DUCKS.length = 0;
+  // Test Paneli butonları veya canlı yayın hediyeleri gelene kadar piste otomatik ördek basılmaz
+}
+
+// =====================================================================
+// GÖKKUŞAĞI İZİ PARTİKÜLLERİ (Popodan Çıkan Renkli Gökkuşağı İzi)
+// Hızlanan veya yeni takipçi ördeklerin arkasından dökülen rengarenk iz
+// =====================================================================
+const rainbowParticles = [];
+const RAINBOW_COLORS = [0xff0055, 0xff7b00, 0xffea00, 0x00e676, 0x00b4d8, 0x9d4edd];
+let rainbowColorIdx = 0;
+
+function emitRainbowPuff(pos, direction) {
+  const pMat = new THREE.MeshBasicMaterial({
+    color: RAINBOW_COLORS[rainbowColorIdx % RAINBOW_COLORS.length],
+    transparent: true,
+    opacity: 0.9,
+    depthTest: false
+  });
+  rainbowColorIdx++;
+
+  const pGeo = new THREE.CircleGeometry(0.12 + Math.random() * 0.08, 12);
+  const mesh = new THREE.Mesh(pGeo, pMat);
+  mesh.renderOrder = 90;
+
+  // Position at the tail of the duck
+  mesh.position.set(
+    pos.x - direction * 0.45 + (Math.random() - 0.5) * 0.1,
+    pos.y + 0.4 + (Math.random() - 0.5) * 0.1,
+    0.25
+  );
+  scene.add(mesh);
+
+  rainbowParticles.push({
+    mesh,
+    velX: -direction * (1.2 + Math.random() * 1.5),
+    velY: (Math.random() - 0.2) * 0.8,
+    scale: 1.0,
+    life: 1.0,
+    decay: 1.6 + Math.random() * 0.8
+  });
+}
+
+// =====================================================================
+// DETAYLI OYUNCAK KARNAVAL TÜFEĞİ (Custom 3D Poligon Modeli)
+// Ergonomik ahşap dipçik, pirinç kurma kolu, manometre, namlu & mantar
+// =====================================================================
+const gunGroup = new THREE.Group();
+scene.add(gunGroup);
+
+const woodMat = new THREE.MeshStandardMaterial({ color: 0x78350f, roughness: 0.45 });
+const darkMetalMat = new THREE.MeshStandardMaterial({ color: 0x1f2937, metalness: 0.85, roughness: 0.25 });
+const brassMat = new THREE.MeshStandardMaterial({ color: 0xd97706, metalness: 0.9, roughness: 0.2 });
+const cyanTrimMat = new THREE.MeshStandardMaterial({ color: 0x00b4d8, roughness: 0.3, metalness: 0.3 });
+const corkMat = new THREE.MeshLambertMaterial({ color: 0xc19a6b });
+
+// 1. Curved Wooden Stock (Ergonomik Ahşap Dipçik)
+const stockShape = new THREE.Shape();
+stockShape.moveTo(0, 0);
+stockShape.lineTo(0.3, -0.4);
+stockShape.lineTo(1.8, -0.2);
+stockShape.lineTo(1.8, 0.35);
+stockShape.lineTo(0.6, 0.4);
+stockShape.lineTo(0, 0.2);
+stockShape.closePath();
+
+const stockExtrude = new THREE.ExtrudeGeometry(stockShape, { depth: 0.24, bevelEnabled: true, bevelThickness: 0.04, bevelSize: 0.04 });
+const gunStock = new THREE.Mesh(stockExtrude, woodMat);
+gunStock.rotation.y = -Math.PI / 2;
+gunStock.position.set(0.12, -0.2, 0.2);
+gunGroup.add(gunStock);
+
+// Rubber Butt Plate (Siyah Omuz Tabanı)
+const buttPlate = new THREE.Mesh(new THREE.BoxGeometry(0.26, 0.65, 0.08), darkMetalMat);
+buttPlate.position.set(0, 0.05, 2.0);
+gunGroup.add(buttPlate);
+
+// 2. Metallic Receiver Housing (Pirinç/Çelik Mekanizma Gövdesi)
+const gunReceiver = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.42, 1.4), darkMetalMat);
+gunReceiver.position.set(0, 0.12, -0.5);
+gunGroup.add(gunReceiver);
+
+// Brass Cocking Lever & Ball (Pirinç Kurma Kolu)
+const cockingRod = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.3, 8), brassMat);
+cockingRod.rotation.z = Math.PI / 3;
+cockingRod.position.set(0.2, 0.22, -0.3);
+const cockingBall = new THREE.Mesh(new THREE.SphereGeometry(0.07, 10, 10), brassMat);
+cockingBall.position.set(0.32, 0.28, -0.3);
+gunGroup.add(cockingRod, cockingBall);
+
+// Pressure Gauge Dial (Hava Manometresi)
+const gaugeBezel = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, 0.06, 16), brassMat);
+gaugeBezel.rotation.z = Math.PI / 2;
+gaugeBezel.position.set(-0.16, 0.22, -0.5);
+const gaugeFace = new THREE.Mesh(new THREE.CircleGeometry(0.1, 16), new THREE.MeshBasicMaterial({ color: 0xffffff }));
+gaugeFace.rotation.y = -Math.PI / 2;
+gaugeFace.position.set(-0.195, 0.22, -0.5);
+gunGroup.add(gaugeBezel, gaugeFace);
+
+// Brass Trigger Guard & Trigger
+const triggerGuard = new THREE.Mesh(new THREE.TorusGeometry(0.14, 0.025, 8, 16, Math.PI), brassMat);
+triggerGuard.rotation.x = Math.PI;
+triggerGuard.position.set(0, -0.16, 0.1);
+const trigger = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.14, 0.04), darkMetalMat);
+trigger.rotation.x = -0.3;
+trigger.position.set(0, -0.1, 0.1);
+gunGroup.add(triggerGuard, trigger);
+
+// 3. Dual-Tone Ribbed Barrel (Uzun Karnaval Namlusu)
+const gunBarrel = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.1, 3.4, 16), cyanTrimMat);
+gunBarrel.rotation.x = Math.PI / 2;
+gunBarrel.position.set(0, 0.18, -2.6);
+gunGroup.add(gunBarrel);
+
+// Brass Barrel Retaining Bands
+[-1.6, -2.6, -3.6].forEach(bz => {
+  const band = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.11, 0.08, 16), brassMat);
+  band.rotation.x = Math.PI / 2;
+  band.position.set(0, 0.18, bz);
+  gunGroup.add(band);
+});
+
+// Front Bead Sight
+const frontSight = new THREE.Mesh(new THREE.SphereGeometry(0.035, 8, 8), brassMat);
+frontSight.position.set(0, 0.3, -4.1);
+gunGroup.add(frontSight);
+
+// 4. Realistic Cork Loaded in Muzzle & String (Mantar Mermisi & İp)
+const loadedCork = new THREE.Mesh(new THREE.CylinderGeometry(0.085, 0.1, 0.35, 12), corkMat);
+loadedCork.rotation.x = Math.PI / 2;
+loadedCork.position.set(0, 0.18, -4.35);
+gunGroup.add(loadedCork);
+
+// Gun Base Position
+const gunBasePos = new THREE.Vector3(2.1, -1.35, 9.2);
+gunGroup.position.copy(gunBasePos);
+
+let gunRecoilZ = 0;
+let gunRecoilRotX = 0;
+const mouseWorldTarget = new THREE.Vector3(0, 0, 0);
+
+// Hit Particle Sparks
+const particles = [];
+const starShape = new THREE.Shape();
+for (let i = 0; i < 5; i++) {
+  const outer = 0.14;
+  const inner = 0.06;
+  const a1 = (i * 72 - 90) * (Math.PI / 180);
+  const a2 = ((i * 72 + 36) - 90) * (Math.PI / 180);
+  if (i === 0) starShape.moveTo(Math.cos(a1) * outer, Math.sin(a1) * outer);
+  else starShape.lineTo(Math.cos(a1) * outer, Math.sin(a1) * outer);
+  starShape.lineTo(Math.cos(a2) * inner, Math.sin(a2) * inner);
+}
+starShape.closePath();
+const starGeo = new THREE.ShapeGeometry(starShape);
+
+function createHitParticles(pos, isGold = false, isBoss = false, isBomb = false) {
+  const count = isBomb ? 40 : isBoss ? 35 : isGold ? 22 : 14;
+  const colors = isBomb
+    ? [0xff1100, 0xff7b00, 0x333333, 0xffea00]
+    : isBoss
+      ? [0xff0055, 0xffea00, 0xffffff, 0x9d4edd]
+      : isGold
+        ? [0xffea00, 0xffd000, 0xffffff, 0xff9100]
+        : [0xffde59, 0xf77f00, 0xffffff, 0x06d6a0];
+
+  for (let i = 0; i < count; i++) {
+    const mat = new THREE.MeshBasicMaterial({
+      color: colors[i % colors.length],
+      side: THREE.DoubleSide,
+      transparent: true,
+      opacity: 1
+    });
+    const p = new THREE.Mesh(starGeo, mat);
+    p.position.copy(pos);
+    p.position.x += (Math.random() - 0.5) * 0.4;
+    p.position.y += (Math.random() - 0.5) * 0.4;
+
+    const vel = new THREE.Vector3(
+      (Math.random() - 0.5) * 7.0,
+      Math.random() * 5.5 + 1.5,
+      (Math.random() - 0.5) * 5.0
+    );
+
+    scene.add(p);
+    particles.push({
+      mesh: p,
+      vel,
+      rotSpeed: (Math.random() - 0.5) * 12.0,
+      life: 1.0,
+      decay: 1.2 + Math.random() * 0.8
+    });
+  }
+}
+
+// Active Flying Corks
+const activeCorks = [];
+const corkGeo = new THREE.CylinderGeometry(0.06, 0.08, 0.22, 12);
+
+function shootCork(startPos, targetPos) {
+  const cork = new THREE.Mesh(corkGeo, corkMat);
+  cork.position.copy(startPos);
+  const dir = targetPos.clone().sub(startPos).normalize();
+  cork.lookAt(targetPos);
+  scene.add(cork);
+
+  activeCorks.push({
+    mesh: cork,
+    pos: cork.position,
+    vel: dir.multiplyScalar(44.0),
+    targetDist: startPos.distanceTo(targetPos),
+    traveled: 0
+  });
+}
+
+// =====================================================================
+// DEVASA EKRANI KAPLAYAN AKIŞKAN ÇAMUR SIÇRAMASI & GERİ SAYIM ROZETİ
+// Ekranın ~%85-90'ını kaplar, akışkan süzülen dereler ve ortada canlı süre gösterir
+// =====================================================================
+let isMudActive = false;
+let mudTimer = 0;
+let mudSplashTimeout = null;
+let isClearingMud = false;
+
+function clearMudSplash() {
+  if (!isMudActive && !isClearingMud) return;
+  isMudActive = false;
+  isClearingMud = true;
+  if (mudSplashTimeout) {
+    clearTimeout(mudSplashTimeout);
+    mudSplashTimeout = null;
+  }
+  const container = document.getElementById('mud-splat-container');
+  if (container) {
+    container.classList.add('slide-out');
+  }
+  setTimeout(() => {
+    if (mudLayer) {
+      mudLayer.classList.remove('active');
+      mudLayer.innerHTML = '';
+    }
+    isClearingMud = false;
+  }, 750);
+}
+
+function triggerMudSplash(durationSec = 10, sender = null, giftSlot = null) {
+  playMudSplat();
+  if (!mudLayer) return;
+
+  const dur = Number(durationSec) || 10;
+  isMudActive = true;
+  isClearingMud = false;
+  mudTimer = dur;
+
+  if (mudSplashTimeout) clearTimeout(mudSplashTimeout);
+
+  mudLayer.classList.add('active');
+
+  const slot = giftSlot || CUSTOM_GIFT_SLOTS.find(s => s.action === 'mud_splash') || { name: 'Perfume', trName: 'Parfüm', file: 'Perfume.png' };
+  const giftFile = slot.file || 'Perfume.png';
+  const giftNameTr = slot.trName || slot.name || 'Parfüm';
+
+  const senderNick = sender?.nickname || sender?.uniqueId || 'İzleyici';
+  const senderAvatar = sender?.avatar || `/api/avatar?user=${encodeURIComponent(senderNick)}`;
+
+  const giantMudHTML = `
+    <div id="mud-splat-container" class="giant-mud-splat">
+      <svg viewBox="0 0 1000 600" preserveAspectRatio="none" width="100%" height="100%" style="overflow:visible;">
+        <defs>
+          <radialGradient id="mudGradCenter" cx="50%" cy="35%" r="55%">
+            <stop offset="0%" stop-color="#080301" stop-opacity="0.99"/>
+            <stop offset="50%" stop-color="#140702" stop-opacity="0.99"/>
+            <stop offset="85%" stop-color="#240c03" stop-opacity="0.98"/>
+            <stop offset="100%" stop-color="#0b0401" stop-opacity="0.97"/>
+          </radialGradient>
+          <linearGradient id="mudDrip" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#180802" stop-opacity="0.99"/>
+            <stop offset="60%" stop-color="#0e0401" stop-opacity="0.99"/>
+            <stop offset="100%" stop-color="#050100" stop-opacity="0.98"/>
+          </linearGradient>
+          <filter id="mudGloss">
+            <feDropShadow dx="0" dy="12" stdDeviation="14" flood-color="#000" flood-opacity="0.88"/>
+          </filter>
+        </defs>
+
+        <!-- Ördek Parkurunun Üzerini Kaplayan Akışkan Çamur Kütlesi -->
+        <path d="M -20,10 Q 250,-10 500,20 T 1020,10 L 1020,430 
+                 Q 920,480 840,410 Q 750,530 660,430 Q 550,560 460,440 
+                 Q 360,540 280,420 Q 180,510 80,410 Q 20,490 -20,430 Z" 
+              fill="url(#mudGradCenter)" filter="url(#mudGloss)" />
+
+        <!-- Aşağı Doğru Süzülen Akışkan Çamur Şeritleri -->
+        <g class="mud-drip-flow">
+          <path d="M 60,390 Q 75,540 68,610 Q 60,620 52,610 Q 46,540 54,390 Z" fill="url(#mudDrip)" />
+          <path d="M 160,400 Q 180,550 172,640 Q 164,650 156,640 Q 148,550 152,400 Z" fill="url(#mudDrip)" />
+          <path d="M 280,410 Q 305,570 296,660 Q 288,670 280,660 Q 270,570 274,410 Z" fill="url(#mudDrip)" />
+          <path d="M 400,420 Q 425,580 416,680 Q 408,690 398,680 Q 390,580 394,420 Z" fill="url(#mudDrip)" />
+          <path d="M 520,430 Q 545,590 536,690 Q 528,700 518,690 Q 510,590 514,430 Z" fill="url(#mudDrip)" />
+          <path d="M 640,410 Q 665,570 656,660 Q 648,670 638,660 Q 630,570 634,410 Z" fill="url(#mudDrip)" />
+          <path d="M 760,400 Q 785,550 776,640 Q 768,650 758,640 Q 750,550 754,400 Z" fill="url(#mudDrip)" />
+          <path d="M 880,390 Q 900,530 892,600 Q 884,610 876,600 Q 870,530 874,390 Z" fill="url(#mudDrip)" />
+          <path d="M 960,380 Q 975,500 968,570 Q 960,580 952,570 Q 946,500 952,380 Z" fill="url(#mudDrip)" />
+        </g>
+
+        <!-- Aşağı Süzülen Sıvı Damlalar -->
+        <g class="mud-drops-falling">
+          <circle cx="60" cy="635" r="14" fill="#080301" />
+          <circle cx="164" cy="665" r="16" fill="#060200" />
+          <circle cx="288" cy="685" r="18" fill="#050100" />
+          <circle cx="408" cy="705" r="20" fill="#040100" />
+          <circle cx="528" cy="715" r="20" fill="#040100" />
+          <circle cx="648" cy="685" r="18" fill="#050100" />
+          <circle cx="768" cy="665" r="16" fill="#060200" />
+          <circle cx="884" cy="625" r="14" fill="#080301" />
+        </g>
+      </svg>
+
+      <!-- Ortada Geri Sayan Canlı Çamur Rozeti (Kullanıcı & Hediye Bilgisi) -->
+      <div class="mud-center-badge">
+        <div class="mud-badge-icon">
+          <div class="mud-badge-visual-pair">
+            <img class="mud-badge-gift-img" src="/catalog-assets/gift-images/${giftFile}" onerror="this.src='/catalog-assets/gift-images/Perfume.png'" alt="${giftNameTr}" title="${giftNameTr}" />
+            <img class="mud-badge-sender-avatar" src="${senderAvatar}" onerror="this.src='/api/avatar?user=${encodeURIComponent(senderNick)}'" alt="${senderNick}" title="@${senderNick}" />
+          </div>
+        </div>
+        <div class="mud-badge-content">
+          <div class="mud-badge-user-row">
+            <span class="mud-badge-user">@${senderNick}</span>
+            <span class="mud-badge-user-action">ekrana çamur attı!</span>
+          </div>
+          <div class="mud-badge-title">
+            <span class="mud-badge-gift-name">${giftNameTr}</span> ile Görüş Kapatıldı!
+          </div>
+          <div class="mud-badge-sub">Kalan Süre: <span id="mud-countdown-text">${dur.toFixed(1)} sn</span></div>
+        </div>
+      </div>
+    </div>
+  `;
+
+  mudLayer.innerHTML = giantMudHTML;
+
+  mudSplashTimeout = setTimeout(() => {
+    clearMudSplash();
+  }, dur * 1000);
+}
+
+// Bomb Explosion Effect
+function triggerBombExplosion(bombPos) {
+  playBombExplosion();
+
+  if (bombFlash) {
+    bombFlash.classList.add('active');
+    setTimeout(() => bombFlash.classList.remove('active'), 250);
+  }
+
+  canvas.classList.add('screen-shake');
+  setTimeout(() => canvas.classList.remove('screen-shake'), 400);
+
+  createHitParticles(bombPos, false, false, true);
+
+  // -1000 Puan Cezası & Kombo Sıfırlama
+  score = Math.max(0, score - 1000);
+  currentStreak = 0;
+  scoreDisplay.textContent = score.toLocaleString('tr-TR');
+  scoreDisplay.classList.add('score-bump');
+  setTimeout(() => scoreDisplay.classList.remove('score-bump'), 250);
+
+  showFloatingScore(bombPos, '-1.000 PUAN! 💥', true);
+  updateRoundTargetHUD();
+}
+
+// Rapid Fire Mechanic (Taramalı Silah)
+function triggerRapidFire(durationSec = 10) {
+  isRapidFire = true;
+  rapidFireTimer = durationSec;
+  crosshairEl.classList.add('rapid');
+  rapidFireBanner.classList.add('visible');
+  rapidSub.textContent = `Süre: ${durationSec} sn`;
+
+  if (ammoStatusTag) {
+    ammoStatusTag.textContent = '⚡ SINIRSIZ MERMİ';
+    ammoStatusTag.style.color = '#ffea00';
+  }
+}
+
+function stopRapidFire() {
+  isRapidFire = false;
+  crosshairEl.classList.remove('rapid');
+  rapidFireBanner.classList.remove('visible');
+  if (ammoStatusTag) {
+    ammoStatusTag.textContent = 'OTOMATİK YENİLEME';
+    ammoStatusTag.style.color = '#00e676';
+  }
+}
+
+// =====================================================================
+// SHOOTING, AUTO-RELOAD & DUCK HIT MECHANICS
+// =====================================================================
+const raycaster = new THREE.Raycaster();
+const mouseNDC = new THREE.Vector2();
+
+function updateAmmoHUD() {
+  corkSlots.forEach((slot, index) => {
+    if (index < currentAmmo) slot.classList.remove('spent');
+    else slot.classList.add('spent');
+  });
+
+  if (currentAmmo <= 0) {
+    ammoWarning.classList.add('active');
+    btnReload.classList.add('flashing');
+    crosshairEl.classList.add('empty-ammo');
+  } else {
+    ammoWarning.classList.remove('active');
+    btnReload.classList.remove('flashing');
+    crosshairEl.classList.remove('empty-ammo');
+  }
+}
+
+function startReload() {
+  if (isReloading || currentAmmo === maxAmmo) return;
+  isReloading = true;
+  btnReload.classList.add('flashing');
+
+  setTimeout(() => {
+    currentAmmo = maxAmmo;
+    isReloading = false;
+    updateAmmoHUD();
+    btnReload.classList.remove('flashing');
+  }, 750);
+}
+
+function triggerGunJam(durationSec = 3.0, sourceUser = '') {
+  isGunJammed = true;
+  gunJamTimer = Number(durationSec) || 3.0;
+  currentJamSource = sourceUser;
+  playJamSound();
+  jamBanner.classList.add('visible');
+  crosshairEl.classList.add('jammed');
+  if (jamSub) {
+    const durFormatted = gunJamTimer.toFixed(1);
+    jamSub.textContent = sourceUser ? `@${sourceUser} tüfeğinizi kilitledi! (${durFormatted} sn)` : `Tüfek kilitlendi! (${durFormatted} sn)`;
+  }
+}
+
+function shoot() {
+  initAudio();
+
+  if (gameState !== 'playing' || !roundActive) return;
+
+  if (isGunJammed) {
+    playJamSound();
+    return;
+  }
+
+  if (isReloading && !isRapidFire) return;
+
+  if (!isRapidFire) {
+    if (currentAmmo <= 0) {
+      startReload();
+      return;
+    }
+    currentAmmo--;
+    totalShots++;
+    updateAmmoHUD();
+  } else {
+    totalShots++;
+  }
+
+  playCorkPop();
+
+  gunRecoilZ = 0.42;
+  gunRecoilRotX = 0.22;
+
+  const muzzlePos = new THREE.Vector3(gunGroup.position.x - 0.35, gunGroup.position.y + 0.25, gunGroup.position.z - 4.1);
+  shootCork(muzzlePos, mouseWorldTarget);
+
+  let hitAny = false;
+  for (let i = 0; i < DUCKS.length; i++) {
+    const d = DUCKS[i];
+    if (d.hit) continue;
+
+    const duckPos = new THREE.Vector3();
+    d.hingePivot.getWorldPosition(duckPos);
+    const dist = duckPos.distanceTo(mouseWorldTarget);
+    const hitRadius = d.duckType === 'boss' ? 1.4 : d.duckType === 'big' ? 1.05 : 0.85;
+
+    if (dist < hitRadius) {
+      hitAny = true;
+
+      // Bomb Check
+      if (d.duckType === 'bomb') {
+        d.hit = true;
+        scene.remove(d.group);
+        DUCKS.splice(i, 1);
+        triggerBombExplosion(duckPos);
+        break;
+      }
+
+      d.currentHP--;
+
+      if (d.currentHP > 0) {
+        // NON-LETHAL HIT (Has HP remaining)
+        playDuckBonk();
+        playDuckQuack();
+
+        if (d.duckMat) {
+          const origColor = d.duckMat.color.getHex();
+          d.duckMat.color.setHex(0xff0000);
+          setTimeout(() => d.duckMat.color.setHex(origColor), 180);
+        }
+
+        d.hingePivot.rotation.z = (Math.random() - 0.5) * 0.4;
+
+        if (d.healthDisplay) {
+          const { ctx, tex, canvas: hCanvas } = d.healthDisplay;
+          ctx.clearRect(0, 0, hCanvas.width, hCanvas.height);
+          let heartStr = '';
+          for (let h = 0; h < d.maxHP; h++) {
+            heartStr += h < d.currentHP ? '❤️' : '🖤';
+          }
+          ctx.fillText(heartStr, 80, 24);
+          tex.needsUpdate = true;
+        }
+
+        createHitParticles(duckPos, d.duckType === 'golden', d.duckType === 'boss');
+        showFloatingScore(mouseWorldTarget, `CAN: ${d.currentHP}/${d.maxHP} 💥`, true);
+
+      } else {
+        // LETHAL HIT
+        d.hit = true;
+        d.tipVelocity = 0;
+
+        totalHits++;
+        currentStreak++;
+        if (duckKillDisplay) duckKillDisplay.textContent = `Vurulan: ${totalHits}`;
+
+        // Points using EXACT user table
+        const pts = calculateDuckPoints(d);
+        score += pts;
+
+        scoreDisplay.textContent = score.toLocaleString('tr-TR');
+        scoreDisplay.classList.add('score-bump');
+        setTimeout(() => scoreDisplay.classList.remove('score-bump'), 250);
+
+        recordViewerVictim(d.nickname, d.avatarUrl);
+
+        playDuckHit();
+        playDuckQuack();
+        createHitParticles(duckPos, d.duckType === 'golden', d.duckType === 'boss');
+
+        showFloatingScore(mouseWorldTarget, `+${pts}`, d.duckType === 'boss' || d.duckType === 'big');
+
+        updateRoundTargetHUD();
+        if (score >= roundTargetScore && roundActive) {
+          completeRound(true);
+        }
+      }
+      break;
+    }
+  }
+
+  if (!hitAny) {
+    currentStreak = 0;
+  }
+
+  const acc = totalShots > 0 ? Math.round((totalHits / totalShots) * 100) : 100;
+  accuracyDisplay.textContent = `İsabet: %${acc}`;
+
+  if (currentStreak >= 3) {
+    streakBanner.classList.add('visible');
+    streakTitle.textContent = `Streak x${currentStreak}!`;
+    streakSub.textContent = currentStreak >= 5 ? 'EFSANEVİ SERİ! 🔥🚀' : 'MÜKEMMEL ATIŞ! 🔥';
+  } else {
+    streakBanner.classList.remove('visible');
+  }
+
+  if (!isRapidFire && currentAmmo <= 0) {
+    startReload();
+  }
+}
+
+function showFloatingScore(worldPos, text, isBoss = false) {
+  const pos = worldPos.clone();
+  pos.project(camera);
+  const x = (pos.x * 0.5 + 0.5) * window.innerWidth;
+  const y = (-(pos.y * 0.5) + 0.5) * window.innerHeight;
+
+  const toast = document.createElement('div');
+  toast.className = `floating-hit-toast ${isBoss ? 'boss-hit' : ''}`;
+  toast.textContent = text;
+  toast.style.left = `${x}px`;
+  toast.style.top = `${y}px`;
+  document.getElementById('game-container').appendChild(toast);
+  setTimeout(() => toast.remove(), 1100);
+}
+
+function showEscapeToast(nickname) {
+  // Yeşil bildirimler kullanıcı isteği üzerine tamamen kaldırıldı
+}
+
+// Viewer Tracking
+function recordViewerVictim(nickname, avatarUrl) {
+  const key = nickname.toLowerCase();
+  const v = ACTIVE_VIEWERS.get(key) || { nickname, avatar: avatarUrl, deathCount: 0, escapeCount: 0 };
+  v.deathCount++;
+  ACTIVE_VIEWERS.set(key, v);
+  syncLeaderboardToServer();
+}
+
+function recordViewerEscape(nickname, avatarUrl) {
+  const key = nickname.toLowerCase();
+  const v = ACTIVE_VIEWERS.get(key) || { nickname, avatar: avatarUrl, deathCount: 0, escapeCount: 0 };
+  v.escapeCount++;
+  ACTIVE_VIEWERS.set(key, v);
+  syncLeaderboardToServer();
+}
+
+function syncLeaderboardToServer() {
+  const all = Array.from(ACTIVE_VIEWERS.values());
+  const survivors = all
+    .filter(u => u.escapeCount > 0)
+    .sort((a, b) => b.escapeCount - a.escapeCount)
+    .slice(0, 10);
+  const victims = all
+    .filter(u => u.deathCount > 0)
+    .sort((a, b) => b.deathCount - a.deathCount)
+    .slice(0, 10);
+
+  if (ws && ws.readyState === 1) {
+    ws.send(JSON.stringify({
+      type: "update-leaderboard",
+      survivors,
+      victims
+    }));
+  }
+}
+
+function renderLeaderboardModal() {
+  const all = Array.from(ACTIVE_VIEWERS.entries());
+  let list = [];
+
+  if (currentLeadTab === 'survivors') {
+    list = all.filter(([k, u]) => u.escapeCount > 0).sort((a, b) => b[1].escapeCount - a[1].escapeCount);
+  } else {
+    list = all.filter(([k, u]) => u.deathCount > 0).sort((a, b) => b[1].deathCount - a[1].deathCount);
+  }
+
+  leaderboardList.innerHTML = '';
+  if (list.length === 0) {
+    leaderboardList.innerHTML = `<div style="text-align:center; color:#888; padding:20px;">Henüz kayıtlı veri yok. Oynamaya devam edin!</div>`;
+    return;
+  }
+
+  list.slice(0, 15).forEach(([key, u], i) => {
+    const row = document.createElement('div');
+    row.className = `leaderboard-row rank-${i + 1}`;
+    const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i + 1}.`;
+    const countVal = currentLeadTab === 'survivors' ? `${u.escapeCount} Kaçış 🏃` : `${u.deathCount} Vurulma 🎯`;
+
+    row.innerHTML = `
+      <div class="user-badge">
+        <span style="font-size:16px; width:22px;">${medal}</span>
+        <img class="user-avatar-sm" src="${u.avatar}" onerror="this.src='/api/avatar?user=${encodeURIComponent(u.nickname)}'" />
+        <span class="user-name-text">@${u.nickname}</span>
+      </div>
+      <div class="user-score-wrap">
+        <div class="user-score-text">${countVal}</div>
+        <div class="lead-controls">
+          <button class="lead-btn btn-lead-plus" data-key="${key}" title="1 Artır">➕</button>
+          <button class="lead-btn btn-lead-minus" data-key="${key}" title="1 Azalt">➖</button>
+          <button class="lead-btn btn-lead-remove" data-key="${key}" title="Listeden Çıkar">🗑️</button>
+        </div>
+      </div>
+    `;
+
+    // Button event listeners
+    const plusBtn = row.querySelector('.btn-lead-plus');
+    const minusBtn = row.querySelector('.btn-lead-minus');
+    const removeBtn = row.querySelector('.btn-lead-remove');
+
+    plusBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const v = ACTIVE_VIEWERS.get(key);
+      if (v) {
+        if (currentLeadTab === 'survivors') v.escapeCount = (v.escapeCount || 0) + 1;
+        else v.deathCount = (v.deathCount || 0) + 1;
+        syncLeaderboardToServer();
+        renderLeaderboardModal();
+      }
+    });
+
+    minusBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const v = ACTIVE_VIEWERS.get(key);
+      if (v) {
+        if (currentLeadTab === 'survivors') v.escapeCount = Math.max(0, (v.escapeCount || 0) - 1);
+        else v.deathCount = Math.max(0, (v.deathCount || 0) - 1);
+        syncLeaderboardToServer();
+        renderLeaderboardModal();
+      }
+    });
+
+    removeBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const v = ACTIVE_VIEWERS.get(key);
+      if (v) {
+        if (currentLeadTab === 'survivors') v.escapeCount = 0;
+        else v.deathCount = 0;
+        if (v.escapeCount === 0 && v.deathCount === 0) {
+          ACTIVE_VIEWERS.delete(key);
+        }
+        syncLeaderboardToServer();
+        renderLeaderboardModal();
+      }
+    });
+
+    leaderboardList.appendChild(row);
+  });
+}
+
+// Copy OBS Widget URL Function
+if (btnCopyWidget) {
+  btnCopyWidget.addEventListener('click', async () => {
+    const mode = currentLeadTab === 'survivors' ? 'survivors' : 'victims';
+    try {
+      const response = await fetch('/api/launcher-widget-links', { cache: 'no-store' });
+      const data = await response.json();
+      const widgetUrl = data.links?.[mode];
+      if (!response.ok || !data.ready || typeof widgetUrl !== 'string' || new URL(widgetUrl).protocol !== 'https:') throw new Error(data.message || 'HTTPS yayın bağlantısı hazır değil. Launcher içinden yayın bağlantısını hazırlayın.');
+      try { await navigator.clipboard.writeText(widgetUrl); }
+      catch {
+        obsCopyFeedback.textContent = `Kopyalanamadı, lütfen adresi elle girin: ${widgetUrl}`;
+        obsCopyFeedback.style.color = '#ffb703';
+        return;
+      }
+      const modeName = currentLeadTab === 'survivors' ? 'En Çok Kaçanlar' : 'En Çok Vurulanlar';
+      obsCopyFeedback.textContent = `✅ ${modeName} OBS Widget Bağlantısı Kopyalandı!`;
+      obsCopyFeedback.style.color = '#00e676';
+      setTimeout(() => { obsCopyFeedback.textContent = ''; }, 3500);
+    } catch (error) {
+      obsCopyFeedback.textContent = error.message || 'HTTPS yayın bağlantısı kullanılamıyor.';
+      obsCopyFeedback.style.color = '#ffb703';
+    }
+  });
+}
+
+// =====================================================================
+// ROUND / TARGET SCORE SYSTEM & PODIUM
+// =====================================================================
+function updateRoundTargetHUD() {
+  if (targetCounterEl) {
+    targetCounterEl.textContent = `${score.toLocaleString('tr-TR')} / ${roundTargetScore.toLocaleString('tr-TR')}`;
+  }
+  if (targetProgressBar) {
+    const pct = Math.min(100, Math.round((score / roundTargetScore) * 100));
+    targetProgressBar.style.width = `${pct}%`;
+  }
+}
+
+function completeRound(isVictory) {
+  roundActive = false;
+  roundCompleted = true;
+
+  if (isVictory) {
+    playFanfare();
+    completeBadge.textContent = '🏆 YAYINCI KAZANDI!';
+    completeTitle.textContent = `HEDEF PUANA ULAŞILDI! (${score.toLocaleString('tr-TR')} Puan) 🎉`;
+  } else {
+    playJamSound();
+    completeBadge.textContent = '🏃 İZLEYİCİLER KAZANDI!';
+    completeTitle.textContent = `Süre Bitti! Ördekler Başarıyla Kaçtı!`;
+  }
+
+  cstatScore.textContent = score.toLocaleString('tr-TR');
+  cstatHits.textContent = totalHits;
+  const acc = totalShots > 0 ? Math.round((totalHits / totalShots) * 100) : 100;
+  cstatAcc.textContent = `%${acc}`;
+
+  let totalEscaped = 0;
+  ACTIVE_VIEWERS.forEach(v => { totalEscaped += v.escapeCount; });
+  cstatEscapes.textContent = totalEscaped;
+
+  renderPodium();
+  roundCompleteModal.classList.add('open');
+}
+
+function renderPodium() {
+  if (!podiumGrid) return;
+  podiumGrid.innerHTML = '';
+
+  const survivors = Array.from(ACTIVE_VIEWERS.values())
+    .filter(u => u.escapeCount > 0)
+    .sort((a, b) => b.escapeCount - a.escapeCount)
+    .slice(0, 3);
+
+  const defaults = [
+    { nickname: 'Kral_Kacan', avatar: '/api/avatar?user=Kral_Kacan', escapeCount: 0 },
+    { nickname: 'Hizli_Ordek', avatar: '/api/avatar?user=Hizli_Ordek', escapeCount: 0 },
+    { nickname: 'Kurnaz_Av', avatar: '/api/avatar?user=Kurnaz_Av', escapeCount: 0 }
+  ];
+
+  const top3 = [
+    survivors[0] || defaults[0],
+    survivors[1] || defaults[1],
+    survivors[2] || defaults[2]
+  ];
+
+  const podiumOrders = [
+    { rank: 2, u: top3[1], crown: '🥈', stand: '2' },
+    { rank: 1, u: top3[0], crown: '👑 1.', stand: '1' },
+    { rank: 3, u: top3[2], crown: '🥉', stand: '3' }
+  ];
+
+  podiumOrders.forEach(p => {
+    const el = document.createElement('div');
+    el.className = `podium-item podium-${p.rank}`;
+    el.innerHTML = `
+      <div class="podium-crown">${p.crown}</div>
+      <img class="podium-avatar" src="${p.u.avatar}" onerror="this.src='/api/avatar?user=${encodeURIComponent(p.u.nickname)}'" />
+      <div class="podium-name">@${p.u.nickname}</div>
+      <div class="podium-escapes">${p.u.escapeCount} Kaçış</div>
+      <div class="podium-stand">${p.stand}</div>
+    `;
+    podiumGrid.appendChild(el);
+  });
+}
+
+function restartRound() {
+  roundActive = true;
+  roundCompleted = false;
+  isRoundPaused = false;
+  if (btnRoundPause) {
+    btnRoundPause.innerHTML = '⏸️';
+    btnRoundPause.classList.remove('paused');
+  }
+  if (roundTimerEl) roundTimerEl.classList.remove('paused');
+  roundTimeLeft = roundDuration;
+  score = 0;
+  totalHits = 0;
+  totalShots = 0;
+  currentStreak = 0;
+  scoreDisplay.textContent = '0';
+  accuracyDisplay.textContent = 'İsabet: %100';
+  if (duckKillDisplay) duckKillDisplay.textContent = 'Vurulan: 0';
+  roundCompleteModal.classList.remove('open');
+  spawnInitialDucks();
+  updateRoundTargetHUD();
+}
+
+// =====================================================================
+// DYNAMIC GIFT CATALOG & GIFT PICKER (630+ TIKTOK HEDİYESİ)
+// =====================================================================
+async function loadFullCatalogFromServer() {
+  try {
+    const res = await fetch('/api/catalog');
+    const data = await res.json();
+    if (Array.isArray(data) && data.length) {
+      fullGiftCatalog = data;
+    }
+  } catch {}
+}
+loadFullCatalogFromServer();
+
+const GIFT_TURKISH_MAP = {
+  'perfume': 'Parfüm',
+  'rose': 'Gül',
+  'doughnut': 'Donut',
+  'eye on the ball': 'Nazar Boncuğu',
+  'nazar': 'Nazar Boncuğu',
+  'hat and mustache': 'Şapka & Bıyık',
+  'turkish coffee': 'Türk Kahvesi',
+  'money gun': 'Para Tabancası',
+  'lion': 'Aslan',
+  'heart me': 'Kalp',
+  'heart': 'Kalp',
+  'teddy bear': 'Ayıcık',
+  'cap': 'Şapka',
+  'sunglasses': 'Gözlük',
+  'crown': 'Taç',
+  'diamond': 'Elmas',
+  'ring': 'Yüzük',
+  'whale': 'Balina',
+  'yacht': 'Yat',
+  'airplane': 'Uçak',
+  'sports car': 'Spor Araba',
+  'rocket': 'Roket',
+  'fireworks': 'Havai Fişek',
+  'fire': 'Ateş',
+  'guitar': 'Gitar',
+  'microphone': 'Mikrofon',
+  'cake slice': 'Pasta Dilimi',
+  'cake': 'Pasta',
+  'ice cream cone': 'Dondurma',
+  'kiss': 'Öpücük',
+  'panda': 'Panda',
+  'cat': 'Kedi',
+  'dog': 'Köpek',
+  'puppy': 'Yavru Köpek',
+  'watermelon': 'Karpuz',
+  'football': 'Futbol',
+  'basketball': 'Basketbol',
+  'flower': 'Çiçek',
+  'butterfly': 'Kelebek',
+  'balloon': 'Balon',
+  'star': 'Yıldız',
+  'magic': 'Sihir',
+  'dragon': 'Ejderha',
+  'unicorn': 'Tekboynuz',
+  'phoenix': 'Anka Kuşu',
+  'mirror': 'Ayna',
+  'castle': 'Kale / Şato',
+  'swan': 'Kuğu',
+  'planet': 'Gezegen',
+  'galaxy': 'Galaksi',
+  'universe': 'Evren',
+  'gem': 'Mücevher',
+  'pearl': 'İnci',
+  'treasure': 'Hazine',
+  'trophy': 'Kupa',
+  'donut': 'Donut',
+  'coffee': 'Kahve'
+};
+
+function normalizeTr(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/İ/g, 'i')
+    .replace(/I/g, 'ı')
+    .toLowerCase()
+    .replace(/i̇/g, 'i')
+    .replace(/ı/g, 'i')
+    .replace(/ğ/g, 'g')
+    .replace(/ü/g, 'u')
+    .replace(/ş/g, 's')
+    .replace(/ö/g, 'o')
+    .replace(/ç/g, 'c')
+    .replace(/[^a-z0-9]/g, '');
+}
+
+function getGiftTurkishName(enName, fileName = '') {
+  if (!enName) return '';
+  const key = enName.toLowerCase().trim();
+  if (GIFT_TURKISH_MAP[key]) return GIFT_TURKISH_MAP[key];
+
+  const fileKey = (fileName || '').replace(/\.png$/i, '').replace(/_/g, ' ').toLowerCase().trim();
+  if (GIFT_TURKISH_MAP[fileKey]) return GIFT_TURKISH_MAP[fileKey];
+
+  for (const [k, v] of Object.entries(GIFT_TURKISH_MAP)) {
+    if (key.includes(k) || fileKey.includes(k)) return v;
+  }
+  return enName;
+}
+
+function getActionLabel(action, jamDuration = 3, mudDuration = 10, rapidDuration = 10) {
+  switch (action) {
+    case 'speed_1.2x': return '⚡ 1.2x Hızlandır';
+    case 'speed_1.5x': return '⚡ 1.5x Hızlandır';
+    case 'speed_2x': return '⚡ 2.0x Hızlandır';
+    case 'speed_3x': return '🚀 3.0x Hızlandır';
+    case 'speed_5x': return '🏎️ 5.0x Roket Hız';
+    case 'spawn_gold': return '⭐ Altın Ördek';
+    case 'spawn_big': return '🐻 Büyük Ördek (2 Can)';
+    case 'spawn_boss': return '👑 Dev Boss (3 Can)';
+    case 'jam_gun': return `🔒 Kilit (${jamDuration} sn)`;
+    case 'mud_splash': return `☕ Çamur (${mudDuration} sn)`;
+    case 'rapid_fire': return `⚡ Taramalı (${rapidDuration} sn)`;
+    default: return '⚡ Hızlandır';
+  }
+}
+
+function ensureGameStarted() {
+  if (gameState !== 'playing') {
+    initAudio();
+    gameState = 'playing';
+    roundActive = true;
+    roundCompleted = false;
+    isRoundPaused = false;
+    if (btnRoundPause) {
+      btnRoundPause.innerHTML = '⏸️';
+      btnRoundPause.classList.remove('paused');
+    }
+    if (roundTimerEl) roundTimerEl.classList.remove('paused');
+    if (lobbyModal) lobbyModal.classList.remove('open');
+    spawnInitialDucks();
+    updateRoundTargetHUD();
+  }
+}
+
+function renderCatalogDrawer() {
+  const container = document.getElementById('catalog-list');
+  if (!container) return;
+  container.innerHTML = '';
+
+  CUSTOM_GIFT_SLOTS.forEach((g, idx) => {
+    const card = document.createElement('div');
+    card.className = 'catalog-card';
+
+    let durationHTML = '';
+    if (g.action === 'jam_gun') {
+      const jVal = g.jamDuration || 3;
+      durationHTML = `
+        <select class="gift-duration-select" data-slot="${idx}" data-field="jamDuration" title="Tüfek Kilit Süresi">
+          <option value="2" ${jVal === 2 ? 'selected' : ''}>2 sn</option>
+          <option value="3" ${jVal === 3 ? 'selected' : ''}>3 sn</option>
+          <option value="5" ${jVal === 5 ? 'selected' : ''}>5 sn</option>
+          <option value="8" ${jVal === 8 ? 'selected' : ''}>8 sn</option>
+          <option value="10" ${jVal === 10 ? 'selected' : ''}>10 sn</option>
+        </select>
+      `;
+    } else if (g.action === 'mud_splash') {
+      const mVal = g.mudDuration || 10;
+      durationHTML = `
+        <select class="gift-duration-select" data-slot="${idx}" data-field="mudDuration" title="Çamur Süresi">
+          <option value="3" ${mVal === 3 ? 'selected' : ''}>3 sn</option>
+          <option value="5" ${mVal === 5 ? 'selected' : ''}>5 sn</option>
+          <option value="8" ${mVal === 8 ? 'selected' : ''}>8 sn</option>
+          <option value="10" ${mVal === 10 ? 'selected' : ''}>10 sn</option>
+          <option value="15" ${mVal === 15 ? 'selected' : ''}>15 sn</option>
+          <option value="20" ${mVal === 20 ? 'selected' : ''}>20 sn</option>
+        </select>
+      `;
+    } else if (g.action === 'rapid_fire') {
+      const rVal = g.rapidDuration || 10;
+      durationHTML = `
+        <select class="gift-duration-select" data-slot="${idx}" data-field="rapidDuration" title="Taramalı Silah Süresi">
+          <option value="5" ${rVal === 5 ? 'selected' : ''}>5 sn</option>
+          <option value="10" ${rVal === 10 ? 'selected' : ''}>10 sn</option>
+          <option value="15" ${rVal === 15 ? 'selected' : ''}>15 sn</option>
+          <option value="20" ${rVal === 20 ? 'selected' : ''}>20 sn</option>
+          <option value="30" ${rVal === 30 ? 'selected' : ''}>30 sn</option>
+        </select>
+      `;
+    }
+
+    card.innerHTML = `
+      <div class="catalog-card-left">
+        <img class="catalog-thumb" src="/catalog-assets/gift-images/${g.file}" onerror="this.src='/catalog-assets/gift-images/Rose.png'" />
+        <div>
+          <div class="catalog-name">${g.trName || g.name}</div>
+          <span class="catalog-coin-badge">🪙 ${g.coins || 1} Coin</span>
+          <button class="btn-change-gift" data-slot="${idx}">🔄 Hediyeyi Değiştir</button>
+        </div>
+      </div>
+      <div class="catalog-card-right">
+        <select class="catalog-action-select" data-slot="${idx}">
+          <option value="speed_1.2x" ${g.action === 'speed_1.2x' ? 'selected' : ''}>⚡ Hızlandır (1.2x) [250 Puan]</option>
+          <option value="speed_1.5x" ${g.action === 'speed_1.5x' ? 'selected' : ''}>⚡ Hızlandır (1.5x) [300 Puan]</option>
+          <option value="speed_2x" ${g.action === 'speed_2x' ? 'selected' : ''}>⚡ Hızlandır (2x) [350 Puan]</option>
+          <option value="speed_3x" ${g.action === 'speed_3x' ? 'selected' : ''}>🚀 Hızlandır (3x) [400 Puan]</option>
+          <option value="speed_5x" ${g.action === 'speed_5x' ? 'selected' : ''}>🏎️ Roket Hız (5x) [500 Puan]</option>
+          <option value="spawn_gold" ${g.action === 'spawn_gold' ? 'selected' : ''}>⭐ Altın Ördek Gönder [300 Puan]</option>
+          <option value="spawn_big" ${g.action === 'spawn_big' ? 'selected' : ''}>🐻 Büyük Ördek (2 Can) [500 Puan]</option>
+          <option value="spawn_boss" ${g.action === 'spawn_boss' ? 'selected' : ''}>👑 Dev Boss Ördek (3 Can) [1000 Puan]</option>
+          <option value="jam_gun" ${g.action === 'jam_gun' ? 'selected' : ''}>🔒 Tüfeği Kilitle (Sabotaj)</option>
+          <option value="mud_splash" ${g.action === 'mud_splash' ? 'selected' : ''}>☕ Ekrana Çamur At!</option>
+          <option value="rapid_fire" ${g.action === 'rapid_fire' ? 'selected' : ''}>⚡ Taramalı Silah</option>
+        </select>
+        ${durationHTML}
+      </div>
+    `;
+    container.appendChild(card);
+  });
+
+  // Action Change Listener
+  container.querySelectorAll('.catalog-action-select').forEach(sel => {
+    sel.addEventListener('change', (e) => {
+      const slotIdx = Number(e.target.getAttribute('data-slot'));
+      if (CUSTOM_GIFT_SLOTS[slotIdx]) {
+        CUSTOM_GIFT_SLOTS[slotIdx].action = e.target.value;
+        saveSettings();
+        renderCatalogDrawer();
+        renderTestPanelButtons();
+      }
+    });
+  });
+
+  // Duration Change Listener (İki Yönlü Eşzamanlama)
+  container.querySelectorAll('.gift-duration-select').forEach(sel => {
+    sel.addEventListener('change', (e) => {
+      const slotIdx = Number(e.target.getAttribute('data-slot'));
+      const field = e.target.getAttribute('data-field') || 'jamDuration';
+      const val = Number(e.target.value);
+      if (CUSTOM_GIFT_SLOTS[slotIdx]) {
+        CUSTOM_GIFT_SLOTS[slotIdx][field] = val;
+        if (field === 'jamDuration') {
+          jamDurationSetting = val;
+          if (selectJamDuration) selectJamDuration.value = String(val);
+          CUSTOM_GIFT_SLOTS.forEach(s => {
+            if (s.action === 'jam_gun') s.jamDuration = val;
+          });
+        } else if (field === 'rapidDuration') {
+          rapidDurationSetting = val;
+          if (selectRapidDuration) selectRapidDuration.value = String(val);
+          CUSTOM_GIFT_SLOTS.forEach(s => {
+            if (s.action === 'rapid_fire') s.rapidDuration = val;
+          });
+        }
+        saveSettings();
+        renderCatalogDrawer();
+        renderTestPanelButtons();
+      }
+    });
+  });
+
+  // Change Gift Button -> Open Picker Modal
+  container.querySelectorAll('.btn-change-gift').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      activeSlotIndexForPicker = Number(e.target.getAttribute('data-slot'));
+      openGiftPicker();
+    });
+  });
+}
+
+function openGiftPicker() {
+  if (!giftPickerModal) return;
+  giftPickerModal.classList.add('open');
+  renderGiftPickerGrid(giftPickerSearch ? giftPickerSearch.value : '');
+}
+
+function closeGiftPicker() {
+  if (!giftPickerModal) return;
+  giftPickerModal.classList.remove('open');
+}
+
+if (btnPickerClose) btnPickerClose.addEventListener('click', closeGiftPicker);
+
+if (giftPickerSearch) {
+  giftPickerSearch.addEventListener('input', (e) => {
+    renderGiftPickerGrid(e.target.value);
+  });
+}
+
+if (giftPickerSort) {
+  giftPickerSort.addEventListener('change', () => {
+    renderGiftPickerGrid(giftPickerSearch ? giftPickerSearch.value : '');
+  });
+}
+
+if (giftPickerChips) {
+  giftPickerChips.querySelectorAll('.gift-chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      giftPickerChips.querySelectorAll('.gift-chip').forEach(c => c.classList.remove('active'));
+      chip.classList.add('active');
+      selectedPickerChipRange = chip.getAttribute('data-range') || 'all';
+      renderGiftPickerGrid(giftPickerSearch ? giftPickerSearch.value : '');
+    });
+  });
+}
+
+function renderGiftPickerGrid(filter = '') {
+  if (!giftPickerGrid) return;
+  giftPickerGrid.innerHTML = '';
+
+  const q = normalizeTr(filter);
+  const sortMode = giftPickerSort ? giftPickerSort.value : 'coins_asc';
+
+  const list = fullGiftCatalog.length ? fullGiftCatalog : [
+    { name: 'Rose', trName: 'Gül', file: 'Rose.png', coins: 1 },
+    { name: 'Blue Bead', trName: 'Nazar Boncuğu', file: 'Blue_Bead.png', coins: 5 },
+    { name: 'Roses', trName: 'Kırmızı Gül', file: 'Roses.png', coins: 500 },
+    { name: 'Bouquet', trName: 'Çiçek Buketi', file: 'Bouquet.png', coins: 20 },
+    { name: 'Perfume', trName: 'Parfüm', file: 'Perfume.png', coins: 20 },
+    { name: 'Doughnut', trName: 'Donut', file: 'Doughnut.png', coins: 30 },
+    { name: 'Tea', trName: 'Çay', file: 'Tea.png', coins: 50 },
+    { name: 'Heart Me', trName: 'Kalp', file: 'Heart_Me.png', coins: 1 },
+    { name: 'Hat and Mustache', trName: 'Şapka & Bıyık', file: 'Hat_and_Mustache.png', coins: 99 }
+  ];
+
+  const enriched = list.map(g => {
+    const tr = g.trName || getGiftTurkishName(g.name, g.file);
+    const nName = normalizeTr(g.name);
+    const nTr = normalizeTr(tr);
+    const nFile = normalizeTr(g.file);
+    const coins = Number(g.coins) || 1;
+    return {
+      name: g.name,
+      trName: tr,
+      file: g.file,
+      coins,
+      nName,
+      nTr,
+      nFile
+    };
+  });
+
+  let filtered = enriched;
+
+  // Filter by Coin Range Chip
+  if (selectedPickerChipRange && selectedPickerChipRange !== 'all') {
+    if (selectedPickerChipRange === '1-10') {
+      filtered = filtered.filter(g => g.coins >= 1 && g.coins <= 10);
+    } else if (selectedPickerChipRange === '11-99') {
+      filtered = filtered.filter(g => g.coins >= 11 && g.coins <= 99);
+    } else if (selectedPickerChipRange === '100-999') {
+      filtered = filtered.filter(g => g.coins >= 100 && g.coins <= 999);
+    } else if (selectedPickerChipRange === '1000+') {
+      filtered = filtered.filter(g => g.coins >= 1000);
+    }
+  }
+
+  // Filter by Search Query
+  if (q) {
+    const isParfQuery = q.startsWith('par') || q.includes('parfum');
+    const isDonutQuery = q.startsWith('don') || q.includes('donut');
+    const isNazarQuery = q.includes('nazar') || q.includes('boncuk');
+    const isGulQuery = q.includes('gul') || q.includes('rose');
+    const isKahveQuery = q.includes('kahve') || q.includes('coffee');
+    const isSapkaQuery = q.includes('sapka') || q.includes('biyik') || q.includes('hat');
+    const isParaQuery = q.includes('para') || q.includes('tabanca') || q.includes('money');
+
+    filtered = filtered.filter(g => {
+      if (isParfQuery && (g.nName.includes('perfume') || g.nFile.includes('perfume') || g.nTr.includes('parfum'))) return true;
+      if (isDonutQuery && (g.nName.includes('doughnut') || g.nFile.includes('doughnut') || g.nTr.includes('donut'))) return true;
+      if (isNazarQuery && (g.nName.includes('eye') || g.nFile.includes('eye') || g.nName.includes('nazar') || g.nTr.includes('nazar') || g.nName.includes('bead'))) return true;
+      if (isGulQuery && (g.nName.includes('rose') || g.nFile.includes('rose') || g.nTr.includes('gul'))) return true;
+      if (isKahveQuery && (g.nName.includes('coffee') || g.nFile.includes('coffee') || g.nTr.includes('kahve'))) return true;
+      if (isSapkaQuery && (g.nName.includes('hat') || g.nFile.includes('hat') || g.nTr.includes('sapka'))) return true;
+      if (isParaQuery && (g.nName.includes('money') || g.nFile.includes('money') || g.nTr.includes('para'))) return true;
+
+      return g.nTr.includes(q) || g.nName.includes(q) || g.nFile.includes(q);
+    });
+  }
+
+  // Sorting
+  filtered.sort((a, b) => {
+    if (q) {
+      const aStarts = a.nTr.startsWith(q) || a.nName.startsWith(q);
+      const bStarts = b.nTr.startsWith(q) || b.nName.startsWith(q);
+      if (aStarts && !bStarts) return -1;
+      if (!aStarts && bStarts) return 1;
+    }
+
+    if (sortMode === 'coins_asc') {
+      return a.coins - b.coins;
+    } else if (sortMode === 'coins_desc') {
+      return b.coins - a.coins;
+    } else if (sortMode === 'name_asc') {
+      return (a.trName || a.name).localeCompare(b.trName || b.name, 'tr');
+    }
+    return 0;
+  });
+
+  const itemsToRender = filtered.slice(0, 300);
+
+  if (itemsToRender.length === 0) {
+    giftPickerGrid.innerHTML = `<div style="grid-column: 1 / -1; text-align:center; color:#a0aec0; padding:30px;">"${filter}" kriterine uygun hediye bulunamadı.</div>`;
+    return;
+  }
+
+  itemsToRender.forEach(g => {
+    const item = document.createElement('div');
+    item.className = 'gift-picker-item';
+    item.innerHTML = `
+      <img class="gift-picker-img" src="/catalog-assets/gift-images/${g.file}" onerror="this.src='/catalog-assets/gift-images/Rose.png'" />
+      <span class="gift-picker-name-tr">${g.trName || g.name}</span>
+      <span class="gift-picker-coin-badge">🪙 ${g.coins}</span>
+    `;
+
+    item.addEventListener('click', () => {
+      if (CUSTOM_GIFT_SLOTS[activeSlotIndexForPicker]) {
+        CUSTOM_GIFT_SLOTS[activeSlotIndexForPicker].name = g.name;
+        CUSTOM_GIFT_SLOTS[activeSlotIndexForPicker].trName = g.trName || g.name;
+        CUSTOM_GIFT_SLOTS[activeSlotIndexForPicker].file = g.file;
+        CUSTOM_GIFT_SLOTS[activeSlotIndexForPicker].coins = g.coins;
+        saveSettings();
+        renderCatalogDrawer();
+        renderTestPanelButtons();
+        closeGiftPicker();
+      }
+    });
+
+    giftPickerGrid.appendChild(item);
+  });
+}
+
+// Dynamically Render Test Panel Buttons (Hediye Görseli + Adı + Tetiklediği Görev Rozeti)
+function renderTestPanelButtons() {
+  if (!testGiftsGrid) return;
+  testGiftsGrid.innerHTML = '';
+
+  CUSTOM_GIFT_SLOTS.forEach((g) => {
+    const actionLabel = getActionLabel(g.action, g.jamDuration || 3, g.mudDuration || 10, g.rapidDuration || 10);
+    const btn = document.createElement('button');
+    btn.className = 'test-btn test-gift-btn';
+    btn.innerHTML = `
+      <div class="test-gift-btn-left">
+        <img src="/catalog-assets/gift-images/${g.file}" class="test-btn-img" onerror="this.src='/catalog-assets/gift-images/Rose.png'" />
+        <span class="test-btn-name">${g.trName || g.name}</span>
+      </div>
+      <span class="test-btn-badge">${actionLabel}</span>
+    `;
+    btn.addEventListener('click', () => {
+      ensureGameStarted();
+      handleViewerInteraction({ nickname: `Test_${g.name}` }, 'gift', { giftName: g.name });
+    });
+    testGiftsGrid.appendChild(btn);
+  });
+}
+
+renderCatalogDrawer();
+renderTestPanelButtons();
+
+// Viewer Interaction Dispatcher
+function handleViewerInteraction(player, type = 'chat', data = {}) {
+  const nick = player.nickname || player.uniqueId || 'İzleyici';
+  const avatar = player.avatar || `/api/avatar?user=${encodeURIComponent(nick)}`;
+
+  const key = nick.toLowerCase();
+  if (!ACTIVE_VIEWERS.has(key)) {
+    ACTIVE_VIEWERS.set(key, { nickname: nick, avatar, deathCount: 0, escapeCount: 0 });
+  }
+
+  // Find if duck is already on track
+  const existingDuck = DUCKS.find(d => !d.hit && d.nickname.toLowerCase() === key);
+
+  // Admission Gate (Kimler Oyuna Dahil Olsun?)
+  if (!existingDuck) {
+    if (viewerAdmissionMode === 'likes_only') {
+      // Sadece en az 1 beğeni atanlar, hediyeler veya takipçiler piste dahil edilir
+      if (type !== 'like' && type !== 'gift' && type !== 'follow') {
+        return;
+      }
+    } else if (viewerAdmissionMode === 'gifts_only') {
+      // Sadece hediye gönderenler piste dahil edilir
+      if (type !== 'gift') {
+        return;
+      }
+    } else if (viewerAdmissionMode === 'chat_only') {
+      // Sadece sohbet edenler (yorum yapanlar & hediyeler & takipçiler) piste dahil edilir
+      if (type !== 'chat' && type !== 'gift' && type !== 'follow') {
+        return;
+      }
+    }
+  }
+
+  let chosenAction = null;
+  let matchedSlot = null;
+  let customJamSec = jamDurationSetting;
+  let customMudSec = 10;
+  let customRapidSec = rapidDurationSetting;
+
+  if (type === 'gift') {
+    const normalizeGiftName = value => String(value || '')
+      .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+      .toLocaleLowerCase('tr-TR').replace(/[^a-z0-9]+/g, ' ').trim();
+    const giftNameClean = normalizeGiftName(data.giftName);
+    matchedSlot = CUSTOM_GIFT_SLOTS.find(g =>
+      [g.name,g.trName,String(g.file||'').replace(/\.png$/i,'')]
+        .some(candidate => normalizeGiftName(candidate) === giftNameClean)
+    );
+    if (matchedSlot) {
+      chosenAction = matchedSlot.action;
+      if (matchedSlot.jamDuration) customJamSec = matchedSlot.jamDuration;
+      if (matchedSlot.mudDuration) customMudSec = matchedSlot.mudDuration;
+      if (matchedSlot.rapidDuration) customRapidSec = matchedSlot.rapidDuration;
+    } else {
+      chosenAction = 'speed_2x';
+    }
+  } else if (type === 'like') {
+    chosenAction = likeActionSetting;
+  } else if (type === 'follow') {
+    chosenAction = followActionSetting;
+  }
+
+  // Execute Special Actions
+  if (chosenAction === 'mud_splash') {
+    triggerMudSplash(customMudSec, player, matchedSlot);
+    showToast(player, `Ekrana Çamur Attı! ☕💦 (${customMudSec} sn)`);
+    return;
+  } else if (chosenAction === 'jam_gun') {
+    triggerGunJam(customJamSec, nick);
+    showToast(player, `Tüfeğinizi Kilitledi! 🔒 (${customJamSec} sn)`);
+    return;
+  } else if (chosenAction === 'rapid_fire') {
+    triggerRapidFire(customRapidSec);
+    showToast(player, `Taramalı Silah Kazandırdı! ⚡ (${customRapidSec} sn)`);
+    return;
+  }
+
+  if (existingDuck) {
+    let boostVal = 1.5;
+    if (chosenAction === 'speed_1.2x') boostVal = 1.2;
+    else if (chosenAction === 'speed_1.5x') boostVal = 1.5;
+    else if (chosenAction === 'speed_2x') boostVal = 2.0;
+    else if (chosenAction === 'speed_3x') boostVal = 3.0;
+    else if (chosenAction === 'speed_5x') boostVal = 5.0;
+
+    existingDuck.speedMultiplier = Math.min(6.5, existingDuck.speedMultiplier + boostVal);
+    if (existingDuck.speedRingMat) existingDuck.speedRingMat.opacity = 0.9;
+    showToast(player, `Kendini Hızlandırdı! ⚡ x${existingDuck.speedMultiplier.toFixed(1)}`);
+  } else {
+    // Spawn fresh duck
+    const counts = [0, 1, 2].map(sIdx => DUCKS.filter(d => d.shelfIndex === sIdx && !d.hit).length);
+    const minShelf = counts.indexOf(Math.min(...counts));
+
+    let dType = 'normal';
+    if (chosenAction === 'spawn_boss') dType = 'boss';
+    else if (chosenAction === 'spawn_big') dType = 'big';
+    else if (chosenAction === 'spawn_gold') dType = 'golden';
+
+    const newDuck = spawnDuck(minShelf, { nickname: nick, avatar }, dType);
+    if (chosenAction && chosenAction.startsWith('speed_')) {
+      const mult = parseFloat(chosenAction.replace('speed_', '').replace('x', '')) || 2.0;
+      newDuck.speedMultiplier = mult;
+      if (newDuck.speedRingMat) newDuck.speedRingMat.opacity = 0.9;
+    }
+    showToast(player, `Piste Girdi! (${dType === 'boss' ? '👑 Dev Boss' : dType === 'big' ? '🐻 Büyük Ördek' : '🦆 Hızlı Ördek'})`);
+  }
+}
+
+function showToast(player, message) {
+  if (!toastContainer) return;
+  // Sağ tarafta en fazla 4 bildirim gösterilir, taşma ve ekranı kaplama engellenir
+  while (toastContainer.children.length >= 4) {
+    toastContainer.removeChild(toastContainer.firstElementChild);
+  }
+  const toast = document.createElement('div');
+  toast.className = 'gift-toast';
+  toast.innerHTML = `
+    <img class="toast-avatar" src="${player.avatar || '/api/avatar?user=' + encodeURIComponent(player.nickname)}" onerror="this.src='/api/avatar?user=${encodeURIComponent(player.nickname)}'" />
+    <div class="toast-info">
+      <div class="toast-user">@${player.nickname}</div>
+      <div class="toast-msg">${message}</div>
+    </div>
+  `;
+  toastContainer.appendChild(toast);
+  setTimeout(() => toast.remove(), 3200);
+}
+
+// =====================================================================
+// WEBSOCKET & TIKTOK INTEGRATION
+// =====================================================================
+let ws = null;
+
+function connectWS() {
+  const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+  ws = new WebSocket(`${protocol}//${window.location.host}`);
+
+  ws.onopen = () => {
+    statusDot.className = 'status-dot test';
+  };
+
+  ws.onmessage = (event) => {
+    let msg;
+    try { msg = JSON.parse(event.data); } catch { return; }
+
+    if (msg.type === 'status') {
+      if (msg.state === 'connected') {
+        connectedStreamer = msg.activeUsername || '';
+        statusDot.className = 'status-dot connected';
+        btnQuickConnect.classList.add('connected');
+        btnQuickConnect.textContent = '🟢 Yayında';
+        btnTiktokConnect.classList.add('disconnect-btn');
+        btnTiktokConnect.textContent = 'Bağlantıyı Kes';
+
+        if (lobbyStatusText) {
+          lobbyStatusText.className = 'lobby-status connected';
+          lobbyStatusText.textContent = `🟢 @${connectedStreamer || 'Yayıncı'} Canlı Yayına Başarıyla Bağlandı!`;
+        }
+        if (btnLobbyConnect) {
+          btnLobbyConnect.classList.add('connected');
+          btnLobbyConnect.textContent = '🟢 Bağlandı';
+        }
+
+      } else if (msg.state === 'connecting') {
+        statusDot.className = 'status-dot test';
+        btnQuickConnect.textContent = 'Bağlanıyor...';
+        if (lobbyStatusText) lobbyStatusText.textContent = 'Canlı yayına bağlanılıyor...';
+      } else {
+        connectedStreamer = '';
+        statusDot.className = 'status-dot';
+        btnQuickConnect.classList.remove('connected');
+        btnQuickConnect.textContent = '🔴 Bağlan';
+        btnTiktokConnect.classList.remove('disconnect-btn');
+        btnTiktokConnect.textContent = 'Bağlan';
+        if (lobbyStatusText) {
+          lobbyStatusText.className = 'lobby-status';
+          lobbyStatusText.textContent = 'Yayıncı kullanıcı adınızı girip bağlanın veya test modunda doğrudan başlayın.';
+        }
+        if (btnLobbyConnect) {
+          btnLobbyConnect.classList.remove('connected');
+          btnLobbyConnect.textContent = 'Yayına Bağlan';
+        }
+      }
+    } else if (msg.type === 'duck-event') {
+      handleViewerInteraction(msg.player, msg.event, msg);
+    }
+  };
+
+  ws.onclose = () => {
+    statusDot.className = 'status-dot';
+    setTimeout(connectWS, 2000);
+  };
+}
+
+connectWS();
+
+function toggleConnect(username) {
+  if (btnQuickConnect.classList.contains('connected')) {
+    if (ws && ws.readyState === 1) ws.send(JSON.stringify({ type: 'disconnect' }));
+  } else {
+    const u = username.replace(/^@/, '').trim();
+    if (u && ws && ws.readyState === 1) {
+      ws.send(JSON.stringify({ type: 'connect', username: u }));
+    }
+  }
+}
+
+btnQuickConnect.addEventListener('click', () => {
+  toggleConnect(quickTiktokInput.value || tiktokUserInput.value || lobbyUsernameInput.value);
+});
+
+btnTiktokConnect.addEventListener('click', () => {
+  toggleConnect(tiktokUserInput.value || quickTiktokInput.value || lobbyUsernameInput.value);
+});
+
+if (btnLobbyConnect) {
+  btnLobbyConnect.addEventListener('click', () => {
+    toggleConnect(lobbyUsernameInput.value || quickTiktokInput.value);
+  });
+}
+
+// =====================================================================
+// LOBBY & OYUNA BAŞLA
+// =====================================================================
+if (btnLobbyStart) {
+  btnLobbyStart.addEventListener('click', () => {
+    initAudio();
+    gameState = 'playing';
+    roundActive = true;
+    roundCompleted = false;
+    isRoundPaused = false;
+    if (btnRoundPause) {
+      btnRoundPause.innerHTML = '⏸️';
+      btnRoundPause.classList.remove('paused');
+    }
+    if (roundTimerEl) roundTimerEl.classList.remove('paused');
+    lobbyModal.classList.remove('open');
+    spawnInitialDucks();
+    updateRoundTargetHUD();
+  });
+}
+
+const btnDownloadGuide = document.getElementById('btn-download-guide');
+if (btnDownloadGuide) {
+  btnDownloadGuide.addEventListener('click', (e) => {
+    e.stopPropagation();
+  });
+}
+
+// =====================================================================
+// CONTROLS & EVENT LISTENERS
+// =====================================================================
+window.addEventListener('mousemove', (e) => {
+  crosshairEl.style.left = `${e.clientX}px`;
+  crosshairEl.style.top = `${e.clientY}px`;
+
+  mouseNDC.x = (e.clientX / window.innerWidth) * 2 - 1;
+  mouseNDC.y = -(e.clientY / window.innerHeight) * 2 + 1;
+
+  raycaster.setFromCamera(mouseNDC, camera);
+  const planeZ = new THREE.Plane(new THREE.Vector3(0, 0, 1), -0.1);
+  raycaster.ray.intersectPlane(planeZ, mouseWorldTarget);
+
+  isAimingDuck = false;
+  for (const d of DUCKS) {
+    if (!d.hit && d.group.position.distanceTo(mouseWorldTarget) < 1.1) {
+      isAimingDuck = true;
+      break;
+    }
+  }
+
+  if (isAimingDuck) crosshairEl.classList.add('aiming-duck');
+  else crosshairEl.classList.remove('aiming-duck');
+});
+
+window.addEventListener('mousedown', (e) => {
+  if (e.target.closest('.hud-interactive') || e.target.closest('.score-plaque') || e.target.closest('#settings-drawer') || e.target.closest('#leaderboard-modal') || e.target.closest('#round-complete-modal') || e.target.closest('#lobby-modal') || e.target.closest('#gift-picker-modal')) {
+    return;
+  }
+  isMouseDown = true;
+  shoot();
+
+  if (isRapidFire && !rapidFireInterval) {
+    rapidFireInterval = setInterval(() => {
+      if (isMouseDown && isRapidFire) shoot();
+    }, 85);
+  }
+});
+
+window.addEventListener('mouseup', () => {
+  isMouseDown = false;
+  if (rapidFireInterval) {
+    clearInterval(rapidFireInterval);
+    rapidFireInterval = null;
+  }
+});
+
+window.addEventListener('keydown', (e) => {
+  if (e.key === 'r' || e.key === 'R') {
+    startReload();
+  } else if (e.key === 'p' || e.key === 'P') {
+    togglePauseRound();
+  } else if (e.key === 'Escape') {
+    closeSettingsModal();
+    leaderboardModal.classList.remove('open');
+    roundCompleteModal.classList.remove('open');
+    closeGiftPicker();
+  }
+});
+
+btnReload.addEventListener('click', (e) => {
+  e.stopPropagation();
+  startReload();
+});
+
+// Drawer Tabs
+document.querySelectorAll('.drawer-tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.drawer-tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.drawer-tab-content').forEach(c => c.classList.remove('active'));
+    btn.classList.add('active');
+    const tabId = btn.getAttribute('data-tab');
+    document.getElementById(tabId).classList.add('active');
+  });
+});
+
+function openSettingsModal() {
+  settingsDrawer.classList.add('open');
+  if (settingsBackdrop) settingsBackdrop.classList.add('open');
+}
+
+function closeSettingsModal() {
+  settingsDrawer.classList.remove('open');
+  if (settingsBackdrop) settingsBackdrop.classList.remove('open');
+}
+
+btnSettings.addEventListener('click', () => {
+  if (settingsDrawer.classList.contains('open')) closeSettingsModal();
+  else openSettingsModal();
+});
+btnDrawerClose.addEventListener('click', closeSettingsModal);
+if (settingsBackdrop) settingsBackdrop.addEventListener('click', closeSettingsModal);
+
+// Pause / Resume Round Timer (Turu Duraklat / Devam Ettir)
+function togglePauseRound() {
+  if (gameState !== 'playing' || !roundActive) {
+    ensureGameStarted();
+  }
+  isRoundPaused = !isRoundPaused;
+  if (btnRoundPause) {
+    btnRoundPause.innerHTML = isRoundPaused ? '▶️' : '⏸️';
+    btnRoundPause.title = isRoundPaused ? 'Süreyi Devam Ettir (P)' : 'Süreyi Duraklat (P)';
+    if (isRoundPaused) {
+      btnRoundPause.classList.add('paused');
+    } else {
+      btnRoundPause.classList.remove('paused');
+    }
+  }
+  if (roundTimerEl) {
+    if (isRoundPaused) roundTimerEl.classList.add('paused');
+    else roundTimerEl.classList.remove('paused');
+  }
+  showToast({ nickname: 'Oyun', avatar: '' }, isRoundPaused ? '⏸️ Süre duraklatıldı!' : '▶️ Süre devam ediyor!');
+}
+
+if (btnRoundPause) {
+  btnRoundPause.addEventListener('click', (e) => {
+    e.stopPropagation();
+    e.preventDefault();
+    togglePauseRound();
+  });
+  btnRoundPause.addEventListener('mousedown', (e) => {
+    e.stopPropagation();
+  });
+}
+
+btnLeaderboard.addEventListener('click', () => {
+  renderLeaderboardModal();
+  leaderboardModal.classList.toggle('open');
+});
+btnLeaderboardClose.addEventListener('click', () => leaderboardModal.classList.remove('open'));
+
+btnTabSurvivors.addEventListener('click', () => {
+  btnTabSurvivors.classList.add('active');
+  btnTabVictims.classList.remove('active');
+  currentLeadTab = 'survivors';
+  renderLeaderboardModal();
+});
+
+btnTabVictims.addEventListener('click', () => {
+  btnTabVictims.classList.add('active');
+  btnTabSurvivors.classList.remove('active');
+  currentLeadTab = 'victims';
+  renderLeaderboardModal();
+});
+
+btnCompleteRestart.addEventListener('click', restartRound);
+btnRestartRound.addEventListener('click', restartRound);
+
+selectRoundTime.addEventListener('change', (e) => {
+  roundDuration = Number(e.target.value);
+  restartRound();
+  saveSettings();
+});
+
+if (selectRoundTargetScore) {
+  selectRoundTargetScore.addEventListener('change', (e) => {
+    roundTargetScore = Number(e.target.value);
+    updateRoundTargetHUD();
+    saveSettings();
+  });
+}
+
+if (selectJamDuration) {
+  selectJamDuration.addEventListener('change', (e) => {
+    jamDurationSetting = Number(e.target.value);
+    CUSTOM_GIFT_SLOTS.forEach(s => {
+      if (s.action === 'jam_gun') s.jamDuration = jamDurationSetting;
+    });
+    saveSettings();
+    renderCatalogDrawer();
+    renderTestPanelButtons();
+  });
+}
+
+if (selectRapidDuration) {
+  selectRapidDuration.addEventListener('change', (e) => {
+    rapidDurationSetting = Number(e.target.value);
+    CUSTOM_GIFT_SLOTS.forEach(s => {
+      if (s.action === 'rapid_fire') s.rapidDuration = rapidDurationSetting;
+    });
+    saveSettings();
+    renderCatalogDrawer();
+    renderTestPanelButtons();
+  });
+}
+
+if (selectLikeAction) {
+  selectLikeAction.addEventListener('change', (e) => {
+    likeActionSetting = e.target.value;
+    saveSettings();
+  });
+}
+
+if (selectFollowAction) {
+  selectFollowAction.addEventListener('change', (e) => {
+    followActionSetting = e.target.value;
+    saveSettings();
+  });
+}
+
+sliderSpeed.addEventListener('input', (e) => {
+  gameSpeedMultiplier = parseFloat(e.target.value);
+  saveSettings();
+});
+
+if (sliderMusic) {
+  sliderMusic.addEventListener('input', (e) => {
+    musicVolume = parseFloat(e.target.value);
+    saveSettings();
+    if (musicVolume > 0 && !musicInterval && soundEnabled) startCarnivalMusic();
+  });
+}
+
+if (sliderSfx) {
+  sliderSfx.addEventListener('input', (e) => {
+    sfxVolume = parseFloat(e.target.value);
+    saveSettings();
+  });
+}
+
+btnSound.addEventListener('click', () => {
+  soundEnabled = !soundEnabled;
+  btnSound.textContent = soundEnabled ? '🔊' : '🔇';
+  if (soundEnabled) startCarnivalMusic();
+  else stopCarnivalMusic();
+  saveSettings();
+});
+
+btnResetScore.addEventListener('click', () => {
+  score = 0;
+  totalHits = 0;
+  totalShots = 0;
+  currentStreak = 0;
+  scoreDisplay.textContent = '0';
+  accuracyDisplay.textContent = 'İsabet: %100';
+  if (duckKillDisplay) duckKillDisplay.textContent = 'Vurulan: 0';
+  ACTIVE_VIEWERS.clear();
+  updateRoundTargetHUD();
+});
+
+// Special Test Panel Buttons (Her biri oyunu garantili başlatır ve testi anında uygular)
+if (btnTestCoffee) btnTestCoffee.addEventListener('click', () => {
+  ensureGameStarted();
+  const coffeeSlot = CUSTOM_GIFT_SLOTS.find(s => s.action === 'mud_splash') || { name: 'Perfume', trName: 'Parfüm', file: 'Perfume.png' };
+  const dur = (coffeeSlot && coffeeSlot.mudDuration) ? coffeeSlot.mudDuration : 10;
+  triggerMudSplash(dur, { nickname: 'Sabotajci', avatar: '/api/avatar?user=Sabotajci' }, coffeeSlot);
+});
+if (btnTestRapid) btnTestRapid.addEventListener('click', () => {
+  ensureGameStarted();
+  const rapidSlot = CUSTOM_GIFT_SLOTS.find(s => s.action === 'rapid_fire');
+  const dur = (rapidSlot && rapidSlot.rapidDuration) ? rapidSlot.rapidDuration : rapidDurationSetting;
+  triggerRapidFire(dur);
+});
+if (btnTestSabotage) btnTestSabotage.addEventListener('click', () => {
+  ensureGameStarted();
+  const jamSlot = CUSTOM_GIFT_SLOTS.find(s => s.action === 'jam_gun');
+  const dur = (jamSlot && jamSlot.jamDuration) ? jamSlot.jamDuration : jamDurationSetting;
+  triggerGunJam(dur, 'Sabotajci');
+});
+if (btnTestBomb) btnTestBomb.addEventListener('click', () => { ensureGameStarted(); spawnDuck(Math.floor(Math.random() * 3), null, 'bomb'); });
+if (btnTestBoss) btnTestBoss.addEventListener('click', () => { ensureGameStarted(); spawnDuck(0, { nickname: 'Mega_Boss' }, 'boss'); });
+if (btnTestGold) btnTestGold.addEventListener('click', () => { ensureGameStarted(); spawnDuck(1, { nickname: 'Altin_Ordek' }, 'golden'); });
+if (btnTestLike) btnTestLike.addEventListener('click', () => { ensureGameStarted(); handleViewerInteraction({ nickname: 'Begeni_Sever' }, 'like'); });
+if (btnTestFollow) btnTestFollow.addEventListener('click', () => { ensureGameStarted(); handleViewerInteraction({ nickname: 'Yeni_Takipci' }, 'follow'); });
+if (btnTestRandom) btnTestRandom.addEventListener('click', () => {
+  ensureGameStarted();
+  const names = ['Kral_Oyuncu', 'Ece_01', 'Can_Pro', 'Bahar_Deniz', 'Yildiz_Gamer', 'Selin_07', 'Can_Gamer'];
+  const testNick = names[Math.floor(Math.random() * names.length)];
+  const counts = [0, 1, 2].map(sIdx => DUCKS.filter(d => d.shelfIndex === sIdx && !d.hit).length);
+  const minShelf = counts.indexOf(Math.min(...counts));
+  spawnDuck(minShelf, { nickname: testNick }, 'normal');
+  showToast({ nickname: testNick }, 'Piste Girdi! (🦆 Standart İzleyici)');
+});
+
+// Window Resize
+window.addEventListener('resize', () => {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+});
+
+// =====================================================================
+// MAIN ANIMATION LOOP
+// =====================================================================
+let lastTime = performance.now();
+let autoSpawnTimer = 0;
+let bombSpawnTimer = 0;
+let secondTimer = 0;
+let rainbowPuffTimer = 0;
+
+function animate(time) {
+  requestAnimationFrame(animate);
+
+  const dt = Math.min((time - lastTime) / 1000, 0.1);
+  lastTime = time;
+
+  // Round Timer Countdown (Durdurulduğunda sayım durur)
+  if (gameState === 'playing' && roundActive && !isRoundPaused && roundDuration > 0) {
+    secondTimer += dt;
+    if (secondTimer >= 1.0) {
+      secondTimer -= 1.0;
+      roundTimeLeft = Math.max(0, roundTimeLeft - 1);
+      const mins = Math.floor(roundTimeLeft / 60);
+      const secs = roundTimeLeft % 60;
+      roundTimerEl.textContent = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+      if (roundTimeLeft <= 0) {
+        completeRound(false);
+      }
+    }
+  }
+
+  // Mud Splash Countdown (Canlı Geri Sayım Rozeti Güncellemesi)
+  if (isMudActive) {
+    mudTimer -= dt;
+    const mudCountEl = document.getElementById('mud-countdown-text');
+    if (mudCountEl) {
+      mudCountEl.textContent = `${Math.max(0, mudTimer).toFixed(1)} sn`;
+    }
+    if (mudTimer <= 0) {
+      clearMudSplash();
+    }
+  }
+
+  // Gun Jam Countdown (Centered Screen Banner Realtime Update)
+  if (isGunJammed) {
+    gunJamTimer -= dt;
+    if (jamSub) {
+      const remaining = Math.max(0, gunJamTimer).toFixed(1);
+      jamSub.textContent = currentJamSource ? `@${currentJamSource} tüfeğinizi kilitledi! (${remaining} sn)` : `Tüfek kilitlendi! (${remaining} sn)`;
+    }
+    if (gunJamTimer <= 0) {
+      isGunJammed = false;
+      currentJamSource = '';
+      jamBanner.classList.remove('visible');
+      crosshairEl.classList.remove('jammed');
+    }
+  }
+
+  // Rapid Fire Countdown
+  if (isRapidFire) {
+    rapidFireTimer -= dt;
+    if (rapidSub) rapidSub.textContent = `Süre: ${Math.max(0, rapidFireTimer).toFixed(1)} sn`;
+    if (rapidFireTimer <= 0) {
+      stopRapidFire();
+    }
+  }
+
+  // Animate chain conveyors (Süre dursa dahi konveyörler hareket etmeye devam eder)
+  if (gameState === 'playing') {
+    conveyorMeshes.forEach(c => {
+      c.mesh.material.map.offset.x -= c.direction * dt * 0.4 * gameSpeedMultiplier;
+    });
+  }
+
+  // Ambient Duck & Bomb Spawning (autoSpawnEnabled false iken devre dışıdır)
+  if (gameState === 'playing' && autoSpawnEnabled && roundActive) {
+    autoSpawnTimer += dt;
+    if (autoSpawnTimer > 2.8 / gameSpeedMultiplier) {
+      autoSpawnTimer = 0;
+      const sIdx = Math.floor(Math.random() * 3);
+      const onShelf = DUCKS.filter(d => d.shelfIndex === sIdx && !d.hit).length;
+      if (onShelf < 5) {
+        const rand = Math.random();
+        const type = rand > 0.88 ? 'golden' : rand > 0.96 ? 'big' : 'normal';
+        spawnDuck(sIdx, null, type);
+      }
+    }
+
+    bombSpawnTimer += dt;
+    if (bombSpawnTimer > 15.0 / gameSpeedMultiplier) {
+      bombSpawnTimer = 0;
+      const sIdx = Math.floor(Math.random() * 3);
+      spawnDuck(sIdx, null, 'bomb');
+    }
+  }
+
+  // Rainbow Puffs Spawning for Boosted Ducks
+  rainbowPuffTimer += dt;
+  const shouldEmitRainbow = rainbowPuffTimer > 0.08;
+  if (shouldEmitRainbow) rainbowPuffTimer = 0;
+
+  // Update Ducks & Bombs (Süre dursa dahi ördekler yüzmeye ve akmaya devam eder)
+  const BOUND_X = (ARENA_WIDTH / 2) + 0.6;
+  for (let i = DUCKS.length - 1; i >= 0; i--) {
+    const d = DUCKS[i];
+
+    if (gameState === 'playing') {
+      d.group.position.x += d.direction * d.baseSpeed * d.speedMultiplier * dt * gameSpeedMultiplier;
+
+      // EMIT RAINBOW PUFFS from bottom / rear if boosted!
+      if (!d.hit && d.speedMultiplier > 1.05 && shouldEmitRainbow) {
+        emitRainbowPuff(d.group.position, d.direction);
+      }
+    }
+
+    // Bobbing & Waddle
+    if (!d.hit) {
+      d.hingePivot.rotation.z = Math.sin(time * 0.008 + d.wobblePhase) * 0.07;
+      d.hingePivot.position.y = 0.06 + Math.abs(Math.sin(time * 0.008 + d.wobblePhase)) * 0.03;
+    } else {
+      d.tipVelocity -= 36.0 * dt;
+      d.tipAngle += d.tipVelocity * dt;
+      if (d.tipAngle < -Math.PI / 2) {
+        d.tipAngle = -Math.PI / 2;
+        d.tipVelocity = -d.tipVelocity * 0.25;
+      }
+      d.hingePivot.rotation.x = d.tipAngle;
+      d.hingePivot.rotation.z = 0;
+    }
+
+    // Boundary Wrap / Despawn
+    if ((d.direction === 1 && d.group.position.x > BOUND_X) || (d.direction === -1 && d.group.position.x < -BOUND_X)) {
+      if (d.hit || d.duckType === 'bomb') {
+        scene.remove(d.group);
+        DUCKS.splice(i, 1);
+      } else {
+        if (!d.hasEscaped) {
+          d.hasEscaped = true;
+          recordViewerEscape(d.nickname, d.avatarUrl);
+        }
+        d.group.position.x = d.direction === 1 ? -BOUND_X : BOUND_X;
+        d.hasEscaped = false;
+      }
+    }
+  }
+
+  // Update Rainbow Particles
+  for (let i = rainbowParticles.length - 1; i >= 0; i--) {
+    const rp = rainbowParticles[i];
+    rp.life -= rp.decay * dt;
+    if (rp.life <= 0) {
+      scene.remove(rp.mesh);
+      rainbowParticles.splice(i, 1);
+      continue;
+    }
+    rp.mesh.position.x += rp.velX * dt;
+    rp.mesh.position.y += rp.velY * dt;
+    rp.scale += dt * 1.2;
+    rp.mesh.scale.set(rp.scale, rp.scale, 1);
+    rp.mesh.material.opacity = rp.life * 0.85;
+  }
+
+  // Update Hit Confetti Particles
+  for (let i = particles.length - 1; i >= 0; i--) {
+    const p = particles[i];
+    p.life -= p.decay * dt;
+    if (p.life <= 0) {
+      scene.remove(p.mesh);
+      particles.splice(i, 1);
+      continue;
+    }
+    p.vel.y -= 9.8 * dt;
+    p.mesh.position.addScaledVector(p.vel, dt);
+    p.mesh.rotation.z += p.rotSpeed * dt;
+    p.mesh.material.opacity = p.life;
+  }
+
+  // Update Corks
+  for (let i = activeCorks.length - 1; i >= 0; i--) {
+    const c = activeCorks[i];
+    const step = c.vel.clone().multiplyScalar(dt);
+    c.pos.add(step);
+    c.traveled += step.length();
+    if (c.traveled >= c.targetDist || c.pos.z < -2) {
+      scene.remove(c.mesh);
+      activeCorks.splice(i, 1);
+    }
+  }
+
+  // Gun Aiming & Recoil
+  gunRecoilZ = THREE.MathUtils.lerp(gunRecoilZ, 0, dt * 14.0);
+  gunRecoilRotX = THREE.MathUtils.lerp(gunRecoilRotX, 0, dt * 14.0);
+  gunGroup.position.set(gunBasePos.x, gunBasePos.y, gunBasePos.z + gunRecoilZ);
+  gunGroup.lookAt(mouseWorldTarget);
+  gunGroup.rotation.x -= gunRecoilRotX;
+
+  renderer.render(scene, camera);
+}
+
+requestAnimationFrame(animate);

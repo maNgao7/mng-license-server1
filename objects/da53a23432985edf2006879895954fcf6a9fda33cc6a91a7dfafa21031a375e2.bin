@@ -1,0 +1,684 @@
+import express from "express";
+import { createRequire } from "node:module";
+import http from "http";
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
+import { WebSocketServer } from "ws";
+import { TikTokLiveConnection, WebcastEvent } from "tiktok-live-connector";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const PORT = Number(process.env.PORT || 3050);
+
+process.on("uncaughtException", err => {
+  console.error("Beklenmeyen Hata:", err?.message || err);
+});
+process.on("unhandledRejection", err => {
+  console.error("İşlenmeyen Promise Hatası:", err?.message || err);
+});
+
+function widgetEventPost(route, payload) {
+  const port = Number(process.env.MNG_WIDGET_PORT);
+  const key = String(process.env.MNG_WIDGET_ACCESS_KEY || "");
+  if (!Number.isInteger(port) || port < 1 || port > 65535 || !/^[a-f0-9]{32}$/.test(key)) return;
+  try {
+    const body = JSON.stringify(payload);
+    const req = http.request({
+      hostname: "127.0.0.1", port, path: route + "?key=" + encodeURIComponent(key),
+      method: "POST",
+      headers: { "Content-Type": "application/json", "Content-Length": Buffer.byteLength(body) },
+      timeout: 800
+    }, response => response.resume());
+    req.on("timeout", () => req.destroy());
+    req.on("error", () => {});
+    req.end(body);
+  } catch {}
+}
+
+function widgetGiftPost(payload) {
+  widgetEventPost("/api/widget/gift", payload);
+}
+
+function widgetLikePost(payload) {
+  widgetEventPost("/api/widget/like", payload);
+}
+
+const app = express();
+createRequire(import.meta.url)("./launcher-widget-links.cjs").mountWidgetLinks(app, { gameId: "penalty-kick" });
+app.use((req, res, next) => {
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "*");
+  res.setHeader("X-Frame-Options", "ALLOWALL");
+  next();
+});
+app.use(express.static(path.join(__dirname, "public")));
+
+function findCatalogPath() {
+  const candidates = [
+    path.join(__dirname, "public", "assets"),
+    path.join(__dirname, "..", "tiktok-vs", "public", "assets"),
+    path.join(__dirname, "..", "MNG-TikTok-Game", "apps", "tiktok-vs", "public", "assets"),
+    path.join("C:", "Users", "User", "Desktop", "MNG-TikTok-Game", "apps", "tiktok-vs", "public", "assets"),
+    path.join(__dirname, "..", "MNG-Duck-Hunt", "public", "assets")
+  ];
+  return candidates.find(p => fs.existsSync(path.join(p, "gift-images"))) || path.join(__dirname, "public");
+}
+
+function findSharedBackgroundsPath() {
+  const candidates = [
+    path.join(__dirname, "..", "tiktok-vs", "public", "assets", "backgrounds"),
+    path.join(__dirname, "..", "MNG-TikTok-Game", "apps", "tiktok-vs", "public", "assets", "backgrounds"),
+    path.join("C:", "Users", "User", "Desktop", "MNG-TikTok-Game", "apps", "tiktok-vs", "public", "assets", "backgrounds")
+  ];
+  return candidates.find(p => fs.existsSync(p)) || path.join(__dirname, "public");
+}
+
+function findAvatarCachePath() {
+  const candidates = [
+    path.join(__dirname, "..", "tiktok-vs", ".avatar-cache"),
+    path.join(__dirname, "..", "MNG-TikTok-Game", "apps", "tiktok-vs", ".avatar-cache"),
+    path.join("C:", "Users", "User", "Desktop", "MNG-TikTok-Game", "apps", "tiktok-vs", ".avatar-cache")
+  ];
+  return candidates.find(p => fs.existsSync(p)) || path.join(__dirname, ".avatar-cache");
+}
+
+app.use("/catalog-assets", express.static(findCatalogPath(), { maxAge: "30d", immutable: true }));
+app.use("/shared-backgrounds", express.static(findSharedBackgroundsPath()));
+app.use("/libs/addons", express.static(path.join(__dirname, "node_modules", "three", "examples", "jsm")));
+
+// OBS & TikTok Live Studio Doğrudan Widget Rotaları (Localhost kabulü için)
+app.get(["/widget", "/widget.html"], (_req, res) => {
+  res.sendFile(path.join(__dirname, "public", "widget.html"));
+});
+app.get("/widget-keepers", (_req, res) => {
+  res.sendFile(path.join(__dirname, "public", "widget.html"));
+});
+app.get("/widget-teams", (_req, res) => {
+  res.sendFile(path.join(__dirname, "public", "widget.html"));
+});
+
+app.get("/api/catalog", (_req, res) => {
+  const localCatalog = path.join(__dirname, "gift-catalog.json");
+  if (fs.existsSync(localCatalog)) {
+    try {
+      const data = JSON.parse(fs.readFileSync(localCatalog, "utf8"));
+      if (Array.isArray(data) && data.length) {
+        return res.json(data);
+      }
+    } catch {}
+  }
+
+  const giftDir = path.join(findCatalogPath(), "gift-images");
+  const p = path.join(giftDir, "_kutuphane.json");
+  let items = [];
+
+  if (fs.existsSync(p)) {
+    try {
+      const data = JSON.parse(fs.readFileSync(p, "utf8"));
+      if (Array.isArray(data) && data.length) items = data;
+    } catch {}
+  }
+
+  if (fs.existsSync(giftDir)) {
+    try {
+      const existingFiles = new Set(items.map(x => (x.file || '').toLowerCase()));
+      const files = fs.readdirSync(giftDir).filter(f => f.endsWith(".png") && !f.startsWith("."));
+      files.forEach(f => {
+        if (!existingFiles.has(f.toLowerCase())) {
+          items.push({
+            name: f.replace(/\.png$/i, "").replace(/_/g, " "),
+            file: f,
+            coins: 1,
+            duplicate_image: false
+          });
+        }
+      });
+    } catch {}
+  }
+
+  res.json(items);
+});
+
+app.get("/api/sounds", (_req, res) => {
+  const dir = path.join(__dirname, "public", "sounds");
+  if (!fs.existsSync(dir)) return res.json([]);
+  try {
+    const files = fs.readdirSync(dir);
+    res.json(files);
+  } catch {
+    res.json([]);
+  }
+});
+
+const server = http.createServer(app);
+server.on("error", err => {
+  console.error("HTTP Server Hatası:", err?.message || err);
+});
+
+const wss = new WebSocketServer({ server });
+wss.on("error", err => {
+  console.error("WSS Hatası:", err?.message || err);
+});
+
+const avatarCache = new Map();
+const AVATAR_HOSTS = ["tiktokcdn.com", "byteimg.com", "ibytedtos.com", "tiktokv.com", "pravatar.cc", "unavatar.io"];
+const LAUNCHER_AVATAR_CACHE = findAvatarCachePath();
+
+let connection = null;
+let activeUsername = "";
+let topKeepers = [];
+let teamScores = {
+  galatasaray: 0,
+  fenerbahce: 0,
+  besiktas: 0,
+  trabzonspor: 0,
+  amedspor: 0
+};
+
+function eulerKey() {
+  const candidates = [
+    path.join(__dirname, "euler-api-key.txt"),
+    path.join(__dirname, "..", "tiktok-vs", "euler-api-key.txt"),
+    path.join(__dirname, "..", "mng-orbit", "euler-api-key.txt"),
+    path.join(__dirname, "..", "crowd-control", "euler-api-key.txt"),
+    path.join("C:", "Users", "User", "Desktop", "MNG-TikTok-Game", "apps", "tiktok-vs", "euler-api-key.txt")
+  ];
+  for (const c of candidates) {
+    try {
+      if (fs.existsSync(c)) {
+        const val = fs.readFileSync(c, "utf8").trim();
+        if (val) return val;
+      }
+    } catch {}
+  }
+  return undefined;
+}
+
+function trustedAvatarUrl(rawUrl) {
+  if (!rawUrl || typeof rawUrl !== "string") return null;
+  try {
+    const parsed = new URL(rawUrl.trim());
+    if (parsed.protocol !== "http:" && parsed.protocol !== "https:") return null;
+    const hostname = parsed.hostname.toLowerCase();
+    const isAllowed = AVATAR_HOSTS.some(host => hostname === host || hostname.endsWith(`.${host}`));
+    return isAllowed ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
+function uretVarsayilanAvatarSvg(username) {
+  const clean = String(username || "U").trim();
+  const harf = (clean.charAt(0) || "U").toUpperCase();
+  const renkler = [
+    "#f59e0b", "#ef4444", "#3b82f6", "#10b981", "#8b5cf6",
+    "#ec4899", "#06b6d4", "#84cc16", "#f97316", "#6366f1"
+  ];
+  let h = 0;
+  for (let i = 0; i < clean.length; i++) h = (h * 31 + clean.charCodeAt(i)) >>> 0;
+  const bg = renkler[h % renkler.length];
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
+    <circle cx="64" cy="64" r="64" fill="${bg}"/>
+    <text x="64" y="80" font-size="64" font-weight="900" font-family="system-ui, -apple-system, sans-serif" fill="#ffffff" text-anchor="middle" dominant-baseline="central">${harf}</text>
+  </svg>`;
+}
+
+app.get("/api/health", (_req, res) => {
+  res.json({ status: "ok", app: "mng-penalty-kick", port: PORT, activeUsername, connected: Boolean(connection) });
+});
+
+async function fetchUnavatarTikTok(username) {
+  const clean = String(username || "").replace(/^@/, "").trim();
+  if (!clean || clean === "MNG" || clean === "Kaleci" || clean === "YAYINCI") return null;
+  try {
+    const unavatarUrl = `https://unavatar.io/tiktok/${encodeURIComponent(clean)}`;
+    const response = await fetch(unavatarUrl, {
+      headers: { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)" },
+      signal: AbortSignal.timeout(5000)
+    });
+    const contentType = response.headers.get("content-type") || "";
+    if (response.ok && contentType.startsWith("image/")) {
+      const buffer = Buffer.from(await response.arrayBuffer());
+      if (buffer.length >= 1000) {
+        return { buffer, contentType };
+      }
+    }
+  } catch {}
+  return null;
+}
+
+app.get("/api/avatar", async (req, res) => {
+  const username = String(req.query.user || "").trim();
+  const avatarUrl = trustedAvatarUrl(req.query.url);
+  const cleanUser = username.replace(/^@/, "").replace(/[^a-zA-Z0-9_.-]/g, "_").slice(0, 100);
+
+  // 1. Yerel Launcher önbelleği
+  if (cleanUser) {
+    try {
+      const base = path.join(LAUNCHER_AVATAR_CACHE, `user_${cleanUser}`);
+      const metadata = JSON.parse(fs.readFileSync(`${base}.json`, "utf8"));
+      const buffer = fs.readFileSync(`${base}.bin`);
+      if (buffer.length >= 1500) {
+        res.set("Content-Type", metadata.contentType || "image/jpeg");
+        res.set("Cache-Control", "public, max-age=900");
+        return res.send(buffer);
+      }
+    } catch {}
+  }
+
+  // 2. Bellek önbelleği
+  if (avatarUrl) {
+    const cacheKey = avatarUrl.href;
+    const cached = avatarCache.get(cacheKey);
+    if (cached) {
+      res.set("Content-Type", cached.contentType);
+      res.set("Cache-Control", "public, max-age=900");
+      return res.send(cached.buffer);
+    }
+
+    try {
+      const response = await fetch(avatarUrl, {
+        headers: {
+          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/124 Safari/537.36",
+          "Accept": "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
+          "Referer": "https://www.tiktok.com/"
+        },
+        signal: AbortSignal.timeout(6000)
+      });
+      const contentType = response.headers.get("content-type") || "";
+      if (response.ok && contentType.startsWith("image/")) {
+        const buffer = Buffer.from(await response.arrayBuffer());
+        if (buffer.length && buffer.length <= 8 * 1024 * 1024) {
+          avatarCache.set(cacheKey, { buffer, contentType });
+          if (avatarCache.size > 400) avatarCache.delete(avatarCache.keys().next().value);
+          res.set("Content-Type", contentType);
+          res.set("Cache-Control", "public, max-age=900");
+          return res.send(buffer);
+        }
+      }
+    } catch {}
+  }
+
+  // 3. unavatar.io TikTok profil servisi
+  if (cleanUser) {
+    const unav = await fetchUnavatarTikTok(cleanUser);
+    if (unav) {
+      res.set("Content-Type", unav.contentType);
+      res.set("Cache-Control", "public, max-age=1800");
+      return res.send(unav.buffer);
+    }
+  }
+
+  // 4. Varsayılan SVG Rozet
+  res.set("Content-Type", "image/svg+xml");
+  res.set("Cache-Control", "public, max-age=3600");
+  res.send(uretVarsayilanAvatarSvg(username));
+});
+
+app.get("/api/tiktok-avatar", async (req, res) => {
+  const username = String(req.query.user || "").replace(/^@/, "").trim();
+  if (!username || username === "MNG" || username === "Kaleci" || username === "YAYINCI") {
+    res.set("Content-Type", "image/svg+xml");
+    res.set("Cache-Control", "public, max-age=86400");
+    return res.send(uretVarsayilanAvatarSvg(username || "U"));
+  }
+
+  // 1. Yerel Launcher önbelleği
+  const cleanUser = username.replace(/[^a-zA-Z0-9_.-]/g, "_").slice(0, 100);
+  try {
+    const base = path.join(LAUNCHER_AVATAR_CACHE, `user_${cleanUser}`);
+    if (fs.existsSync(`${base}.bin`)) {
+      const buffer = fs.readFileSync(`${base}.bin`);
+      if (buffer.length >= 1500) {
+        let contentType = "image/jpeg";
+        try { contentType = JSON.parse(fs.readFileSync(`${base}.json`, "utf8")).contentType || contentType; } catch {}
+        res.set("Content-Type", contentType);
+        res.set("Cache-Control", "public, max-age=1800");
+        return res.send(buffer);
+      }
+    }
+  } catch {}
+
+  // 2. unavatar.io TikTok profil servisi
+  const unav = await fetchUnavatarTikTok(cleanUser);
+  if (unav) {
+    res.set("Content-Type", unav.contentType);
+    res.set("Cache-Control", "public, max-age=3600");
+    return res.send(unav.buffer);
+  }
+
+  // 3. Fallback SVG
+  res.set("Content-Type", "image/svg+xml");
+  res.set("Cache-Control", "public, max-age=86400");
+  res.send(uretVarsayilanAvatarSvg(username));
+});
+
+app.post("/api/disconnect", (_req, res) => {
+  disconnect();
+  res.json({ ok: true });
+});
+
+app.post("/api/leaderboard/reset", (_req, res) => {
+  topKeepers = [];
+  teamScores = {
+    galatasaray: 0,
+    fenerbahce: 0,
+    besiktas: 0,
+    trabzonspor: 0,
+    amedspor: 0
+  };
+  broadcast({
+    type: "sync-leaderboard",
+    goalkeepers: topKeepers,
+    teams: teamScores
+  });
+  console.log("🏆 Canlı liderlik tablosu ve takım gol skorları sıfırlandı.");
+  res.json({ ok: true, topKeepers, teamScores });
+});
+
+function imageUrlFrom(...candidates) {
+  for (const item of candidates) {
+    if (!item) continue;
+    if (typeof item === "string" && item.trim()) return item.trim();
+    if (Array.isArray(item?.urlList) && item.urlList[0]) return item.urlList[0];
+    if (Array.isArray(item?.url_list) && item.url_list[0]) return item.url_list[0];
+    if (Array.isArray(item?.urls) && item.urls[0]) return item.urls[0];
+    if (typeof item?.url === "string" && item.url.trim()) return item.url.trim();
+    if (typeof item?.uri === "string" && item.uri.trim()) return item.uri.trim();
+  }
+  return null;
+}
+
+function playerFrom(data) {
+  const user = data.user || data.author || data.sender || data;
+  const id = String(user.userId || user.user_id || user.id || user.secUid || user.uniqueId || "").trim();
+  if (!id) return null;
+  const nickname = String(user.nickname || user.uniqueId || user.unique_id || user.name || id).trim();
+  const avatar = imageUrlFrom(user.avatarLarge, user.avatar_large, user.profilePictureUrl, user.profile_picture_url, user.avatarThumb, user.avatar_thumb, user.avatarMedium, user.avatar_medium, user.avatar);
+  const avatarFallback = imageUrlFrom(user.avatarThumb, user.avatar_thumb, user.avatarMedium, user.avatar_medium, user.avatar);
+  return { id, nickname, avatar, avatarFallback };
+}
+
+function giftFrom(data) {
+  const extended = data.extendedGiftInfo || {};
+  const detail = data.giftDetails || {};
+  const gift = data.gift || {};
+  const count = Math.max(1, Number(data.repeatCount || data.repeat_count || data.comboCount || data.combo_count || data.count || extended.count || 1) || 1);
+  const coins = Math.max(1, Number(extended.diamondCount || extended.diamond_count || detail.diamondCount || detail.diamond_count || data.diamondCount || data.diamond_count || gift.diamond_count || 1) || 1);
+  const giftId = extended.id || data.giftId || data.gift_id || detail.giftId || detail.gift_id || gift.id || null;
+  const giftName = extended.name || extended.giftName || detail.name || detail.giftName || data.giftName || gift.name || "Hediye";
+  const giftImage = imageUrlFrom(extended.image, extended.icon, detail.image, detail.icon, gift.image, gift.icon);
+
+  return { giftId, giftName, coins, count, giftImage };
+}
+
+function broadcast(msg) {
+  const payload = JSON.stringify(msg);
+  for (const client of wss.clients) {
+    if (client.readyState === 1) client.send(payload);
+  }
+}
+
+function disconnect() {
+  if (!connection) return;
+  try { connection.disconnect(); } catch {}
+  connection = null;
+  activeUsername = "";
+  broadcast({ type: "status", state: "disconnected", activeUsername: "" });
+}
+
+function connect(username) {
+  const clean = String(username || "").replace(/^@/, "").trim();
+  if (!clean) {
+    broadcast({ type: "status", state: "disconnected", error: "TikTok kullanıcı adı boş olamaz." });
+    return;
+  }
+  disconnect();
+
+  activeUsername = clean;
+  const avatarFallback = `/api/tiktok-avatar?user=${encodeURIComponent(clean)}`;
+  broadcast({
+    type: "status",
+    state: "connecting",
+    activeUsername: clean,
+    avatar: avatarFallback,
+    message: `@${clean} yayınına bağlanılıyor...`
+  });
+
+  const apiKey = eulerKey();
+  const options = {};
+  if (apiKey) {
+    options.signApiKey = apiKey;
+  }
+
+  connection = new TikTokLiveConnection(clean, options);
+  const activeConn = connection;
+
+  // Hata durumunda EventEmitter çökmesini engelleyen güvenli listener
+  connection.on("error", err => {
+    if (connection !== activeConn) return;
+    const msg = err?.message || String(err || "Bağlantı hatası oluştu.");
+    console.warn("TikTok Live Uyarısı/Hatası:", msg);
+    broadcast({ type: "status", state: "disconnected", activeUsername: clean, avatar: avatarFallback, error: msg, message: msg });
+  });
+
+  connection.connect().then(state => {
+    if (connection !== activeConn) return;
+    const roomInfo = state?.roomInfo || {};
+    const owner = roomInfo?.owner || {};
+    const avatarUrl = owner?.avatar_thumb?.url_list?.[0] || owner?.avatar_medium?.url_list?.[0] || owner?.avatar_large?.url_list?.[0] || avatarFallback;
+    console.log(`✅ @${clean} yayınına başarıyla bağlandı! (Room: ${state.roomId})`);
+    broadcast({
+      type: "status",
+      state: "connected",
+      activeUsername: clean,
+      roomId: state.roomId,
+      avatar: avatarUrl,
+      message: `@${clean} yayınına başarıyla bağlandı!`
+    });
+  }).catch(err => {
+    if (connection !== activeConn) return;
+    connection = null;
+    const rawMsg = err?.message || String(err || "");
+    const friendlyMsg = rawMsg.includes("isn't online") || rawMsg.includes("not online") || rawMsg.includes("LIVE has ended")
+      ? `@${clean} kullanıcısı şu anda canlı yayında değil.`
+      : (rawMsg || "Yayın bulunamadı veya bağlantı kurulamadı.");
+    console.warn("TikTok Bağlantı Hatası:", friendlyMsg);
+    broadcast({
+      type: "status",
+      state: "disconnected",
+      activeUsername: clean,
+      avatar: avatarFallback,
+      error: friendlyMsg,
+      message: friendlyMsg
+    });
+  });
+
+  connection.on(WebcastEvent.GIFT, data => {
+    const player = playerFrom(data);
+    if (!player) return;
+    const g = giftFrom(data);
+    widgetGiftPost({
+      sender: player.nickname,
+      avatar: player.avatar,
+      giftName: g.giftName,
+      count: g.count,
+      diamondCount: g.coins
+    });
+    broadcast({
+      type: "penalty-event",
+      event: "gift",
+      player,
+      ...g
+    });
+  });
+
+  connection.on(WebcastEvent.LIKE, data => {
+    const player = playerFrom(data);
+    if (!player) return;
+    const count = Math.max(1, Number(data.likeCount || data.count || 1));
+    widgetLikePost({
+      sender: player.nickname,
+      avatar: player.avatar,
+      count
+    });
+    broadcast({
+      type: "penalty-event",
+      event: "like",
+      player,
+      count
+    });
+  });
+
+  connection.on(WebcastEvent.FOLLOW, data => {
+    const player = playerFrom(data);
+    if (!player) return;
+    broadcast({
+      type: "penalty-event",
+      event: "follow",
+      player
+    });
+  });
+
+  connection.on(WebcastEvent.CHAT, data => {
+    const player = playerFrom(data);
+    if (!player) return;
+    broadcast({
+      type: "penalty-event",
+      event: "chat",
+      player,
+      comment: data.comment || ""
+    });
+  });
+
+  connection.on(WebcastEvent.MEMBER, data => {
+    const player = playerFrom(data);
+    if (!player) return;
+    broadcast({
+      type: "penalty-event",
+      event: "member",
+      player
+    });
+  });
+
+  connection.on(WebcastEvent.SHARE, data => {
+    const player = playerFrom(data);
+    if (!player) return;
+    broadcast({
+      type: "penalty-event",
+      event: "share",
+      player
+    });
+  });
+
+  if (WebcastEvent.STREAM_END) {
+    connection.on(WebcastEvent.STREAM_END, () => {
+      if (connection !== activeConn) return;
+      connection = null;
+      activeUsername = "";
+      broadcast({ type: "status", state: "disconnected", message: "Canlı yayın sona erdi." });
+    });
+  }
+}
+
+wss.on("connection", ws => {
+  ws.on("error", () => {});
+
+  try {
+    ws.send(JSON.stringify({
+      type: "status",
+      state: connection ? "connected" : "disconnected",
+      activeUsername
+    }));
+
+    ws.send(JSON.stringify({
+      type: "init-leaderboard",
+      goalkeepers: topKeepers,
+      teams: teamScores
+    }));
+  } catch {}
+
+  ws.on("message", raw => {
+    let msg;
+    try { msg = JSON.parse(raw); } catch { return; }
+
+    if (msg.type === "connect") connect(msg.username);
+    else if (msg.type === "disconnect") disconnect();
+    else if (msg.type === "update-leaderboard") {
+      if (Array.isArray(msg.goalkeepers)) topKeepers = msg.goalkeepers;
+      if (msg.teams) teamScores = msg.teams;
+      broadcast({
+        type: "sync-leaderboard",
+        goalkeepers: topKeepers,
+        teams: teamScores
+      });
+    } else if (msg.type === "trigger-team-goal") {
+      const teamKey = String(msg.team || "turkiye").toLowerCase();
+      teamScores[teamKey] = (teamScores[teamKey] || 0) + 1;
+      broadcast({
+        type: "sync-leaderboard",
+        goalkeepers: topKeepers,
+        teams: teamScores
+      });
+    } else if (msg.type === "trigger-keeper-save") {
+      const uname = String(msg.username || "Kaleci").trim();
+      const kType = msg.keeperType || "normal";
+      let existing = topKeepers.find(k => k.username.toLowerCase() === uname.toLowerCase());
+      if (existing) {
+        existing.saves = (existing.saves || 0) + 1;
+        existing.keeperType = kType;
+      } else {
+        topKeepers.push({
+          username: uname,
+          saves: 1,
+          keeperType: kType,
+          avatar: `/api/avatar?user=${encodeURIComponent(uname)}`
+        });
+      }
+      topKeepers.sort((a, b) => (b.saves || 0) - (a.saves || 0));
+      broadcast({
+        type: "sync-leaderboard",
+        goalkeepers: topKeepers,
+        teams: teamScores
+      });
+    } else if (msg.type === "reset-leaderboard") {
+      topKeepers = [];
+      teamScores = {
+        galatasaray: 0,
+        fenerbahce: 0,
+        besiktas: 0,
+        trabzonspor: 0,
+        amedspor: 0
+      };
+      broadcast({
+        type: "sync-leaderboard",
+        goalkeepers: topKeepers,
+        teams: teamScores
+      });
+    }
+  });
+});
+
+server.listen(PORT, () => {
+  console.log(`⚽ MNG Penalty Kick sunucusu http://localhost:${PORT} portunda çalışıyor.`);
+});
+
+process.on("uncaughtException", err => {
+  console.warn("🛡️ Yakalanan Hata (uncaughtException):", err?.message || err);
+});
+
+process.on("unhandledRejection", err => {
+  console.warn("🛡️ Yakalanan Red (unhandledRejection):", err?.message || err);
+});
+
+process.on("exit", code => {
+  console.log(`Sunucu kapandı (Exit Code: ${code})`);
+});
+
+// Event loop'u daima canlı tutan periyodik kalp atışı (Background daemon güvencesi)
+setInterval(() => {}, 30000);
+if (process.stdin.isTTY === false) {
+  try { process.stdin.resume(); } catch {}
+}

@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <title>MNG Şövalye Savaşı</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      height: 100%;
+      overflow: hidden;
+      background: #0f172a;
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      color: #fff;
+      user-select: none;
+    }
+    canvas { display: block; width: 100%; height: 100%; touch-action: none; }
+
+    /* Üst Sol Kontrol Butonları */
+    .top-left-controls {
+      position: fixed;
+      top: 12px;
+      left: 12px;
+      z-index: 100;
+      display: flex;
+      gap: 8px;
+    }
+    .hud-btn {
+      background: rgba(15, 23, 42, 0.85);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      color: #f8fafc;
+      padding: 8px 14px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s;
+    }
+    .hud-btn:hover { background: rgba(30, 41, 59, 0.95); border-color: #38bdf8; transform: translateY(-1px); }
+    .hud-btn-primary { background: linear-gradient(135deg, #0284c7, #0369a1); border-color: #38bdf8; }
+
+    /* Üst Bilgi Barı */
+    #top {
+      position: fixed;
+      top: 12px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(15, 23, 42, 0.85);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 12px;
+      padding: 8px 24px;
+      text-align: center;
+      font-size: 13px;
+      font-weight: 700;
+      pointer-events: none;
+      z-index: 90;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+    }
+    #top small { color: #38bdf8; margin-left: 4px; font-size: 11px; }
+    #tot { color: #cbd5e1; font-weight: 600; font-size: 12px; margin-top: 2px; display: block; }
+    #roundControls{position:fixed;top:12px;left:50%;transform:translateX(-50%);margin-top:62px;z-index:90;display:flex;align-items:center;gap:7px;padding:8px 11px;background:rgba(15,23,42,.9);border:1px solid rgba(251,191,36,.58);border-radius:8px;box-shadow:0 4px 20px rgba(0,0,0,.35);font-size:12px}.round-time{min-width:57px;color:#fef3c7;font-size:19px;font-weight:900;text-align:center}.round-note{color:#fbbf24;font-size:12px;font-weight:800}.round-select{max-width:92px;padding:5px;background:#0f172a;border:1px solid #475569;color:#fff;border-radius:4px}
+
+    /* Hediye Akışı (Sol) */
+    #feed {
+      position: fixed;
+      top: 60px;
+      left: 12px;
+      max-width: 320px;
+      background: rgba(15, 23, 42, 0.8);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 10px;
+      padding: 10px 12px;
+      font-size: 12px;
+      pointer-events: none;
+      z-index: 80;
+    }
+    #feed .feed-title { font-weight: 800; color: #f59e0b; margin-bottom: 6px; display: flex; align-items: center; gap: 6px; }
+    #feed div { margin: 4px 0; display: flex; align-items: center; gap: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+    /* Sürüklenebilir Paneller */
+    .drag-panel {
+      position: fixed;
+      background: rgba(15, 23, 42, 0.88);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 12px;
+      width: 260px;
+      z-index: 85;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+      overflow: hidden;
+      cursor: default;
+    }
+    .drag-header {
+      padding: 10px 14px;
+      background: rgba(30, 41, 59, 0.75);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      font-size: 13px;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: grab;
+      user-select: none;
+    }
+    .drag-header:active { cursor: grabbing; }
+    .drag-header button { padding:3px 6px; color:#f8fafc; background:rgba(251,191,36,.14); border:1px solid rgba(251,191,36,.42); border-radius:4px; font-size:10px; font-weight:800; cursor:pointer; }
+    .drag-header button:hover { background:rgba(251,191,36,.3); }
+    .drag-body {
+      padding: 8px 10px;
+      max-height: 280px;
+      overflow-y: auto;
+    }
+
+    /* Sıralama Satırları */
+    .rank-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 8px;
+      border-radius: 8px;
+      margin-bottom: 4px;
+      background: rgba(255, 255, 255, 0.04);
+      transition: background 0.15s;
+    }
+    .rank-row:hover { background: rgba(255, 255, 255, 0.08); }
+    .rank-num { font-weight: 800; font-size: 13px; min-width: 22px; text-align: center; }
+    .rank-avatar { width: 28px; height: 28px; border-radius: 50%; object-fit: cover; border: 1.5px solid #64748b; }
+    .rank-info { flex: 1; min-width: 0; }
+    .rank-name { font-weight: 700; font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .rank-count { font-size: 11px; opacity: 0.85; font-weight: 600; }
+    .rank-crown { font-size: 14px; margin-right: 2px; }
+
+    /* Galibiyet Kontrolleri (+ / -) */
+    .win-controls { display: flex; align-items: center; gap: 4px; }
+    .win-btn {
+      background: rgba(255, 255, 255, 0.12);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: #fff;
+      width: 20px;
+      height: 20px;
+      border-radius: 4px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: 800;
+    }
+    .win-btn:hover { background: #38bdf8; border-color: #38bdf8; }
+
+    /* 3D Üstü İsim Etiketleri */
+    .lb {
+      position: fixed;
+      left: 0;
+      top: 0;
+      font-size: 11px;
+      font-weight: 800;
+      text-shadow: 0 0 4px #000, 0 0 8px #000;
+      pointer-events: none;
+      white-space: nowrap;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      background: rgba(0,0,0,0.6);
+      padding: 3px 8px;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,0.25);
+    }
+    .lb img { width: 16px; height: 16px; border-radius: 50%; }
+
+    /* Banner & Mesaj */
+    #banner {
+      position: fixed;
+      top: 30%;
+      left: 50%;
+      transform: translate(-50%, 0);
+      font-size: 22px;
+      font-weight: 800;
+      text-align: center;
+      background: rgba(200, 120, 0, 0.9);
+      padding: 12px 28px;
+      border-radius: 12px;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.6);
+      opacity: 0;
+      transition: opacity 0.3s;
+      pointer-events: none;
+      z-index: 150;
+    }
+
+    #load {
+      position: fixed;
+      top: 45%;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 16px;
+      background: rgba(0,0,0,0.7);
+      padding: 12px 24px;
+      border-radius: 10px;
+      z-index: 200;
+    }
+
+    /* Modal Arka Plan */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.75);
+      backdrop-filter: blur(8px);
+      z-index: 1000;
+      display: none;
+      align-items: center;
+      justify-content: center;
+    }
+    .modal-card {
+      background: #1e293b;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 16px;
+      width: min(600px, 92vw);
+      max-height: 85vh;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.7);
+      overflow: hidden;
+    }
+    .modal-header {
+      padding: 16px 20px;
+      background: #0f172a;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 16px;
+      font-weight: 800;
+    }
+    .modal-close {
+      background: transparent;
+      border: none;
+      color: #94a3b8;
+      font-size: 20px;
+      cursor: pointer;
+    }
+    .modal-close:hover { color: #fff; }
+    .modal-body {
+      padding: 20px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+    .settings-row {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .settings-label {
+      font-size: 13px;
+      font-weight: 700;
+      color: #cbd5e1;
+    }
+    .settings-input {
+      background: #0f172a;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: #fff;
+      padding: 10px 14px;
+      border-radius: 8px;
+      font-size: 14px;
+      outline: none;
+    }
+    .settings-input:focus { border-color: #38bdf8; }
+
+    /* Hediye Kuralları Listesi */
+    .rules-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      max-height: 240px;
+      overflow-y: auto;
+    }
+    .rule-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: rgba(15, 23, 42, 0.6);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      padding: 8px 12px;
+      border-radius: 8px;
+    }
+    .rule-gift-img {
+      width: 32px;
+      height: 32px;
+      object-fit: contain;
+    }
+    .rule-gift-name {
+      font-weight: 700;
+      font-size: 13px;
+      flex: 1;
+    }
+    .rule-soldier-count {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+    }
+    .rule-soldier-input {
+      width: 70px;
+      background: #0f172a;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: #fff;
+      padding: 6px 8px;
+      border-radius: 6px;
+      text-align: center;
+      font-weight: 700;
+    }
+    .rule-change-btn {
+      background: rgba(56, 189, 248, 0.15);
+      border: 1px solid #38bdf8;
+      color: #38bdf8;
+      padding: 6px 10px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .rule-del-btn {
+      background: rgba(239, 68, 68, 0.15);
+      border: 1px solid #ef4444;
+      color: #ef4444;
+      padding: 6px 10px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 12px;
+    }
+
+    /* Test Butonları Grubu */
+    .test-btn-group {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .test-spawn-btn {
+      flex: 1;
+      min-width: 120px;
+      background: rgba(245, 158, 11, 0.15);
+      border: 1px solid #f59e0b;
+      color: #f59e0b;
+      padding: 8px;
+      border-radius: 8px;
+      font-weight: 700;
+      font-size: 12px;
+      cursor: pointer;
+    }
+    .test-spawn-btn:hover { background: #f59e0b; color: #000; }
+
+    /* Hediye Seçici Modal */
+    .gift-picker-modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.85);
+      backdrop-filter: blur(10px);
+      z-index: 2000;
+      display: none;
+      align-items: center;
+      justify-content: center;
+    }
+    .gift-picker-card {
+      background: #1e293b;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 16px;
+      width: min(640px, 94vw);
+      height: 75vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .gift-picker-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+      gap: 10px;
+      padding: 16px;
+      overflow-y: auto;
+      flex: 1;
+    }
+    .picker-item {
+      background: rgba(15, 23, 42, 0.7);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 10px;
+      padding: 8px 6px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.15s;
+    }
+    .picker-item:hover { border-color: #38bdf8; background: rgba(56, 189, 248, 0.15); transform: translateY(-2px); }
+    .picker-item img { width: 44px; height: 44px; object-fit: contain; }
+    .picker-item span { font-size: 11px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 80px; }
+    .picker-item small { font-size: 10px; color: #f59e0b; font-weight: 700; }
+  </style>
+
+  <script>
+    (function(){
+      var L='./node_modules/three/build/three.module.js', useLocal=false;
+      try{ var x=new XMLHttpRequest(); x.open('HEAD',L,false); x.send(); useLocal=x.status===200; }catch(e){}
+      var m=useLocal?{three:L,'three/addons/':'./node_modules/three/examples/jsm/'}:{three:'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js','three/addons/':'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/'};
+      var s=document.createElement('script'); s.type='importmap'; s.textContent=JSON.stringify({imports:m}); document.head.appendChild(s);
+      window.__three=useLocal?'yerel':'CDN';
+    })();
+  </script>
+</head>
+<body>
+  <pre id="err" style="display:none;position:fixed;z-index:999;left:8px;right:8px;top:90px;background:#400;color:#fff;font:13px/1.45 monospace;padding:10px;white-space:pre-wrap;max-height:65vh;overflow:auto;border-radius:8px;user-select:text"></pre>
+  <script>
+    const E=document.getElementById('err'); function show(t){E.style.display='block';E.textContent+=t+'\n';}
+    addEventListener('error',e=>show('HATA: '+(e.message||'dosya yüklenemedi: '+(e.target&&(e.target.src||e.target.href)))+(e.filename?'\n yer: '+e.filename+':'+e.lineno:'')),true);
+    addEventListener('unhandledrejection',e=>show('HATA (söz): '+(e.reason&&(e.reason.stack||e.reason))));
+  </script>
+
+  <!-- 3D Canvas -->
+  <canvas id="c"></canvas>
+
+  <!-- Üst Sol Kontroller -->
+  <div class="top-left-controls">
+    <button class="hud-btn hud-btn-primary" id="openSettingsBtn" type="button">⚙️ Ayarlar & Canlı Bağlantı</button>
+  </div>
+
+  <!-- Üst Bilgi Barı -->
+  <div id="top">
+    <span>⚔️ MNG ŞÖVALYE SAVAŞI</span>
+    <small>v5.0.5</small>
+    <span id="tot">AKTİF ORDULAR: 0 • TOPLAM ASKER: 0</span>
+  </div>
+  <div id="roundControls">
+    <select id="roundDuration" class="round-select" aria-label="Tur süresi"><option value="60">1 dk</option><option value="120">2 dk</option><option value="180">3 dk</option><option value="300" selected>5 dk</option><option value="600">10 dk</option></select>
+    <b id="roundClock" class="round-time">05:00</b>
+    <button class="hud-btn hud-btn-primary" id="roundStartBtn" type="button">Başlat</button>
+    <button class="hud-btn" id="roundPauseBtn" type="button">Duraklat</button>
+    <button class="hud-btn" id="roundRestartBtn" type="button">Yeniden</button>
+    <span class="round-note">@maNgao7tv ulaşabilirsiniz</span>
+  </div>
+
+  <!-- Son Hediyeler Feed'i -->
+  <div id="feed">
+    <div class="feed-title">🎁 Son Gönderilen Hediyeler</div>
+  </div>
+
+  <!-- 1. SÜRÜKLENEBİLİR PANEL: ORDU LİDERLERİ -->
+  <div class="drag-panel" id="armyLeaderboardPanel" style="top: 60px; right: 12px;">
+    <div class="drag-header" id="armyHeader">
+      <span>👑 En Çok Asker Sahibi</span>
+      <button id="armyWidgetBtn" type="button" title="OBS asker liderleri widget bağlantısını kopyala">Widget</button>
+      <span style="font-size:11px; opacity:0.6;">⠿ Taşı</span>
+    </div>
+    <div class="drag-body" id="armyList">
+      <div style="text-align:center; padding:10px; color:#94a3b8; font-size:12px;">Henüz ordu kurulmadı</div>
+    </div>
+  </div>
+
+  <!-- 2. SÜRÜKLENEBİLİR PANEL: TUR ZAFERLERİ -->
+  <div class="drag-panel" id="winsPanel" style="top: 360px; right: 12px;">
+    <div class="drag-header" id="winsHeader">
+      <span>🏆 Tur Galibiyetleri</span>
+      <button id="tournamentWidgetBtn" type="button" title="OBS turnuva widget bağlantısını kopyala">Widget</button>
+      <button id="tournamentResetBtn" type="button" title="Turnuva galibiyetlerini sıfırla">Sıfırla</button>
+      <span style="font-size:11px; opacity:0.6;">⠿ Taşı</span>
+    </div>
+    <div class="drag-body" id="winsList">
+      <div style="text-align:center; padding:10px; color:#94a3b8; font-size:12px;">Henüz galip yok</div>
+    </div>
+  </div>
+
+  <!-- Banner & Yükleniyor -->
+  <div id="banner"></div>
+  <div id="load">Savaş Haritası Yükleniyor...</div>
+
+  <!-- AYARLAR & BAĞLANTI MODALI -->
+  <div class="modal-backdrop" id="settingsModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <span>⚙️ Şövalye Savaşı Ayarları</span>
+        <button class="modal-close" id="closeSettingsBtn" type="button">✕</button>
+      </div>
+      <div class="modal-body">
+        
+        <!-- TikTok Canlı Bağlantı -->
+        <div class="settings-row">
+          <label class="settings-label">🔴 TikTok Canlı Yayın Bağlantısı (@Kullanıcı Adı):</label>
+          <div style="display:flex; gap:8px;">
+            <input type="text" class="settings-input" id="tiktokUsernameInput" placeholder="@kullanici_adiniz" style="flex:1;">
+            <button class="hud-btn hud-btn-primary" id="connectTiktokBtn" type="button">Yayına Bağlan</button>
+          </div>
+          <div id="connectionStatus" style="font-size:12px; color:#94a3b8; margin-top:4px;">Durum: Bağlı değil</div>
+        </div>
+
+        <!-- Hediye Kuralları Listesi -->
+        <div class="settings-row">
+          <div style="display:flex; align-items:center; justify-content:space-between;">
+            <label class="settings-label">🎁 Hediye → Asker Üretim Kuralları:</label>
+            <button class="hud-btn" id="addRuleBtn" type="button" style="font-size:11px; padding:4px 8px;">+ Yeni Kural Ekle</button>
+          </div>
+          <div class="rules-list" id="rulesListContainer"></div>
+        </div>
+
+        <!-- Hızlı Test Paneli -->
+        <div class="settings-row">
+          <label class="settings-label">🧪 Hızlı Test (Asker Gönder):</label>
+          <div class="test-btn-group">
+            <button class="test-spawn-btn" id="test10Btn" type="button">+10 Asker (Gül)</button>
+            <button class="test-spawn-btn" id="test50Btn" type="button">+50 Asker (Donut)</button>
+            <button class="test-spawn-btn" id="test100Btn" type="button">+100 Asker (Çay)</button>
+            <button class="test-spawn-btn" id="test500Btn" type="button">+500 Asker (Para Tabancası)</button>
+          </div>
+        </div>
+
+        <div class="settings-row">
+          <label class="settings-label" for="battleMapSelect">🗺️ Savaş Haritası:</label>
+          <select class="settings-input" id="battleMapSelect"><option value="plains">Krallık Ovası</option><option value="sunset">Kızıl Gün Batımı</option><option value="night">Gece Kuşatması</option></select>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- HEDİYE SEÇİCİ MODAL -->
+  <div class="gift-picker-modal" id="giftPickerModal">
+    <div class="gift-picker-card">
+      <div class="modal-header">
+        <span id="giftPickerTitle">Hediye Seçin</span>
+        <button class="modal-close" id="closeGiftPickerBtn" type="button">✕</button>
+      </div>
+      <div style="padding:12px 16px; border-bottom:1px solid rgba(255,255,255,0.1);">
+        <input type="text" id="giftPickerSearch" class="settings-input" placeholder="Hediye ara... (Gül, Asa, Kalp, Donut...)" style="width:100%;">
+      </div>
+      <div class="gift-picker-grid" id="giftPickerGrid"></div>
+    </div>
+  </div>
+
+  <!-- Eski Araç Çubuğu (Gerektiğinde Gizli) -->
+  <div id="tools" style="display:none !important;">
+    <input id="nm" placeholder="@kullanıcı">
+    <button id="b1">100 coin</button>
+    <button id="b2">500 coin</button>
+    <button id="b3">1000 coin</button>
+    <button id="bh">HUD</button>
+  </div>
+
+  <script type="module" src="./main.js?v=5.0.0"></script>
+</body>
+</html>

@@ -1,0 +1,3145 @@
+import express from "express";
+import http from "http";
+import path from "path";
+import { fileURLToPath } from "url";
+import fs from "fs";
+import os from "os";
+import { WebSocketServer } from "ws";
+import { TikTokLiveConnection, WebcastEvent } from "tiktok-live-connector";
+import puppeteer from "puppeteer";
+import launcherWidgetLinks from "./launcher-widget-links.cjs";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+function widgetEventPost(route, payload) {
+  const port = Number(process.env.MNG_WIDGET_PORT);
+  const key = String(process.env.MNG_WIDGET_ACCESS_KEY || "");
+  if (!Number.isInteger(port) || port < 1 || port > 65535 || !/^[a-f0-9]{32}$/.test(key)) return;
+  try {
+    const body = JSON.stringify(payload);
+    const req = http.request({
+      hostname: "127.0.0.1", port, path: route + "?key=" + encodeURIComponent(key),
+      method: "POST",
+      headers: { "Content-Type": "application/json", "Content-Length": Buffer.byteLength(body) },
+      timeout: 800
+    }, response => response.resume());
+    req.on("timeout", () => req.destroy());
+    req.on("error", () => {});
+    req.end(body);
+  } catch {}
+}
+
+function widgetGiftPost(payload) {
+  widgetEventPost("/api/widget/gift", payload);
+}
+
+function widgetLikePost(payload) {
+  widgetEventPost("/api/widget/like", payload);
+}
+
+// =====================================================================
+// EULERSTREAM İMZA API ANAHTARI
+// ---------------------------------------------------------------------
+// tiktok-live-connector, TikTok'a bağlanırken hem isteği "imzalamak"
+// hem de yayının Room ID'sini bulmak için üçüncü parti bir servis
+// (EulerStream) kullanıyor. API anahtarı OLMADAN kullanılan ücretsiz/
+// anonim yol artık TikTok tarafından çoğu zaman engelleniyor — az önce
+// gördüğün "Failed to retrieve Room ID from all sources" hatasının
+// sebebi tam olarak bu (kodda bir bozulma değil).
+//
+// Çözüm: eulerstream.com'dan alınan ücretsiz bir API anahtarını bu
+// dosyaya yapıştırmak. Anahtarı değiştirmek istersen sadece bu
+// dosyanın içeriğini güncelle, koda dokunmana gerek yok.
+const EULER_ANAHTAR_DOSYASI = path.join(__dirname, "euler-api-key.txt");
+let eulerApiAnahtari = "";
+
+try {
+    eulerApiAnahtari = fs.readFileSync(EULER_ANAHTAR_DOSYASI, "utf-8").trim();
+    if (eulerApiAnahtari) {
+        console.log("EULERSTREAM — API anahtarı yüklendi (Room ID / bağlantı sınırlaması kalkacak)");
+    }
+} catch (hata) {
+    console.log("EULERSTREAM — API anahtarı bulunamadı (euler-api-key.txt), ücretsiz/kısıtlı kota kullanılacak");
+}
+
+const app = express();
+launcherWidgetLinks.mountWidgetLinks(app, { gameId: "vs", aliases: ["puanlama"] });
+// Tarayıcı (ve özellikle OBS'in Browser Source'u) bu dosyaları eski
+// haliyle önbellekte tutup güncellemeleri hiç görmeyebiliyor. Bunu
+// kalıcı olarak engelliyoruz — her sayfa yenilemesinde en güncel
+// index.html/script.js/style.css garantili gelir.
+app.use(express.static(path.join(__dirname, "public"), {
+    etag: false,
+    lastModified: false,
+    setHeaders: function (res) {
+        res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate");
+    }
+}));
+app.use("/catalog-assets", express.static(path.join(__dirname, "public", "assets"), {
+    etag: false,
+    lastModified: false
+}));
+
+const ortakArkaPlanAdaylari = [
+    process.env.MNG_BACKGROUNDS_DIR,
+    process.env.APPDATA && path.join(process.env.APPDATA, "mng-tiktok-game", "content", "backgrounds")
+].filter(Boolean).map(klasor => path.resolve(klasor));
+const ortakArkaPlanKlasoru = ortakArkaPlanAdaylari.find(klasor => fs.existsSync(klasor));
+if (ortakArkaPlanKlasoru && fs.existsSync(ortakArkaPlanKlasoru)) {
+    app.use("/assets/backgrounds", express.static(ortakArkaPlanKlasoru, {
+        etag: false,
+        lastModified: false,
+        setHeaders: function (res) {
+            res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate");
+        }
+    }));
+}
+
+// =====================================================================
+// ARKA PLAN VİDEOLARI
+// ---------------------------------------------------------------------
+// public/assets/backgrounds/ klasöründeki .mp4 dosyalarını otomatik
+// tarar. İleride yeni video eklemek için tek yapman gereken o klasöre
+// dosyayı atmak — kodda hiçbir değişiklik gerekmez. Küçük önizleme
+function widgetStateProxy(route, empty) {
+    return (_req, res) => {
+        res.setHeader("Cache-Control", "no-store");
+        const port = Number(process.env.MNG_WIDGET_PORT);
+        const key = String(process.env.MNG_WIDGET_ACCESS_KEY || "");
+        let settled = false;
+        const fail = status => {
+            if (settled) return;
+            settled = true;
+            res.status(status).json({ ...empty, error: "widget-upstream-unavailable" });
+        };
+        if (!Number.isInteger(port) || port < 1 || port > 65535 || !/^[a-f0-9]{32}$/.test(key)) return fail(503);
+        const target = new URL(route, `http://127.0.0.1:${port}`);
+        target.searchParams.set("key", key);
+        try {
+            const request = http.get(target, upstream => {
+                if (upstream.statusCode !== 200) {
+                    upstream.resume();
+                    return fail(upstream.statusCode >= 400 && upstream.statusCode <= 599 ? upstream.statusCode : 502);
+                }
+                let body = "";
+                upstream.setEncoding("utf8");
+                upstream.on("data", chunk => {
+                    body += chunk;
+                    if (body.length > 1024 * 1024) { fail(502); request.destroy(); }
+                });
+                upstream.on("error", () => fail(502));
+                upstream.on("end", () => {
+                    if (settled) return;
+                    try {
+                        const data = JSON.parse(body);
+                        if (!data || !Array.isArray(data.entries) || ("top" in empty && !("top" in data))) throw new Error("Invalid widget state");
+                        settled = true;
+                        res.json(data);
+                    } catch { fail(502); }
+                });
+            });
+            request.setTimeout(3000, () => { fail(504); request.destroy(); });
+            request.on("error", () => fail(503));
+        } catch { fail(503); }
+    };
+}
+app.get(["/widget/top-gift/state", "/api/widget/top-gift/state"], widgetStateProxy("/widget/top-gift/state", { top: null, entries: [] }));
+app.get(["/widget/top-likes/state", "/api/widget/top-likes/state"], widgetStateProxy("/widget/top-likes/state", { podium: [], runnersUp: [], entries: [] }));
+app.get(["/widget/leaderboard/state", "/api/widget/leaderboard/state"], widgetStateProxy("/widget/leaderboard/state", { entries: [] }));
+
+app.get("/api/backgrounds", (req, res) => {
+    const paketKlasoru = path.join(__dirname, "public", "assets", "backgrounds");
+    const klasor = ortakArkaPlanKlasoru && fs.existsSync(ortakArkaPlanKlasoru)
+        ? ortakArkaPlanKlasoru
+        : paketKlasoru;
+
+    fs.readdir(klasor, (hata, dosyalar) => {
+        if (hata) {
+            return res.json([]);
+        }
+
+        const videolar = dosyalar
+            .filter(function (ad) { return /\.mp4$/i.test(ad); })
+            .sort()
+            .map(function (ad) {
+                const isim = ad.replace(/\.mp4$/i, "");
+                const thumbYolu = path.join(klasor, "thumbs", isim + ".jpg");
+                const thumbVarMi = fs.existsSync(thumbYolu);
+
+                return {
+                    dosya: "assets/backgrounds/" + ad,
+                    thumb: thumbVarMi ? "assets/backgrounds/thumbs/" + isim + ".jpg" : null
+                };
+            });
+
+        res.json(videolar);
+    });
+});
+
+// =====================================================================
+// FOTOĞRAF KALİTESİ MOTORU
+// ---------------------------------------------------------------------
+// ESKİDEN: CDN linkinin içindeki boyut şablonunu (72 -> 1080 gibi)
+// değiştirip aynı fotoğrafın büyük halini istemeye çalışıyorduk.
+// TEST EDİLDİ VE DOĞRULANDI: TikTok'un imzalı (x-signature/x-expires'lı)
+// CDN linkleri boyutu DEĞİŞTİRİLMİŞ her isteği 403 ile reddediyor —
+// tek bir istisnası bile yok. Yani bu yöntem çalışmıyor; üstelik her
+// fotoğraf için 6-12 tane baştan kaybedilmiş istek TikTok'a gidiyordu.
+// Bu hem logları REDDEDİLDİ (403) satırlarıyla dolduruyor hem de aynı
+// anda çok sayıda izleyicinin fotoğrafı için bu kadar istek atınca
+// TikTok'un bizi geçici olarak engelleyip ORİJİNAL (küçük) fotoğrafı
+// bile reddetmesine yol açabiliyordu.
+//
+// ŞİMDİ: Boyut değiştirmeyi tamamen bıraktık. Gerçek kalite artışı
+// tek bir yerden geliyor: gerçek bir tarayıcı (Puppeteer) ile profil
+// sayfasını açıp oradaki gömülü 1080x1080 "avatarLarger" verisini
+// okumak (aşağıdaki "Gerçek tarayıcı" bölümü). Bu, sadece savaş
+// ekranındaki iki büyük daire için (highres=1) çalıştırılıyor —
+// sohbet/hediye listesindeki onlarca küçük daire için değil.
+// =====================================================================
+
+// Bu boyuttan büyük bir fotoğrafı "gerçek/kaliteli" sayıyoruz (küçük
+// 72px avatarlar genelde birkaç KB'ın altında kalıyor).
+const KALITELI_ESIK_BYTE = 10000;
+
+// Bir resmin geçerli sayılması için gereken en küçük boyut.
+const MIN_GECERLI_BYTE = 500;
+
+function mevcutBoyutuBul(url) {
+    if (!url) return 0;
+
+    // Sorgu parametrelerinde de sayılar olduğu için sadece yol kısmına bakıyoruz.
+    const yol = url.split("?")[0];
+
+    // ~tplv-tiktok-shrink:720:720.webp  /  ~tplv-tiktokx-cropcenter:1080:1080.jpeg
+    const shrink = yol.match(/:(\d+):(\d+)/);
+    if (shrink) return parseInt(shrink[1], 10);
+
+    // ~c5_720x720.jpeg  /  /1080x1080/
+    const carpi = yol.match(/(\d+)x(\d+)/);
+    if (carpi) return parseInt(carpi[1], 10);
+
+    return 0;
+}
+
+const RESIM_BASLIKLARI = {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+    "Referer": "https://www.tiktok.com/",
+    "Accept": "image/avif,image/webp,image/apng,image/*,*/*;q=0.8",
+    "Accept-Language": "tr-TR,tr;q=0.9,en;q=0.8"
+};
+
+// --- Basit süreli önbellek ---
+// TikTok linkleri imzalı ve süreli olduğu için uzun süre saklamıyoruz.
+// Sohbette aynı kişi defalarca yazdığında tekrar tekrar indirmemek
+// için 10 dakikalık bir hafıza yeterli.
+function suureliOnbellek(maksAdet, omurMs) {
+    const harita = new Map();
+
+    return {
+        al: function (anahtar) {
+            const kayit = harita.get(anahtar);
+            if (!kayit) return null;
+
+            if (Date.now() - kayit.zaman > omurMs) {
+                harita.delete(anahtar);
+                return null;
+            }
+
+            return kayit.deger;
+        },
+        koy: function (anahtar, deger) {
+            if (harita.size >= maksAdet) {
+                const ilk = harita.keys().next().value;
+                harita.delete(ilk);
+            }
+            harita.set(anahtar, { deger: deger, zaman: Date.now() });
+        }
+    };
+}
+
+// =====================================================================
+// KALICI DİSK ÖNBELLEĞİ
+// ---------------------------------------------------------------------
+// Bir kullanıcının yüksek çözünürlüklü fotoğrafını bir kez indirdikten
+// sonra diske de yazıyoruz. TikTok ileride linki değiştirse, imzayı
+// bozsa ya da tamamen engellese bile elimizdeki son sağlam fotoğraf
+// kullanılmaya devam eder. "Hiçbir zaman bozulmasın" isteğinin
+// karşılığı tam olarak budur.
+// =====================================================================
+
+const DISK_KLASORU = path.join(__dirname, ".avatar-cache");
+
+try {
+    fs.mkdirSync(DISK_KLASORU, { recursive: true });
+} catch (hata) {
+    console.error("Önbellek klasörü oluşturulamadı:", hata.message);
+}
+
+function diskAnahtari(anahtar) {
+    return String(anahtar).replace(/[^a-zA-Z0-9_.-]/g, "_").slice(0, 120);
+}
+
+function diskeYaz(anahtar, sonuc) {
+    try {
+        const ad = diskAnahtari(anahtar);
+        fs.writeFileSync(path.join(DISK_KLASORU, ad + ".bin"), sonuc.buffer);
+        fs.writeFileSync(
+            path.join(DISK_KLASORU, ad + ".json"),
+            JSON.stringify({ contentType: sonuc.contentType, url: sonuc.url, zaman: Date.now() })
+        );
+    } catch (hata) {
+        // Disk yazılamazsa sorun değil, sistem bellekten çalışmaya devam eder.
+    }
+}
+
+function disktenOku(anahtar) {
+    try {
+        const ad = diskAnahtari(anahtar);
+        const binYol = path.join(DISK_KLASORU, ad + ".bin");
+        const jsonYol = path.join(DISK_KLASORU, ad + ".json");
+
+        if (!fs.existsSync(binYol) || !fs.existsSync(jsonYol)) {
+            return null;
+        }
+
+        const bilgi = JSON.parse(fs.readFileSync(jsonYol, "utf-8"));
+
+        return {
+            buffer: fs.readFileSync(binYol),
+            contentType: bilgi.contentType || "image/jpeg",
+            url: bilgi.url || ""
+        };
+    } catch (hata) {
+        return null;
+    }
+}
+
+const resimOnbellek = suureliOnbellek(250, 10 * 60 * 1000);
+const profilOnbellek = suureliOnbellek(60, 15 * 60 * 1000);
+
+const oembedBasariOnbellek = suureliOnbellek(200, 30 * 60 * 1000);
+
+// NOT: TikTok'un oembed servisi artık her istekte 400 ("Something went
+// wrong") döndürüyor — bu geçici bir aksama değil, sürekli bir durum
+// gibi görünüyor. Başarısızlığı sadece birkaç saniye hatırlarsak, her
+// yeni fotoğraf isteğinde TikTok'a boşuna yeniden istek atmış oluruz
+// (tam da eski logdaki spam'in sebebi buydu). 3 dakika boyunca
+// hatırlayıp öyle tekrar deniyoruz; oembed düzelirse en geç 3 dakika
+// içinde kendiliğinden fark edilir.
+const oembedHataOnbellek = suureliOnbellek(200, 3 * 60 * 1000);
+
+// Aynı kişi için neredeyse aynı anda birden fazla istek gelirse
+// (örneğin hediye + izleyici listesi + sıralama aynı anda güncellenince)
+// TikTok'a 3 ayrı istek atmak yerine TEK bir isteği paylaşıyoruz.
+const oembedBekleyenler = new Map();
+
+let oembedSirasi = Promise.resolve();
+
+function siraliCalistir(gorev) {
+    const sonuc = oembedSirasi.then(gorev, gorev);
+    oembedSirasi = sonuc.then(function () {
+        return new Promise(function (r) { setTimeout(r, 150); });
+    }, function () {
+        return new Promise(function (r) { setTimeout(r, 150); });
+    });
+    return sonuc;
+}
+
+async function oembedAvatarAl(username) {
+    if (!username) return null;
+
+    const temiz = String(username).replace(/^@/, "").trim();
+    if (!temiz) return null;
+
+    const basarili = oembedBasariOnbellek.al(temiz);
+    if (basarili !== null) {
+        return basarili;
+    }
+
+    // Yakın zamanda denenmiş ve başarısız olmuşsa, birkaç saniye
+    // boyunca tekrar denemeden hemen "yok" diyoruz (TikTok'u yormamak
+    // için) — ama bu süre kısa, fotoğraf uzun süre bulanık kalmıyor.
+    if (oembedHataOnbellek.al(temiz) !== null) {
+        return null;
+    }
+
+    if (oembedBekleyenler.has(temiz)) {
+        return oembedBekleyenler.get(temiz);
+    }
+
+    const istek = (async function () {
+        try {
+            const hedef = "https://www.tiktok.com/@" + encodeURIComponent(temiz);
+            const cevap = await siraliCalistir(function () {
+                return fetch(
+                    "https://www.tiktok.com/oembed?url=" + encodeURIComponent(hedef),
+                    { headers: { "User-Agent": RESIM_BASLIKLARI["User-Agent"] } }
+                );
+            });
+
+            if (!cevap.ok) {
+                oembedHataOnbellek.koy(temiz, true);
+                return null;
+            }
+
+            const veri = await cevap.json();
+            const url = veri.thumbnail_url || null;
+
+            if (url) {
+                oembedBasariOnbellek.koy(temiz, url);
+                console.log("OEMBED — @" + temiz + " için " + (mevcutBoyutuBul(url) || "?") + "px fotoğraf alındı");
+            } else {
+                oembedHataOnbellek.koy(temiz, true);
+            }
+
+            return url;
+
+        } catch (hata) {
+            oembedHataOnbellek.koy(temiz, true);
+            return null;
+        } finally {
+            oembedBekleyenler.delete(temiz);
+        }
+    })();
+
+    oembedBekleyenler.set(temiz, istek);
+    return istek;
+}
+
+// Verilen linki TEK seferde indirir (artık boyut denemesi yapmıyoruz —
+// yukarıdaki not'ta açıklandığı gibi bu, imzalı linklerde asla işe
+// yaramıyordu ve sadece TikTok'a gereksiz yük bindiriyordu).
+async function tekResimIndir(url) {
+    if (!url) return null;
+
+    try {
+        const cevap = await fetch(url, { headers: RESIM_BASLIKLARI });
+
+        if (!cevap.ok) {
+            return null;
+        }
+
+        const contentType = cevap.headers.get("content-type") || "";
+        if (contentType.indexOf("image") === -1) {
+            return null;
+        }
+
+        const buffer = Buffer.from(await cevap.arrayBuffer());
+        if (buffer.length < MIN_GECERLI_BYTE) {
+            return null;
+        }
+
+        return { buffer: buffer, contentType: contentType, url: url };
+
+    } catch (hata) {
+        return null;
+    }
+}
+
+// Otomatik HD Yükseltici — 72x72, 100x100 ve 300x300 linklerini otomatik 720x720 ve 1080x1080 yapar!
+async function akilliHdResimIndir(url) {
+    if (!url) return null;
+
+    const adaylar = [];
+
+    // 1. İki nokta formatı (:100:100, :72:72, :300:300)
+    if (url.includes(":100:100")) {
+        adaylar.push(url.replace(/:100:100/g, ":720:720"));
+        adaylar.push(url.replace(/:100:100/g, ":1080:1080"));
+    }
+    if (url.includes(":72:72")) {
+        adaylar.push(url.replace(/:72:72/g, ":720:720"));
+        adaylar.push(url.replace(/:72:72/g, ":1080:1080"));
+    }
+    if (url.includes(":300:300")) {
+        adaylar.push(url.replace(/:300:300/g, ":720:720"));
+        adaylar.push(url.replace(/:300:300/g, ":1080:1080"));
+    }
+
+    // 2. Çarpı formatı (100x100, 72x72, 300x300)
+    if (url.includes("100x100")) {
+        adaylar.push(url.replace(/100x100/g, "720x720"));
+        adaylar.push(url.replace(/100x100/g, "1080x1080"));
+    }
+    if (url.includes("72x72")) {
+        adaylar.push(url.replace(/72x72/g, "720x720"));
+        adaylar.push(url.replace(/72x72/g, "1080x1080"));
+    }
+    if (url.includes("300x300")) {
+        adaylar.push(url.replace(/300x300/g, "720x720"));
+        adaylar.push(url.replace(/300x300/g, "1080x1080"));
+    }
+    if (url.includes("720x720")) {
+        adaylar.push(url.replace(/720x720/g, "1080x1080"));
+    }
+
+    // Önce yüksek çözünürlüklü linkleri dene
+    for (const hdUrl of adaylar) {
+        try {
+            const hdSonuc = await tekResimIndir(hdUrl);
+            if (hdSonuc && hdSonuc.buffer.length > 15000) {
+                console.log("HD PROFİL BAŞARIYLA YÜKSELTİLDİ:", hdSonuc.buffer.length, "bytes");
+                return hdSonuc;
+            }
+        } catch {}
+    }
+
+    // Yükseltme olmazsa orijinal linki indir
+    return await tekResimIndir(url);
+}
+
+// --- TikTok oembed proxy ---
+// Sunucudan sunucuya istek attığımız için tarayıcıdaki CORS
+// kısıtlaması burada geçerli değil, bu yüzden artık üçüncü parti
+// bir "cors proxy" servisine ihtiyacımız yok.
+app.get("/api/profile", async (req, res) => {
+    const link = req.query.url;
+
+    if (!link) {
+        return res.status(400).json({ error: "url gerekli" });
+    }
+
+    try {
+        const onbellekten = profilOnbellek.al(link);
+        if (onbellekten) {
+            return res.json(onbellekten);
+        }
+
+        let data = null;
+
+        // oembed artık güvenilir değil (bkz. aşağıdaki hata logu) ama
+        // ÖNEMLİ DÜZELTME: eskiden bu başarısız olunca fonksiyon burada
+        // hata fırlatıp DURUYOR ve altta çalışması kanıtlanmış olan
+        // tarayıcı (Puppeteer) yöntemine hiç sıra gelmiyordu — az önceki
+        // logdaki "OEMBED BAŞARISIZ" hatalarının hepsinin fotoğrafsız
+        // kalmasının sebebi tam olarak buydu. Şimdi oembed başarısız
+        // olsa bile devam edip tarayıcıyı deniyoruz.
+        try {
+            const oembedUrl = "https://www.tiktok.com/oembed?url=" + encodeURIComponent(link);
+            const response = await fetch(oembedUrl);
+
+            if (response.ok) {
+                data = await response.json();
+            } else {
+                const bodyText = await response.text().catch(function () { return ""; });
+                console.error("OEMBED BAŞARISIZ — denenen link:", link);
+                console.error("OEMBED BAŞARISIZ — durum kodu:", response.status);
+                console.error("OEMBED BAŞARISIZ — cevap:", bodyText.slice(0, 300));
+            }
+        } catch (oembedHata) {
+            console.error("OEMBED İSTEĞİ ATILAMADI:", oembedHata.message);
+        }
+
+        if (!data) {
+            data = { author_name: kullaniciAdiLinktenCikar(link), thumbnail_url: null };
+        }
+
+        // Tarayıcı ile sayfadan çekilen yüksek çözünürlüklü fotoğraf —
+        // oembed çalışsa da çalışmasa da HER ZAMAN deneniyor, çünkü bu
+        // şu anda tek güvenilir kaynağımız.
+        const tarayiciAvatari = await zamanSinirliAvatar(link);
+
+        if (tarayiciAvatari) {
+            const oembedBoyut = mevcutBoyutuBul(data.thumbnail_url || "");
+            const tarayiciBoyut = mevcutBoyutuBul(tarayiciAvatari);
+
+            if (!data.thumbnail_url || tarayiciBoyut >= oembedBoyut) {
+                data.thumbnail_url = tarayiciAvatari;
+            }
+        }
+
+        if (!data.thumbnail_url) {
+            throw new Error("Ne oembed ne de tarayıcı bir fotoğraf bulabildi");
+        }
+
+        console.log("PROFİL — seçilen fotoğraf boyutu:", mevcutBoyutuBul(data.thumbnail_url || "") || "?", "px");
+
+        profilOnbellek.koy(link, data);
+
+        res.json(data);
+
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: "Profil alınamadı" });
+    }
+});
+
+function kullaniciAdiLinktenCikar(link) {
+    const eslesme = String(link).match(/@([^/?]+)/);
+    return eslesme ? "@" + eslesme[1] : "PROFİL";
+}
+
+// --- Gerçek tarayıcı ile yüksek çözünürlüklü fotoğraf denemesi ---
+// Düz bir "fetch" isteği TikTok'un bot korumasına (WAF) takılıyordu.
+// Puppeteer gerçek bir Chrome açıp JavaScript'i çalıştırdığı için bu
+// korumayı genelde aşabiliyor. Tek bir tarayıcı örneği açık tutulup
+// her istek için yeni bir sekme (page) kullanılıyor.
+function bulTarayiciYolu() {
+    if (process.env.PUPPETEER_EXECUTABLE_PATH && fs.existsSync(process.env.PUPPETEER_EXECUTABLE_PATH)) {
+        return process.env.PUPPETEER_EXECUTABLE_PATH;
+    }
+
+    const localAppData = process.env.LOCALAPPDATA || "";
+    const programFiles = process.env.PROGRAMFILES || "C:\\Program Files";
+    const programFilesX86 = process.env["PROGRAMFILES(X86)"] || "C:\\Program Files (x86)";
+
+    const olasiYollar = [
+        path.join(programFilesX86, "Microsoft\\Edge\\Application\\msedge.exe"),
+        path.join(programFiles, "Microsoft\\Edge\\Application\\msedge.exe"),
+        (localAppData ? path.join(localAppData, "Microsoft\\Edge\\Application\\msedge.exe") : null),
+        path.join(programFiles, "Google\\Chrome\\Application\\chrome.exe"),
+        path.join(programFilesX86, "Google\\Chrome\\Application\\chrome.exe"),
+        (localAppData ? path.join(localAppData, "Google\\Chrome\\Application\\chrome.exe") : null),
+        "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe",
+        "C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe",
+        "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
+        "C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe"
+    ];
+
+    for (const yol of olasiYollar) {
+        try {
+            if (yol && fs.existsSync(yol)) {
+                return yol;
+            }
+        } catch (e) {}
+    }
+
+    try {
+        if (typeof puppeteer.executablePath === "function") {
+            const defaultPath = puppeteer.executablePath();
+            if (defaultPath && fs.existsSync(defaultPath)) {
+                return defaultPath;
+            }
+        }
+    } catch (e) {}
+
+    return undefined;
+}
+
+let browserInstance = null;
+
+async function getBrowser() {
+    const canli = browserInstance && (
+        typeof browserInstance.connected === "boolean"
+            ? browserInstance.connected
+            : (typeof browserInstance.isConnected === "function" ? browserInstance.isConnected() : true)
+    );
+
+    if (!canli) {
+        browserInstance = null;
+    }
+
+    if (!browserInstance) {
+        const execPath = bulTarayiciYolu();
+        const launchOpts = {
+            headless: true,
+            args: [
+                "--no-sandbox",
+                "--disable-setuid-sandbox",
+                "--disable-dev-shm-usage",
+                "--disable-blink-features=AutomationControlled",
+                "--lang=tr-TR,tr"
+            ]
+        };
+        if (execPath) {
+            launchOpts.executablePath = execPath;
+        }
+        browserInstance = await puppeteer.launch(launchOpts);
+    }
+    return browserInstance;
+}
+
+function gomuluAvatariCikar(html) {
+    // En kalitelisinden başlayarak sırayla ara.
+    const alanlar = ["avatarLarger", "avatarMedium", "avatarThumb"];
+
+    for (let i = 0; i < alanlar.length; i++) {
+        const match = html.match(new RegExp('"' + alanlar[i] + '":"([^"]+)"'));
+        if (!match) continue;
+
+        let url;
+        try {
+            url = JSON.parse("\"" + match[1] + "\"");
+        } catch (parseError) {
+            url = match[1].replace(/\\u0026/g, "&").replace(/\\\//g, "/");
+        }
+
+        console.log("PUPPETEER — bulundu (" + alanlar[i] + ")");
+        return url;
+    }
+
+    return null;
+}
+
+async function tryGetHighResAvatarViaBrowser(profileLink, agirModda) {
+    let page = null;
+
+    try {
+        const browser = await getBrowser();
+        page = await browser.newPage();
+
+        await page.setUserAgent(
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
+        );
+        await page.setViewport({ width: 1280, height: 800 });
+        await page.setExtraHTTPHeaders({
+            "Accept-Language": "tr-TR,tr;q=0.9,en-US;q=0.8,en;q=0.7"
+        });
+
+        // TikTok'un bot tespiti "navigator.webdriver" bayrağına bakıyor.
+        await page.evaluateOnNewDocument(function () {
+            Object.defineProperty(navigator, "webdriver", { get: function () { return undefined; } });
+            Object.defineProperty(navigator, "languages", { get: function () { return ["tr-TR", "tr", "en-US"]; } });
+            Object.defineProperty(navigator, "plugins", { get: function () { return [1, 2, 3, 4, 5]; } });
+        });
+
+        // Hafif mod: resim/video/font indirmeyip hızlanıyoruz.
+        // Ağır mod: hiçbir şeyi engellemiyoruz — engelleme davranışının
+        // kendisi bot sinyali olarak algılanabildiği için ikinci denemede
+        // sayfayı normal bir kullanıcı gibi tamamen yüklüyoruz.
+        if (!agirModda) {
+            await page.setRequestInterception(true);
+            page.on("request", function (req) {
+                const type = req.resourceType();
+                if (type === "image" || type === "media" || type === "font") {
+                    req.abort().catch(function () {});
+                } else {
+                    req.continue().catch(function () {});
+                }
+            });
+        }
+
+        await page.goto(profileLink, {
+            waitUntil: agirModda ? "networkidle2" : "domcontentloaded",
+            timeout: agirModda ? 25000 : 15000
+        });
+
+        // Yönlendirme sırasında page.content() "Execution context was
+        // destroyed" hatası veriyordu. Sayfanın oturmasını bekleyip
+        // birkaç kez deniyoruz.
+        let html = "";
+
+        for (let deneme = 0; deneme < 3; deneme++) {
+            try {
+                await new Promise(function (r) { setTimeout(r, 1500); });
+                html = await page.content();
+                if (html && html.length > 5000) break;
+            } catch (icHata) {
+                // Sayfa hâlâ hareket halinde, bir tur daha bekle.
+            }
+        }
+
+        if (!html) {
+            console.log("PUPPETEER — sayfa içeriği okunamadı, oembed fotoğrafı kullanılacak");
+            return null;
+        }
+
+        // Sayfa çok kısaysa (ör. 1624 karakter) bu gerçek profil sayfası
+        // değil, TikTok'un bot/doğrulama ekranıdır. Gömülü veri hiç gelmez.
+        if (html.length < 5000) {
+            console.log("PUPPETEER — engel sayfası geldi (uzunluk: " + html.length + ")");
+
+            if (!agirModda) {
+                console.log("PUPPETEER — ağır modda tekrar deneniyor...");
+                await page.close().catch(function () {});
+                page = null;
+                return await tryGetHighResAvatarViaBrowser(profileLink, true);
+            }
+
+            return null;
+        }
+
+        console.log("PUPPETEER — sayfa uzunluğu:", html.length);
+
+        const url = gomuluAvatariCikar(html);
+
+        if (!url) {
+            console.log("PUPPETEER — gömülü avatar verisi bulunamadı, oembed fotoğrafı kullanılacak");
+            return null;
+        }
+
+        return url;
+
+    } catch (error) {
+        console.error("PUPPETEER — hata:", error.message);
+
+        if (!agirModda) {
+            console.log("PUPPETEER — ağır modda tekrar deneniyor...");
+            if (page) {
+                await page.close().catch(function () {});
+                page = null;
+            }
+            return await tryGetHighResAvatarViaBrowser(profileLink, true).catch(function () { return null; });
+        }
+
+        return null;
+    } finally {
+        if (page) {
+            await page.close().catch(function () {});
+        }
+    }
+}
+
+// Puppeteer ne kadar uğraşırsa uğraşsın kullanıcıyı bekletmesin.
+// 20 saniyede sonuç gelmezse oembed fotoğrafıyla devam ediyoruz.
+function zamanSinirliAvatar(profileLink) {
+    return Promise.race([
+        tryGetHighResAvatarViaBrowser(profileLink, false).catch(function () { return null; }),
+        new Promise(function (resolve) {
+            setTimeout(function () { resolve(null); }, 20000);
+        })
+    ]);
+}
+
+// =====================================================================
+// ARKA PLANDA ÖNDEN FOTOĞRAF HAZIRLAMA (SOHBETE YAZANLAR İÇİN)
+// ---------------------------------------------------------------------
+// Bir yayıncı VS'ye birini seçtiğinde kaliteli fotoğrafın "biraz geç"
+// gelmesinin sebebi: o kişinin tarayıcı ile fotoğrafı SEÇİLDİĞİ ANDA
+// ilk kez çekiliyor olmasıydı. Bunu ortadan kaldırmak için: sohbete
+// YAZAN her kişi için (sessiz izleyiciler değil — onlar zaten VS'ye
+// seçilme ihtimali en düşük olanlar, hepsi için tarayıcı açmak hem
+// gereksiz hem de TikTok'u fazla yormak anlamına gelir) kaliteli
+// fotoğraf, seçilmeden ÖNCE, arka planda ve TEK TEK (aynı anda değil,
+// aralıklı) hazırlanıyor ve diske kalıcı olarak yazılıyor. Yayıncı o
+// kişiyi VS'ye seçtiğinde fotoğraf artık diskten anında geliyor —
+// tarayıcı beklemesi olmuyor.
+// =====================================================================
+
+const onceHazirlananKullanicilar = new Set();
+const fotoHazirlamaKuyrugu = [];
+let fotoHazirlamaIsliyor = false;
+
+function arkaPlandaKaliteliFotoHazirla(username) {
+    if (!username || onceHazirlananKullanicilar.has(username)) return;
+
+    const eskiDisk = disktenOku("user_" + username);
+    if (eskiDisk && eskiDisk.buffer.length >= KALITELI_ESIK_BYTE) {
+        // Zaten kaliteli bir kaydı var, tekrar denemeye gerek yok.
+        onceHazirlananKullanicilar.add(username);
+        return;
+    }
+
+    onceHazirlananKullanicilar.add(username);
+    fotoHazirlamaKuyrugu.push(username);
+    fotoHazirlamaKuyruguIsle();
+}
+
+async function fotoHazirlamaKuyruguIsle() {
+    if (fotoHazirlamaIsliyor) return;
+    fotoHazirlamaIsliyor = true;
+
+    while (fotoHazirlamaKuyrugu.length > 0) {
+        const username = fotoHazirlamaKuyrugu.shift();
+
+        try {
+            const profilLinki = "https://www.tiktok.com/@" + encodeURIComponent(username);
+            const tarayiciUrl = await zamanSinirliAvatar(profilLinki);
+
+            if (tarayiciUrl) {
+                const sonuc = await tekResimIndir(tarayiciUrl);
+
+                if (sonuc) {
+                    const eskiDisk = disktenOku("user_" + username);
+                    if (!eskiDisk || sonuc.buffer.length > eskiDisk.buffer.length) {
+                        diskeYaz("user_" + username, sonuc);
+                        console.log("ÖN HAZIRLIK — @" + username + " için kaliteli fotoğraf hazır (" + sonuc.buffer.length + " byte)");
+                        if (typeof savas !== "undefined" && (savas.leftPhotoUser === username || savas.rightPhotoUser === username)) {
+                            if (typeof savasYayinla === "function") savasYayinla();
+                        }
+                    }
+                }
+            }
+        } catch (hata) {
+            // Arka plan işlemi kritik değil, sessizce bir sonrakine geç.
+        }
+
+        // TikTok'u art arda çok hızlı istekle yormamak için aralıklı çalış.
+        await new Promise(function (r) { setTimeout(r, 1500); });
+    }
+
+    fotoHazirlamaIsliyor = false;
+}
+
+// =====================================================================
+// HEDİYE GÖRSELLERİ İÇİN BAĞIMSIZ TARAYICI TARAMASI
+// ---------------------------------------------------------------------
+// Bu, canlı yayın bağlantısıyla (tiktokConnection / EulerStream) HİÇBİR
+// İLGİSİ OLMAYAN, tamamen ayrı bir yol: normal bir tarayıcı gibi
+// TikTok'un yayın sayfasını (www.tiktok.com/@kullanici/live) ziyaret
+// edip, sayfaya gömülü olan hediye kataloğu verisini (varsa) okumaya
+// çalışıyor. Bu, profil fotoğrafı için zaten kullandığımız yöntemin
+// AYNISI — imza servisi (EulerStream) hiç devreye girmiyor, dolayısıyla
+// canlı bağlantıyı ASLA etkileyemez; başarısız olursa sessizce hiçbir
+// şey yapmaz, sadece görselsiz devam edilir.
+//
+// TikTok sayfa yapısını değiştirirse bu bulamayabilir — bu durumda
+// tehlikesiz şekilde atlanır, hiçbir mevcut özelliği bozmaz.
+// =====================================================================
+
+// Bir JSON ağacının içinde "hediyeye benzeyen" nesneleri (gerçek görsel +
+// coin değeri + kimlik + isim dörtlüsü olan) arar. Tam yolun ne
+// olduğunu bilmemize gerek yok — sadece şekline bakıyoruz, bu yüzden
+// TikTok küçük yapısal değişiklikler yapsa bile çalışmaya devam eder.
+function nesneIcindeHediyeListesiAra(kok) {
+    const bulunanlar = [];
+    const gorulenler = new Set();
+
+    function hediyeGibiMi(o) {
+        if (!o || typeof o !== "object") return false;
+        const gorselVar = o.image && Array.isArray(o.image.url_list) && o.image.url_list.length > 0;
+        const coinVar = o.diamond_count !== undefined || o.diamondCount !== undefined;
+        const idVar = o.id !== undefined || o.gift_id !== undefined;
+        const isimVar = o.name !== undefined || o.giftName !== undefined;
+        return gorselVar && coinVar && idVar && isimVar;
+    }
+
+    function gez(deger, derinlik) {
+        if (!deger || typeof deger !== "object" || derinlik > 8) return;
+        if (gorulenler.has(deger)) return;
+        gorulenler.add(deger);
+
+        if (Array.isArray(deger)) {
+            deger.forEach(function (eleman) {
+                if (hediyeGibiMi(eleman)) {
+                    bulunanlar.push(eleman);
+                } else {
+                    gez(eleman, derinlik + 1);
+                }
+            });
+        } else {
+            Object.keys(deger).forEach(function (anahtar) {
+                gez(deger[anahtar], derinlik + 1);
+            });
+        }
+    }
+
+    gez(kok, 0);
+    return bulunanlar;
+}
+
+async function webdenHediyeGorselleriniDene(username) {
+    let page = null;
+
+    try {
+        const browser = await getBrowser();
+        page = await browser.newPage();
+
+        await page.setUserAgent(
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
+        );
+        await page.setViewport({ width: 1280, height: 800 });
+        await page.setExtraHTTPHeaders({ "Accept-Language": "tr-TR,tr;q=0.9,en-US;q=0.8,en;q=0.7" });
+        await page.evaluateOnNewDocument(function () {
+            Object.defineProperty(navigator, "webdriver", { get: function () { return undefined; } });
+        });
+
+        await page.goto("https://www.tiktok.com/@" + encodeURIComponent(username) + "/live", {
+            waitUntil: "networkidle2",
+            timeout: 25000
+        });
+
+        let html = "";
+        for (let deneme = 0; deneme < 3; deneme++) {
+            try {
+                await new Promise(function (r) { setTimeout(r, 1500); });
+                html = await page.content();
+                if (html && html.length > 5000) break;
+            } catch (icHata) {
+                // Sayfa hâlâ hareket halinde, bir tur daha bekle.
+            }
+        }
+
+        if (!html || html.length < 5000) {
+            console.log("HEDİYE GÖRSEL TARAMASI — sayfa okunamadı, atlanıyor (ana bağlantı etkilenmedi)");
+            return;
+        }
+
+        const scriptMatch = html.match(/<script id="__UNIVERSAL_DATA_FOR_REHYDRATION__"[^>]*>([\s\S]*?)<\/script>/) ||
+            html.match(/<script id="SIGI_STATE"[^>]*>([\s\S]*?)<\/script>/);
+
+        if (!scriptMatch) {
+            console.log("HEDİYE GÖRSEL TARAMASI — sayfada gömülü veri bulunamadı, atlanıyor");
+            return;
+        }
+
+        let veri;
+        try {
+            veri = JSON.parse(scriptMatch[1]);
+        } catch (parseHata) {
+            console.log("HEDİYE GÖRSEL TARAMASI — gömülü veri okunamadı, atlanıyor");
+            return;
+        }
+
+        const bulunanHediyeler = nesneIcindeHediyeListesiAra(veri);
+
+        if (bulunanHediyeler.length === 0) {
+            console.log("HEDİYE GÖRSEL TARAMASI — sayfada hediye listesi bulunamadı, atlanıyor");
+            return;
+        }
+
+        let eklenenSayisi = 0;
+        bulunanHediyeler.forEach(function (g) {
+            const cikarilan = katalogHediyesiCikar(g);
+            if (cikarilan.name && cikarilan.id != null) {
+                if (katalogaEkle({ id: cikarilan.id, isim: cikarilan.name, birimCoin: cikarilan.coins, gorsel: cikarilan.image })) {
+                    eklenenSayisi++;
+                }
+            }
+        });
+
+        console.log("HEDİYE GÖRSEL TARAMASI — sayfada " + bulunanHediyeler.length + " hediye bulundu, " + eklenenSayisi + " tanesi görseliyle güncellendi/eklendi");
+
+        if (eklenenSayisi > 0) {
+            katalogKaydet();
+            broadcast({ type: "giftCatalog", entries: hediyeKatalogu });
+        }
+
+    } catch (hata) {
+        // Bu tamamen bağımsız bir deneme — başarısız olması ana canlı
+        // yayın bağlantısını HİÇ etkilemez, sadece görselsiz devam edilir.
+        console.log("HEDİYE GÖRSEL TARAMASI — denendi ama başarısız oldu (zararsız):", hata.message);
+    } finally {
+        if (page) {
+            await page.close().catch(function () {});
+        }
+    }
+}
+
+// --- Profil fotoğrafı proxy ---
+function uretVarsayilanAvatarSvg(isim) {
+    const harf = (isim || "?").trim().charAt(0).toUpperCase() || "?";
+    let hash = 0;
+    for (let i = 0; i < (isim || "").length; i++) {
+        hash = (hash << 5) - hash + (isim || "").charCodeAt(i);
+        hash |= 0;
+    }
+    const renkler = ["#ef4444", "#f97316", "#f59e0b", "#10b981", "#06b6d4", "#3b82f6", "#8b5cf6", "#ec4899"];
+    const bg = renkler[Math.abs(hash) % renkler.length];
+    return `<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128"><circle cx="64" cy="64" r="64" fill="${bg}"/><text x="64" y="80" font-size="56" font-family="-apple-system,BlinkMacSystemFont,sans-serif" font-weight="bold" fill="#ffffff" text-anchor="middle">${harf}</text></svg>`;
+}
+
+// Görseli de sunucu üzerinden geçiriyoruz ki hotlink koruması
+// tarayıcıda <img> yüklenmesini engellemesin.
+app.get("/api/image", async (req, res) => {
+    const imageUrl = req.query.url;
+    // "highres=1" SADECE savaş ekranındaki sol/sağ büyük daire için
+    // gönderiliyor (bkz. public/script.js). Sohbet listesi ve hediye
+    // sıralamasındaki küçük daireler bunu göndermez — orada ağır
+    // tarayıcı yöntemini çalıştırmak hem yavaş hem gereksizdir.
+    const yuksekKaliteMi = req.query.highres === "1";
+
+    if (!imageUrl || imageUrl === "undefined" || imageUrl === "null") {
+        const svg = uretVarsayilanAvatarSvg(req.query.user);
+        res.set("Content-Type", "image/svg+xml");
+        res.set("Cache-Control", "public, max-age=3600");
+        return res.send(Buffer.from(svg));
+    }
+
+    try {
+        const onbellekAnahtari = (req.query.user || "") + "|" + (yuksekKaliteMi ? "hq|" : "") + imageUrl;
+        const onbellekten = resimOnbellek.al(onbellekAnahtari);
+
+        if (onbellekten) {
+            res.set("Content-Type", onbellekten.contentType);
+            res.set("Cache-Control", "public, max-age=600");
+            return res.send(onbellekten.buffer);
+        }
+
+        const diskAnahtar = req.query.user ? "user_" + req.query.user : imageUrl;
+        const eskiDisk = disktenOku(diskAnahtar);
+
+        // ============================================================
+        // KALİTE KİLİDİ + KALİTE HİÇ DÜŞMESİN KURALI
+        // ------------------------------------------------------------
+        // Bu kişi için diskte zaten KALİTELİ bir fotoğraf varsa, hiçbir
+        // şeyi yeniden denemiyoruz — direkt onu gönderiyoruz. Eskiden
+        // her skor güncellemesinde (her puan eklemede!) tarayıcı yeniden
+        // açılıp TikTok'a yeniden istek atıyordu; bu hem yavaşlık hem de
+        // ara sıra başarısız olma riski demekti — "bazen net bazen
+        // bulanık" hissinin asıl sebebi muhtemelen buydu. Artık kalite
+        // bir kez yakalandı mı, o kişi için BİR DAHA ASLA bozulmuyor.
+        // (Diskteki kayıt henüz yeterince kaliteli değilse, aşağıdaki
+        // adımlar normal şekilde denenmeye devam eder.)
+        // ============================================================
+
+        let sonuc = null;
+
+        if (eskiDisk && eskiDisk.buffer.length >= KALITELI_ESIK_BYTE) {
+            sonuc = eskiDisk;
+        }
+
+        // 1) Sadece yüksek kalite istendiyse (savaş ekranındaki iki kişi)
+        //    VE elimizde henüz kaliteli bir kayıt yoksa: gerçek
+        //    tarayıcıyla profil sayfasından 1080x1080 fotoğrafı çekmeyi
+        //    dene. Bu, şu an elimizdeki TEK gerçekten çalışan kalite
+        //    artırma yöntemi.
+        if (!sonuc && yuksekKaliteMi && req.query.user) {
+            const profilLinki = "https://www.tiktok.com/@" + encodeURIComponent(req.query.user);
+            const tarayiciUrl = await zamanSinirliAvatar(profilLinki);
+
+            if (tarayiciUrl) {
+                sonuc = await tekResimIndir(tarayiciUrl);
+            }
+        }
+
+        // 2) Tarayıcı sonuç vermediyse (ya da yüksek kalite istenmediyse)
+        //    TikTok'un oembed servisini dene — çalışıyorsa orijinalden
+        //    biraz daha iyi bir fotoğraf verir.
+        if (!sonuc && req.query.user) {
+            const tazeUrl = await oembedAvatarAl(req.query.user);
+
+            if (tazeUrl) {
+                sonuc = await tekResimIndir(tazeUrl);
+            }
+        }
+
+        // 3) Diskte zaten iyi bir kayıt varsa ve yeni denemeden büyük/eşitse
+        //    onu kullan; küçükse diskteki kalsın.
+        if (eskiDisk && (!sonuc || sonuc.buffer.length < eskiDisk.buffer.length)) {
+            sonuc = eskiDisk;
+        }
+
+        // 4) Hâlâ elimizde hiçbir şey yoksa: canlı yayından gelen ham
+        //    linki TEK seferde dene (artık boyut büyütmeye uğraşmıyoruz
+        //    — imzalı linkler bunu zaten her zaman 403 ile reddediyordu
+        //    ve sadece TikTok'a gereksiz istek yığıyordu).
+        if (!sonuc) {
+            sonuc = await akilliHdResimIndir(imageUrl);
+        }
+
+        if (!sonuc) {
+            console.warn("RESIM ALINAMADI (Varsayılan SVG dönülüyor):", imageUrl);
+            const svg = uretVarsayilanAvatarSvg(req.query.user);
+            res.set("Content-Type", "image/svg+xml");
+            res.set("Cache-Control", "public, max-age=300");
+            return res.send(Buffer.from(svg));
+        }
+
+        // Yeni bulduğumuz sonuç diskteki kayıttan daha iyiyse (veya disk
+        // hiç yoksa) diski güncelliyoruz — kalite kaydı ilerledikçe büyüsün.
+        if (!eskiDisk || sonuc.buffer.length > eskiDisk.buffer.length) {
+            diskeYaz(diskAnahtar, sonuc);
+        }
+
+        resimOnbellek.koy(onbellekAnahtari, sonuc);
+
+        console.log(
+            (yuksekKaliteMi ? "RESIM OK (yüksek kalite) — " : "RESIM OK — ") +
+            sonuc.buffer.length + " byte"
+        );
+
+        res.set("Content-Type", sonuc.contentType);
+        res.set("Cache-Control", "public, max-age=600");
+        res.send(sonuc.buffer);
+
+    } catch (error) {
+        console.error("RESIM PROXY HATASI (Varsayılan SVG dönülüyor) — url:", imageUrl, "hata:", error.message);
+        const svg = uretVarsayilanAvatarSvg(req.query.user);
+        res.set("Content-Type", "image/svg+xml");
+        res.set("Cache-Control", "public, max-age=300");
+        res.send(Buffer.from(svg));
+    }
+});
+
+// Kütüphanenin içindeki beklenmedik bir hata artık tüm sunucuyu
+// çökertmesin; sadece loglayıp devam edelim.
+process.on("uncaughtException", function (error) {
+    console.error("Beklenmeyen hata (sunucu ayakta kalıyor):", error);
+});
+
+process.on("unhandledRejection", function (reason) {
+    console.error("Yakalanmamış promise hatası (sunucu ayakta kalıyor):", reason);
+});
+
+const server = http.createServer(app);
+const wss = new WebSocketServer({ server });
+
+let tiktokConnection = null;
+
+// ---- OTOMATİK YENİDEN BAĞLANMA ----
+// Yayın sırasında bağlantı beklenmedik şekilde koparsa (TikTok'un kendi
+// WebSocket'i düşerse vs.) elle tekrar "BAĞLAN"a basmaya gerek kalmadan
+// kendiliğinden yeniden dener. Kullanıcı başka bir yayına geçerse ya da
+// elle yeniden bağlanırsa, önceki denemeler otomatik iptal olur.
+let sonBaglanilanKullaniciAdi = null;
+let yenidenBaglanmaZamanlayici = null;
+let yenidenBaglanmaDenemeSayisi = 0;
+
+wss.on("connection", function (ws) {
+    // OBS Browser Source uzun süre açık kaldığında ağ bağlantısı sessizce
+    // düşebiliyor. Pong gelmeyen bağlantılar temizlenir; widget yeniden
+    // bağlandığında aşağıdaki tam durum paketiyle kaldığı yerden devam eder.
+    ws.isAlive = true;
+    ws.on("pong", function () { ws.isAlive = true; });
+    ws.on("error", function () {});
+
+    wsGonder(ws, { type: "status", message: "Sunucuya bağlanıldı, yayın kullanıcı adını gir." });
+
+    // Yeni açılan her sekme/telefon/tablet, mevcut coin sıralamasını
+    // anında görsün diye bağlanır bağlanmaz gönderiyoruz. Bu sayede
+    // sıralama hiçbir cihazda sıfırlanmış gibi görünmüyor.
+    wsGonder(ws, { type: "giftState", entries: coinTablosuDiziyeCevir() });
+
+    // Aynı şekilde: skor, süre, atanmış oyuncular ve başlık da yeni
+    // bağlanan her cihaza anında gönderiliyor — telefon açıldığında
+    // bilgisayarda o an ne oluyorsa aynısını görür.
+    wsGonder(ws, { type: "battleState", state: savas });
+    wsGonder(ws, { type: "timerState", state: zamanlayici });
+
+    // Yayına daha önce bağlanılmışsa, o yayının gerçek hediye kataloğu
+    // (isim + coin değeri + görsel) zaten hazır — yeni bağlanan cihaza
+    // da anında gönderiyoruz.
+    if (hediyeKatalogu.length > 0) {
+        wsGonder(ws, { type: "giftCatalog", entries: hediyeKatalogu });
+    }
+
+    // Hangi hediyenin hangi tarafa atandığı bilgisi de her cihazda aynı
+    // görünsün.
+    wsGonder(ws, { type: "giftSlots", slots: hediyeSlotAtama });
+
+    // Profil Puanlama sayfasının durumu da her cihazda aynı görünsün.
+    wsGonder(ws, { type: "puanlamaState", state: puanlama });
+    wsGonder(ws, {
+        type: "puanlamaViewers",
+        viewers: Array.from(puanlamaViewers.entries()).map(function (girdi) {
+            return {
+                uniqueId: girdi[0],
+                nickname: girdi[1].nickname,
+                profilePictureUrl: girdi[1].profilePictureUrl,
+                sira: girdi[1].sira,
+                mesajZamani: girdi[1].mesajZamani || 0,
+                sonEtkilesim: girdi[1].sonEtkilesim || null
+            };
+        })
+    });
+    wsGonder(ws, { type: "puanlamaStatus", message: puanlamaConnection ? "Bağlı" : "Bağlı değil" });
+
+    ws.on("message", function (raw) {
+        let msg;
+
+        try {
+            msg = JSON.parse(raw);
+        } catch (error) {
+            return;
+        }
+
+        if (msg.type === "connect-live") {
+            connectToTikTokLive(msg.username);
+        }
+
+        if (msg.type === "disconnect-live") {
+            if (tiktokConnection) {
+                try { tiktokConnection.disconnect(); } catch (hata) {}
+                tiktokConnection = null;
+            }
+            broadcast({ type: "status", message: "Bağlantı kesildi." });
+        }
+
+        // Coin sıralaması SADECE bu istek geldiğinde temizlenir.
+        if (msg.type === "reset-coins") {
+            coinTablosu.clear();
+
+            try {
+                fs.writeFileSync(COIN_DOSYASI, "{}");
+            } catch (hata) {
+                console.error("Coin verisi sıfırlanırken yazılamadı:", hata.message);
+            }
+
+            console.log("COIN — sıralama kullanıcı isteğiyle sıfırlandı");
+            broadcast({ type: "coinReset" });
+        }
+
+        // ---- Savaş durumu: hangi cihazdan gelirse gelsin herkese yansır ----
+
+        if (msg.type === "battle-start") {
+            savasBaslat(msg.duration);
+        }
+
+        if (msg.type === "battle-toggle-pause") {
+            savasDuraklatDevamEttir();
+        }
+
+        if (msg.type === "battle-score" && (msg.side === "left" || msg.side === "right")) {
+            savasSkorAyarla(msg.side, msg.value);
+        }
+
+        // Profil altındaki 6 hazır hediye butonu (1/5/20/100/500/1000 puan).
+        if (msg.type === "quick-score-add" && (msg.side === "left" || msg.side === "right")) {
+            const miktar = Number(msg.amount);
+            if (miktar > 0 && miktar <= 100000) {
+                savasSkorAyarla(msg.side, savas[msg.side + "Score"] + miktar);
+            }
+        }
+
+        // Hediye sıralamasındaki "◀ SOL / SAĞ ▶" butonları artık skoru
+        // kendileri hesaplamıyor; sadece kimin coin'inin hangi tarafa
+        // eklenmesini istediklerini bildiriyorlar. Hesap ve "daha önce
+        // eklendi mi" kontrolü SADECE sunucuda yapılıyor.
+        if (msg.type === "credit-gift" && (msg.side === "left" || msg.side === "right")) {
+            savasSkoraHediyeKredisiEkle(msg.uniqueId, msg.side);
+        }
+
+        if (msg.type === "battle-assign" && (msg.side === "left" || msg.side === "right")) {
+            savasOyuncuAta(msg.side, {
+                username: msg.username,
+                link: msg.link,
+                photoUser: msg.photoUser,
+                photoUrl: msg.photoUrl
+            });
+        }
+
+        if (msg.type === "battle-title") {
+            savasBasligiAyarla(msg.text);
+        }
+
+        if (msg.type === "battle-tally-remove" && (msg.side === "left" || msg.side === "right")) {
+            savasTalliSil(msg.side, msg.id);
+        }
+
+        // Arka plan videosu seçimi — tüm cihazlara (ve OBS'e) yayılır.
+        // msg.video boş/null gelirse "Boş" seçilmiş demektir.
+        if (msg.type === "background-select") {
+            savas.backgroundVideo = msg.video || null;
+            savasYayinla();
+        }
+
+        // Hediye ikonu animasyonu ayarı — SADECE hediye PNG'lerini
+        // etkiler, tüm cihazlarda/OBS'te aynı görünsün diye yayılır.
+        if (msg.type === "gift-animasyon-ayarla") {
+            const gecerliTurler = ["yok", "karart", "dondur", "nabiz", "acKapa", "salla", "zipla", "parla"];
+            if (gecerliTurler.indexOf(msg.tur) !== -1) {
+                savas.giftAnimasyonTuru = msg.tur;
+            }
+            const hiz = Number(msg.hiz);
+            if (!isNaN(hiz) && hiz > 0) {
+                savas.giftAnimasyonHizi = hiz;
+            }
+            savasYayinla();
+        }
+
+        // ---------------- PROFİL PUANLAMA ----------------
+
+        if (msg.type === "puanlama-goster" && msg.uniqueId) {
+            puanlamaGosterilenAyarla({
+                uniqueId: msg.uniqueId,
+                nickname: msg.nickname || msg.uniqueId,
+                profilePictureUrl: msg.profilePictureUrl || null
+            });
+        }
+
+        if (msg.type === "puanlama-basla") {
+            puanlamaBaslat(msg.saniye);
+        }
+
+        if (msg.type === "puanlama-durdur") {
+            puanlamaZamanlayiciDurdur();
+            puanlamaYayinla();
+        }
+
+        if (msg.type === "puanlama-liste-sil" && msg.id) {
+            puanlamaListedenSil(msg.id);
+        }
+
+        if (msg.type === "puanlama-baglan" && msg.username) {
+            puanlamaBaglan(String(msg.username).trim().replace(/^@/, ""));
+        }
+
+        if (msg.type === "puanlama-baglanti-kes") {
+            puanlamaBaglantiyiKes();
+        }
+
+        // Profil altındaki "hediye ara/ekle" kutusundan seçilen hediyenin
+        // coin değerini doğrudan o tarafın skoruna ekler. Bu MANUEL bir
+        // işlem (gerçek bir bağış değil) — bu yüzden "credited" (kim ne
+        // kadar bağışladı) takibini etkilemiyor.
+        if (msg.type === "manual-gift-add" && (msg.side === "left" || msg.side === "right")) {
+            const hediye = hediyeKatalogu.find(function (g) { return String(g.id) === String(msg.giftId); });
+            if (hediye) {
+                savasSkorAyarla(msg.side, savas[msg.side + "Score"] + hediye.coins);
+            }
+        }
+
+        // Profil altındaki 6 kutudan birini GERÇEK bir TikTok hediyesine
+        // bağlar — bundan sonra o hediye canlı yayında kim tarafından
+        // gönderilirse gönderilsin, o tarafın skoruna otomatik eklenir.
+        if (msg.type === "gift-slot-set" && (msg.side === "left" || msg.side === "right")) {
+            const index = Number(msg.index);
+
+            if (index >= 0 && index <= 5) {
+                // Slot sıfırlanmak istendiyse
+                if (!msg.giftId || msg.giftId === "reset" || msg.giftId === "null") {
+                    hediyeSlotAtama[msg.side][index] = null;
+                    slotAtamalariniKaydet();
+                    broadcast({ type: "giftSlots", slots: hediyeSlotAtama });
+                } else {
+                    const hediye = hediyeKatalogu.find(function (g) { return String(g.id) === String(msg.giftId); });
+
+                    if (hediye) {
+                        // Eğer bu hediye zaten başka bir slotta kullanılıyorsa:
+                        // Hata fırlatmak yerine iki slotun yerini otomatik değiştiriyoruz (SWAP)
+                        const cakisma = slotCakismasiBul(hediye.id, msg.side, index);
+                        if (cakisma) {
+                            const suAnkiHediye = hediyeSlotAtama[msg.side][index] || null;
+                            hediyeSlotAtama[cakisma.taraf][cakisma.index] = suAnkiHediye;
+                        }
+
+                        hediyeSlotAtama[msg.side][index] = hediye;
+                        slotAtamalariniKaydet();
+                        broadcast({ type: "giftSlots", slots: hediyeSlotAtama });
+                    }
+                }
+            }
+        }
+
+        // Bir hediyenin fotoğrafını Azad'ın kendi bilgisayarından
+        // seçtiği bir resimle KALICI olarak değiştirir (TikTok bize
+        // resmi görseli ücretsiz vermediği için).
+        if (msg.type === "gift-image-set" && msg.giftId && msg.dataUrl) {
+            try {
+                const eslesme = /^data:image\/(png|jpeg|jpg|webp);base64,(.+)$/.exec(msg.dataUrl);
+                if (!eslesme) return;
+
+                const uzanti = eslesme[1] === "jpeg" ? "jpg" : eslesme[1];
+                const veri = Buffer.from(eslesme[2], "base64");
+
+                const guvenliAd = "manuel-" + String(msg.giftId).replace(/[^a-zA-Z0-9_-]/g, "_") + "." + uzanti;
+                const klasor = path.join(__dirname, "public", "assets", "gift-images", "manuel");
+                if (!fs.existsSync(klasor)) {
+                    fs.mkdirSync(klasor, { recursive: true });
+                }
+                fs.writeFileSync(path.join(klasor, guvenliAd), veri);
+
+                const yeniYol = "assets/gift-images/manuel/" + guvenliAd;
+
+                const kayit = hediyeKatalogu.find(function (g) { return String(g.id) === String(msg.giftId); });
+                if (kayit) {
+                    kayit.image = yeniYol;
+                    katalogKaydet();
+                    broadcast({ type: "giftCatalog", entries: hediyeKatalogu });
+                }
+
+                // Bu hediye zaten bir kutuya atanmışsa, o kutudaki
+                // görseli de anında güncelle.
+                let slotDegisti = false;
+                ["left", "right"].forEach(function (taraf) {
+                    hediyeSlotAtama[taraf].forEach(function (slot, i) {
+                        if (slot && String(slot.id) === String(msg.giftId)) {
+                            hediyeSlotAtama[taraf][i] = Object.assign({}, slot, { image: yeniYol });
+                            slotDegisti = true;
+                        }
+                    });
+                });
+                if (slotDegisti) {
+                    slotAtamalariniKaydet();
+                    broadcast({ type: "giftSlots", slots: hediyeSlotAtama });
+                }
+            } catch (hata) {
+                console.error("Hediye görseli kaydedilemedi:", hata.message);
+            }
+        }
+    });
+});
+
+function wsGonder(ws, data) {
+    if (!ws || ws.readyState !== 1) return false;
+    try {
+        ws.send(JSON.stringify(data));
+        return true;
+    } catch (hata) {
+        return false;
+    }
+}
+
+function broadcast(data) {
+    wss.clients.forEach(function (client) {
+        wsGonder(client, data);
+    });
+}
+
+const WIDGET_KALP_ATISI = setInterval(function () {
+    wss.clients.forEach(function (client) {
+        if (client.isAlive === false) {
+            try { client.terminate(); } catch (hata) {}
+            return;
+        }
+        client.isAlive = false;
+        try { client.ping(); } catch (hata) {}
+    });
+}, 25000);
+
+wss.on("close", function () {
+    clearInterval(WIDGET_KALP_ATISI);
+});
+
+// =====================================================================
+// SAVAŞ DURUMU — TEK MERKEZDEN YÖNETİLİYOR
+// ---------------------------------------------------------------------
+// Eskiden her cihaz (bilgisayar, telefon, tablet) süreyi/skoru kendi
+// başına, kendi ekranında sayıyordu. Birinde BAŞLAT'a basmak diğerinde
+// hiçbir şey yapmıyordu. Artık süre, skor, hangi oyuncunun atandığı ve
+// başlık SUNUCUDA tutuluyor; hangi cihazdan değiştirilirse değiştirilsin
+// bağlı TÜM cihazlara aynı anda yansıyor.
+// =====================================================================
+
+const savas = {
+    leftUsername: "OYUNCU 1",
+    leftLink: "",
+    leftPhotoUser: "",
+    leftPhotoUrl: "",
+    rightUsername: "OYUNCU 2",
+    rightLink: "",
+    rightPhotoUser: "",
+    rightPhotoUrl: "",
+    leftScore: 0,
+    rightScore: 0,
+    customTitle: "MaNga Live",
+    // Son biten savaşın sonucu ("left" / "right" / "draw" / null). Kalıcı
+    // state'in bir parçası ki yeni bağlanan bir cihaz da doğru görsün,
+    // ve yeni bir profil atanınca (aşağıda) temizlenebilsin.
+    sonuc: null,
+
+    // Tur kazanma listesi: her turu kazananın o anki ismiyle otomatik
+    // eklendiği kayıt listesi (bkz. savasTalliOtomatikEkle). Her kayıt
+    // {id, name} — elle silinebilir (bkz. savasTalliSil), elle eklenmez.
+    leftTally: [],
+    rightTally: [],
+
+    // Seçili arka plan videosu (assets/backgrounds/... yolu) ya da boş
+    // seçildiyse null. Kalıcı state'in parçası, tüm cihazlarda (ve OBS
+    // tarayıcı kaynağında) aynı arka plan görünsün diye.
+    backgroundVideo: null,
+
+    // Hediye ikonlarındaki (sadece o küçük PNG'ler — başka hiçbir şey)
+    // hafif hareket/animasyon ayarı. Yayın sırasında ekranda hep aynı
+    // sabit görsellerin durması yerine, hafif bir hareket olsun diye.
+    // tur: "yok" | "karart" | "dondur" | "nabiz" | "acKapa"
+    // hiz: animasyonun bir turunun kaç saniye süreceği (küçük = hızlı).
+    giftAnimasyonTuru: "yok",
+    giftAnimasyonHizi: 3
+};
+
+const zamanlayici = {
+    duration: 60,
+    kalanSaniye: 60,
+    calisiyorMu: false
+};
+
+let zamanlayiciId = null;
+
+function savasYayinla() {
+    broadcast({ type: "battleState", state: savas });
+}
+
+function zamanlayiciYayinla() {
+    broadcast({ type: "timerState", state: zamanlayici });
+}
+
+function zamanlayiciDurdur() {
+    if (zamanlayiciId) {
+        clearInterval(zamanlayiciId);
+        zamanlayiciId = null;
+    }
+    zamanlayici.calisiyorMu = false;
+}
+
+function zamanlayiciTick() {
+    zamanlayici.kalanSaniye--;
+
+    if (zamanlayici.kalanSaniye <= 0) {
+        zamanlayici.kalanSaniye = 0;
+        zamanlayiciDurdur();
+        zamanlayiciYayinla();
+
+        let sonuc = "draw";
+        if (savas.leftScore > savas.rightScore) sonuc = "left";
+        else if (savas.rightScore > savas.leftScore) sonuc = "right";
+
+        savas.sonuc = sonuc;
+
+        // Kazanan tarafın listesine otomatik kayıt eklenir (kaybeden
+        // taraf temizlenmeden ÖNCE, isim hâlâ doğruyken).
+        if (sonuc === "left" || sonuc === "right") {
+            savasTalliOtomatikEkle(sonuc);
+        }
+
+        broadcast({
+            type: "battleFinished",
+            sonuc: sonuc,
+            leftScore: savas.leftScore,
+            rightScore: savas.rightScore
+        });
+
+        // 3 saniye sonra otomatik yeni tur: skorlar sıfırlanır, süre
+        // baştan başlar (ama otomatik başlamaz, BAŞLAT'ı bekler —
+        // eski davranışla aynı). Ayrıca: KAYBEDEN taraf, yeni biri
+        // atanana kadar boş kalsın diye profili temizlenir — kazanan
+        // taraf ise olduğu gibi kalır.
+        setTimeout(function () {
+            if (sonuc === "left" || sonuc === "right") {
+                const kaybeden = sonuc === "left" ? "right" : "left";
+                savas[kaybeden + "Username"] = kaybeden === "left" ? "OYUNCU 1" : "OYUNCU 2";
+                savas[kaybeden + "Link"] = "";
+                savas[kaybeden + "PhotoUser"] = "";
+                savas[kaybeden + "PhotoUrl"] = "";
+            }
+
+            savas.leftScore = 0;
+            savas.rightScore = 0;
+            savas.sonuc = null;
+            zamanlayici.kalanSaniye = zamanlayici.duration;
+            savasYayinla();
+            zamanlayiciYayinla();
+        }, 3000);
+
+        return;
+    }
+
+    zamanlayiciYayinla();
+}
+
+function savasBaslat(sureSaniye) {
+    zamanlayiciDurdur();
+
+    const sure = Number(sureSaniye);
+    zamanlayici.duration = (!isNaN(sure) && sure >= 5) ? sure : 60;
+    zamanlayici.kalanSaniye = zamanlayici.duration;
+    zamanlayici.calisiyorMu = true;
+
+    // Yeni tur başlarken önceki turun WIN/LOSE yazısı tüm cihazlarda
+    // temizlensin.
+    savas.sonuc = null;
+    savasYayinla();
+
+    zamanlayiciYayinla();
+    zamanlayiciId = setInterval(zamanlayiciTick, 1000);
+}
+
+function savasDuraklatDevamEttir() {
+    if (zamanlayici.calisiyorMu) {
+        zamanlayiciDurdur();
+    } else {
+        if (zamanlayici.kalanSaniye <= 0) return;
+        zamanlayici.calisiyorMu = true;
+        zamanlayiciId = setInterval(zamanlayiciTick, 1000);
+    }
+    zamanlayiciYayinla();
+}
+
+function savasSkorAyarla(taraf, deger) {
+    if (taraf !== "left" && taraf !== "right") return;
+
+    let sayi = Number(deger);
+    if (isNaN(sayi)) sayi = 0;
+    sayi = Math.max(0, Math.min(9999999, Math.round(sayi)));
+
+    // Tur BAŞLAT ile açılmadan hiçbir hediye/manuel puan skor ekleyemez.
+    // Azaltma ve sıfırlama serbesttir; böylece yayıncı hatalı bir skoru
+    // temizleyebilir. Reddetme sonrası mevcut değer her ekrana tekrar
+    // gönderilir, bu nedenle widget ve oyun aynı görünür.
+    if (!zamanlayici.calisiyorMu && sayi > savas[taraf + "Score"]) {
+        savasYayinla();
+        return false;
+    }
+
+    savas[taraf + "Score"] = sayi;
+    savasYayinla();
+    return true;
+}
+
+function savasOyuncuAta(taraf, bilgi) {
+    if (taraf !== "left" && taraf !== "right") return;
+
+    if (typeof bilgi.username === "string") savas[taraf + "Username"] = bilgi.username.slice(0, 100);
+    if (typeof bilgi.link === "string") savas[taraf + "Link"] = bilgi.link.slice(0, 500);
+    if (typeof bilgi.photoUser === "string") savas[taraf + "PhotoUser"] = bilgi.photoUser.slice(0, 100);
+    if (typeof bilgi.photoUrl === "string") savas[taraf + "PhotoUrl"] = bilgi.photoUrl.slice(0, 3000000);
+
+    // Seçilen oyuncunun kaliteli profil fotoğrafını arka planda hazırla
+    if (typeof bilgi.photoUser === "string" && bilgi.photoUser) {
+        arkaPlandaKaliteliFotoHazirla(bilgi.photoUser);
+    }
+
+    // ÖNEMLİ DÜZELTME: Yeni bir profil atanınca, bir önceki kişiden kalan
+    // skor ve "WIN/LOSE" yazısı ekranda ASILI KALIYORDU — yeni kişi
+    // sanki eski kişinin skoruyla başlıyormuş gibi görünüyordu. Artık bu
+    // taraf için skor sıfırlanıyor ve genel sonuç yazısı temizleniyor
+    // (iki tarafın karşılaştırması artık anlamsız olduğu için).
+    savas[taraf + "Score"] = 0;
+    savas.sonuc = null;
+
+    savasYayinla();
+}
+
+function savasBasligiAyarla(metin) {
+    savas.customTitle = String(metin || "").slice(0, 200);
+    savasYayinla();
+}
+
+// Tur bitince kazanan tarafa otomatik olarak bir liste kaydı eklenir
+// (kazandığı andaki profil ismiyle). Elle SİLİNEBİLİR (bkz.
+// savasTalliSil) ama elle EKLENEMEZ — ekleme her zaman otomatik.
+let tallyIdSayaci = 1;
+
+function savasTalliOtomatikEkle(taraf) {
+    if (taraf !== "left" && taraf !== "right") return;
+
+    if (!Array.isArray(savas[taraf + "Tally"])) {
+        savas[taraf + "Tally"] = [];
+    }
+
+    savas[taraf + "Tally"].push({
+        id: tallyIdSayaci++,
+        name: savas[taraf + "Username"] || (taraf === "left" ? "OYUNCU 1" : "OYUNCU 2")
+    });
+
+    savasYayinla();
+}
+
+// Yayıncı, listedeki bir kaydın yanındaki "－" butonuna basınca çağrılır.
+// Chat mesajından geçerli bir "0"-"10" puanı çıkarır, değilse null
+// döner. Sadece düz rakam değil, mobil klavyelerin sık kullandığı
+// emoji "keycap" rakamları (1️⃣2️⃣...🔟) ve tam genişlikli rakamları
+// (１２３...) da kabul eder — aksi halde birçok gerçek oy sayılmıyordu.
+function mesajdanPuanCikar(ham) {
+    let metin = String(ham || "").trim();
+
+    // Emoji keycap rakamlarındaki görünmez işaretleri temizle:
+    // varyasyon seçici (U+FE0F) ve birleştirici kutu işareti (U+20E3).
+    metin = metin.replace(/\uFE0F/g, "").replace(/\u20E3/g, "");
+    if (metin === "🔟") metin = "10";
+
+    // Tam genişlikli rakamlar (０-９) varsa normal rakama çevir.
+    metin = metin.replace(/[０-９]/g, function (c) {
+        return String.fromCharCode(c.charCodeAt(0) - 0xFF10 + 0x30);
+    });
+
+    if (!/^(10|[0-9])$/.test(metin)) return null;
+    return Number(metin);
+}
+
+function savasTalliSil(taraf, id) {
+    if (taraf !== "left" && taraf !== "right") return;
+    if (!Array.isArray(savas[taraf + "Tally"])) return;
+
+    savas[taraf + "Tally"] = savas[taraf + "Tally"].filter(function (kayit) {
+        return kayit.id !== id;
+    });
+
+    savasYayinla();
+}
+
+// =====================================================================
+// PROFİL PUANLAMA — savaş sisteminden tamamen BAĞIMSIZ ayrı bir sayfa.
+// Bir izleyicinin profilini büyük gösterip, chat'ten "0"-"10" arası tek
+// sayı yazanların oyunu topluyor, ortalamasını hesaplıyor ve en yüksek
+// ortalamaya göre sıralı bir listede tutuyor.
+// =====================================================================
+
+const puanlama = {
+    gosterilenKullanici: null, // {uniqueId, nickname, profilePictureUrl} ya da null
+    sure: 30,
+    kalanSaniye: 30,
+    calisiyorMu: false,
+    oylar: [],  // [{uniqueId, nickname, profilePictureUrl, puan}] — SADECE şu an gösterilen kişi için
+    liste: [],  // [{id, uniqueId, nickname, profilePictureUrl, ortalama, oySayisi}] — kalıcı sıralama
+
+    // Canlı teşhis sayaçları — bu bağlantıdan gerçekten mesaj gelip
+    // gelmediğini ekranda göstermek için (konsola bakmaya gerek kalmadan).
+    gelenMesajSayisi: 0,
+    gecerliOySayisi: 0
+};
+
+let puanlamaZamanlayiciId = null;
+let puanlamaIdSayaci = 1;
+
+function puanlamaYayinla() {
+    broadcast({ type: "puanlamaState", state: puanlama });
+}
+
+// Yayıncı izleyici listesinden birine "Profili Göster" deyince çağrılır.
+// Önceki turun oyları temizlenir, yeni bir tur başlamaya hazır olur
+// (süre elle BAŞLAT'a basılınca başlar, otomatik başlamaz).
+function puanlamaGosterilenAyarla(kullanici) {
+    puanlamaZamanlayiciDurdur();
+    puanlama.gosterilenKullanici = kullanici;
+    puanlama.oylar = [];
+    puanlama.kalanSaniye = puanlama.sure;
+    puanlamaYayinla();
+}
+
+function puanlamaZamanlayiciDurdur() {
+    if (puanlamaZamanlayiciId) {
+        clearInterval(puanlamaZamanlayiciId);
+        puanlamaZamanlayiciId = null;
+    }
+    puanlama.calisiyorMu = false;
+}
+
+function puanlamaBaslat(saniyeGirdi) {
+    if (!puanlama.gosterilenKullanici) {
+        console.log("PUANLAMA: BAŞLAT'a basıldı ama önce 'Göster' seçilmemiş, iptal.");
+        return;
+    }
+
+    const saniye = Number(saniyeGirdi);
+    puanlama.sure = (!isNaN(saniye) && saniye > 0) ? saniye : 30;
+    puanlama.kalanSaniye = puanlama.sure;
+    puanlama.oylar = [];
+    console.log("PUANLAMA BAŞLADI: @" + puanlama.gosterilenKullanici.uniqueId + " için " + puanlama.sure + " saniye.");
+
+    puanlamaZamanlayiciDurdur();
+    puanlama.calisiyorMu = true;
+    puanlamaYayinla();
+
+    puanlamaZamanlayiciId = setInterval(function () {
+        puanlama.kalanSaniye--;
+
+        if (puanlama.kalanSaniye <= 0) {
+            puanlama.kalanSaniye = 0;
+            puanlamaZamanlayiciDurdur();
+            puanlamaTuruBitirVeListeyeEkle();
+        }
+
+        puanlamaYayinla();
+    }, 1000);
+}
+
+function puanlamaOrtalamaHesapla() {
+    if (puanlama.oylar.length === 0) return 0;
+    const toplam = puanlama.oylar.reduce(function (t, o) { return t + o.puan; }, 0);
+    return toplam / puanlama.oylar.length;
+}
+
+// Süre bitince: ortalamayı hesaplar, kalıcı listeye ekler/günceller,
+// en yüksek ortalama en üste gelecek şekilde sıralar.
+function puanlamaTuruBitirVeListeyeEkle() {
+    const kullanici = puanlama.gosterilenKullanici;
+    if (!kullanici) return;
+
+    const ortalama = puanlamaOrtalamaHesapla();
+    const mevcut = puanlama.liste.find(function (k) { return k.uniqueId === kullanici.uniqueId; });
+
+    if (mevcut) {
+        mevcut.ortalama = ortalama;
+        mevcut.oySayisi = puanlama.oylar.length;
+        mevcut.nickname = kullanici.nickname;
+        mevcut.profilePictureUrl = kullanici.profilePictureUrl;
+    } else {
+        puanlama.liste.push({
+            id: puanlamaIdSayaci++,
+            uniqueId: kullanici.uniqueId,
+            nickname: kullanici.nickname,
+            profilePictureUrl: kullanici.profilePictureUrl,
+            ortalama: ortalama,
+            oySayisi: puanlama.oylar.length
+        });
+    }
+
+    puanlama.liste.sort(function (a, b) { return b.ortalama - a.ortalama; });
+
+    // Süre bittiğinde profil sıralamaya girdi — ekrandan yok olsun (yayıncı yenisini seçene kadar boş kalsın)
+    puanlama.gosterilenKullanici = null;
+    puanlama.calisiyorMu = false;
+    puanlama.kalanSaniye = 0;
+}
+
+function puanlamaListedenSil(id) {
+    puanlama.liste = puanlama.liste.filter(function (k) { return k.id !== id; });
+    puanlamaYayinla();
+}
+
+// Chat'e "0"-"10" arası tek sayı yazılınca (SADECE oylama açıkken)
+// çağrılır. Aynı kişi tekrar yazarsa oyu GÜNCELLENİR (son yazdığı
+// geçerli olur), iki kere sayılmaz.
+function puanlamaOyEkle(uniqueId, nickname, profilePictureUrl, puan) {
+    if (!puanlama.calisiyorMu || !puanlama.gosterilenKullanici) return;
+
+    const mevcut = puanlama.oylar.find(function (o) { return o.uniqueId === uniqueId; });
+    if (mevcut) {
+        mevcut.puan = puan;
+        mevcut.nickname = nickname;
+        mevcut.profilePictureUrl = profilePictureUrl;
+    } else {
+        puanlama.oylar.push({ uniqueId: uniqueId, nickname: nickname, profilePictureUrl: profilePictureUrl, puan: puan });
+    }
+
+    puanlamaYayinla();
+
+    // OBS Şeffaf Balon Widget'ı için anlık tekil oy yayını:
+    broadcast({
+        type: "puanlamaYeniOy",
+        oy: {
+            uniqueId: uniqueId,
+            nickname: nickname || uniqueId,
+            profilePictureUrl: profilePictureUrl,
+            puan: puan,
+            id: Date.now() + "_" + Math.random().toString(36).substr(2, 4)
+        }
+    });
+}
+
+// ---------------------------------------------------------------------
+// Profil Puanlama sayfasının KENDİ, ANA VS EKRANINDAN TAMAMEN BAĞIMSIZ
+// canlı yayın bağlantısı. Ana ekrandaki karmaşık izleyici/fotoğraf
+// önbellekleme sistemine hiç dokunmadan, sadece "kim ne yazdı" ve
+// "izleyici listesi" için minimal, kendi başına bir bağlantı kurar.
+// ---------------------------------------------------------------------
+
+let puanlamaConnection = null;
+// uniqueId -> {nickname, profilePictureUrl, sira, mesajZamani, lastSeen}
+// sira: katılma sırası (yeni katılan altta başlar). mesajZamani: en son
+// mesaj YA DA hediye zamanı (o kişiyi listenin en üstüne çıkarır).
+// lastSeen: uzun süre sessiz kalanları listeden düşürmek için.
+let puanlamaViewers = new Map();
+let puanlamaSiraSayaci = 1;
+let puanlamaTemizlemeZamanlayici = null;
+
+function puanlamaViewerGuncelle(kimlik, nickname, profilePictureUrl, aktiviteVarMi, ikon) {
+    const mevcut = puanlamaViewers.get(kimlik);
+
+    puanlamaViewers.set(kimlik, {
+        nickname: nickname,
+        profilePictureUrl: profilePictureUrl,
+        sira: mevcut ? mevcut.sira : puanlamaSiraSayaci++,
+        mesajZamani: aktiviteVarMi ? Date.now() : (mevcut ? mevcut.mesajZamani || 0 : 0),
+        lastSeen: Date.now(),
+        sonEtkilesim: ikon || (mevcut ? mevcut.sonEtkilesim : null)
+    });
+}
+
+// Uzun süredir (3 dakika) hiç görünmeyen izleyicileri listeden düşürür —
+// tıpkı ana ekrandaki izleyici listesi gibi, TikTok "ayrıldı" bilgisi
+// vermediği için sessizlik süresine bakıyoruz.
+function puanlamaEskiViewerlariTemizle() {
+    const esik = 3 * 60 * 1000;
+    const now = Date.now();
+    let degisti = false;
+
+    puanlamaViewers.forEach(function (bilgi, kimlik) {
+        if (now - bilgi.lastSeen > esik) {
+            puanlamaViewers.delete(kimlik);
+            degisti = true;
+        }
+    });
+
+    if (degisti) {
+        puanlamaViewersYayinla();
+    }
+}
+
+function puanlamaViewersYayinla() {
+    const dizi = Array.from(puanlamaViewers.entries()).map(function (girdi) {
+        return {
+            uniqueId: girdi[0],
+            nickname: girdi[1].nickname,
+            profilePictureUrl: girdi[1].profilePictureUrl,
+            sira: girdi[1].sira,
+            mesajZamani: girdi[1].mesajZamani || 0,
+            sonEtkilesim: girdi[1].sonEtkilesim || null
+        };
+    });
+    broadcast({ type: "puanlamaViewers", viewers: dizi });
+}
+
+function puanlamaDurumYayinla(mesaj) {
+    broadcast({ type: "puanlamaStatus", message: mesaj });
+}
+
+function puanlamaBaglantiyiKes() {
+    if (puanlamaConnection) {
+        try { puanlamaConnection.disconnect(); } catch (hata) {}
+        puanlamaConnection = null;
+    }
+    if (puanlamaTemizlemeZamanlayici) {
+        clearInterval(puanlamaTemizlemeZamanlayici);
+        puanlamaTemizlemeZamanlayici = null;
+    }
+    puanlamaViewers.clear();
+    puanlamaViewersYayinla();
+    puanlamaDurumYayinla("Bağlı değil");
+}
+
+function puanlamaBaglan(kullaniciAdi) {
+    puanlamaBaglantiyiKes();
+    puanlamaDurumYayinla("Bağlanıyor...");
+    console.log("PUANLAMA: @" + kullaniciAdi + " için bağımsız bağlantı kuruluyor...");
+
+    puanlamaConnection = new TikTokLiveConnection(kullaniciAdi, {
+        signApiKey: eulerApiAnahtari || undefined
+    });
+
+    puanlamaConnection.connect()
+        .then(function () {
+            puanlamaDurumYayinla("Bağlandı: @" + kullaniciAdi);
+            console.log("PUANLAMA: bağlandı @" + kullaniciAdi);
+        })
+        .catch(function (hata) {
+            puanlamaDurumYayinla("Bağlanılamadı: " + hata.message);
+            console.log("PUANLAMA: bağlantı hatası -", hata.message);
+        });
+
+    puanlamaConnection.on(WebcastEvent.CHAT, function (data) {
+        const user = data.user || {};
+        const kimlik = user.displayId || user.nickname;
+
+        // Mesaj yazmak = aktivite → listenin en üstüne çıkar.
+        puanlamaViewerGuncelle(kimlik, user.nickname, kullaniciAvatariSec(user), true, "💬");
+        puanlamaViewersYayinla();
+
+        // Canlı teşhis: bu bağlantıdan GERÇEKTEN mesaj gelip gelmediğini
+        // ekranda görebilmek için — konsola bakmaya gerek kalmadan.
+        puanlama.gelenMesajSayisi++;
+
+        // Doğrulandı: bu kütüphane sürümünde mesaj metni "data.content"
+        // alanında geliyor ("data.comment" hep boştu). İkisini de
+        // deniyoruz ki kütüphane ileride değişirse yine çalışsın.
+        const mesajMetni = data.comment || data.content || "";
+        const puan = mesajdanPuanCikar(mesajMetni);
+        if (puan !== null) {
+            console.log("PUANLAMA - \"" + mesajMetni + "\" (@" + kimlik + ") -> " + puan + "/10 olarak sayıldı");
+        }
+
+        if (puan !== null) {
+            puanlama.gecerliOySayisi++;
+            puanlamaOyEkle(kimlik, user.nickname, kullaniciAvatariSec(user), puan);
+        } else {
+            puanlamaYayinla(); // sayaç değişti, mesaj oy olmasa bile ekrana yansısın
+        }
+    });
+
+    puanlamaConnection.on(WebcastEvent.MEMBER, function (_data) {
+        // Giren kişiler listeye eklenmez, sadece yorum ve hediye atanlar eklenir.
+    });
+
+    // Takip eden kişiler de listeye eklenir (Kullanıcı İsteği)
+    if (WebcastEvent.FOLLOW) {
+        puanlamaConnection.on(WebcastEvent.FOLLOW, function (data) {
+            try {
+                const user = data.user || {};
+                const kimlik = user.displayId || user.nickname;
+                if (!kimlik) return;
+                puanlamaViewerGuncelle(kimlik, user.nickname, kullaniciAvatariSec(user), true, "➕");
+                puanlamaViewersYayinla();
+            } catch (hata) {
+                console.error("Puanlama takip işlenemedi:", hata.message);
+            }
+        });
+    }
+
+    // Beğeni = SADECE ikon güncellenir (ana ekrandaki gibi), listedeki
+    // yeri değişmez.
+    puanlamaConnection.on(WebcastEvent.LIKE, function (data) {
+        const user = data.user || {};
+        const kimlik = user.displayId || user.nickname;
+        if (!kimlik) return;
+
+        if (!tiktokConnection) widgetLikePost({
+            username: kimlik, nickname: user.nickname || kimlik, avatar: kullaniciAvatariSec(user),
+            likeCount: Math.max(1, Number(data.count ?? data.likeCount ?? 1) || 1)
+        });
+
+        puanlamaViewerGuncelle(kimlik, user.nickname, kullaniciAvatariSec(user), false, "❤️");
+        puanlamaViewersYayinla();
+    });
+
+    // Hediye/coin atmak da mesaj yazmak gibi aktivite sayılır — o kişi
+    // de listenin en üstüne çıkar (SADECE bu sayfaya özel davranış).
+    puanlamaConnection.on(WebcastEvent.GIFT, function (data) {
+        try {
+            const user = data.user || {};
+            const kimlik = user.displayId || user.nickname;
+
+            puanlamaViewerGuncelle(kimlik, user.nickname, kullaniciAvatariSec(user), true, "🎁");
+            puanlamaViewersYayinla();
+
+            // Coin toplamı SADECE ana bağlantı KAPALIYKEN burada işlenir —
+            // ikisi birden açıksa ana bağlantı zaten aynı hediyeyi
+            // işliyor, burada da işlersek coin ÇİFT sayılır.
+            if (!tiktokConnection) {
+                hediyeCoinKrediEkle(data);
+            }
+        } catch (hata) {
+            console.error("Puanlama hediye işlenemedi:", hata.message);
+        }
+    });
+
+    puanlamaConnection.on(WebcastEvent.DISCONNECTED, function () {
+        puanlamaDurumYayinla("Bağlantı koptu.");
+    });
+
+    // Sessiz kalan izleyicileri periyodik olarak listeden düşür.
+    if (puanlamaTemizlemeZamanlayici) {
+        clearInterval(puanlamaTemizlemeZamanlayici);
+    }
+    puanlamaTemizlemeZamanlayici = setInterval(puanlamaEskiViewerlariTemizle, 15000);
+}
+
+// Canlı yayın olaylarında TikTok bize aynı kullanıcının birden fazla
+// boyutta avatarını gönderebiliyor. Var olanların en büyüğünü seçiyoruz.
+// (Eskiden doğrudan avatarThumb alınıyordu; o yüzden ekrana 72x72'lik
+// bulanık fotoğraflar geliyordu.)
+function kullaniciAvatariSec(user) {
+    if (!user) return null;
+    const kaynaklar = [
+        user.avatarLarger,
+        user.avatarLarge,
+        user.avatar_larger,
+        user.avatar_large,
+        user.avatarMedium,
+        user.avatar_medium,
+        user.avatarThumb,
+        user.avatar_thumb,
+        user.profilePictureUrl,
+        user.profile_picture_url,
+        user.avatarUrl,
+        user.avatar_url,
+        user.avatar,
+        user.picture,
+        user.pictureUrl
+    ];
+
+    for (let i = 0; i < kaynaklar.length; i++) {
+        const kaynak = kaynaklar[i];
+        if (!kaynak) continue;
+        if (typeof kaynak === "string" && (kaynak.startsWith("http://") || kaynak.startsWith("https://"))) {
+            return kaynak;
+        }
+        const liste = (kaynak && (kaynak.urlList || kaynak.url_list || kaynak.urls)) || [];
+        if (Array.isArray(liste) && liste.length > 0 && typeof liste[0] === "string") {
+            return liste[0];
+        }
+    }
+
+    return null;
+}
+
+// =====================================================================
+// HEDİYE / COIN TAKİBİ
+// ---------------------------------------------------------------------
+// TikTok hediye olayının alan isimleri sürüme göre değişebiliyor.
+// Hangi isim gelirse gelsin çalışsın diye hepsini sırayla deniyoruz.
+// =====================================================================
+
+// =====================================================================
+// COIN SIRALAMASI — KALICI DEPOLAMA
+// ---------------------------------------------------------------------
+// Sıralama artık:
+//  1) Yayına yeniden bağlanınca SIFIRLANMIYOR.
+//  2) Sunucu yeniden başlasa bile diskteki dosyadan geri yükleniyor.
+//  3) Sadece kullanıcı "SIFIRLA" butonuna basınca temizleniyor.
+// =====================================================================
+
+const coinTablosu = new Map(); // uniqueId -> { coins, nickname, profilePictureUrl }
+
+// GERÇEK hediye kataloğu: [{ id, name, coins, image }]. Profil altındaki
+// hediye eşleştirme kutusu bunu kullanıyor.
+//
+// ÖNEMLİ: TikTok'un "bu yayının TÜM hediyelerini baştan ver" servisi
+// (fetchAvailableGifts) artık ücretli bir plan gerektiriyor (Business
+// plan) — ücretsizde "This endpoint requires a Business plan" hatasıyla
+// başarısız oluyor. Bu yüzden kataloğu TERSİNDEN kuruyoruz: yayında
+// GERÇEKTEN gönderilen her hediyeyi (isim, gerçek coin değeri, görseli)
+// gördükçe bu listeye ekliyoruz. Böylece "bağlanmadan liste boş" sorunu
+// olmaz — birkaç hediye geldikten sonra liste kendiliğinden dolar, ve
+// diskte saklandığı için bir sonraki yayında da baştan hazır olur.
+const KATALOG_DOSYASI = path.join(__dirname, ".gift-catalog.json");
+let hediyeKatalogu = [];
+
+function katalogYukle() {
+    try {
+        const tamPath = path.join(__dirname, "public", "assets", "gift-images", "katalog_tam.json");
+        if (fs.existsSync(tamPath)) {
+            const tamListe = JSON.parse(fs.readFileSync(tamPath, "utf8"));
+            if (Array.isArray(tamListe) && tamListe.length) {
+                tamListe.sort((a, b) => (Number(a.coins) || 0) - (Number(b.coins) || 0));
+                hediyeKatalogu = tamListe.map(g => ({
+                    id: String(g.id || g.name),
+                    name: g.trName || g.name,
+                    origName: g.name,
+                    coins: Number(g.coins) || 1,
+                    image: g.image || `/catalog-assets/gift-images/${g.file}`
+                }));
+                return;
+            }
+        }
+        if (fs.existsSync(KATALOG_DOSYASI)) {
+            const veri = JSON.parse(fs.readFileSync(KATALOG_DOSYASI, "utf8"));
+            if (Array.isArray(veri)) {
+                hediyeKatalogu = veri.filter(function (g) {
+                    return !(typeof g.id === "string" && g.id.indexOf("seed-") === 0);
+                });
+            }
+        }
+    } catch (hata) {
+        console.error("Hediye kataloğu dosyası okunamadı:", hata.message);
+    }
+}
+
+function katalogKaydet() {
+    try {
+        fs.writeFileSync(KATALOG_DOSYASI, JSON.stringify(hediyeKatalogu));
+    } catch (hata) {
+        console.error("Hediye kataloğu dosyası yazılamadı:", hata.message);
+    }
+}
+
+katalogYukle();
+
+// =====================================================================
+// HEDİYE GÖRSEL KÜTÜPHANESİ — TikTok'un resmi hediye görsellerini bize
+// ÜCRETSİZ vermemesi (Business plan gerektirmesi) yüzünden, Azad'ın
+// elle topladığı Türkiye'deki TÜM TikTok hediyelerinin PNG'lerini
+// (public/assets/gift-images/*.png + _kutuphane.json) isim üzerinden
+// eşleştiriyoruz. SADECE canlıda GERÇEKTEN görülmüş (yani zaten
+// hediyeKatalogu'nda gerçek ID'si olan) hediyelere görsel ekler —
+// kütüphanede olup canlıda hiç gelmemiş bir hediye ASLA yeni bir
+// katalog kaydı olarak eklenmez (sahte kayıt yaratılmaz).
+const GORSEL_KUTUPHANE_KLASORU = path.join(__dirname, "public", "assets", "gift-images");
+let gorselKutuphaneIndeksi = null; // normalizeEdilmişIsim -> dosyaAdi
+
+function isimNormallestir(isim) {
+    return String(isim || "")
+        .trim()
+        .toLocaleLowerCase("tr-TR")
+        .replace(/\.\.\.$/, "")
+        .replace(/\s+/g, " ")
+        .trim();
+}
+
+function gorselKutuphanesiniYukle() {
+    gorselKutuphaneIndeksi = new Map();
+
+    try {
+        const listeYolu = path.join(GORSEL_KUTUPHANE_KLASORU, "_kutuphane.json");
+        if (!fs.existsSync(listeYolu)) return;
+
+        const liste = JSON.parse(fs.readFileSync(listeYolu, "utf8"));
+        if (!Array.isArray(liste)) return;
+
+        liste.forEach(function (girdi) {
+            if (!girdi.name || !girdi.file) return;
+            const anahtar = isimNormallestir(girdi.name);
+            if (!gorselKutuphaneIndeksi.has(anahtar)) {
+                gorselKutuphaneIndeksi.set(anahtar, girdi.file);
+            }
+        });
+
+        console.log("HEDİYE GÖRSEL KÜTÜPHANESİ — " + gorselKutuphaneIndeksi.size + " görsel yüklendi.");
+    } catch (hata) {
+        console.error("Hediye görsel kütüphanesi okunamadı:", hata.message);
+    }
+}
+
+// Tam eşleşme yoksa, ekran görüntüsünden kopyalanırken kesilmiş isimler
+// (ör. "Love you so mu...") için basit bir "biri diğerinin başlangıcı
+// mı" kontrolü de dener.
+function kutuphaneGorseliBul(isim) {
+    if (!gorselKutuphaneIndeksi) gorselKutuphanesiniYukle();
+
+    const hedef = isimNormallestir(isim);
+    if (!hedef) return null;
+
+    if (gorselKutuphaneIndeksi.has(hedef)) {
+        return "assets/gift-images/" + gorselKutuphaneIndeksi.get(hedef);
+    }
+
+    let bulunan = null;
+    gorselKutuphaneIndeksi.forEach(function (dosya, anahtar) {
+        if (bulunan) return;
+        if (hedef.indexOf(anahtar) === 0 || anahtar.indexOf(hedef) === 0) {
+            bulunan = dosya;
+        }
+    });
+
+    return bulunan ? "assets/gift-images/" + bulunan : null;
+}
+
+// Sunucu her açıldığında, kataloğumuzda ZATEN olan ama görseli eksik
+// hediyeleri kütüphaneden bir kerede tamamlar (manuel eklenmiş görsele
+// asla dokunmaz, sadece null olanları doldurur).
+function katalogGorsellerinTamamla() {
+    let degisti = false;
+
+    hediyeKatalogu.forEach(function (g) {
+        if (!g.image) {
+            const bulunan = kutuphaneGorseliBul(g.name);
+            if (bulunan) {
+                g.image = bulunan;
+                degisti = true;
+            }
+        }
+    });
+
+    if (degisti) {
+        katalogKaydet();
+    }
+}
+
+gorselKutuphanesiniYukle();
+katalogGorsellerinTamamla();
+
+// Canlıda gerçekten gelen bir hediyeyi kataloğa ekler (zaten varsa
+// üzerine yazar — isim/görsel/coin değeri güncel kalsın). Yeni bir
+// hediye eklendiyse true döner (böylece sadece o zaman diske yazıp
+// yayınlıyoruz, her hediyede gereksiz iş yapmayalım).
+//
+// tiktokIds: TikTok aynı hediye için zamanla/bölgeye göre farklı ID
+// verirse diye, o hediye için görülen TÜM gerçek ID'lerin listesi.
+// Eşleştirme yaparken hem "id" hem "tiktokIds" kontrol ediliyor.
+function idEslesiyorMu(g, hedefId) {
+    if (hedefId == null) return false;
+    if (g.id != null && String(g.id) === String(hedefId)) return true;
+    return Array.isArray(g.tiktokIds) && g.tiktokIds.some(function (tid) { return String(tid) === String(hedefId); });
+}
+
+function katalogaEkle(hediye) {
+    if (hediye.id == null && !hediye.isim) return false;
+
+    // Önce gerçek TikTok kimliğiyle (id veya tiktokIds) eşleşen kayıt var mı bak.
+    let mevcutIndex = hediye.id != null
+        ? hediyeKatalogu.findIndex(function (g) { return idEslesiyorMu(g, hediye.id); })
+        : -1;
+
+    // Kimlikle bulunamadıysa: isim aynıysa onu bul (kimliği ister eksik
+    // ister farklı olsun) — böylece aynı hediye ikiye bölünmez; gerçek
+    // kimlik geldiğinde eski kaydın üzerine eklenir.
+    if (mevcutIndex === -1 && hediye.isim) {
+        mevcutIndex = hediyeKatalogu.findIndex(function (g) {
+            return g.name &&
+                String(g.name).trim().toLocaleLowerCase("tr-TR") === String(hediye.isim).trim().toLocaleLowerCase("tr-TR");
+        });
+    }
+
+    const eskiKayit = mevcutIndex !== -1 ? hediyeKatalogu[mevcutIndex] : null;
+    const eskiTiktokIds = (eskiKayit && Array.isArray(eskiKayit.tiktokIds)) ? eskiKayit.tiktokIds.slice() : [];
+    const yeniId = ilkDolu(hediye.id, eskiKayit ? eskiKayit.id : null, null);
+
+    const tiktokIds = eskiTiktokIds.slice();
+    if (yeniId != null && tiktokIds.indexOf(yeniId) === -1 &&
+        !tiktokIds.some(function (tid) { return String(tid) === String(yeniId); })) {
+        tiktokIds.push(yeniId);
+    }
+
+    const kayit = {
+        id: yeniId,
+        name: hediye.isim || (eskiKayit ? eskiKayit.name : "Hediye"),
+        coins: hediye.birimCoin != null ? hediye.birimCoin : (eskiKayit ? eskiKayit.coins : 0),
+        // Öncelik: (1) TikTok'un canlıda verdiği gerçek görsel, (2) daha
+        // önce elle/kütüphaneden atanmış görsel, (3) hiçbiri yoksa görsel
+        // kütüphanesinden isme göre otomatik eşleştirme.
+        image: hediye.gorsel || (eskiKayit ? eskiKayit.image : null) || kutuphaneGorseliBul(hediye.isim),
+        tiktokIds: tiktokIds
+    };
+
+    if (mevcutIndex === -1) {
+        hediyeKatalogu.push(kayit);
+        hediyeKatalogu.sort(function (a, b) { return a.coins - b.coins; });
+        return true;
+    }
+
+    const eski = hediyeKatalogu[mevcutIndex];
+    if (eski.id === kayit.id && eski.name === kayit.name && eski.coins === kayit.coins &&
+        eski.image === kayit.image && JSON.stringify(eski.tiktokIds) === JSON.stringify(kayit.tiktokIds)) {
+        return false;
+    }
+
+    hediyeKatalogu[mevcutIndex] = kayit;
+    return true;
+}
+
+// Profil kartlarının altındaki 6'şar hediye kutusunun HANGİ GERÇEK TikTok
+// hediyesine bağlandığı: { left: [slot0..slot5], right: [slot0..slot5] }.
+// Her slot ya null (henüz bağlanmamış, sadece elle eklenen sabit puanlı
+// görsel) ya da katalogdan bir { id, name, coins, image } kaydı.
+// Diskte saklanır ki sunucu yeniden başlayınca kaybolmasın.
+const SLOT_DOSYASI = path.join(__dirname, ".gift-slots.json");
+let hediyeSlotAtama = { left: [null, null, null, null, null, null], right: [null, null, null, null, null, null] };
+
+function slotAtamalariniYukle() {
+    try {
+        if (fs.existsSync(SLOT_DOSYASI)) {
+            const veri = JSON.parse(fs.readFileSync(SLOT_DOSYASI, "utf8"));
+            if (veri && Array.isArray(veri.left) && Array.isArray(veri.right)) {
+                hediyeSlotAtama = {
+                    left: veri.left.slice(0, 6).concat([null, null, null, null, null, null]).slice(0, 6),
+                    right: veri.right.slice(0, 6).concat([null, null, null, null, null, null]).slice(0, 6)
+                };
+            }
+        }
+    } catch (hata) {
+        console.error("Hediye slot dosyası okunamadı:", hata.message);
+    }
+}
+
+function slotAtamalariniKaydet() {
+    try {
+        fs.writeFileSync(SLOT_DOSYASI, JSON.stringify(hediyeSlotAtama));
+    } catch (hata) {
+        console.error("Hediye slot dosyası yazılamadı:", hata.message);
+    }
+}
+
+slotAtamalariniYukle();
+
+app.get("/api/gift-slots", (req, res) => {
+    res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate");
+    res.json(hediyeSlotAtama);
+});
+
+app.get("/api/gift-catalog", (req, res) => {
+    res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate");
+    try {
+        const tamPath = path.join(__dirname, "public", "assets", "gift-images", "katalog_tam.json");
+        if (fs.existsSync(tamPath)) {
+            const tamListe = JSON.parse(fs.readFileSync(tamPath, "utf8"));
+            if (Array.isArray(tamListe) && tamListe.length) {
+                tamListe.sort((a, b) => (Number(a.coins) || 0) - (Number(b.coins) || 0));
+                const formatli = tamListe.map(g => ({
+                    id: String(g.id || g.name),
+                    name: g.trName || g.name,
+                    origName: g.name,
+                    coins: Number(g.coins) || 1,
+                    image: g.image || `/assets/gift-images/${g.file}`
+                }));
+                return res.json(formatli);
+            }
+        }
+    } catch (e) {
+        console.warn("katalog_tam.json okunamadı:", e.message);
+    }
+    res.json(hediyeKatalogu);
+});
+
+// TikTok'un fetchAvailableGifts() sonucundaki bir hediyeyi bizim
+// kullandığımız sade şekle çevirir.
+function katalogHediyesiCikar(g) {
+    const isim = ilkDolu(g.name, g.giftName, "Hediye");
+    const coin = Number(ilkDolu(g.diamond_count, g.diamondCount, g.diamond_cost, g.diamondCost, 0)) || 0;
+    const gorsel = ilkDolu(
+        g.image && g.image.url_list && g.image.url_list[0],
+        g.icon && g.icon.url_list && g.icon.url_list[0],
+        null
+    );
+
+    return { id: g.id, name: isim, coins: coin, image: gorsel };
+}
+const COIN_DOSYASI = path.join(__dirname, ".coin-data.json");
+
+function coinTablosunuYukle() {
+    // KULLANICI İSTEĞİ: Uygulama her yeniden başlatıldığında coin sıralaması,
+    // isimler ve profiller tamamen sıfırlansın, eski oturumlardan hiçbir veri kalmasın.
+    try {
+        coinTablosu.clear();
+        fs.writeFileSync(COIN_DOSYASI, "{}", "utf-8");
+        console.log("COIN — Uygulama başlangıcı: Sıralama ve profiller sıfırlandı (tertemiz başlatıldı).");
+    } catch (hata) {
+        console.error("Coin sıfırlanırken hata:", hata.message);
+    }
+}
+
+let coinKaydetZamanlayici = null;
+
+function coinTablosunuKaydet() {
+    // Art arda hediye gelirse diski her seferinde değil, 1.5 saniyede
+    // bir topluca yazıyoruz.
+    if (coinKaydetZamanlayici) return;
+
+    coinKaydetZamanlayici = setTimeout(function () {
+        coinKaydetZamanlayici = null;
+        try {
+            const nesne = {};
+            coinTablosu.forEach(function (deger, anahtar) { nesne[anahtar] = deger; });
+            fs.writeFileSync(COIN_DOSYASI, JSON.stringify(nesne));
+        } catch (hata) {
+            console.error("Coin verisi diske yazılamadı:", hata.message);
+        }
+    }, 1500);
+}
+
+// Bir hediye olayından coin kredisi işler: coinTablosu'nu günceller,
+// diske kaydeder, gerçek hediye kataloğunu büyütür ve tüm cihazlara
+// "gift" olarak yayınlar. Hem ANA bağlantıdan hem de (ana bağlantı kapalı
+// olduğunda) Profil Puanlama'nın kendi bağlantısından çağrılabilir —
+// AMA aynı hediye asla İKİSİNDEN BİRDEN işlenmemeli (çağıran taraf
+// buna dikkat eder), yoksa coin çift sayılır.
+function hediyeCoinKrediEkle(data) {
+    const user = data.user || {};
+    const kimlik = user.displayId || user.nickname;
+    if (!kimlik) return null;
+
+    const hediye = hediyeBilgisiCikar(data);
+    if (!hediye.sayilsinMi) return null;
+
+    widgetGiftPost({
+        username: kimlik, nickname: user.nickname || kimlik, avatar: kullaniciAvatariSec(user),
+        giftId: hediye.id, giftName: hediye.isim, count: hediye.adet, coins: hediye.toplamCoin,
+        eventId: data.eventId || data.msgId || data.common?.msgId || data.logId || '',
+        giftType: hediye.giftType, repeatEnd: hediye.repeatEnd,
+        giftImage: String(hediye.gorsel || "").startsWith("/") ? "http://127.0.0.1:3000" + hediye.gorsel : hediye.gorsel
+    });
+
+    const oncekiKayit = coinTablosu.get(kimlik) || { coins: 0, credited: 0 };
+    const yeniToplam = (oncekiKayit.coins || 0) + hediye.toplamCoin;
+
+    coinTablosu.set(kimlik, {
+        coins: yeniToplam,
+        nickname: user.nickname || oncekiKayit.nickname || kimlik,
+        profilePictureUrl: kullaniciAvatariSec(user) || oncekiKayit.profilePictureUrl || null,
+        credited: oncekiKayit.credited || 0,
+        sonHediyeAdi: hediye.isim,
+        sonHediyeGorseli: hediye.gorsel
+    });
+
+    coinTablosunuKaydet();
+
+    if (katalogaEkle(hediye)) {
+        katalogKaydet();
+        broadcast({ type: "giftCatalog", entries: hediyeKatalogu });
+    }
+
+    broadcast({
+        type: "gift",
+        uniqueId: kimlik,
+        nickname: user.nickname,
+        profilePictureUrl: kullaniciAvatariSec(user),
+        giftName: hediye.isim,
+        giftImage: hediye.gorsel,
+        count: hediye.adet,
+        coins: hediye.toplamCoin,
+        totalCoins: yeniToplam
+    });
+
+    return { kimlik: kimlik, hediye: hediye, yeniToplam: yeniToplam };
+}
+
+function coinTablosuDiziyeCevir() {
+    const dizi = [];
+
+    coinTablosu.forEach(function (deger, anahtar) {
+        dizi.push({
+            uniqueId: anahtar,
+            nickname: deger.nickname || anahtar,
+            profilePictureUrl: deger.profilePictureUrl || null,
+            coins: deger.coins || 0,
+            // Bu kişinin coin'inden savaş skoruna şimdiye kadar ne kadarı
+            // eklendi — arayüz "SOL/SAĞ'A EKLE" butonunun hâlâ eklenecek
+            // bir şey olup olmadığını bununla anlıyor.
+            credited: deger.credited || 0,
+            lastGiftName: deger.sonHediyeAdi || null,
+            lastGiftImage: deger.sonHediyeGorseli || null
+        });
+    });
+
+    dizi.sort(function (a, b) { return b.coins - a.coins; });
+    return dizi;
+}
+
+// ============================================================
+// Sohbetten bir kişinin coin'ini savaş skoruna EKLE butonuna
+// basıldığında çağrılır. ÖNEMLİ DÜZELTME: eskiden istemci "mevcut
+// skor + bu kişinin TOPLAM coin'i" hesaplayıp gönderiyordu. Bu,
+// aynı kişiye ikinci kez basılınca (ya da o kişi yeni hediye
+// gönderdikten sonra tekrar basılınca) coin'lerin İKİNCİ KEZ
+// eklenmesine, yani skorun olması gerekenden fazla artmasına yol
+// açıyordu. Şimdi sunucu her kişi için "şimdiye kadar ne kadarı
+// eklendi" bilgisini tutuyor ve HER SEFERİNDE SADECE henüz
+// eklenmemiş farkı ekliyor.
+// ============================================================
+function savasSkoraHediyeKredisiEkle(uniqueId, taraf) {
+    if (taraf !== "left" && taraf !== "right") return;
+    if (!uniqueId) return;
+    if (!zamanlayici.calisiyorMu) return;
+
+    const kayit = coinTablosu.get(uniqueId);
+    if (!kayit) return;
+
+    const toplam = kayit.coins || 0;
+    const eskiKredi = kayit.credited || 0;
+    const fark = toplam - eskiKredi;
+
+    if (fark <= 0) return; // Bu kişinin coin'i zaten tamamen eklenmiş.
+
+    kayit.credited = toplam;
+    coinTablosu.set(uniqueId, kayit);
+    coinTablosunuKaydet();
+
+    savasSkorAyarla(taraf, savas[taraf + "Score"] + fark);
+
+    // "Eklendi" durumu tüm cihazlarda aynı görünsün diye güncel
+    // sıralamayı da yayınlıyoruz.
+    broadcast({ type: "giftState", entries: coinTablosuDiziyeCevir() });
+}
+
+coinTablosunuYukle();
+
+function ilkDolu() {
+    for (let i = 0; i < arguments.length; i++) {
+        const deger = arguments[i];
+        if (deger !== undefined && deger !== null && deger !== "") {
+            return deger;
+        }
+    }
+    return null;
+}
+
+function hediyeBilgisiCikar(data) {
+    // enableExtendedGiftInfo:true sayesinde TikTok'un kendi verdiği
+    // GERÇEK bilgi — varsa her zaman bunu önceliklendiriyoruz.
+    const ext = data.extendedGiftInfo || {};
+    const gift = data.gift || {};
+    const detay = data.giftDetails || data.giftInfo || {};
+
+    const adet = Number(ilkDolu(
+        data.repeatCount, gift.repeat_count, gift.repeatCount, data.comboCount, 1
+    )) || 1;
+
+    const birimCoin = Number(ilkDolu(
+        ext.diamond_count, ext.diamondCount,
+        detay.diamondCount, detay.diamond_count,
+        data.diamondCount, data.diamond_count,
+        gift.diamond_count, gift.diamondCount, 0
+    )) || 0;
+
+    const isim = ilkDolu(
+        ext.name, ext.giftName,
+        detay.giftName, detay.name, data.giftName, gift.name, "Hediye"
+    );
+
+    // Canlı olayın gerçek TikTok hediye kimliğini görsel ve eşleşme
+    // aramalarından önce hazırla. Önceki sıra, görselsiz hediyelerde
+    // değişken tanımlanmadan erişim hatası üretiyordu.
+    const kimlikId = ilkDolu(
+        ext.id, data.giftId, data.gift_id, detay.giftId, detay.gift_id, gift.id, null
+    );
+
+    function hediyeGorseliniCoz(obj) {
+        if (!obj) return null;
+        if (typeof obj === "string" && (obj.startsWith("http://") || obj.startsWith("https://"))) return obj;
+        if (obj.url_list && Array.isArray(obj.url_list) && obj.url_list[0]) return obj.url_list[0];
+        if (obj.urlList && Array.isArray(obj.urlList) && obj.urlList[0]) return obj.urlList[0];
+        if (obj.giftPictureUrl && typeof obj.giftPictureUrl === "string") return obj.giftPictureUrl;
+        return null;
+    }
+
+    let gorsel = ilkDolu(
+        hediyeGorseliniCoz(ext.image),
+        hediyeGorseliniCoz(ext.icon),
+        hediyeGorseliniCoz(detay.giftImage),
+        detay.giftPictureUrl,
+        hediyeGorseliniCoz(detay.image),
+        hediyeGorseliniCoz(detay.icon),
+        hediyeGorseliniCoz(gift.image),
+        hediyeGorseliniCoz(gift.icon),
+        data.giftPictureUrl,
+        null
+    );
+
+    // Canlı veriden görsel çıkmadıysa katalogdan veya dahili kütüphaneden bul
+    if (!gorsel && kimlikId && typeof hediyeKatalogu !== "undefined") {
+        const kayit = hediyeKatalogu.find(function (g) { return idEslesiyorMu(g, kimlikId); });
+        if (kayit && kayit.image) gorsel = kayit.image;
+    }
+    if (!gorsel && isim) {
+        gorsel = kutuphaneGorseliBul(isim);
+    }
+
+    // Bu hediyeyi katalogla eşleştirmek için GERÇEK TikTok hediye
+    // kimliği. data.giftId, TikTok'un canlı olayda verdiği doğrulanmış
+    // alan — önce onu, sonra diğer olası konumları deniyoruz.
+    // Seri (streak) hediyelerde her tekrar için ayrı olay gelir.
+    // Çift saymamak için sadece seri bittiğinde topluyoruz.
+    const seriTipi = Number(ilkDolu(data.giftType, data.gift_type, detay.giftType, detay.gift_type, gift.type, 0)) || 0;
+    const seriBitti = ilkDolu(data.repeatEnd, gift.repeat_end, gift.repeatEnd);
+
+    const sayilsinMi = seriTipi === 1 ? [true, 1, '1', 'true'].includes(seriBitti) : true;
+
+    return {
+        id: kimlikId,
+        adet: adet,
+        birimCoin: birimCoin,
+        toplamCoin: birimCoin * adet,
+        isim: isim,
+        gorsel: gorsel,
+        giftType: seriTipi,
+        repeatEnd: seriBitti,
+        sayilsinMi: sayilsinMi
+    };
+}
+
+// Bu hediye sol veya sağ tarafa ATANMIŞ mı? Sıra (spesifikasyondaki gibi):
+//   1) slot.id
+//   2) slot.tiktokIds
+//   3) slot.id'nin GÜNCEL katalogdaki id'si (katalog sonradan güncellenmiş olabilir)
+//   4) slot.id'nin GÜNCEL katalogdaki tiktokIds'i
+// Hiçbiri yoksa son çare olarak GÜVENLİ isim eşleşmesi (sadece büyük/
+// küçük harf ve boşluk farkı — asla çeviri/tahmin değil).
+// Dönen değer: { taraf, index } ya da hiçbiri uymazsa null.
+function hediyeSlotEslesenTaraf(hediye) {
+    const taraflar = ["left", "right"];
+
+    function idEslesiyorMu(depoId, depoTiktokIds, hedefId) {
+        if (hedefId == null) return false;
+        if (depoId != null && String(depoId) === String(hedefId)) return true;
+        return Array.isArray(depoTiktokIds) && depoTiktokIds.some(function (tid) { return String(tid) === String(hedefId); });
+    }
+
+    // 1-2) Slotun kendi id / tiktokIds bilgisiyle.
+    for (let t = 0; t < taraflar.length; t++) {
+        const taraf = taraflar[t];
+        const slotlar = hediyeSlotAtama[taraf] || [];
+        for (let i = 0; i < slotlar.length; i++) {
+            const slot = slotlar[i];
+            if (slot && idEslesiyorMu(slot.id, slot.tiktokIds, hediye.id)) {
+                return { taraf: taraf, index: i };
+            }
+        }
+    }
+
+    // 3-4) Slotun bağlı olduğu hediyenin GÜNCEL katalog kaydı üzerinden
+    // (katalog, slot bağlandıktan sonra yeni bir tiktokId öğrenmiş olabilir).
+    for (let t = 0; t < taraflar.length; t++) {
+        const taraf = taraflar[t];
+        const slotlar = hediyeSlotAtama[taraf] || [];
+        for (let i = 0; i < slotlar.length; i++) {
+            const slot = slotlar[i];
+            if (!slot || slot.id == null) continue;
+            const guncelKayit = hediyeKatalogu.find(function (g) { return String(g.id) === String(slot.id); });
+            if (guncelKayit && idEslesiyorMu(guncelKayit.id, guncelKayit.tiktokIds, hediye.id)) {
+                return { taraf: taraf, index: i };
+            }
+        }
+    }
+
+    // Son çare: güvenli isim eşleşmesi.
+    for (let t = 0; t < taraflar.length; t++) {
+        const taraf = taraflar[t];
+        const slotlar = hediyeSlotAtama[taraf] || [];
+        for (let i = 0; i < slotlar.length; i++) {
+            const slot = slotlar[i];
+            if (slot && slot.name && hediye.isim &&
+                String(slot.name).trim().toLocaleLowerCase("tr-TR") === String(hediye.isim).trim().toLocaleLowerCase("tr-TR")) {
+                return { taraf: taraf, index: i };
+            }
+        }
+    }
+
+    return null;
+}
+
+// Bir hediye, VERİLEN taraf/slot dışında BAŞKA bir slotta zaten
+// kullanılıyor mu? (Aynı hediye iki tarafta birden olamaz kuralı için.)
+function slotCakismasiBul(giftId, haricTaraf, haricIndex) {
+    const taraflar = ["left", "right"];
+
+    for (let t = 0; t < taraflar.length; t++) {
+        const taraf = taraflar[t];
+        const slotlar = hediyeSlotAtama[taraf] || [];
+
+        for (let i = 0; i < slotlar.length; i++) {
+            if (taraf === haricTaraf && i === haricIndex) continue;
+
+            const slot = slotlar[i];
+            if (slot && String(slot.id) === String(giftId)) {
+                return { taraf: taraf, index: i };
+            }
+        }
+    }
+
+    return null;
+}
+
+function connectToTikTokLive(username, otomatikDenemeMi) {
+    try {
+        // Bu, kullanıcının elle başlattığı YENİ bir bağlanma isteğiyse
+        // (otomatik yeniden deneme değilse) önceki bekleyen yeniden
+        // bağlanma denemesini iptal et ve deneme sayacını sıfırla.
+        if (!otomatikDenemeMi) {
+            if (yenidenBaglanmaZamanlayici) {
+                clearTimeout(yenidenBaglanmaZamanlayici);
+                yenidenBaglanmaZamanlayici = null;
+            }
+            yenidenBaglanmaDenemeSayisi = 0;
+        }
+
+        sonBaglanilanKullaniciAdi = username;
+
+        if (tiktokConnection) {
+            tiktokConnection.disconnect();
+            tiktokConnection = null;
+        }
+
+        // Yeni bir yayına bağlanılıyor — önceki yayının arka plan
+        // fotoğraf hazırlama kuyruğu artık alakasız, temizle.
+        onceHazirlananKullanicilar.clear();
+        fotoHazirlamaKuyrugu.length = 0;
+
+        // NOT: Coin sıralaması burada artık SIFIRLANMIYOR. Yayına
+        // yeniden bağlansan bile sıralama olduğu gibi kalıyor —
+        // sadece "SIFIRLA" butonuna basınca temizleniyor.
+        broadcast({ type: "viewersReset" });
+        broadcast({ type: "status", message: "@" + username + " yayınına bağlanılıyor..." });
+
+        tiktokConnection = new TikTokLiveConnection(username, {
+            signApiKey: eulerApiAnahtari || undefined
+            // NOT: enableExtendedGiftInfo denendi ama KAPATILDI — bu ayar
+            // açıkken kütüphane, bağlantı kurulurken hediye görsellerini
+            // zenginleştirmek için "oda hediyeleri" (fetchRoomGifts) adlı
+            // bir uç noktayı da otomatik çağırıyor. O uç nokta EulerStream'in
+            // ÜCRETLİ (Business) planını gerektiriyor — ücretsiz planda
+            // imzalanamadığı için TÜM bağlantı çöküyordu. Yani hediye
+            // görsellerini gerçek TikTok kaynağından almak, bu kütüphane
+            // üzerinden SADECE ücretli bir EulerStream planıyla mümkün.
+        });
+
+        const buBaglanti = tiktokConnection; // kapanış (closure) referansı — hangi bağlantıya ait olduğumuzu anlamak için
+
+        tiktokConnection.on("error", function (error) {
+            console.error("Bağlantı hatası:", error);
+            broadcast({ type: "status", message: "Hata: " + (error && error.message ? error.message : error) });
+        });
+
+        tiktokConnection.connect()
+            .then(function () {
+                yenidenBaglanmaDenemeSayisi = 0; // başarılı bağlantı — sayaç sıfırlansın
+                broadcast({ type: "status", message: "@" + username + " yayınına bağlanıldı, sohbet dinleniyor." });
+
+                // Profil Puanlama sayfasının kendi bağlantısını da AYNI
+                // kullanıcı adıyla otomatik başlat — elle ikinci kez
+                // bağlanmayı unutursa diye. (Puanlama sayfasında elle
+                // farklı bir kullanıcı adına bağlanmak istersen oradaki
+                // BAĞLAN/KES hâlâ bağımsız çalışır, bunu değiştirebilirsin.)
+                puanlamaBaglan(username);
+
+                // Hediye görselleri için TAMAMEN AYRI, bağımsız bir deneme
+                // (bkz. yukarıdaki webdenHediyeGorselleriniDene). Bu, canlı
+                // yayın bağlantısını (yukarısı) hiç etkilemez — sonucunu
+                // beklemiyoruz bile, arka planda kendi başına çalışır.
+                webdenHediyeGorselleriniDene(username).catch(function () {});
+
+                // 1) availableGifts: sadece enableExtendedGiftInfo açıksa ya
+                // da fetchAvailableGifts() çağrıldıktan sonra dolu olur.
+                // enableExtendedGiftInfo'yu KASITLI OLARAK AÇMIYORUZ çünkü bu
+                // hesapta bağlantının kendisini düşürüyor (o da "oda
+                // hediyelerini" business-plan-gerektiren yoldan çekmeye
+                // çalışıyor). Yine de burada bir şey varsa (ör. ileride
+                // TikTok bunu ücretsiz hale getirirse) değerlendiriyoruz —
+                // yoksa zararsız şekilde boş geçiyor.
+                try {
+                    const ham = tiktokConnection.availableGifts;
+                    const liste = Array.isArray(ham) ? ham : Object.values(ham || {});
+
+                    const yeniler = liste
+                        .map(katalogHediyesiCikar)
+                        .filter(function (g) { return g.name && g.id != null; });
+
+                    let degisenVarMi = false;
+                    yeniler.forEach(function (g) {
+                        if (katalogaEkle({ id: g.id, isim: g.name, birimCoin: g.coins, gorsel: g.image })) {
+                            degisenVarMi = true;
+                        }
+                    });
+
+                    console.log("HEDİYE KATALOĞU (ücretsiz availableGifts) — " + yeniler.length + " hediye bulundu.");
+
+                    if (degisenVarMi) {
+                        katalogKaydet();
+                        broadcast({ type: "giftCatalog", entries: hediyeKatalogu });
+                    }
+                } catch (hata) {
+                    console.log("Not: availableGifts okunamadı (" + hata.message + ").");
+                }
+
+                // 2) Ek deneme: TikTok'un ücretli "tüm hediyeleri baştan ver"
+                // servisi. Bazı hesaplarda açık olabilir; çalışırsa aynı
+                // kataloğa EKLENİR. Çalışmazsa sorun değil — yukarıdaki
+                // availableGifts ve canlıda gelen hediyeler zaten kataloğu
+                // dolduracak.
+                tiktokConnection.fetchAvailableGifts()
+                    .then(function (liste) {
+                        const yeniler = (liste || [])
+                            .map(katalogHediyesiCikar)
+                            .filter(function (g) { return g.name && g.id != null; });
+
+                        let degisenVarMi = false;
+                        yeniler.forEach(function (g) {
+                            if (katalogaEkle({ id: g.id, isim: g.name, birimCoin: g.coins, gorsel: g.image })) {
+                                degisenVarMi = true;
+                            }
+                        });
+
+                        if (degisenVarMi) {
+                            katalogKaydet();
+                            console.log("HEDİYE KATALOĞU (fetchAvailableGifts) — " + yeniler.length + " hediye eklendi/güncellendi (toplam " + hediyeKatalogu.length + ").");
+                            broadcast({ type: "giftCatalog", entries: hediyeKatalogu });
+                        }
+                    })
+                    .catch(function (error) {
+                        console.log("Not: fetchAvailableGifts bu hesapta açık değil (" + error.message + ") — sorun değil, diğer kaynaklar zaten çalışıyor.");
+                    });
+            })
+            .catch(function (error) {
+                console.error(error);
+                broadcast({ type: "status", message: "Bağlanılamadı: " + error.message });
+                yenidenBaglanmayiPlanla(buBaglanti, username);
+            });
+
+        tiktokConnection.on(WebcastEvent.CHAT, function (data) {
+            const user = data.user || {};
+            const kimlik = user.displayId || user.nickname;
+
+            broadcast({
+                type: "chat",
+                uniqueId: kimlik,
+                nickname: user.nickname,
+                profilePictureUrl: kullaniciAvatariSec(user)
+            });
+
+            // Sohbete yazan biri VS'ye seçilme ihtimali en yüksek kişidir —
+            // kaliteli fotoğrafını şimdiden, arka planda hazırlamaya başla.
+            arkaPlandaKaliteliFotoHazirla(kimlik);
+
+            // Profil Puanlama aktifse ve puanlama için ayrı bir bağlantı açılmamışsa,
+            // ana canlı yayın sohbetinden gelen 0-10 oylarını da otomatik kaydet:
+            if (puanlama.calisiyorMu && puanlama.gosterilenKullanici && !puanlamaConnection) {
+                const mesajMetni = data.comment || data.content || "";
+                const puan = mesajdanPuanCikar(mesajMetni);
+                if (puan !== null) {
+                    puanlama.gecerliOySayisi++;
+                    puanlamaOyEkle(kimlik, user.nickname, kullaniciAvatariSec(user), puan);
+                }
+            }
+        });
+
+        tiktokConnection.on(WebcastEvent.MEMBER, function (_data) {
+            // Kullanıcı İsteği: Giren kişiler görünmesin. Sadece yorum yazan ve hediye atan kişiler görünsün.
+        });
+
+        if (WebcastEvent.FOLLOW) {
+            tiktokConnection.on(WebcastEvent.FOLLOW, function (data) {
+                try {
+                    const user = data.user || {};
+                    const kimlik = user.displayId || user.nickname;
+                    if (!kimlik) return;
+                    puanlamaViewerGuncelle(kimlik, user.nickname, kullaniciAvatariSec(user), true, "➕");
+                    puanlamaViewersYayinla();
+                } catch (_) {}
+            });
+        }
+
+        if (WebcastEvent.GIFT) tiktokConnection.on(WebcastEvent.GIFT, function (data) {
+            try {
+                const sonuc = hediyeCoinKrediEkle(data);
+                if (!sonuc) return;
+
+                const kimlik = sonuc.kimlik;
+                const hediye = sonuc.hediye;
+                const yeniToplam = sonuc.yeniToplam;
+                const user = data.user || {};
+
+                // ============================================================
+                // SKOR ÖNCELİK SIRASI (spesifikasyona göre):
+                // 1) Hediye SOL bir kutuya atanmışsa       → SOL SKOR
+                // 2) Hediye SAĞ bir kutuya atanmışsa        → SAĞ SKOR
+                //    (Bu ikisinde HEDİYEYİ KİM GÖNDERDİ hiç kontrol edilmez —
+                //    sadece hediyenin kendisi hangi tarafa atanmış, ona bakılır.)
+                // 3) Hiçbir kutuya atanmamışsa → ESKİ DAVRANIŞ korunuyor:
+                //    gönderen kişi o an savaş ekranında sol/sağa atanmış
+                //    PROFİLİN KENDİSİYSE o tarafa eklenir; değilse hiçbir
+                //    şey olmaz (elle "SOL/SAĞ'A EKLE" gerekir).
+                // ============================================================
+                const eslesme = hediyeSlotEslesenTaraf(hediye);
+                const eslesenTaraf = eslesme ? eslesme.taraf : null;
+                const eslesenSlot = eslesme ? eslesme.index : null;
+                let skoraEklenen = 0;
+
+                if (eslesenTaraf) {
+                    skoraEklenen = hediye.toplamCoin;
+                    savasSkorAyarla(eslesenTaraf, savas[eslesenTaraf + "Score"] + skoraEklenen);
+                } else if (kimlik === savas.leftPhotoUser) {
+                    const oncekiSkor = savas.leftScore;
+                    savasSkoraHediyeKredisiEkle(kimlik, "left");
+                    skoraEklenen = savas.leftScore - oncekiSkor;
+                } else if (kimlik === savas.rightPhotoUser) {
+                    const oncekiSkor = savas.rightScore;
+                    savasSkoraHediyeKredisiEkle(kimlik, "right");
+                    skoraEklenen = savas.rightScore - oncekiSkor;
+                }
+
+                console.log("HEDİYE GELDİ");
+                console.log("Gönderen: @" + kimlik);
+                console.log("Gift ID: " + hediye.id);
+                console.log("Hediye: " + hediye.isim);
+                console.log("Birim Coin: " + hediye.birimCoin);
+                console.log("Adet: " + hediye.adet);
+                console.log("Toplam Coin: " + hediye.toplamCoin);
+                console.log("Eşleşen Taraf: " + (eslesenTaraf ? (eslesenTaraf === "left" ? "SOL" : "SAĞ") : "YOK"));
+                console.log("Eşleşen Slot: " + (eslesenSlot != null ? (eslesenSlot + 1) : "YOK"));
+                console.log("Skora Eklenen: " + skoraEklenen);
+
+            } catch (hata) {
+                console.error("Hediye işlenemedi:", hata.message);
+            }
+        });
+
+        if (WebcastEvent.LIKE) tiktokConnection.on(WebcastEvent.LIKE, function (data) {
+            const user = data.user || {};
+            const kimlik = user.displayId || user.nickname;
+            if (!kimlik) return;
+
+            const likeCount = Math.max(1, Number(data.count ?? data.likeCount ?? 1) || 1);
+            widgetLikePost({
+                username: kimlik,
+                nickname: user.nickname || kimlik,
+                avatar: kullaniciAvatariSec(user),
+                likeCount
+            });
+
+            broadcast({
+                type: "like",
+                uniqueId: kimlik,
+                nickname: user.nickname,
+                profilePictureUrl: kullaniciAvatariSec(user),
+                likeCount
+            });
+        });
+
+        tiktokConnection.on(WebcastEvent.ROOM_USER, function (data) {
+            broadcast({ type: "viewerCount", count: data.viewerCount });
+        });
+
+        tiktokConnection.on(WebcastEvent.DISCONNECTED, function () {
+            broadcast({ type: "status", message: "Yayın bağlantısı koptu, yeniden bağlanılıyor..." });
+            yenidenBaglanmayiPlanla(buBaglanti, username);
+        });
+
+        tiktokConnection.on(WebcastEvent.STREAM_END, function () {
+            broadcast({ type: "status", message: "Yayın sona erdi." });
+            // Yayıncı birkaç saniye içinde tekrar başlatmış olabilir —
+            // birkaç kez daha dener (sınırlı sayıda), sonra sessizce durur.
+            yenidenBaglanmayiPlanla(buBaglanti, username, 5);
+        });
+
+    } catch (error) {
+        console.error("connectToTikTokLive çökme yakaladı:", error);
+        broadcast({ type: "status", message: "Bağlanılamadı: " + error.message });
+        yenidenBaglanmayiPlanla(tiktokConnection, username);
+    }
+}
+
+// Bağlantı beklenmedik şekilde koptuğunda ya da kurulamadığında otomatik
+// olarak yeniden dener. Üstel geri çekilme: 8sn, 16sn, 24sn... en fazla
+// 60 saniye. TikTok ihlal riskini azaltmak için eski 3sn başlangıçtan
+// yavaşlatıldı — çok hızlı/agresif bağlanma denemeleri TikTok'un
+// bot/spam tespitini tetikleyebiliyordu.
+// "maksimumDeneme" verilirse (ör. yayın gerçekten bittiyse)
+// o sayıya ulaşınca sessizce durur.
+function yenidenBaglanmayiPlanla(eskiBaglanti, username, maksimumDeneme) {
+    // Kullanıcı bu arada başka bir yayına geçtiyse ya da elle yeniden
+    // bağlandıysa, bu artık "güncel" bağlantı değildir — denemeyi bırak.
+    if (eskiBaglanti !== tiktokConnection) return;
+    if (username !== sonBaglanilanKullaniciAdi) return;
+
+    yenidenBaglanmaDenemeSayisi++;
+
+    if (maksimumDeneme && yenidenBaglanmaDenemeSayisi > maksimumDeneme) {
+        broadcast({ type: "status", message: "Yayın kapalı görünüyor. Tekrar başladığında BAĞLAN'a bas." });
+        return;
+    }
+
+    // 8sn, 16sn, 24sn, 32sn... en fazla 60sn.
+    const gecikme = Math.min(8000 + (yenidenBaglanmaDenemeSayisi - 1) * 8000, 60000);
+
+    if (yenidenBaglanmaZamanlayici) clearTimeout(yenidenBaglanmaZamanlayici);
+
+    broadcast({ type: "status", message: "Yeniden bağlanılıyor... (deneme " + yenidenBaglanmaDenemeSayisi + ", " + Math.round(gecikme / 1000) + "sn)" });
+
+    yenidenBaglanmaZamanlayici = setTimeout(function () {
+        yenidenBaglanmaZamanlayici = null;
+        if (username !== sonBaglanilanKullaniciAdi) return;
+        connectToTikTokLive(username, true);
+    }, gecikme);
+}
+
+const PORT = process.env.PORT || 3000;
+
+function yerelIPleriBul() {
+    const sonuc = [];
+    const araclar = os.networkInterfaces();
+
+    Object.keys(araclar).forEach(function (ad) {
+        (araclar[ad] || []).forEach(function (bilgi) {
+            if (bilgi.family === "IPv4" && !bilgi.internal) {
+                sonuc.push(bilgi.address);
+            }
+        });
+    });
+
+    return sonuc;
+}
+
+// "0.0.0.0" = sadece bu bilgisayar değil, aynı Wi-Fi ağındaki
+// telefon ve tabletler de bağlanabilsin.
+server.listen(PORT, "0.0.0.0", function () {
+    console.log("");
+    console.log("==================================================");
+    console.log("  Bu bilgisayarda : http://localhost:" + PORT);
+
+    const ipler = yerelIPleriBul();
+
+    if (ipler.length > 0) {
+        ipler.forEach(function (ip) {
+            console.log("  Telefon/tablet : http://" + ip + ":" + PORT);
+        });
+        console.log("");
+        console.log("  (Telefonun bilgisayarla AYNI Wi-Fi ağında olmalı)");
+    } else {
+        console.log("  Ağ adresi bulunamadı — Wi-Fi bağlı mı?");
+    }
+
+    console.log("==================================================");
+    console.log("");
+});
+
+app.get("/api/health", function (req, res) {
+    res.json({ ok: true, app: "tiktok-vs", connected: !!tiktokConnection });
+});
+
+app.all("/api/disconnect", function (req, res) {
+    if (tiktokConnection) {
+        try { tiktokConnection.disconnect(); } catch {}
+        tiktokConnection = null;
+    }
+    if (puanlamaConnection) {
+        try { puanlamaConnection.disconnect(); } catch {}
+        puanlamaConnection = null;
+    }
+    res.json({ ok: true });
+});
+
+async function closeBrowser() {
+    if (tiktokConnection) {
+        try { tiktokConnection.disconnect(); } catch {}
+        tiktokConnection = null;
+    }
+    if (puanlamaConnection) {
+        try { puanlamaConnection.disconnect(); } catch {}
+        puanlamaConnection = null;
+    }
+    if (browserInstance) {
+        await browserInstance.close().catch(function () {});
+        browserInstance = null;
+    }
+}
+
+process.on("SIGINT", async function () {
+    await closeBrowser();
+    process.exit(0);
+});
+
+process.on("SIGTERM", async function () {
+    await closeBrowser();
+    process.exit(0);
+});

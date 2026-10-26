@@ -1,0 +1,1553 @@
+// =====================================================================
+// MNG CROWD CONTROL - TikTok Canlı Yayın İnteraktif Hayatta Kalma Oyunu
+// =====================================================================
+
+const byId = (id) => document.getElementById(id);
+const canvas = byId("gameCanvas");
+const ctx = canvas.getContext("2d");
+
+// --- AUDIO SİSTEMİ (Web Audio API) ---
+let audioCtx = null;
+let soundEnabled = true;
+
+function initAudio() {
+  if (!audioCtx) {
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    if (AudioCtx) audioCtx = new AudioCtx();
+  }
+  if (audioCtx && audioCtx.state === "suspended") {
+    audioCtx.resume().catch(() => {});
+  }
+}
+["pointerdown", "keydown"].forEach((ev) => window.addEventListener(ev, initAudio, { once: true }));
+
+function playTone(freq, duration, type = "sine", vol = 0.15, toFreq = null, delay = 0) {
+  if (!soundEnabled || !audioCtx) return;
+  try {
+    const t = audioCtx.currentTime + delay;
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = type;
+    osc.frequency.setValueAtTime(freq, t);
+    if (toFreq) osc.frequency.exponentialRampToValueAtTime(toFreq, t + duration);
+    gain.gain.setValueAtTime(vol, t);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + duration);
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.start(t);
+    osc.stop(t + duration);
+  } catch {}
+}
+
+const SFX = {
+  shoot() { playTone(880, 0.07, "square", 0.05, 300); },
+  hit() { playTone(220, 0.3, "sawtooth", 0.25, 50); playTone(90, 0.25, "square", 0.2, 40); },
+  enemyHit() { playTone(160, 0.08, "sawtooth", 0.1, 70); },
+  bossHit() { playTone(120, 0.12, "sawtooth", 0.18, 50); },
+  gift() { playTone(660, 0.18, "sine", 0.15, 880); },
+  shield() { playTone(500, 0.25, "sine", 0.18, 1200); playTone(750, 0.3, "triangle", 0.12, 1500, 0.08); },
+  life() { [523, 659, 784, 1046].forEach((f, i) => playTone(f, 0.18, "triangle", 0.14, null, i * 0.06)); },
+  boss() { playTone(70, 1.2, "sawtooth", 0.3, 35); playTone(140, 1.0, "square", 0.15, 50, 0.1); },
+  megaBoss() {
+    playTone(55, 2.0, "sawtooth", 0.45, 25);
+    playTone(110, 1.6, "square", 0.3, 40, 0.15);
+    playTone(40, 2.5, "sine", 0.5, 20);
+  },
+  bossDefeat() { [523, 659, 784, 1046, 1318].forEach((f, i) => playTone(f, 0.25, "triangle", 0.18, null, i * 0.08)); },
+  gameOver() { [392, 330, 262, 196].forEach((f, i) => playTone(f, 0.35, "triangle", 0.2, null, i * 0.2)); }
+};
+
+// --- DEFAULT CONFIG & RULES ---
+const DEFAULT_RULES = [
+  { id: "5655", name: "Gül", image: "/catalog-assets/gift-images/Rose.png", action: "small_wave", count: 5 },
+  { id: "5319", name: "Nazar Boncuğu", image: "/catalog-assets/gift-images/Nazar.png", action: "medium_wave", count: 10 },
+  { id: "5879", name: "Donut", image: "/catalog-assets/gift-images/Doughnut.png", action: "heavy_wave", count: 30 },
+  { id: "6427", name: "Şapka & Bıyık", image: "/catalog-assets/gift-images/Hat_and_Mustache.png", action: "boss", count: 2 },
+  { id: "5658", name: "Parfüm", image: "/catalog-assets/gift-images/Perfume.png", action: "shield", count: 1 },
+  { id: "5994", name: "Türk Kahvesi", image: "/catalog-assets/gift-images/Turkish_coffee.png", action: "life", count: 1 },
+  { id: "7168", name: "Para Tabancası", image: "/catalog-assets/gift-images/Money_Gun.png", action: "mega_boss", count: 1 }
+];
+
+const ACTION_LABELS = {
+  small_wave: "Küçük Pasif Engel",
+  medium_wave: "Standart Engel",
+  heavy_wave: "Büyük Hızlı Sürü",
+  boss: "Boss Gönder (Kovalayan)",
+  mega_boss: "👑 DEVASA MEGA BOSS",
+  shield: "🛡️ Kalkan Ver (Yayıncıyı Korur)",
+  life: "💚 +1 Can Ver (Destek)"
+};
+
+function getRuleDescription(rule) {
+  const count = rule.count || 1;
+  switch (rule.action) {
+    case "small_wave":
+      return `Bu hediye gelince sahaya ${count} adet küçük pasif engel fırlar.`;
+    case "medium_wave":
+      return `Bu hediye gelince sahaya ${count} adet standart kovalayıcı engel gelir.`;
+    case "heavy_wave":
+      return `Bu hediye gelince sahaya ${count} adet hızlı ve dayanıklı engel fırlar!`;
+    case "boss":
+      return `Bu hediye gelince sahaya ${count} adet canı yüksek kovalayan Boss fırlar!`;
+    case "mega_boss":
+      return `Bu hediye gelince ekran genişler ve devasa ${count} adet Mega Boss sahaya iner!`;
+    case "shield":
+      return `Bu hediye gelince yayıncıya 10 saniyelik hasar almaz kalkan verilir.`;
+    case "life":
+      return `Bu hediye gelince yayıncının canı +${count} artar.`;
+    default:
+      return `Bu hediye tetiklendiğinde ${count} adet engel sahaya gelir.`;
+  }
+}
+
+const settings = {
+  dmg: 8,
+  fireRate: 15,
+  maxLives: 5,
+  bossHp: 1500,
+  megaHp: 5000,
+  megaGoal: 50,
+  mapScale: 1.8,
+  zoom: 0.72,
+  obstacleScale: 1.0,
+  nameScale: 1.0,
+  likeThreshold: 50,
+  likeAction: "small_wave",
+  likeCount: 3,
+  followAction: "small_wave",
+  followCount: 5,
+  rules: JSON.parse(JSON.stringify(DEFAULT_RULES))
+};
+
+function loadSettings() {
+  try {
+    const raw = localStorage.getItem("mng_crowd_control_settings");
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed.dmg) settings.dmg = parsed.dmg;
+      if (parsed.fireRate) settings.fireRate = parsed.fireRate;
+      if (parsed.maxLives) settings.maxLives = parsed.maxLives;
+      if (parsed.bossHp) settings.bossHp = parsed.bossHp;
+      if (parsed.megaHp) settings.megaHp = parsed.megaHp;
+      if (parsed.megaGoal) settings.megaGoal = parsed.megaGoal;
+      if (parsed.mapScale) settings.mapScale = parsed.mapScale;
+      if (parsed.zoom) settings.zoom = parsed.zoom;
+      if (parsed.obstacleScale) settings.obstacleScale = parsed.obstacleScale;
+      if (parsed.nameScale) settings.nameScale = parsed.nameScale;
+      if (parsed.likeThreshold) settings.likeThreshold = parsed.likeThreshold;
+      if (parsed.likeAction) settings.likeAction = parsed.likeAction;
+      if (parsed.likeCount) settings.likeCount = parsed.likeCount;
+      if (parsed.followAction) settings.followAction = parsed.followAction;
+      if (parsed.followCount) settings.followCount = parsed.followCount;
+      if (Array.isArray(parsed.rules) && parsed.rules.length === 7) settings.rules = parsed.rules;
+    }
+  } catch {}
+}
+
+function saveSettings() {
+  localStorage.setItem("mng_crowd_control_settings", JSON.stringify(settings));
+}
+loadSettings();
+
+// --- AVATAR IMAGE CACHE (Frontend) ---
+const avatarImgCache = new Map();
+function getAvatarImg(nickname, avatarUrl) {
+  const key = (nickname || "") + "___" + (avatarUrl || "");
+  if (avatarImgCache.has(key)) return avatarImgCache.get(key);
+
+  const img = new Image();
+  const proxyUrl = "/api/avatar?user=" + encodeURIComponent(nickname || "") + "&url=" + encodeURIComponent(avatarUrl || "");
+  img.src = proxyUrl;
+  avatarImgCache.set(key, img);
+  return img;
+}
+
+// --- DÜNYA & KAMERA ---
+const world = { width: 3200, height: 2200 };
+const cam = { x: 0, y: 0, targetZoom: settings.zoom, currentZoom: settings.zoom };
+let shake = 0, flash = 0;
+
+function updateWorldSize() {
+  const w = window.innerWidth || 1280;
+  const h = window.innerHeight || 800;
+  world.width = Math.max(w * settings.mapScale, (w / settings.zoom) * 1.2);
+  world.height = Math.max(h * settings.mapScale, (h / settings.zoom) * 1.2);
+}
+
+// --- OYUNCU (YAYINCI) ---
+const player = {
+  x: 1600,
+  y: 1100,
+  r: 20,
+  speed: 4.4,
+  lives: settings.maxLives,
+  shield: 0,
+  invincible: 0,
+  trail: [],
+  coolDown: 0
+};
+
+// --- OYUN NESNELERİ ---
+let obstacles = [];
+let bullets = [];
+let particles = [];
+let popups = [];
+let giftSupporters = new Map();
+let userLikes = new Map();
+let gameRunning = false;
+let gameStartTime = 0;
+let bestTime = Number(localStorage.getItem("mng_cc_best_time") || 0);
+let totalGiftsReceived = 0;
+let goalPoints = 0;
+const GOAL_TARGET = 50;
+
+// Girdi Yönetimi
+const keys = {};
+let mousePos = { x: 0, y: 0 };
+let isMouseDown = false;
+let autoSimulation = false;
+let autoSimTimer = 100;
+
+// --- CANVAS BOYUTLANDIRMA ---
+function resizeCanvas() {
+  const ratio = Math.min(window.devicePixelRatio || 1, 2);
+  canvas.width = canvas.clientWidth * ratio;
+  canvas.height = canvas.clientHeight * ratio;
+  ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = "high";
+  updateWorldSize();
+}
+window.addEventListener("resize", resizeCanvas);
+
+// --- TOAST BİLDİRİMİ ---
+let toastTimer = null;
+function showToast(text, color = "#ff4d6d") {
+  const t = byId("toast");
+  t.textContent = text;
+  t.style.textShadow = `0 0 14px ${color}`;
+  t.style.borderColor = color;
+  t.style.opacity = "1";
+  t.style.transform = "translateX(-50%) translateY(0)";
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => {
+    t.style.opacity = "0";
+    t.style.transform = "translateX(-50%) translateY(-10px)";
+  }, 1400);
+}
+
+function showMegaAlert(username) {
+  const el = byId("megaAlert");
+  byId("megaAlertUser").textContent = `@${username} gönderdi!`;
+  el.classList.add("active");
+  setTimeout(() => el.classList.remove("active"), 3200);
+}
+
+// --- ENGEL OLUŞTURMA SİSTEMİ (Büyütülmüş Baloncuklar & Bosslar) ---
+function spawnObstacle({
+  radius = 32,
+  speed = 1.6,
+  color = "#ff4d6d",
+  hp = 1,
+  boss = false,
+  mega = false,
+  sender = { nickname: "İzleyici", avatar: null }
+}) {
+  const W = canvas.clientWidth / cam.currentZoom;
+  const H = canvas.clientHeight / cam.currentZoom;
+  
+  const side = Math.floor(Math.random() * 4);
+  let x, y;
+  if (side === 0) { x = cam.x + Math.random() * W; y = cam.y - radius - 30; }
+  else if (side === 1) { x = cam.x + W + radius + 30; y = cam.y + Math.random() * H; }
+  else if (side === 2) { x = cam.x + Math.random() * W; y = cam.y + H + radius + 30; }
+  else { x = cam.x - radius - 30; y = cam.y + Math.random() * H; }
+
+  const angle = Math.atan2(player.y - y, player.x - x) + (Math.random() - 0.5) * 0.8;
+  const vx = Math.cos(angle) * speed;
+  const vy = Math.sin(angle) * speed;
+
+  const oScale = Number(settings.obstacleScale) || 1.0;
+  const effRadius = Math.max(12, Math.round(radius * oScale));
+
+  const obs = {
+    x, y, vx, vy,
+    r: effRadius,
+    color,
+    hp,
+    maxHp: hp,
+    boss,
+    mega,
+    sender,
+    avatarImg: getAvatarImg(sender.nickname, sender.avatar),
+    phase: Math.random() * Math.PI * 2,
+    angle: 0,
+    spin: (Math.random() < 0.5 ? 1 : -1) * (boss ? 0.012 : 0.03),
+    hitRadius: effRadius + (boss ? 18 : 8)
+  };
+
+  obstacles.push(obs);
+  return obs;
+}
+
+// Hediye Eylemini Tetikle
+function triggerGiftAction(rule, sender) {
+  if (!gameRunning) return;
+  const action = rule.action || "small_wave";
+  const count = Math.max(1, Number(rule.count) || 1);
+  const nickname = sender.nickname || "İzleyici";
+
+  // Liderboard & İstatistik
+  totalGiftsReceived++;
+  byId("giftVal").textContent = totalGiftsReceived;
+  const pts = action === "mega_boss" ? 35 : action === "boss" ? 15 : action === "heavy_wave" ? 10 : action === "medium_wave" ? 5 : 2;
+  const prevPts = giftSupporters.get(nickname)?.pts || 0;
+  giftSupporters.set(nickname, { pts: prevPts + pts, avatar: sender.avatar, nickname });
+  updateLeaderboardUI();
+
+  // Hedef barına ekle
+  goalPoints += pts;
+  updateGoalBar();
+
+  if (action === "small_wave") {
+    SFX.gift();
+    showToast(`🌹 ${nickname} ${count} Küçük Engel gönderdi!`, "#ff6b81");
+    for (let i = 0; i < count; i++) {
+      setTimeout(() => {
+        if (!gameRunning) return;
+        spawnObstacle({ radius: 36, speed: 1.5, color: "#ff6b81", hp: Math.max(30, Math.round(settings.dmg * 4)), sender });
+      }, i * 160);
+    }
+  } else if (action === "medium_wave") {
+    SFX.gift();
+    showToast(`🧿 ${nickname} ${count} Standart Engel gönderdi!`, "#4de1ff");
+    for (let i = 0; i < count; i++) {
+      setTimeout(() => {
+        if (!gameRunning) return;
+        spawnObstacle({ radius: 46, speed: 1.65, color: "#4de1ff", hp: Math.max(65, Math.round(settings.dmg * 8)), sender });
+      }, i * 140);
+    }
+  } else if (action === "heavy_wave") {
+    SFX.gift();
+    shake = 10;
+    showToast(`🍩 ${nickname} ${count} Büyük Engel fırlattı!`, "#ffd166");
+    for (let i = 0; i < count; i++) {
+      setTimeout(() => {
+        if (!gameRunning) return;
+        spawnObstacle({ radius: 58, speed: 1.9, color: "#ffd166", hp: Math.max(140, Math.round(settings.dmg * 16)), sender });
+      }, i * 80);
+    }
+  } else if (action === "boss") {
+    SFX.boss();
+    shake = 18;
+    flash = 0.6;
+    showToast(`👹 ${nickname} ${count} DEV BOSS gönderdi!`, "#ff2d55");
+    for (let i = 0; i < count; i++) {
+      setTimeout(() => {
+        if (!gameRunning) return;
+        spawnObstacle({ radius: 88, speed: 1.35, color: "#ff2d55", hp: settings.bossHp, boss: true, sender });
+      }, i * 450);
+    }
+  } else if (action === "mega_boss") {
+    // 1v1 Arena Düellosu: En çok hediye puanına sahip izleyiciyi Mega Boss yapalım
+    let topSupporter = null;
+    if (giftSupporters.size > 0) {
+      const sorted = [...giftSupporters.values()].sort((a, b) => b.pts - a.pts);
+      if (sorted.length > 0 && sorted[0].pts > 0) topSupporter = sorted[0];
+    }
+    const finalSender = topSupporter || sender || { nickname: "Arena Şampiyonu", avatar: null, pts: settings.megaGoal || 50 };
+    const bossNick = finalSender.nickname || "Arena Şampiyonu";
+    const bossPts = finalSender.pts || pts || 50;
+
+    // "Anlaşılan çevrede kimse olmayacak, sadece ben ve o kapışacağız." -> Diğer tüm engeller temizlensin
+    obstacles.forEach((o) => {
+      addParticles(o.x, o.y, o.color, 10);
+    });
+    obstacles = [];
+
+    SFX.megaBoss();
+    shake = 40;
+    flash = 1.0;
+    showMegaAlert(bossNick);
+    showToast(`⚔️ 1v1 ARENA DÜELLOSU! @${bossNick} (${bossPts} Puan) Sahaya İndi!`, "#ffd166");
+    
+    spawnObstacle({
+      radius: 175,
+      speed: 0.85,
+      color: "#ffd166",
+      hp: settings.megaHp,
+      boss: true,
+      mega: true,
+      sender: {
+        nickname: bossNick,
+        avatar: finalSender.avatar,
+        pts: bossPts
+      }
+    });
+  } else if (action === "shield") {
+    SFX.shield();
+    player.shield = 600; // 10 saniye
+    showToast(`🛡️ ${nickname} Yayıncıya Kalkan Verdi!`, "#2bd9a4");
+  } else if (action === "life") {
+    SFX.life();
+    if (player.lives < settings.maxLives) {
+      player.lives = Math.min(settings.maxLives, player.lives + count);
+      updateLivesUI();
+    }
+    showToast(`💚 ${nickname} Yayıncıya +${count} Can Verdi!`, "#2bd9a4");
+  }
+}
+
+// --- HEDEF (BOSS) BARI GÜNCELLEMESİ ---
+function updateGoalBar() {
+  const activeBosses = obstacles.filter((o) => o.boss);
+  const fill = byId("goalFill");
+  const txt = byId("goalText");
+  const goalTarget = Math.max(10, settings.megaGoal || 50);
+
+  if (activeBosses.length > 0) {
+    const totalHp = activeBosses.reduce((sum, b) => sum + Math.max(0, b.hp), 0);
+    const maxHp = activeBosses.reduce((sum, b) => sum + b.maxHp, 0);
+    const pct = Math.max(0, Math.min(100, (totalHp / maxHp) * 100));
+    fill.style.width = pct + "%";
+    const isMega = activeBosses.some((b) => b.mega);
+    txt.textContent = isMega
+      ? `⚔️ 1v1 DÜELLO (1.5x HASAR): ${totalHp} / ${maxHp} HP`
+      : `👹 BOSS CANI: ${totalHp} / ${maxHp} HP`;
+  } else {
+    const pct = Math.min(100, (goalPoints / goalTarget) * 100);
+    fill.style.width = pct + "%";
+    txt.textContent = `👹 1v1 MEGA BOSS İÇİN: ${goalPoints} / ${goalTarget} Hediye Puanı`;
+    if (goalPoints >= goalTarget) {
+      goalPoints -= goalTarget;
+      triggerGiftAction({ action: "mega_boss" }, { nickname: "Arena Hedefi", avatar: null });
+    }
+  }
+}
+
+function updateLivesUI() {
+  const heart = "❤️";
+  const empty = "🖤";
+  byId("livesVal").textContent = heart.repeat(Math.max(0, player.lives)) + empty.repeat(Math.max(0, settings.maxLives - player.lives));
+}
+
+function updateLeaderboardUI() {
+  const sorted = [...giftSupporters.values()].sort((a, b) => b.pts - a.pts).slice(0, 3);
+  const listEl = byId("mlList");
+  if (!sorted.length) {
+    listEl.textContent = "Henüz hediye gelmedi";
+    return;
+  }
+  const icons = ["🥇", "🥈", "🥉"];
+  listEl.innerHTML = sorted.map((s, idx) => `${icons[idx]} <b>${s.nickname}</b>: ${s.pts}p`).join(" | ");
+
+  if (socket && socket.readyState === WebSocket.OPEN) {
+    socket.send(JSON.stringify({ type: "leaderboard", entries: sorted }));
+  }
+}
+
+// --- PARÇACIKLAR & PATLAMALAR ---
+function addParticles(x, y, color, count = 12) {
+  for (let i = 0; i < count; i++) {
+    const a = Math.random() * Math.PI * 2;
+    const s = Math.random() * 3 + 1;
+    particles.push({
+      x, y,
+      vx: Math.cos(a) * s,
+      vy: Math.sin(a) * s,
+      life: 1.0,
+      color
+    });
+  }
+}
+
+// --- OYUN BAŞLATMA & BİTİRME ---
+function startGame() {
+  byId("introScreen").style.display = "none";
+  byId("gameShell").style.display = "flex";
+  byId("gameOverModal").style.display = "none";
+
+  obstacles = [];
+  bullets = [];
+  particles = [];
+  popups = [];
+  player.trail = [];
+  player.x = world.width / 2;
+  player.y = world.height / 2;
+  player.lives = settings.maxLives;
+  player.shield = 0;
+  player.invincible = 60;
+  totalGiftsReceived = 0;
+  goalPoints = 0;
+
+  updateLivesUI();
+  updateWorldSize();
+  resizeCanvas();
+
+  cam.x = player.x - canvas.clientWidth / cam.currentZoom / 2;
+  cam.y = player.y - canvas.clientHeight / cam.currentZoom / 2;
+
+  gameStartTime = performance.now();
+  gameRunning = true;
+  showToast("🎮 Arena Başladı! Hayatta Kal!", "#2bd9a4");
+}
+
+function gameOver(killer) {
+  gameRunning = false;
+  SFX.gameOver();
+  const survivedSec = Math.floor((performance.now() - gameStartTime) / 1000);
+  if (survivedSec > bestTime) {
+    bestTime = survivedSec;
+    localStorage.setItem("mng_cc_best_time", bestTime);
+    byId("bestVal").textContent = bestTime;
+  }
+
+  byId("goTime").textContent = `Hayatta Kalma Süresi: ${survivedSec} saniye`;
+  const killerBox = byId("goKiller");
+  if (killer) {
+    const avatarSrc = killer.avatar || "/catalog-assets/gift-catalog/balon-hediyesi.png";
+    killerBox.innerHTML = `Seni eleyen: <img src="${avatarSrc}" onerror="this.src='/catalog-assets/gift-catalog/balon-hediyesi.png'"> <b>@${killer.nickname}</b>`;
+    if (socket && socket.readyState === WebSocket.OPEN) {
+      socket.send(JSON.stringify({ type: "killer", killer }));
+    }
+  } else {
+    killerBox.textContent = "Arenanın engellerine yenik düştün!";
+  }
+  byId("gameOverModal").style.display = "flex";
+}
+
+// --- FİZİK & GÜNCELLEME DÖNGÜSÜ ---
+function updateGame(delta) {
+  particles.forEach((p) => {
+    p.x += p.vx;
+    p.y += p.vy;
+    p.life -= delta * 1.8;
+  });
+  particles = particles.filter((p) => p.life > 0);
+
+  popups.forEach((p) => {
+    p.y -= delta * 30;
+    p.life -= delta;
+  });
+  popups = popups.filter((p) => p.life > 0);
+
+  if (shake > 0) shake *= 0.88;
+  if (flash > 0) flash = Math.max(0, flash - delta * 2);
+
+  if (!gameRunning) return;
+
+  const aliveSec = Math.floor((performance.now() - gameStartTime) / 1000);
+  byId("timeVal").textContent = aliveSec;
+
+  // Oyuncu Hareketi (WASD / Ok Tuşları)
+  let mx = 0, my = 0;
+  if (keys["w"] || keys["arrowup"]) my -= 1;
+  if (keys["s"] || keys["arrowdown"]) my += 1;
+  if (keys["a"] || keys["arrowleft"]) mx -= 1;
+  if (keys["d"] || keys["arrowright"]) mx += 1;
+
+  if (mx !== 0 && my !== 0) {
+    mx *= 0.7071;
+    my *= 0.7071;
+  }
+  player.x = Math.max(player.r, Math.min(world.width - player.r, player.x + mx * player.speed));
+  player.y = Math.max(player.r, Math.min(world.height - player.r, player.y + my * player.speed));
+
+  player.trail.push({ x: player.x, y: player.y });
+  if (player.trail.length > 12) player.trail.shift();
+
+  if (player.invincible > 0) player.invincible--;
+  if (player.shield > 0) player.shield--;
+  if (player.coolDown > 0) player.coolDown--;
+
+  // Ateş Etme
+  if (isMouseDown && player.coolDown <= 0) {
+    player.coolDown = Math.max(2, Math.round(60 / settings.fireRate));
+    const targetX = mousePos.x / cam.currentZoom + cam.x;
+    const targetY = mousePos.y / cam.currentZoom + cam.y;
+    const angle = Math.atan2(targetY - player.y, targetX - player.x);
+    bullets.push({
+      x: player.x,
+      y: player.y,
+      vx: Math.cos(angle) * 12,
+      vy: Math.sin(angle) * 12,
+      life: 120
+    });
+    SFX.shoot();
+  }
+
+  // Mermi Çarpışması & 1.5x Hasar Çarpanı
+  const hasMegaBoss = obstacles.some((o) => o.mega);
+  const effectiveDmg = Math.round(settings.dmg * (hasMegaBoss ? 1.5 : 1.0));
+
+  for (let i = bullets.length - 1; i >= 0; i--) {
+    const b = bullets[i];
+    b.x += b.vx;
+    b.y += b.vy;
+    b.life--;
+
+    let dead = b.life <= 0 || b.x < 0 || b.x > world.width || b.y < 0 || b.y > world.height;
+
+    for (let j = obstacles.length - 1; j >= 0 && !dead; j--) {
+      const o = obstacles[j];
+      const dist = Math.hypot(o.x - b.x, o.y - b.y);
+      if (dist < o.r + 6) {
+        dead = true;
+        o.hp -= effectiveDmg;
+        addParticles(b.x, b.y, hasMegaBoss ? "#ffd84d" : o.color, o.boss ? 7 : 4);
+        if (o.boss) SFX.bossHit(); else SFX.enemyHit();
+        updateGoalBar();
+
+        if (o.hp <= 0) {
+          addParticles(o.x, o.y, o.color, o.mega ? 80 : o.boss ? 40 : 16);
+          if (o.boss) {
+            SFX.bossDefeat();
+            shake = o.mega ? 40 : 20;
+            flash = 0.8;
+            showToast(`💥 @${o.sender?.nickname || "Boss"} imha edildi! (Zafer!)`, "#ffd166");
+          }
+          obstacles.splice(j, 1);
+          updateGoalBar();
+        }
+      }
+    }
+
+    if (dead) bullets.splice(i, 1);
+  }
+
+  // Kamera Zoom Adaptasyonu (Mega Boss 1v1 Düello varken geniş arena görünümü)
+  cam.targetZoom = hasMegaBoss ? 0.44 : settings.zoom;
+  cam.currentZoom += (cam.targetZoom - cam.currentZoom) * 0.05;
+
+  for (let i = obstacles.length - 1; i >= 0; i--) {
+    const o = obstacles[i];
+    o.x += o.vx;
+    o.y += o.vy;
+    o.angle += o.spin;
+
+    // Engellerin ve Bossların Oyuncuya Doğru Saldırması & Yönelmesi
+    const toPlayer = Math.atan2(player.y - o.y, player.x - o.x);
+    if (o.boss) {
+      const accel = o.mega ? 0.010 : 0.022;
+      const targetSpeed = o.mega ? 1.4 : 2.1;
+      o.vx += (Math.cos(toPlayer) * targetSpeed - o.vx) * accel;
+      o.vy += (Math.sin(toPlayer) * targetSpeed - o.vy) * accel;
+    } else {
+      // Normal engeller de oyuncuya doğru manevra yaparak saldırır
+      const steerAccel = 0.012;
+      const targetSpeed = 1.7;
+      o.vx += (Math.cos(toPlayer) * targetSpeed - o.vx) * steerAccel;
+      o.vy += (Math.sin(toPlayer) * targetSpeed - o.vy) * steerAccel;
+    }
+
+    // Oyuncu Çarpışması
+    const distToPlayer = Math.hypot(o.x - player.x, o.y - player.y);
+    if (distToPlayer < o.hitRadius + player.r && player.invincible <= 0) {
+      if (player.shield > 0) {
+        player.shield = 0;
+        player.invincible = 45;
+        SFX.shield();
+        shake = 14;
+        addParticles(o.x, o.y, "#4de1ff", 30);
+        if (!o.boss) obstacles.splice(i, 1);
+        continue;
+      }
+
+      player.lives--;
+      player.invincible = 90;
+      shake = o.boss ? 26 : 16;
+      flash = 0.95;
+      SFX.hit();
+      addParticles(player.x, player.y, "#ff4d6d", 24);
+      updateLivesUI();
+
+      if (!o.boss) obstacles.splice(i, 1);
+
+      if (player.lives <= 0) {
+        gameOver(o.sender);
+        return;
+      }
+    }
+
+    if (!o.boss && (o.x < -400 || o.x > world.width + 400 || o.y < -400 || o.y > world.height + 400)) {
+      obstacles.splice(i, 1);
+    }
+  }
+
+  // Kamera Takibi
+  const vw = canvas.clientWidth / cam.currentZoom;
+  const vh = canvas.clientHeight / cam.currentZoom;
+  const targetCamX = Math.max(0, Math.min(world.width - vw, player.x - vw / 2));
+  const targetCamY = Math.max(0, Math.min(world.height - vh, player.y - vh / 2));
+  cam.x += (targetCamX - cam.x) * 0.14;
+  cam.y += (targetCamY - cam.y) * 0.14;
+
+  // Otomatik Test Simülatörü
+  if (autoSimulation && --autoSimTimer <= 0) {
+    autoSimTimer = 90 + Math.random() * 70;
+    const testNames = ["CanlıDestek", "Yıldızİzleyici", "TikTokFan", "OyunSever", "BombaAdam", "Şampiyon"];
+    const randomRule = settings.rules[Math.floor(Math.random() * settings.rules.length)];
+    const randomName = testNames[Math.floor(Math.random() * testNames.length)];
+    triggerGiftAction(randomRule, { nickname: randomName, avatar: `https://pravatar.cc/150?u=${randomName}` });
+  }
+}
+
+// --- ÇİZİM (RENDER) DÖNGÜSÜ ---
+function drawGame() {
+  const W = canvas.clientWidth;
+  const H = canvas.clientHeight;
+
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.clearRect(0, 0, W, H);
+
+  if (shake > 0) {
+    const rx = (Math.random() - 0.5) * shake;
+    const ry = (Math.random() - 0.5) * shake;
+    ctx.translate(rx, ry);
+  }
+  ctx.scale(cam.currentZoom, cam.currentZoom);
+  ctx.translate(-cam.x, -cam.y);
+
+  // Izgara çizgileri
+  ctx.strokeStyle = "rgba(100, 130, 255, 0.08)";
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  const startX = Math.floor(cam.x / 140) * 140;
+  const startY = Math.floor(cam.y / 140) * 140;
+  const endX = cam.x + W / cam.currentZoom;
+  const endY = cam.y + H / cam.currentZoom;
+  for (let gx = startX; gx <= endX; gx += 140) {
+    ctx.moveTo(gx, cam.y);
+    ctx.lineTo(gx, endY);
+  }
+  for (let gy = startY; gy <= endY; gy += 140) {
+    ctx.moveTo(cam.x, gy);
+    ctx.lineTo(endX, gy);
+  }
+  ctx.stroke();
+
+  // Sınırlar
+  ctx.strokeStyle = "rgba(255, 77, 109, 0.4)";
+  ctx.lineWidth = 3;
+  ctx.strokeRect(0, 0, world.width, world.height);
+
+  // Parçacıklar
+  particles.forEach((p) => {
+    ctx.globalAlpha = Math.max(0, p.life);
+    ctx.fillStyle = p.color;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, 3.5 * p.life + 1, 0, Math.PI * 2);
+    ctx.fill();
+  });
+  ctx.globalAlpha = 1.0;
+
+  // Mermiler (Mega Boss varken Güçlendirilmiş Altın Işık)
+  const isMegaActive = obstacles.some((o) => o.mega);
+  ctx.fillStyle = isMegaActive ? "#ffea33" : "#fff6a0";
+  ctx.shadowColor = isMegaActive ? "#ff9900" : "#ffd84d";
+  ctx.shadowBlur = isMegaActive ? 18 : 10;
+  bullets.forEach((b) => {
+    ctx.beginPath();
+    ctx.arc(b.x, b.y, isMegaActive ? 5.5 : 4.5, 0, Math.PI * 2);
+    ctx.fill();
+  });
+  ctx.shadowBlur = 0;
+
+  // ENGELLER, BOSSLAR & KULLANICI ADLARI
+  obstacles.forEach((o) => {
+    ctx.save();
+    ctx.translate(o.x, o.y);
+
+    // 1. Dikenler (Spikes)
+    ctx.fillStyle = o.mega ? "#ffd166" : o.boss ? "#ff2d55" : o.color;
+    const spikeCount = o.mega ? 32 : o.boss ? 18 : 10;
+    const spikeLen = o.mega ? 28 : o.boss ? 16 : 8;
+    for (let k = 0; k < spikeCount; k++) {
+      const a = o.angle + (k * Math.PI * 2) / spikeCount;
+      const c = Math.cos(a), s = Math.sin(a);
+      const halfW = o.mega ? 8 : o.boss ? 5 : 3;
+      ctx.beginPath();
+      ctx.moveTo(c * (o.r - 2) - s * halfW, s * (o.r - 2) + c * halfW);
+      ctx.lineTo(c * (o.r + spikeLen), s * (o.r + spikeLen));
+      ctx.lineTo(c * (o.r - 2) + s * halfW, s * (o.r - 2) - c * halfW);
+      ctx.closePath();
+      ctx.fill();
+    }
+
+    // 2. Dış Halka & Glow
+    ctx.shadowColor = o.color;
+    ctx.shadowBlur = o.mega ? 40 : o.boss ? 26 : 14;
+    ctx.strokeStyle = o.mega ? "#ffd166" : o.boss ? "#ff4d6d" : o.color;
+    ctx.lineWidth = o.mega ? 6 : o.boss ? 4.5 : 3;
+    ctx.beginPath();
+    ctx.arc(0, 0, o.r, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+
+    // 3. Profil Fotoğrafı (Yuvarlak Clip)
+    ctx.beginPath();
+    ctx.arc(0, 0, o.r - 2, 0, Math.PI * 2);
+    ctx.clip();
+
+    if (o.avatarImg && o.avatarImg.complete && o.avatarImg.naturalWidth > 0) {
+      ctx.drawImage(o.avatarImg, -o.r, -o.r, o.r * 2, o.r * 2);
+      ctx.fillStyle = "rgba(0, 0, 0, 0.12)";
+      ctx.fillRect(-o.r, -o.r, o.r * 2, o.r * 2);
+    } else {
+      ctx.fillStyle = o.color;
+      ctx.fillRect(-o.r, -o.r, o.r * 2, o.r * 2);
+      ctx.fillStyle = "#ffffff";
+      ctx.font = `bold ${Math.round(o.r * 0.85)}px system-ui`;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText((o.sender?.nickname || "?").charAt(0).toUpperCase(), 0, 0);
+    }
+
+    ctx.restore();
+
+    // 4. Can Barı (Boss ve çok vuruşlu engeller)
+    if (o.boss || o.maxHp > 1) {
+      const barW = o.r * 1.8;
+      const barH = o.mega ? 10 : 6;
+      const bx = o.x - barW / 2;
+      const by = o.y - o.r - (o.mega ? 30 : 20);
+      ctx.fillStyle = "rgba(0, 0, 0, 0.75)";
+      ctx.fillRect(bx, by, barW, barH);
+      ctx.fillStyle = o.mega ? "#ffd166" : "#2bd9a4";
+      ctx.fillRect(bx, by, barW * Math.max(0, o.hp / o.maxHp), barH);
+      ctx.strokeStyle = "rgba(255, 255, 255, 0.4)";
+      ctx.lineWidth = 1;
+      ctx.strokeRect(bx, by, barW, barH);
+    }
+
+    // 5. KULLANICI ADI & HEDİYE PUANI ETİKETİ (Daha Belirgin ve Net!)
+    const nick = (o.sender?.nickname || "İzleyici").slice(0, 18);
+    if (nick) {
+      ctx.save();
+      const nScale = Number(settings.nameScale) || 1.0;
+      const baseFontSize = o.mega ? 20 : o.boss ? 15 : 12;
+      const fontSize = Math.max(10, Math.round(baseFontSize * nScale));
+      ctx.font = `bold ${fontSize}px system-ui`;
+      const ptsPart = o.mega && o.sender?.pts ? ` • ${o.sender.pts} Hediye` : "";
+      const txt = o.mega ? `👑 @${nick}${ptsPart}` : o.boss ? `👹 @${nick}` : `@${nick}`;
+      const textWidth = ctx.measureText(txt).width;
+      const padX = Math.round((o.mega ? 12 : 8) * nScale);
+      const padY = Math.round((o.mega ? 6 : 4) * nScale);
+      const labelY = o.boss || o.maxHp > 1 ? o.y - o.r - ((o.mega ? 38 : 28) * nScale) : o.y + o.r + (16 * nScale);
+
+      ctx.fillStyle = o.mega ? "rgba(18, 10, 42, 0.95)" : "rgba(8, 12, 30, 0.88)";
+      ctx.strokeStyle = o.mega ? "#ffd166" : o.boss ? "#ff4d6d" : "rgba(255, 255, 255, 0.45)";
+      ctx.lineWidth = o.mega ? 2.5 : 1.5;
+
+      const badgeX = o.x - textWidth / 2 - padX;
+      const badgeY = labelY - fontSize - padY + 2;
+      const badgeW = textWidth + padX * 2;
+      const badgeH = fontSize + padY * 2;
+
+      ctx.beginPath();
+      if (ctx.roundRect) ctx.roundRect(badgeX, badgeY, badgeW, badgeH, 8);
+      else ctx.rect(badgeX, badgeY, badgeW, badgeH);
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.fillStyle = o.mega ? "#ffd166" : o.boss ? "#ff8e53" : "#f8fafc";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText(txt, o.x, badgeY + badgeH / 2);
+      ctx.restore();
+    }
+  });
+
+  // Oyuncu İzi
+  player.trail.forEach((t, i) => {
+    ctx.globalAlpha = (i / player.trail.length) * 0.35;
+    ctx.fillStyle = "#ffd84d";
+    ctx.beginPath();
+    ctx.arc(t.x, t.y, (player.r * i) / player.trail.length, 0, Math.PI * 2);
+    ctx.fill();
+  });
+  ctx.globalAlpha = 1.0;
+
+  // Kalkan Efekti
+  if (player.shield > 0) {
+    ctx.strokeStyle = "#4de1ff";
+    ctx.lineWidth = 3.5;
+    ctx.shadowColor = "#4de1ff";
+    ctx.shadowBlur = 20;
+    ctx.beginPath();
+    ctx.arc(player.x, player.y, player.r + 14 + Math.sin(performance.now() / 100) * 2, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+  }
+
+  // Oyuncu Karakteri (Yayıncı - Sarı Küre)
+  if (player.invincible > 0 && Math.floor(player.invincible / 4) % 2) {
+    ctx.globalAlpha = 0.4;
+  }
+  ctx.shadowColor = "#ffd84d";
+  ctx.shadowBlur = 24;
+  ctx.fillStyle = "#ffd84d";
+  ctx.beginPath();
+  ctx.arc(player.x, player.y, player.r, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.shadowBlur = 0;
+
+  // Yüz Çizimi
+  ctx.fillStyle = "#151a3a";
+  ctx.beginPath();
+  ctx.arc(player.x - 5.5, player.y - 3, 2.8, 0, Math.PI * 2);
+  ctx.arc(player.x + 5.5, player.y - 3, 2.8, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.strokeStyle = "#151a3a";
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.arc(player.x, player.y + 3, 5, 0.2, Math.PI - 0.2);
+  ctx.stroke();
+  ctx.globalAlpha = 1.0;
+
+  // 1.5x Hasar Modu Göstergesi (Mega Boss Düellosu)
+  if (isMegaActive) {
+    ctx.save();
+    ctx.font = "bold 13px system-ui";
+    ctx.fillStyle = "#ffe600";
+    ctx.strokeStyle = "rgba(0, 0, 0, 0.85)";
+    ctx.lineWidth = 3;
+    ctx.textAlign = "center";
+    ctx.strokeText("⚡ 1.5x HASAR MODU", player.x, player.y - player.r - 18);
+    ctx.fillText("⚡ 1.5x HASAR MODU", player.x, player.y - player.r - 18);
+    ctx.restore();
+  }
+
+  // Nişangah
+  const crossX = mousePos.x / cam.currentZoom + cam.x;
+  const crossY = mousePos.y / cam.currentZoom + cam.y;
+  ctx.strokeStyle = "rgba(255, 255, 255, 0.75)";
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.arc(crossX, crossY, 8, 0, Math.PI * 2);
+  ctx.moveTo(crossX - 12, crossY);
+  ctx.lineTo(crossX + 12, crossY);
+  ctx.moveTo(crossX, crossY - 12);
+  ctx.lineTo(crossX + 12, crossY);
+  ctx.stroke();
+
+  // Flaş Efekti
+  if (flash > 0) {
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.fillStyle = `rgba(255, 45, 85, ${flash * 0.35})`;
+    ctx.fillRect(0, 0, W, H);
+  }
+}
+
+// --- DÖNGÜ (GAME LOOP) ---
+let lastTime = performance.now();
+function gameLoop(now) {
+  const delta = Math.min(0.05, (now - lastTime) / 1000);
+  lastTime = now;
+  updateGame(delta);
+  drawGame();
+  requestAnimationFrame(gameLoop);
+}
+
+// --- FARE & KLAVYE DİNLİYİCİLERİ ---
+window.addEventListener("keydown", (e) => (keys[e.key.toLowerCase()] = true));
+window.addEventListener("keyup", (e) => (keys[e.key.toLowerCase()] = false));
+
+function updateMouse(e) {
+  const rect = canvas.getBoundingClientRect();
+  mousePos.x = e.clientX - rect.left;
+  mousePos.y = e.clientY - rect.top;
+}
+canvas.addEventListener("mousemove", updateMouse);
+canvas.addEventListener("mousedown", (e) => {
+  updateMouse(e);
+  if (e.button === 0) isMouseDown = true;
+});
+window.addEventListener("mouseup", () => (isMouseDown = false));
+canvas.addEventListener("contextmenu", (e) => e.preventDefault());
+
+// --- ALT HEDİYE TEST BUTONLARINI OLUŞTUR ---
+function renderGiftButtons() {
+  const wrap = byId("giftButtonsWrap");
+  if (wrap) {
+    wrap.innerHTML = "";
+    settings.rules.forEach((rule) => {
+      const btn = document.createElement("button");
+      const isGood = rule.action === "shield" || rule.action === "life";
+      const isBoss = rule.action === "boss" || rule.action === "mega_boss";
+      btn.className = `gift-action-btn ${isGood ? "good-action" : isBoss ? "boss-action" : ""}`;
+      btn.type = "button";
+      btn.innerHTML = `
+        <img src="${rule.image}" class="btn-gift-img" alt="${rule.name}" onerror="this.src='/catalog-assets/gift-catalog/balon-hediyesi.png'">
+        <div class="btn-gift-info">
+          <span class="btn-gift-name">${rule.name}</span>
+          <span class="btn-gift-action">${rule.count || 1}x ${ACTION_LABELS[rule.action] || rule.action}</span>
+        </div>
+      `;
+      btn.addEventListener("click", () => {
+        triggerGiftAction(rule, { nickname: "Sen (Test)", avatar: null });
+      });
+      wrap.appendChild(btn);
+    });
+  }
+  renderLiveGiftHud();
+}
+
+// --- SAĞ / ÜST CANLI HEDİYE PANELİ (HUD - İzleyicilerin Görmesi İçin) ---
+function renderLiveGiftHud() {
+  const list = byId("clgList");
+  if (!list) return;
+  list.innerHTML = "";
+  if (!settings.rules || !settings.rules.length) return;
+
+  settings.rules.forEach((rule) => {
+    const item = document.createElement("div");
+    const isGood = rule.action === "shield" || rule.action === "life";
+    const isBoss = rule.action === "boss" || rule.action === "mega_boss";
+    item.className = `clg-item ${isGood ? "good" : isBoss ? "boss" : ""}`;
+    const actionLabel = ACTION_LABELS[rule.action] || rule.action;
+    item.innerHTML = `
+      <img src="${rule.image}" alt="${rule.name}" onerror="this.src='/catalog-assets/gift-catalog/balon-hediyesi.png'">
+      <span class="clg-item-name">${rule.name}</span>
+      <span class="clg-item-action">${rule.count || 1}x ${actionLabel}</span>
+    `;
+    list.appendChild(item);
+  });
+}
+
+// --- AYARLAR MODALI & KURAL KARTLARI ---
+function renderSettingsRules() {
+  const grid = byId("giftRulesGrid");
+  if (!grid) return;
+  grid.innerHTML = "";
+
+  settings.rules.forEach((rule, idx) => {
+    const card = document.createElement("div");
+    card.className = "gift-rule-card";
+    card.innerHTML = `
+      <img src="${rule.image}" class="rule-thumb" alt="${rule.name}" onerror="this.src='/catalog-assets/gift-catalog/balon-hediyesi.png'">
+      <div class="rule-details">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+          <strong class="rule-gift-title">${rule.name}</strong>
+          <button type="button" class="rule-change-btn" data-idx="${idx}">Görseli Değiştir</button>
+        </div>
+        <div class="rule-controls" style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+          <label style="display:flex; align-items:center; gap:4px; font-size:12px; color:#cbd5f5;">
+            <span>Eylem:</span>
+            <select class="rule-select" data-idx="${idx}">
+              <option value="small_wave" ${rule.action === "small_wave" ? "selected" : ""}>Küçük Pasif Engel</option>
+              <option value="medium_wave" ${rule.action === "medium_wave" ? "selected" : ""}>Standart Engel</option>
+              <option value="heavy_wave" ${rule.action === "heavy_wave" ? "selected" : ""}>Büyük Hızlı Sürü</option>
+              <option value="boss" ${rule.action === "boss" ? "selected" : ""}>Boss Gönder (Kovalayan)</option>
+              <option value="mega_boss" ${rule.action === "mega_boss" ? "selected" : ""}>👑 DEVASA MEGA BOSS</option>
+              <option value="shield" ${rule.action === "shield" ? "selected" : ""}>🛡️ Kalkan Ver (Yayıncıyı Korur)</option>
+              <option value="life" ${rule.action === "life" ? "selected" : ""}>💚 +1 Can Ver (Destek)</option>
+            </select>
+          </label>
+          <label style="display:flex; align-items:center; gap:4px; font-size:12px; color:#cbd5f5;">
+            <span>Adet:</span>
+            <input type="number" class="rule-count-input" data-idx="${idx}" min="1" max="100" value="${rule.count || 1}">
+          </label>
+        </div>
+        <div class="rule-desc-hint" id="ruleHint_${idx}">
+          ➡️ ${getRuleDescription(rule)}
+        </div>
+      </div>
+    `;
+
+    const selectEl = card.querySelector(".rule-select");
+    const countEl = card.querySelector(".rule-count-input");
+    const hintEl = card.querySelector(`#ruleHint_${idx}`);
+
+    selectEl.addEventListener("change", (e) => {
+      rule.action = e.target.value;
+      if (hintEl) hintEl.textContent = `➡️ ${getRuleDescription(rule)}`;
+      renderLiveGiftHud();
+      renderGiftButtons();
+    });
+    countEl.addEventListener("input", (e) => {
+      rule.count = Math.max(1, parseInt(e.target.value) || 1);
+      if (hintEl) hintEl.textContent = `➡️ ${getRuleDescription(rule)}`;
+      renderLiveGiftHud();
+      renderGiftButtons();
+    });
+    card.querySelector(".rule-change-btn").addEventListener("click", () => {
+      openGiftPicker(idx);
+    });
+
+    grid.appendChild(card);
+  });
+
+  // Beğeni & Takip Alanlarını Eşle
+  byId("likeThresholdInput").value = settings.likeThreshold || 50;
+  byId("likeActionSelect").value = settings.likeAction || "small_wave";
+  byId("likeCountInput").value = settings.likeCount || 3;
+  byId("followActionSelect").value = settings.followAction || "small_wave";
+  byId("followCountInput").value = settings.followCount || 5;
+
+  // Slider değerlerini eşle
+  byId("dmgSlider").value = settings.dmg;
+  byId("dmgValDisplay").textContent = settings.dmg;
+  byId("fireSlider").value = settings.fireRate;
+  byId("fireValDisplay").textContent = settings.fireRate;
+  byId("maxLivesSlider").value = settings.maxLives;
+  byId("maxLivesDisplay").textContent = settings.maxLives;
+  byId("bossHpSlider").value = settings.bossHp;
+  byId("bossHpDisplay").textContent = settings.bossHp;
+  byId("megaHpSlider").value = settings.megaHp;
+  byId("megaHpDisplay").textContent = settings.megaHp;
+  if (byId("megaGoalSlider")) {
+    byId("megaGoalSlider").value = settings.megaGoal || 50;
+    byId("megaGoalDisplay").textContent = settings.megaGoal || 50;
+  }
+  byId("mapScaleSlider").value = settings.mapScale;
+  byId("mapScaleDisplay").textContent = settings.mapScale;
+  byId("zoomSlider").value = settings.zoom;
+  byId("zoomDisplay").textContent = settings.zoom;
+  if (byId("obstacleScaleSlider")) {
+    byId("obstacleScaleSlider").value = settings.obstacleScale || 1.0;
+    byId("obstacleScaleDisplay").textContent = settings.obstacleScale || 1.0;
+  }
+  if (byId("nameScaleSlider")) {
+    byId("nameScaleSlider").value = settings.nameScale || 1.0;
+    byId("nameScaleDisplay").textContent = settings.nameScale || 1.0;
+  }
+}
+
+// Beğeni & Takip Giriş Olayları
+byId("likeThresholdInput").addEventListener("input", (e) => {
+  settings.likeThreshold = Math.max(5, parseInt(e.target.value) || 50);
+});
+byId("likeActionSelect").addEventListener("change", (e) => {
+  settings.likeAction = e.target.value;
+});
+byId("likeCountInput").addEventListener("input", (e) => {
+  settings.likeCount = Math.max(1, parseInt(e.target.value) || 3);
+});
+byId("followActionSelect").addEventListener("change", (e) => {
+  settings.followAction = e.target.value;
+});
+byId("followCountInput").addEventListener("input", (e) => {
+  settings.followCount = Math.max(1, parseInt(e.target.value) || 5);
+});
+
+// Slider Değişim Olayları
+[
+  ["dmgSlider", "dmgValDisplay", "dmg", (v) => Number(v)],
+  ["fireSlider", "fireValDisplay", "fireRate", (v) => Number(v)],
+  ["maxLivesSlider", "maxLivesDisplay", "maxLives", (v) => Number(v)],
+  ["bossHpSlider", "bossHpDisplay", "bossHp", (v) => Number(v)],
+  ["megaHpSlider", "megaHpDisplay", "megaHp", (v) => Number(v)],
+  ["megaGoalSlider", "megaGoalDisplay", "megaGoal", (v) => Number(v)],
+  ["mapScaleSlider", "mapScaleDisplay", "mapScale", (v) => Number(v)],
+  ["zoomSlider", "zoomDisplay", "zoom", (v) => Number(v)],
+  ["obstacleScaleSlider", "obstacleScaleDisplay", "obstacleScale", (v) => Number(v)],
+  ["nameScaleSlider", "nameScaleDisplay", "nameScale", (v) => Number(v)]
+].forEach(([sliderId, labelId, settingKey, parser]) => {
+  const sl = byId(sliderId);
+  if (!sl) return;
+  sl.addEventListener("input", (e) => {
+    const val = parser(e.target.value);
+    settings[settingKey] = val;
+    byId(labelId).textContent = val;
+    if (settingKey === "mapScale" || settingKey === "zoom") updateWorldSize();
+  });
+});
+
+// --- HEDİYE SEÇİCİ (MODAL) ---
+let activePickerIdx = null;
+let giftCatalogCache = [];
+
+async function openGiftPicker(ruleIdx) {
+  activePickerIdx = ruleIdx;
+  byId("giftPickerModal").style.display = "flex";
+  byId("giftSearchInput").value = "";
+  byId("pickerTitle").textContent = `${settings.rules[ruleIdx].name} Yerine Hediye Seç`;
+  if (!giftCatalogCache.length) {
+    try {
+      const res = await fetch("/api/gifts?limit=650");
+      giftCatalogCache = await res.json();
+    } catch {}
+  }
+  renderPickerChoices(giftCatalogCache);
+}
+
+function renderPickerChoices(items) {
+  const grid = byId("pickerResults");
+  grid.innerHTML = "";
+  if (!items || !items.length) {
+    grid.innerHTML = "<div style='grid-column: 1/-1; text-align:center; padding:20px; color:#aaa;'>Eşleşen hediye bulunamadı.</div>";
+    return;
+  }
+  items.forEach((item) => {
+    const div = document.createElement("div");
+    div.className = "picker-item";
+    div.innerHTML = `
+      <img src="${item.image}" alt="${item.name}" onerror="this.src='/catalog-assets/gift-catalog/balon-hediyesi.png'">
+      <span>${item.name}</span>
+      <small>${item.coins} coin</small>
+    `;
+    div.addEventListener("click", () => {
+      if (activePickerIdx !== null) {
+        settings.rules[activePickerIdx].id = String(item.id);
+        settings.rules[activePickerIdx].name = item.name;
+        settings.rules[activePickerIdx].image = item.image;
+        saveSettings();
+        renderSettingsRules();
+        renderGiftButtons();
+        byId("giftPickerModal").style.display = "none";
+      }
+    });
+    grid.appendChild(div);
+  });
+}
+
+byId("giftSearchInput").addEventListener("input", (e) => {
+  const q = e.target.value.toLowerCase().trim();
+  const filtered = giftCatalogCache.filter((g) => {
+    return (g.name && g.name.toLowerCase().includes(q)) ||
+           (g.origName && g.origName.toLowerCase().includes(q)) ||
+           String(g.coins).includes(q);
+  });
+  renderPickerChoices(filtered);
+});
+byId("closePickerBtn").addEventListener("click", () => {
+  byId("giftPickerModal").style.display = "none";
+});
+
+// Ayarlar panelindeki Ses ve Test Botu butonları
+function syncSettingsAuxButtons() {
+  const sBtn = byId("settingsToggleSoundBtn");
+  if (sBtn) {
+    sBtn.textContent = soundEnabled ? "🔊 Ses: AÇIK" : "🔇 Ses: KAPALI";
+    sBtn.className = soundEnabled ? "btn btn-primary" : "btn btn-secondary";
+  }
+  const aBtn = byId("settingsToggleAutoBtn");
+  if (aBtn) {
+    aBtn.textContent = autoBotRunning ? "🤖 Test Botu: AÇIK" : "🤖 Test Botu: KAPALI";
+    aBtn.className = autoBotRunning ? "btn btn-primary" : "btn btn-secondary";
+  }
+}
+
+byId("settingsToggleSoundBtn")?.addEventListener("click", () => {
+  soundEnabled = !soundEnabled;
+  syncSettingsAuxButtons();
+});
+
+byId("settingsToggleAutoBtn")?.addEventListener("click", () => {
+  autoBotRunning = !autoBotRunning;
+  syncSettingsAuxButtons();
+  if (autoBotRunning) {
+    autoBotTimer = setInterval(spawnBotGift, 2200);
+  } else {
+    clearInterval(autoBotTimer);
+    autoBotTimer = null;
+  }
+});
+
+// --- ARKA PLAN SEÇİCİ ---
+let bgListenersBound = false;
+async function loadBackgrounds() {
+  try {
+    const res = await fetch("/api/backgrounds");
+    const backgrounds = await res.json();
+    const grid = byId("bgGrid");
+    grid.innerHTML = "";
+
+    const savedBg = localStorage.getItem("mng_crowd_bg") || (backgrounds[0] ? backgrounds[0].src : "");
+    const video = byId("bgVideo");
+    if (savedBg && video) {
+      video.src = savedBg;
+      video.play().catch(() => {});
+    }
+
+    if (video && !bgListenersBound) {
+      bgListenersBound = true;
+      video.addEventListener("pause", () => {
+        if (gameRunning && video.paused) video.play().catch(() => {});
+      });
+      video.addEventListener("ended", () => {
+        video.currentTime = 0;
+        video.play().catch(() => {});
+      });
+      video.addEventListener("error", () => {
+        console.warn("Video yükleme hatası, yeniden deneniyor...");
+        setTimeout(() => {
+          video.load();
+          video.play().catch(() => {});
+        }, 1000);
+      });
+      document.addEventListener("visibilitychange", () => {
+        if (!document.hidden && video && video.paused) {
+          video.play().catch(() => {});
+        }
+      });
+      window.addEventListener("focus", () => {
+        if (video && video.paused) {
+          video.play().catch(() => {});
+        }
+      });
+    }
+
+    backgrounds.slice(0, 24).forEach((bg) => {
+      const btn = document.createElement("button");
+      btn.className = "bg-thumb-btn";
+      btn.type = "button";
+      btn.innerHTML = `
+        <img src="${bg.thumb || '/shared-backgrounds/thumbs/bg01.jpg'}" alt="${bg.name}" onerror="this.style.display='none'">
+        <span>${bg.name}</span>
+      `;
+      btn.addEventListener("click", () => {
+        const customImg = byId("bgImg");
+        if (customImg) {
+          customImg.style.display = "none";
+          customImg.removeAttribute("src");
+        }
+        if (video) {
+          video.style.display = "block";
+          video.src = bg.src;
+          video.play().catch(() => {});
+        }
+        localStorage.setItem("mng_crowd_bg", bg.src);
+        byId("bgMenu").style.display = "none";
+      });
+      grid.appendChild(btn);
+    });
+  } catch {}
+}
+
+const customBgBtn = byId("ccCustomBgBtn");
+const customBgInput = byId("ccCustomBgInput");
+if (customBgBtn && customBgInput) {
+  customBgBtn.addEventListener("click", () => customBgInput.click());
+  customBgInput.addEventListener("change", (e) => {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+    const url = URL.createObjectURL(file);
+    const video = byId("bgVideo");
+    const img = byId("bgImg");
+    if (file.type.startsWith("video/")) {
+      if (img) {
+        img.style.display = "none";
+        img.removeAttribute("src");
+      }
+      if (video) {
+        video.src = url;
+        video.style.display = "block";
+        video.play().catch(() => {});
+      }
+    } else {
+      if (video) {
+        video.pause();
+        video.style.display = "none";
+      }
+      if (img) {
+        img.src = url;
+        img.style.display = "block";
+      }
+    }
+    byId("bgMenu").style.display = "none";
+  });
+}
+
+byId("bgBtn").addEventListener("click", () => {
+  const m = byId("bgMenu");
+  m.style.display = m.style.display === "none" ? "flex" : "none";
+});
+byId("closeBgMenu").addEventListener("click", () => {
+  byId("bgMenu").style.display = "none";
+});
+
+// --- AYARLAR MODAL AÇ/KAPA ---
+byId("settingsBtn").addEventListener("click", () => {
+  renderSettingsRules();
+  syncSettingsAuxButtons();
+  byId("settingsModal").style.display = "flex";
+});
+byId("closeSettingsBtn").addEventListener("click", () => {
+  byId("settingsModal").style.display = "none";
+});
+byId("saveSettingsBtn").addEventListener("click", () => {
+  saveSettings();
+  renderGiftButtons();
+  byId("settingsModal").style.display = "none";
+  showToast("⚙️ Ayarlar Kaydedildi!", "#2bd9a4");
+});
+byId("resetSettingsBtn").addEventListener("click", () => {
+  settings.rules = JSON.parse(JSON.stringify(DEFAULT_RULES));
+  settings.dmg = 8;
+  settings.fireRate = 15;
+  settings.maxLives = 5;
+  settings.bossHp = 1500;
+  settings.megaHp = 5000;
+  settings.megaGoal = 50;
+  settings.obstacleScale = 1.0;
+  settings.nameScale = 1.0;
+  settings.likeThreshold = 50;
+  settings.likeAction = "small_wave";
+  settings.likeCount = 3;
+  settings.followAction = "small_wave";
+  settings.followCount = 5;
+  saveSettings();
+  renderSettingsRules();
+  renderGiftButtons();
+  showToast("Ayarlar Varsayılana Sıfırlandı", "#ffd166");
+});
+
+// --- SES & OTOMATİK BOT KONTROLLERİ ---
+byId("toggleSoundBtn").addEventListener("click", () => {
+  soundEnabled = !soundEnabled;
+  byId("toggleSoundBtn").textContent = soundEnabled ? "🔊 Ses: AÇIK" : "🔇 Ses: KAPALI";
+});
+byId("toggleAutoBtn").addEventListener("click", () => {
+  autoSimulation = !autoSimulation;
+  byId("toggleAutoBtn").textContent = autoSimulation ? "🤖 Test Botu: AÇIK" : "🤖 Test Botu: KAPALI";
+});
+
+// --- OBS WİDGET BUTONU ---
+byId("widgetBtn").addEventListener("click", async () => {
+  try {
+    const response = await fetch("/api/launcher-widget-links", { cache: "no-store" });
+    const data = await response.json();
+    const widgetUrl = data.links?.ranking;
+    if (!response.ok || !data.ready || typeof widgetUrl !== "string" || new URL(widgetUrl).protocol !== "https:") throw new Error(data.message || "HTTPS yayın bağlantısı hazır değil. Launcher içinden yayın bağlantısını hazırlayın.");
+    try { await navigator.clipboard.writeText(widgetUrl); showToast("🏆 OBS Widget Bağlantısı Kopyalandı!", "#ffd166"); }
+    catch { prompt("OBS Browser Kaynağına ekleyeceğiniz bağlantı:", widgetUrl); }
+  } catch (error) { showToast(error.message || "HTTPS yayın bağlantısı kullanılamıyor.", "#ff6b6b"); }
+});
+
+// --- TAM EKRAN BUTONU ---
+byId("fsBtn").addEventListener("click", () => {
+  if (!document.fullscreenElement) {
+    document.documentElement.requestFullscreen().catch(() => {});
+  } else {
+    document.exitFullscreen().catch(() => {});
+  }
+});
+
+// --- ÇIKIŞ BUTONU ---
+byId("exitBtn").addEventListener("click", () => {
+  gameRunning = false;
+  byId("gameShell").style.display = "none";
+  byId("introScreen").style.display = "flex";
+});
+byId("restartBtn").addEventListener("click", startGame);
+
+// --- TİKTOK BAĞLANTISI (WEBSOCKET) ---
+let socket = null;
+
+function initSocket() {
+  socket = new WebSocket(`ws://${location.host}`);
+
+  socket.addEventListener("open", () => {
+    console.log("Sunucu WebSocket bağlantısı kuruldu.");
+    const autoUser = new URLSearchParams(location.search).get("autoUser");
+    if (autoUser) {
+      byId("username").value = autoUser;
+      localStorage.setItem("mng_crowd_last_user", autoUser);
+      socket.send(JSON.stringify({ type: "connect", username: autoUser }));
+      byId("introStatus").textContent = `@${autoUser} yayınına otomatik bağlanılıyor...`;
+    }
+  });
+
+  socket.addEventListener("message", (e) => {
+    let msg;
+    try { msg = JSON.parse(e.data); } catch { return; }
+
+    if (msg.type === "status") {
+      byId("introStatus").textContent = msg.message;
+      if (msg.state === "connected") {
+        byId("connectBtn").textContent = "✓ Bağlandı";
+        byId("connectBtn").disabled = true;
+        byId("startSection").style.display = "flex";
+      } else if (msg.state === "idle" || msg.state === "error") {
+        byId("connectBtn").textContent = "Yayına Bağlan";
+        byId("connectBtn").disabled = false;
+      }
+    }
+
+    if (msg.type === "crowd-event") {
+      if (msg.event === "gift") {
+        const matchedRule = settings.rules.find((r) =>
+          String(r.id) === String(msg.giftId) ||
+          r.name.toLowerCase() === String(msg.giftName).toLowerCase()
+        ) || {
+          action: Number(msg.coins) >= 500 ? "boss" : Number(msg.coins) >= 100 ? "heavy_wave" : Number(msg.coins) >= 20 ? "medium_wave" : "small_wave",
+          count: Math.min(30, Math.max(1, msg.count || 1))
+        };
+
+        triggerGiftAction(matchedRule, msg.player);
+      } else if (msg.event === "like") {
+        const batch = Math.max(1, Number(msg.count || 1));
+        const sender = msg.player || { nickname: "İzleyici", avatar: null };
+        const pId = sender.id || sender.nickname;
+        const currentLikes = (userLikes.get(pId) || 0) + batch;
+        userLikes.set(pId, currentLikes);
+
+        const threshold = Math.max(5, settings.likeThreshold || 50);
+        let triggeredWaves = 0;
+        while (userLikes.get(pId) >= threshold && triggeredWaves < 10) {
+          userLikes.set(pId, userLikes.get(pId) - threshold);
+          triggeredWaves++;
+        }
+
+        if (triggeredWaves > 0) {
+          for (let w = 0; w < triggeredWaves; w++) {
+            triggerGiftAction({
+              action: settings.likeAction || "small_wave",
+              count: settings.likeCount || 3,
+              name: "Beğeni"
+            }, sender);
+          }
+          showToast(`👍 @${sender.nickname} ${threshold * triggeredWaves} beğeni gönderdi!`, "#4de1ff");
+        }
+      } else if (msg.event === "follow") {
+        const sender = msg.player || { nickname: "Yeni Takipçi", avatar: null };
+        showToast(`⭐ @${sender.nickname} takip etti!`, "#2bd9a4");
+        triggerGiftAction({
+          action: settings.followAction || "small_wave",
+          count: settings.followCount || 5,
+          name: "Takip"
+        }, sender);
+      }
+    }
+  });
+
+  socket.addEventListener("close", () => {
+    setTimeout(initSocket, 2000);
+  });
+}
+
+// --- FORM İŞLEYİCİSİ ---
+const savedUser = localStorage.getItem("mng_crowd_last_user") || "";
+if (savedUser) byId("username").value = savedUser;
+
+byId("connectForm").addEventListener("submit", (e) => {
+  e.preventDefault();
+  const username = byId("username").value.trim();
+  if (!username) return;
+  localStorage.setItem("mng_crowd_last_user", username);
+
+  byId("connectBtn").disabled = true;
+  byId("connectBtn").textContent = "Bağlanılıyor...";
+  byId("introStatus").textContent = `@${username} yayını aranıyor...`;
+
+  if (socket && socket.readyState === WebSocket.OPEN) {
+    socket.send(JSON.stringify({ type: "connect", username }));
+  }
+});
+
+byId("startOfflineBtn").addEventListener("click", () => {
+  startGame();
+});
+byId("startGameBtn").addEventListener("click", () => {
+  startGame();
+});
+
+// Başlangıç Kurulumları
+byId("bestVal").textContent = bestTime;
+renderGiftButtons();
+loadBackgrounds();
+initSocket();
+resizeCanvas();
+requestAnimationFrame(gameLoop);

@@ -1,0 +1,159 @@
+export const MAX_RIDERS=30, MAX_DISTANCE=5000, BASE_SPEED=10;
+export const defaults = Object.freeze({ maxRiders: 8, autoLanes: true, raceDuration: 90, trackLength: 2800, giftJoin: true, entryCoin: 1, coinSpeed: 2, likeJoin: true, likesToJoin: 100, likesForBoost: 100, likeSpeed: 5, followJoin: true, followSpeed: 5, startKey: 'KeyT', quality: 'balanced', commentary:true, hostPlayRequired:true, winnerVolume:.9 });
+export const keyOf = value => String(value || '').replace(/^@/, '').trim().toLowerCase();
+const limit = (v, lo, hi, fallback) => Number.isFinite(Number(v)) ? Math.min(hi, Math.max(lo, Number(v))) : fallback;
+export function validateSettings(value = {}) {
+  const s = { ...defaults };
+  for (const k of ['giftJoin', 'likeJoin', 'followJoin', 'autoLanes','commentary','hostPlayRequired']) if (typeof value[k] === 'boolean') s[k] = value[k];
+  for (const [k, lo, hi] of [['maxRiders', 1, MAX_RIDERS], ['raceDuration', 30, 600], ['trackLength', 80, MAX_DISTANCE], ['entryCoin', 1, 100], ['likesToJoin', 1, 100000], ['likesForBoost', 1, 100000], ['likeSpeed', 1, 20], ['followSpeed', 0, 30]]) s[k] = Math.floor(limit(value[k], lo, hi, defaults[k]));
+  s.coinSpeed = Math.round(limit(value.coinSpeed, .05, 10, defaults.coinSpeed) * 100) / 100;
+  s.winnerVolume = Math.round(limit(value.winnerVolume, 0, 1, defaults.winnerVolume) * 100) / 100;
+  if (/^(Key[A-OQ-Z]|Digit[0-9]|Space|Arrow(Up|Down|Left|Right)|F([1-9]|1[0-2]))$/.test(value.startKey || '')) s.startKey = value.startKey;
+  if (['low', 'balanced', 'high'].includes(value.quality)) s.quality = value.quality;
+  return s;
+}
+export class Race {
+  constructor(saved = {}) {
+    this.settings = validateSettings(saved.settings); this.phase = 'lobby'; this.round = 1;
+    this.players = []; this.laneCount = this.settings.maxRiders; this.wins = saved.wins || {};
+    this.blocked = new Set(); this.pendingCoins = new Map(); this.pendingLikes = new Map(); this.followed = new Set();
+    this.countdownAt = 0; this.startedAt = 0; this.winner = null; this.podium = []; this.elapsed = 0; this.revision = 0;
+    this.lastPodium=Array.isArray(saved.lastPodium)?saved.lastPodium.slice(0,3):[];
+    this.setHost('yayinci');
+  }
+  setHost(username, avatar = '', avatarQuality = 1) {
+    const old = this.players[0];
+    const duplicate = this.players.findIndex((p, i) => i > 0 && p?.id === keyOf(username));
+    if (duplicate > 0) this.players[duplicate] = null;
+    const sameHost = old?.id === keyOf(username);
+    this.players[0] = { id: keyOf(username) || 'yayinci', username: String(username).replace(/^@/, '').slice(0, 60), nickname: String(username).replace(/^@/, '').slice(0, 80), avatar: avatar || (sameHost ? old.avatar : ''), avatarQuality: avatar ? avatarQuality : sameHost ? old.avatarQuality : 1, speed: old?.speed || 0, distance: old?.distance || 0, heat: old?.heat || 0, coins: old?.coins || 0, likes: 0, host: true };
+    this.players[0].speed=Math.max(BASE_SPEED,this.players[0].speed);
+    this.revision++;
+  }
+  player(profile) {
+    const id = keyOf(profile.id || profile.username); if (!id || this.blocked.has(id) || this.phase === 'finished') return null;
+    let p = this.players.find(p => p?.id === id);
+    if (p) { if (profile.avatar && (profile.avatarQuality||1)>=(p.avatarQuality||1)) {p.avatar = profile.avatar;p.avatarQuality=profile.avatarQuality||1;} if (profile.nickname) p.nickname = String(profile.nickname).slice(0, 80); return p; }
+    let index = this.players.findIndex((p, i) => i > 0 && !p);
+    if (index < 0) index = this.players.length;
+    const capacity = this.settings.autoLanes ? MAX_RIDERS : this.settings.maxRiders;
+    if (index >= capacity) return null;
+    p = { id, username: String(profile.username || profile.id).replace(/^@/, '').slice(0, 60), nickname: String(profile.nickname || profile.username || profile.id).slice(0, 80), avatar: profile.avatar || '', avatarQuality:profile.avatarQuality||1, speed: 0, distance: 0, heat: 0, coins: 0, likes: 0, host: false };
+    p.speed=BASE_SPEED;
+    this.players[index] = p; this.laneCount = Math.max(this.laneCount, index + 1); this.revision++; return p;
+  }
+  boost(p, amount) {
+    if (!p || !Number.isFinite(amount)) return;
+    p.speed = Math.min(Number.MAX_SAFE_INTEGER, Math.round(p.speed + Math.max(0, amount)));
+    p.heat = Math.min(1, Math.log2(1 + p.speed) / 12);
+  }
+  gift(profile, coins) {
+    coins = Math.floor(limit(coins, 0, 1000000, 0)); if (!coins || this.phase === 'finished') return;
+    const id = keyOf(profile.id || profile.username); let p = this.players.find(p => p?.id === id), spend = coins;
+    if (this.blocked.has(id)) return;
+    if (!p) {
+      if (!this.settings.giftJoin) return;
+      const total = (this.pendingCoins.get(id) || 0) + coins; this.pendingCoins.set(id, total);
+      if (total < this.settings.entryCoin) return;
+      p = this.player(profile); if (!p) return;
+      spend = total - this.settings.entryCoin; p.coins += total; this.pendingCoins.delete(id);
+    } else { this.player(profile); p.coins += coins; }
+    this.boost(p, spend * this.settings.coinSpeed); return p;
+  }
+  like(profile, count) {
+    count = Math.floor(limit(count, 0, 1000000, 0)); if (!count || this.phase === 'finished') return;
+    const id = keyOf(profile.id || profile.username); let p = this.players.find(p => p?.id === id), spare = count;
+    if (this.blocked.has(id)) return;
+    let joined = false;
+    if (!p) {
+      if (!this.settings.likeJoin) return;
+      const total = (this.pendingLikes.get(id) || 0) + count; this.pendingLikes.set(id, total);
+      if (total < this.settings.likesToJoin) return;
+      p = this.player(profile); if (!p) return;
+      spare = total - this.settings.likesToJoin; this.pendingLikes.delete(id); joined = true;
+    } else this.player(profile);
+    if (joined) this.boost(p, this.settings.likeSpeed);
+    p.likes += spare; const bonus = Math.floor(p.likes / this.settings.likesForBoost);
+    p.likes %= this.settings.likesForBoost; this.boost(p, bonus * this.settings.likeSpeed); return p;
+  }
+  follow(profile) {
+    const id = keyOf(profile.id || profile.username);
+    if (!this.settings.followJoin || this.followed.has(id) || this.blocked.has(id)) return;
+    const p = this.player(profile); if (!p) return;
+    this.followed.add(id); this.boost(p, this.settings.followSpeed); return p;
+  }
+  remove(id) {
+    const index = this.players.findIndex(p => p?.id === keyOf(id)); if (index <= 0) return false;
+    this.blocked.add(this.players[index].id); this.players[index] = null; this.revision++; return true;
+  }
+  configure(value) {
+    this.settings = validateSettings({ ...this.settings, ...value });
+    this.players = this.players.filter(Boolean);
+    // The configured lanes are always visible in the lobby. Auto mode only grows
+    // beyond that base when more viewers join; it never collapses the stage.
+    this.laneCount = Math.max(this.settings.maxRiders, this.players.length); this.revision++;
+  }
+  start(now) { if (this.phase !== 'lobby') return false; this.phase = 'countdown'; this.countdownAt = now; return true; }
+  hostScore(value) {
+    if (this.phase !== 'running' || !this.settings.hostPlayRequired) return false;
+    const host=this.players[0],points=Math.min(3,Math.max(0,Number(value)||0));
+    if(!host||!points||host.finishTime!=null)return false;
+    const before=host.distance;
+    host.distance=Math.min(this.settings.trackLength,host.distance+this.settings.trackLength*(points/90));
+    host.speed=0;host.heat=Math.min(1,host.distance/this.settings.trackLength);
+    if(host.distance>=this.settings.trackLength){host.finishTime=this.elapsed;host.distance=this.settings.trackLength;}
+    this.revision++;
+    return host.distance>before;
+  }
+  newLobby() {
+    this.round++; this.phase = 'lobby'; this.winner = null; this.podium = []; this.elapsed = 0; this.followed.clear(); this.pendingCoins.clear(); this.pendingLikes.clear();
+    this.blocked.clear();
+    const host=this.players[0];
+    if(host){host.distance=0;host.speed=BASE_SPEED;host.heat=0;host.coins=0;host.likes=0;delete host.finishTime;}
+    this.players=host?[host]:[];this.laneCount=this.settings.maxRiders;
+    this.revision++;
+  }
+  adjustWin(id,delta) {
+    id=keyOf(id);delta=Math.sign(Number(delta)||0);if(!id||!delta)return false;
+    const current=this.wins[id];if(!current)return false;
+    current.count=Math.max(0,(current.count||0)+delta);
+    if(!current.count)delete this.wins[id];this.revision++;return true;
+  }
+  step(dt, now) {
+    if (this.phase === 'countdown' && now - this.countdownAt >= 3000) { this.phase = 'running'; this.startedAt = now; }
+    if (this.phase !== 'running') return null;
+    const previousElapsed = this.elapsed;
+    this.elapsed = Math.max(0, (now - this.startedAt) / 1000);
+    for (const p of this.players) {
+      if (!p) continue;
+      if (p.finishTime != null) { p.distance = this.settings.trackLength; continue; }
+      if (p.host && this.settings.hostPlayRequired) { p.speed=0; continue; }
+      const before = p.distance; p.speed = Math.max(BASE_SPEED, p.speed); p.distance += p.speed * dt;
+      if (p.distance >= this.settings.trackLength) {
+        const crossing = Math.max(0, (this.settings.trackLength - before) / Math.max(.01, p.speed));
+        p.finishTime = previousElapsed + crossing;
+        p.distance = this.settings.trackLength;
+      }
+    }
+    if (this.players.filter(p => p?.finishTime != null).length >= 3) return this.finish(now);
+    return null;
+  }
+  finish(now) {
+    if (this.phase !== 'running') return false;
+    this.elapsed = Math.max(this.elapsed, Math.max(0, (now - this.startedAt) / 1000));
+    this.phase = 'finished';
+    this.podium = this.players.filter(Boolean).sort((a, b) => (a.finishTime ?? Infinity) - (b.finishTime ?? Infinity) || b.distance - a.distance).slice(0, 3).map((p, i) => ({ ...p, rank: i + 1, distance: Math.min(p.distance, this.settings.trackLength), finishTime: p.finishTime ?? null }));
+    this.winner = { ...this.podium[0] };
+    this.lastPodium=this.podium.map(p=>({...p}));
+    const old = this.wins[this.winner.id] || { count: 0 };
+    this.wins[this.winner.id] = { id: this.winner.id, username: this.winner.username, nickname: this.winner.nickname, avatar: this.winner.avatar, count: old.count + 1 };
+    this.revision++;
+    return this.winner;
+  }
+  snapshot(now) {
+    return { phase: this.phase, round: this.round, revision: this.revision, laneCount: this.laneCount, settings: this.settings, players: this.players, winner: this.winner, podium: this.podium, lastPodium:this.lastPodium, elapsed: this.elapsed,
+      countdown: this.phase === 'countdown' ? Math.max(1, 3 - Math.floor((now - this.countdownAt) / 1000)) : 0,
+      remaining: null,
+      wins: Object.values(this.wins).sort((a, b) => b.count - a.count), now };
+  }
+}

@@ -1,0 +1,98 @@
+export function playerIdentity(data = {}) {
+  const user = data.user || data;
+  const candidates = [];
+  for (const avatar of [
+    user.avatarLarge, user.avatarMedium, user.avatarThumb,
+    user.avatar_large, user.avatar_medium, user.avatar_thumb,
+    data.avatarLarge, data.avatar_large, data.profilePictureUrls, data.profile_picture_urls
+  ]) {
+    if (Array.isArray(avatar)) candidates.push(...avatar);
+    else if (avatar) candidates.push(...(avatar.urlList || avatar.url_list || (Array.isArray(avatar.url) ? avatar.url : [avatar.url])));
+  }
+  candidates.push(user.profilePictureUrl, user.profile_picture_url, data.profilePictureUrl, data.profile_picture_url);
+  // TikTok connector versions expose the same image under several different
+  // room-owner shapes. Walk avatar-like fields as a final compatibility pass.
+  const visit = (value, field = '', depth = 0) => {
+    if (depth > 5 || value == null) return;
+    if (typeof value === 'string') {
+      if (/^https:\/\//.test(value) && /(avatar|profile|photo|image|url)/i.test(field)) candidates.push(value);
+      return;
+    }
+    if (Array.isArray(value)) return value.forEach(item => visit(item, field, depth + 1));
+    if (typeof value === 'object') Object.entries(value).forEach(([key, item]) => visit(item, key, depth + 1));
+  };
+  visit(data);
+  const avatar = candidates.find(url => typeof url === 'string' && /^https:\/\//.test(url)) || '';
+  const username = String(user.uniqueId || user.displayId || data.uniqueId || '').slice(0, 64);
+  return { id: String(user.id || data.userId || username), username,
+    nickname: String(user.nickname || data.nickname || username || 'İzleyici').slice(0, 64), avatar };
+}
+
+// Streak updates contain cumulative counts: dispatch only the newly received gifts.
+export function createGiftNormalizer() {
+  const seen = new Set(), streaks = new Map(), recentSingles = new Map();
+  return data => {
+    const gift = data.giftDetails || data.extendedGiftInfo || data.gift || data;
+    const player = playerIdentity(data);
+    const giftId = String(data.giftId || gift.id || '');
+    if (!giftId) return null;
+    const repeat = Math.max(1, Math.min(10000, Number(data.repeatCount) || 1));
+    const id = String(data.common?.msgId || data.msgId || '');
+    const group = String(data.groupId || data.group_id || '');
+    const streak = Number(gift.giftType ?? data.giftType) === 1;
+    const done = data.repeatEnd === true || data.repeatEnd === 1;
+    const key = `${player.id}:${giftId}:${group || 'active'}`;
+
+    // 1. Non-streak tekli hediyelerde TikTok hem repeatEnd=false hem repeatEnd=true paketi atar.
+    // Aynı message id'ye sahip paketler ikinci kez düşürülmez, tek bir hediye olarak işlenir.
+    if (!streak) {
+      const now = Date.now();
+      const singleKey = `${player.id}:${giftId}:${repeat}`;
+      const lastSeen = recentSingles.get(singleKey) || 0;
+      // TikTok sometimes repeats a single-gift packet several seconds later
+      // with a different message id. A real rapid series arrives with an
+      // increasing repeatCount, so this longer window only removes copies.
+      if (now - lastSeen < 5000) return null;
+      recentSingles.set(singleKey, now);
+      if (recentSingles.size > 5000) recentSingles.delete(recentSingles.keys().next().value);
+      if (id) {
+        const msgKey = `single:${id}`;
+        if (seen.has(msgKey)) return null;
+        seen.add(msgKey);
+        if (seen.size > 10000) seen.delete(seen.values().next().value);
+      }
+      return {
+        type: 'gift',
+        eventId: id ? `msg:${id}` : `${player.id}:${giftId}:${Date.now()}`,
+        giftId,
+        giftName: String(gift.name || gift.giftName || data.giftName || ''),
+        coins: Math.max(1, Number(gift.diamondCount ?? data.diamondCount) || 1),
+        repeatCount: repeat,
+        player
+      };
+    }
+
+    // 2. Streak / combo hediyelerde ise her combo kademesi (repeat) yalnızca 1 kez işlenir.
+    const eventKey = id ? `streak:${id}:${repeat}` : '';
+    if (eventKey && seen.has(eventKey)) return null;
+    if (eventKey) seen.add(eventKey);
+    if (seen.size > 10000) seen.delete(seen.values().next().value);
+
+    const old = streaks.get(key);
+    const previous = old && !(old.done && !done && repeat <= old.count && !group) ? old.count : 0;
+    const count = Math.max(0, repeat - previous);
+    streaks.set(key, { count: Math.max(previous, repeat), done });
+    if (streaks.size > 5000) streaks.delete(streaks.keys().next().value);
+
+    if (!count) return null;
+    return {
+      type: 'gift',
+      eventId: eventKey || `${player.id}:${giftId}:${repeat}`,
+      giftId,
+      giftName: String(gift.name || gift.giftName || data.giftName || ''),
+      coins: Math.max(1, Number(gift.diamondCount ?? data.diamondCount) || 1),
+      repeatCount: count,
+      player
+    };
+  };
+}

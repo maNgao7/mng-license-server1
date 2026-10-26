@@ -1,0 +1,283 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>MNG Orbit</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .tiktok-accent{display:flex;justify-content:center;gap:6px;margin:-8px 0 18px}.tiktok-accent i,.tiktok-accent b,.tiktok-accent span{display:block;width:38px;height:4px;border-radius:2px}.tiktok-accent i{background:#25f4ee;box-shadow:0 0 14px #25f4ee}.tiktok-accent b{background:#fe2c55;box-shadow:0 0 14px #fe2c55}.tiktok-accent span{background:#fff}.start-game-button{display:inline-flex;align-items:center;justify-content:center;gap:9px;min-width:204px;margin-top:2px;padding:14px 22px;color:#fff;background:#111a36;border:1px solid #25f4ee;border-radius:6px;box-shadow:4px 4px 0 #fe2c55,-4px -4px 0 #25f4ee;font-size:14px;font-weight:900}.start-game-button:hover{background:#18254a;transform:translateY(-1px)}.play-symbol{color:#25f4ee;font-size:15px}
+    .round-timer{position:fixed;z-index:4;top:10px;left:50%;display:grid;gap:5px;min-width:200px;padding:10px 22px;background:rgba(8,14,34,0.94);border:2px solid rgba(37,244,238,0.7);border-radius:12px;text-align:center;transform:translateX(-50%);backdrop-filter:blur(18px);box-shadow:0 8px 36px rgba(0,0,0,0.7),0 0 25px rgba(37,244,238,0.3)}.round-timer span{color:#94a9cd;font-size:11px;font-weight:900;letter-spacing:1.8px}.round-timer select,.round-timer input{width:100%;padding:6px 10px;color:#dffbf8;background:#101d3a;border:1px solid #61dfd173;border-radius:4px;font-size:13px;font-weight:700;outline:0}.round-timer b{color:#fff3b4;font-size:26px;font-variant-numeric:tabular-nums;text-shadow:0 0 14px rgba(255,243,180,0.75)}
+    .timer-ad-banner{margin-top:5px;padding:6px 16px;background:linear-gradient(135deg,rgba(254,44,85,0.25),rgba(37,244,238,0.25));border:1.5px solid rgba(37,244,238,0.6);border-radius:999px;color:#fff;font-size:12px;font-weight:900;letter-spacing:0.6px;text-shadow:0 0 12px rgba(37,244,238,0.7);white-space:nowrap;box-shadow:0 4px 18px rgba(0,0,0,0.5)}
+    .timer-ad-banner strong{color:#ffd700;text-shadow:0 0 14px #ffd700}
+
+    /* SAĞ TARAF: ÜSTTE BAĞLANTIYI KES'İN ALTINDA YÖRÜNGE LİDERLERİ (DRAGGABLE) */
+    .leaderboard{position:fixed;z-index:15;top:68px;right:22px;width:270px;min-width:190px;max-width:520px;min-height:130px;max-height:420px;overflow:auto;resize:both;padding:12px 14px;background:rgba(8,14,34,0.92);border:1.5px solid rgba(37,244,238,0.5);border-radius:10px;box-shadow:0 8px 30px rgba(0,0,0,0.6);cursor:grab}
+    .leaderboard:active{cursor:grabbing}
+    .leaderboard h2{margin:3px 0 9px!important;font-size:14px!important;display:flex;align-items:center;justify-content:space-between}
+    .leaderboard h2::after{content:'✥';font-size:12px;opacity:0.6;title:'Sürükle'}
+
+    /* TUR GALİPLERİ PANELİ (DRAGGABLE, +/- BUTONLARI & TAÇ) */
+    .wins-panel{position:fixed;z-index:14;top:70px;left:20px;width:280px;min-width:190px;max-width:520px;min-height:130px;max-height:420px;overflow:auto;resize:both;cursor:grab}
+    .wins-panel:active{cursor:grabbing}
+    .wins-panel h2{display:flex;align-items:center;justify-content:space-between}
+    .wins-list li{position:relative;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px 8px;margin-bottom:4px;border-radius:8px;background:rgba(255,255,255,0.05);transition:background .2s}
+    .wins-list li:hover{background:rgba(255,255,255,0.1)}
+    .wins-list li.rank-1{background:linear-gradient(90deg,rgba(255,215,0,0.18),rgba(255,215,0,0.04));border:1px solid rgba(255,215,0,0.5)}
+    .wins-list li.rank-2{background:linear-gradient(90deg,rgba(192,192,192,0.18),rgba(192,192,192,0.04));border:1px solid rgba(192,192,192,0.4)}
+    .wins-list li.rank-3{background:linear-gradient(90deg,rgba(205,127,50,0.18),rgba(205,127,50,0.04));border:1px solid rgba(205,127,50,0.4)}
+    .win-avatar-wrap{position:relative;display:inline-block;flex-shrink:0}
+    .win-avatar-wrap img{width:32px;height:32px;border-radius:50%;object-fit:cover}
+    .win-crown{position:absolute;top:-10px;left:50%;transform:translateX(-50%);font-size:14px;filter:drop-shadow(0 0 4px gold);animation:crownBounce 1.5s infinite alternate ease-in-out}
+    @keyframes crownBounce{0%{transform:translateX(-50%) translateY(0)}100%{transform:translateX(-50%) translateY(-3px)}}
+    .win-user-info{display:flex;align-items:center;gap:6px;flex:1;min-width:0}
+    .win-user-info span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:13px;font-weight:700}
+    .win-controls{display:flex;align-items:center;gap:4px;flex-shrink:0}
+    .win-btn{width:22px;height:22px;border-radius:4px;border:1px solid rgba(255,255,255,0.25);background:rgba(255,255,255,0.1);color:#fff;font-size:13px;font-weight:900;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .15s}
+    .win-btn:hover{background:#25f4ee;color:#041c2c;border-color:#25f4ee}
+    .win-btn.minus:hover{background:#fe2c55;color:#fff;border-color:#fe2c55}
+    .win-count-badge{font-size:12px;font-weight:900;color:#25f4ee;min-width:24px;text-align:center}
+
+    /* SAĞ TARAF: ÖZEL HEDİYE KARTLARI (2x HIZLAN, 5x SÜPER HIZLAN, MONEY GUN) */
+    .orbit-side-specials{position:fixed;z-index:10;top:310px;right:22px;display:flex;flex-direction:column;gap:7px;width:240px;pointer-events:none}
+    .special-gift-card{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 12px;background:rgba(8,16,39,0.94);border:2px solid rgba(37,244,238,0.65);border-radius:12px;box-shadow:0 12px 35px rgba(0,0,0,0.65),0 0 24px rgba(37,244,238,0.35);backdrop-filter:blur(16px);pointer-events:auto;transition:transform .2s ease,box-shadow .2s ease}
+    .special-gift-card:hover{transform:scale(1.02);box-shadow:0 14px 42px rgba(0,0,0,0.75),0 0 32px rgba(37,244,238,0.5)}
+    .special-gift-card.super-speed-card{border-color:rgba(255,215,0,0.75);box-shadow:0 12px 35px rgba(0,0,0,0.65),0 0 24px rgba(255,215,0,0.35)}
+    .special-gift-card.super-speed-card:hover{box-shadow:0 14px 42px rgba(0,0,0,0.75),0 0 32px rgba(255,215,0,0.55)}
+    .special-gift-card.moneygun-card{border-color:rgba(254,44,85,0.75);box-shadow:0 12px 35px rgba(0,0,0,0.65),0 0 24px rgba(254,44,85,0.35)}
+    .special-gift-card.moneygun-card:hover{box-shadow:0 14px 42px rgba(0,0,0,0.75),0 0 32px rgba(254,44,85,0.55)}
+    .special-gift-left{display:flex;align-items:center;gap:10px}
+    .special-gift-img-wrap img{width:50px;height:50px;object-fit:contain;filter:drop-shadow(0 0 10px rgba(255,255,255,0.75))}
+    .special-gift-info{display:flex;flex-direction:column;gap:2px}
+    .special-gift-title{color:#fff;font-size:13px;font-weight:900;letter-spacing:0.6px;text-transform:uppercase}
+    .special-gift-badge{font-size:11px;font-weight:900;padding:3px 8px;border-radius:6px;white-space:nowrap;letter-spacing:0.5px}
+    .special-gift-badge.speed-badge{background:linear-gradient(135deg,#25f4ee,#00b4d8);color:#041c2c;box-shadow:0 0 14px rgba(37,244,238,0.7)}
+    .special-gift-badge.super-speed-badge{background:linear-gradient(135deg,#ffd700,#ff8800);color:#000;box-shadow:0 0 14px rgba(255,215,0,0.7)}
+    .special-gift-badge.shatter-badge{background:linear-gradient(135deg,#fe2c55,#f72585);color:#fff;box-shadow:0 0 14px rgba(254,44,85,0.7)}
+    .special-gift-change-btn{padding:5px 9px;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.25);border-radius:6px;color:#dffbf8;font-size:11px;font-weight:800;cursor:pointer;white-space:nowrap;transition:all .18s ease}
+    .special-gift-change-btn:hover{background:#25f4ee;color:#041c2c;border-color:#25f4ee;box-shadow:0 0 12px #25f4ee}
+
+    /* ARKA PLAN MENÜSÜ SCROLL & 48 VİDEO DÜZENİ */
+    .background-menu{position:fixed;z-index:20;top:64px;left:24px;width:340px;max-height:min(70vh,520px);padding:14px;background:rgba(8,16,39,0.96);border:1.5px solid rgba(37,244,238,0.5);border-radius:12px;box-shadow:0 16px 45px rgba(0,0,0,0.8),0 0 25px rgba(37,244,238,0.25);backdrop-filter:blur(18px);display:flex;flex-direction:column}
+    .background-menu[hidden]{display:none!important}
+    .background-options{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;overflow-y:auto;max-height:430px;padding-right:4px;margin-top:10px}
+    .background-option{position:relative!important;display:grid!important;grid-template-columns:34px 1fr;align-items:center;min-height:76px;padding:5px!important;overflow:hidden}.background-option video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.42}.background-option span,.background-option b{position:relative;z-index:1;text-shadow:0 2px 7px #000}.background-option.selected video{opacity:.62}
+    .background-options::-webkit-scrollbar{width:6px}
+    .background-options::-webkit-scrollbar-thumb{background:#25f4ee55;border-radius:3px}
+
+    /* 600+ HEDİYE SEÇİCİ MODAL */
+    .orbit-gift-picker-modal{position:fixed;z-index:200;inset:0;display:grid;place-items:center;padding:24px;background:rgba(3,6,18,0.88);backdrop-filter:blur(12px)}
+    .orbit-gift-picker-modal[hidden]{display:none!important}
+    .orbit-gift-picker-dialog{width:min(860px,94vw);max-height:min(82vh,760px);display:flex;flex-direction:column;padding:22px;background:#081027;border:2px solid #25f4eeaa;border-radius:14px;box-shadow:0 30px 100px #000,0 0 50px rgba(37,244,238,0.35)}
+    .orbit-gift-picker-head{display:flex;align-items:center;justify-content:space-between;padding-bottom:14px;border-bottom:1px solid rgba(135,169,221,0.25)}
+    .orbit-gift-picker-head h3{margin:0;color:#f1f8ff;font-size:22px;font-weight:900}
+    .orbit-gift-picker-dialog input{width:100%;margin-top:14px;padding:12px 14px;color:#f4f8ff;background:#111c37;border:1.5px solid rgba(101,128,175,0.5);border-radius:8px;outline:0;font-size:14px;font-weight:700}
+    .orbit-gift-picker-dialog input:focus{border-color:#25f4ee;box-shadow:0 0 16px rgba(37,244,238,0.5)}
+    .orbit-gift-picker-results{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:10px;min-height:200px;max-height:460px;margin-top:14px;padding:4px;overflow-y:auto}
+    .orbit-gift-picker-results::-webkit-scrollbar{width:6px}
+    .orbit-gift-picker-results::-webkit-scrollbar-thumb{background:#25f4ee66;border-radius:3px}
+    .orbit-gift-choice{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:10px 6px;color:#dce9fb;background:#101b35;border:1.5px solid rgba(84,114,155,0.4);border-radius:10px;cursor:pointer;transition:all .16s ease}
+    .orbit-gift-choice:hover,.orbit-gift-choice.selected{border-color:#25f4ee;background:#153d4a;box-shadow:0 0 16px rgba(37,244,238,0.6);transform:translateY(-2px)}
+    .orbit-gift-choice img{width:52px;height:52px;object-fit:contain}
+    .orbit-gift-choice span{font-size:11px;font-weight:800;text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:95%}
+    .orbit-gift-choice small{color:#ffd700;font-size:10px;font-weight:900}
+  </style>
+</head>
+<body>
+  <div class="background-stage" aria-hidden="true">
+    <video class="background-video active" data-background="0" autoplay muted loop playsinline preload="metadata" src="assets/backgrounds/orbit-1.mp4"></video>
+    <video class="background-video" data-background="1" muted loop playsinline preload="metadata" src="assets/backgrounds/orbit-2.mp4"></video>
+    <video class="background-video" data-background="2" muted loop playsinline preload="metadata" src="assets/backgrounds/orbit-3.mp4"></video>
+    <video class="background-video" data-background="3" muted loop playsinline preload="metadata" src="assets/backgrounds/orbit-4.mp4"></video>
+    <video class="background-video" id="customBgVideo" muted loop playsinline style="display:none;"></video>
+    <img id="customBgImg" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:none;" alt="Özel Arka Plan">
+  </div>
+  <canvas id="orbitCanvas" aria-label="MNG Orbit oyun alanı"></canvas>
+  <section class="intro-screen" id="introScreen">
+    <div class="intro-content">
+      <div class="orbit-mark" aria-hidden="true"><span></span><i></i><b></b></div>
+      <p class="eyebrow">MNG TIKTOK GAME</p>
+      <h1>MNG <em>Orbit</em></h1>
+      <p class="intro-copy">Takipler, beğeniler ve hediyeler canlı yayında kendi yörüngesini büyütür.</p>
+      <div class="tiktok-accent" aria-hidden="true"><i></i><b></b><span></span></div>
+      <form id="connectForm" class="connect-form">
+        <label for="username">TikTok yayıncı kullanıcı adı</label>
+        <div class="connect-row"><span>@</span><input id="username" autocomplete="off" placeholder="kullaniciadi" required><button type="submit" id="connectButton">Bağlan</button></div>
+      </form>
+      <p class="connection-note" id="introStatus">Yayın bağlantısı bekleniyor veya hemen oyuna başlayabilirsiniz</p>
+      <div style="display:flex; gap:10px; justify-content:center; margin-top:14px; flex-wrap:wrap;">
+        <button class="start-game-button" id="startGameButton" type="button"><span class="play-symbol">▶</span> Oyunu Başlat</button>
+        <button class="compact-button" id="offlineStartButton" type="button" style="background: rgba(37, 244, 238, 0.18); border: 1px solid #25f4ee; border-radius: 8px; padding: 12px 20px; font-weight: 800; color: #67ead8; cursor: pointer;">🎮 Test Modunda Başla</button>
+      </div>
+    </div>
+  </section>
+  <main class="game-shell" id="gameShell" hidden>
+    <header class="topbar">
+      <button class="icon-button" id="gameSettingsButton" type="button" aria-label="Oyun ayarları" title="Oyun ayarları"><span></span><span></span><span></span></button>
+      <button class="compact-button" id="backgroundButton" type="button">Arka Plan</button>
+      <div class="brand"><strong>MNG</strong> ORBIT <span class="live-dot"></span></div>
+      <div class="connection-state" id="connectionState">Bağlantı bekleniyor</div>
+      <div class="connection-state" id="combatStatus" role="status">Oyuncular bekleniyor: 0 / 5</div>
+      <button class="icon-action" id="fullscreenButton" type="button" aria-label="Tam ekran" title="Tam ekran">&#9974;</button>
+      <button class="compact-button disconnect" id="disconnectButton" type="button">Bağlantıyı kes</button>
+    </header>
+    <div class="background-menu" id="backgroundMenu" hidden>
+      <p class="eyebrow">ARKA PLAN SEÇ</p>
+      <div class="background-options">
+        <button class="background-option selected" data-background="0" type="button"><span>01</span><b>Akış</b></button>
+        <button class="background-option" data-background="1" type="button"><span>02</span><b>Gece</b></button>
+        <button class="background-option" data-background="2" type="button"><span>03</span><b>Enerji</b></button>
+        <button class="background-option" data-background="3" type="button"><span>04</span><b>Ritim</b></button>
+      </div>
+      <div style="margin-top:12px; padding-top:10px; border-top:1px solid rgba(255,255,255,0.12);">
+        <input type="file" id="customBgFileInput" accept="image/*,video/*" style="display:none;">
+        <button id="customBgBtn" type="button" style="width:100%; padding:9px 10px; background:linear-gradient(135deg, #25f4ee, #5865f2); color:#fff; border:0; border-radius:6px; font-weight:800; font-size:12px; cursor:pointer;">
+          📁 Kendi Görselini / Videonu Ekle
+        </button>
+        <button id="resetBgBtn" type="button" style="width:100%; margin-top:6px; padding:6px; background:rgba(255,255,255,0.08); color:#cbd8ef; border:1px solid rgba(255,255,255,0.15); border-radius:6px; font-weight:700; font-size:11px; cursor:pointer; display:none;">
+          ↺ Varsayılan Videoya Dön
+        </button>
+      </div>
+    </div>
+    <div class="round-timer" id="roundTimer">
+      <span>TUR SÜRESİ</span>
+      <select id="roundDuration" aria-label="Tur süresi"><option value="10">10 sn</option><option value="60">1 dk</option><option value="120">2 dk</option><option value="180">3 dk</option><option value="240">4 dk</option><option value="300" selected>5 dk</option><option value="600">10 dk</option><option value="custom">Özel</option></select>
+      <input id="customDuration" type="number" min="5" max="3600" value="300" hidden aria-label="Özel süre saniye">
+      <b>05:00</b>
+      <div class="timer-actions">
+        <button id="timerToggleBtn" type="button">⏸ Duraklat</button>
+        <button id="timerStartButton" type="button">↺ Yeniden Başlat</button>
+        <button id="timerFinishButton" type="button" style="background:#fe2c55; border-color:#fe2c55; color:#fff; font-weight:800;">🏆 Turu Bitir</button>
+      </div>
+      <div class="timer-ad-banner">
+        Oyun satışı için <strong>@maNgao7tv</strong> "Ulaşabilirsiniz"
+      </div>
+    </div>
+    
+    <!-- SAĞ TARAF SABİT ÖZEL HEDİYE KARTLARI (BÜYÜTÜLMÜŞ & 600+ HEDİYEDEN DEĞİŞTİRİLEBİLİR) -->
+    <aside class="orbit-side-specials" id="orbitSideSpecials">
+      <div class="special-gift-card tea-card">
+        <div class="special-gift-left">
+          <div class="special-gift-img-wrap">
+            <img id="speedGiftImg" src="/catalog-assets/gift-images/Doughnut.png" alt="Hız Hediyesi">
+          </div>
+          <div class="special-gift-info">
+            <strong class="special-gift-title" id="speedGiftTitle">DONUT</strong>
+            <span class="special-gift-badge speed-badge">⚡ 2x HIZLAN</span>
+          </div>
+        </div>
+        <button class="special-gift-change-btn" id="changeSpeedGiftBtn" type="button" title="600+ hediyeden birini seç">🔄 Değiştir</button>
+      </div>
+
+      <div class="special-gift-card super-speed-card">
+        <div class="special-gift-left">
+          <div class="special-gift-img-wrap">
+            <img id="superSpeedGiftImg" src="/catalog-assets/gift-images/Tea.png" alt="5x Süper Hız Hediyesi">
+          </div>
+          <div class="special-gift-info">
+            <strong class="special-gift-title" id="superSpeedGiftTitle">DONUT</strong>
+            <span class="special-gift-badge super-speed-badge">🚀 5x SÜPER HIZ</span>
+          </div>
+        </div>
+        <button class="special-gift-change-btn" id="changeSuperSpeedGiftBtn" type="button" title="600+ hediyeden birini seç">🔄 Değiştir</button>
+      </div>
+
+      <div class="special-gift-card moneygun-card">
+        <div class="special-gift-left">
+          <div class="special-gift-img-wrap">
+            <img id="shatterGiftImg" src="/catalog-assets/gift-images/Money_Gun.png" alt="Parçala Hediyesi">
+          </div>
+          <div class="special-gift-info">
+            <strong class="special-gift-title" id="shatterGiftTitle">MONEY GUN</strong>
+            <span class="special-gift-badge shatter-badge">💥 HERKESİ PARÇALA</span>
+          </div>
+        </div>
+        <button class="special-gift-change-btn" id="changeShatterGiftBtn" type="button" title="600+ hediyeden birini seç">🔄 Değiştir</button>
+      </div>
+    </aside>
+
+    <aside class="leaderboard"><p class="eyebrow">CANLI SIRALAMA</p><h2>Yörünge Liderleri</h2><ol id="leaderboardList"></ol></aside>
+    <aside class="wins-panel"><p class="eyebrow">TUR GALİPLERİ</p><ol id="winsList" class="wins-list"></ol><button id="winnerWidgetButton" type="button">Kazanan widget'ı kopyala</button><button id="leaderboardWidgetButton" type="button">Sıralama widget'ı kopyala</button></aside>
+    
+    <!-- OYUN AYARLARI -->
+    <aside class="orbit-game-settings" id="orbitGameSettings" hidden>
+      <div class="panel-head">
+        <div>
+          <p class="eyebrow">CANLI OYUN AYARLARI</p>
+          <h2>Kütle & Katılım Kuralları</h2>
+        </div>
+        <button class="close-button" id="closeGameSettings" type="button">×</button>
+      </div>
+      <div class="game-settings-scroll">
+        <div class="settings-group-grid">
+          <label>1 Coin Başına Kütle<input id="gameCoinMultiplier" type="number" min="1" max="1000" value="20" step="1"></label>
+          <label>1 Coin Çarpanı<input id="gameMultiplier1" type="number" min="0.1" max="20" value="0.8" step="0.1"></label>
+          <label>50 Coin Çarpanı<input id="gameMultiplier50" type="number" min="0.1" max="20" value="1.5" step="0.1"></label>
+          <label>100 Coin Çarpanı<input id="gameMultiplier100" type="number" min="0.1" max="20" value="1.7" step="0.1"></label>
+          <label>500 Coin Çarpanı<input id="gameMultiplier500" type="number" min="0.1" max="20" value="2" step="0.1"></label>
+          <label>1000 Coin Çarpanı<input id="gameMultiplier1000" type="number" min="0.1" max="20" value="2.5" step="0.1"></label>
+          <label>Takip Giriş Kütlesi<input id="gameFollowMass" type="number" min="1" max="50000" value="250"></label>
+          <label>Kaç beğeniyle girilsin?<input id="gameLikeEnterThreshold" type="number" min="1" max="50000" value="100"></label>
+          <label>İlk beğeni giriş kütlesi<input id="gameLikeEnterMass" type="number" min="1" max="50000" value="200"></label>
+          <label>Beğeni artış adımı (X beğeni)<input id="gameLikeThreshold" type="number" min="1" max="100000" value="100"></label>
+          <label>Her adımda eklenen kütle<input id="gameLikeReward" type="number" min="1" max="50000" value="150"></label>
+          <label>Alan Büyüklüğü (Genişlik)<input id="gameArenaWidth" type="number" min="2000" max="15000" value="5200" step="100"></label>
+          <label>Yeni Katılan Koruma Süresi (sn)<input id="gameProtectionSeconds" type="number" min="0" max="60" value="8" step="1"></label>
+          <label>Hareketin Başlayacağı Kişi Sayısı<input id="gameMinPlayers" type="number" min="2" max="100" value="5" step="1"></label>
+        </div>
+        <div class="like-rule-note" style="border-color:#25f4ee; margin-bottom:8px;">
+          🛡️ <strong>P Harfi ile Profili Sil:</strong> Canlı yayında uygunsuz veya cinsel içerikli fotoğrafları engellemek için balona tıklayıp klavyeden <strong>P</strong> harfine basarak o kişinin profilini anında silebilirsiniz.
+        </div>
+        <div class="like-rule-note" style="border-color:#ffd700;">
+          ⭐ <strong>Coin → Kütle Sistemi:</strong> Kütle = hediye coin değeri × coin başına kütle × coin çarpanı. 1 coin = 1.0×, 50 = 1.5×, 100 = 1.7×, 500 = 2.0×, 1000 = 2.5×. Aradaki coin değerleri kendinden küçük en yakın kuralı kullanır.
+          <br><br>
+          ⚡ <strong>Özel Hediyeler:</strong> Çay atan oyuncu 15 saniyeliğine 2x hızlanır. Money Gun atan oyuncu arenadaki tüm rakipleri parçalar!
+        </div>
+        <div class="settings-actions" style="grid-template-columns: repeat(3, 1fr); margin-bottom: 8px;">
+          <button id="testSpeedButton" type="button" style="background:#25f4ee; color:#041c2c; font-weight:800;">⚡ 2x Hızlan Test</button>
+          <button id="testSuperSpeedButton" type="button" style="background:#ffd700; color:#000; font-weight:800;">🚀 5x Hızlan Test</button>
+          <button id="testShatterButton" type="button" style="background:#fe2c55; color:#fff; font-weight:800;">💥 Parçala Test</button>
+        </div>
+        <div class="settings-actions" style="grid-template-columns: repeat(3, 1fr);">
+          <button id="testLikeButton" type="button">100 Beğeni Testi</button>
+          <button id="testSwallowButton" type="button">Yutma Sesi Testi</button>
+          <button id="saveGameSettings" type="button">Ayarları Kaydet</button>
+        </div>
+      </div>
+    </aside>
+    <div class="event-feed" id="eventFeed"></div>
+  </main>
+  <section class="victory-overlay" id="victoryOverlay" hidden>
+    <div class="gift-fireworks" id="giftFireworks"></div>
+    <div class="victory-ring"></div>
+    <div class="victory-ring victory-ring-outer"></div>
+    <p class="eyebrow victory-eyebrow">TUR TAMAMLANDI • ŞAMPİYON</p>
+    <strong class="winner-win">WINNER</strong>
+    <div class="winner-avatar-container">
+      <img id="winnerAvatar" alt="Kazanan profil fotoğrafı">
+    </div>
+    <h2 id="winnerName"></h2>
+    <p id="winnerScore"></p>
+  </section>
+  <!-- 600+ HEDİYE SEÇİCİ MODAL -->
+  <div class="orbit-gift-picker-modal" id="orbitGiftPickerModal" hidden aria-hidden="true">
+    <div class="orbit-gift-picker-dialog">
+      <div class="orbit-gift-picker-head">
+        <div>
+          <p class="eyebrow" style="color:#25f4ee; margin:0 0 4px;">600+ CANLI HEDİYE KATALOĞU</p>
+          <h3 id="orbitGiftPickerTitle">Özel Hediyeyi Değiştir</h3>
+        </div>
+        <button class="close-button" id="closeGiftPicker" type="button">✕</button>
+      </div>
+      <input type="text" id="orbitGiftPickerSearch" placeholder="Hediye adı ara (örn: Gül, Donut, Çay, Araba, Asa, Kalp...)" autocomplete="off">
+      <div class="orbit-gift-picker-results" id="orbitGiftPickerResults"></div>
+    </div>
+  </div>
+
+  <audio id="winnerAudio" preload="auto" src="assets/audio/winner.mp3"></audio>
+  <audio id="growthAudio" preload="auto" src="assets/audio/growth.mp3"></audio>
+  <audio id="swallowAudio" preload="auto" src="assets/audio/swallow.mp3"></audio>
+  <script src="collision.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

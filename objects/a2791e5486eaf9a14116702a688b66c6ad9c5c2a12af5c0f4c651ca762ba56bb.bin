@@ -1,0 +1,664 @@
+import * as THREE from 'three';
+import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
+import {FBXLoader} from 'three/addons/loaders/FBXLoader.js';
+import * as SU from 'three/addons/utils/SkeletonUtils.js';
+import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
+window.__ok=1;
+// ---- AYARLAR (gerekirse değiştir) ----
+// KNIGHT_H: şövalye boyu (eskisi 1.8 idi, şimdi daha büyük). KNIGHT_SCALE: 0=otomatik.
+const W=700, MAX=4000, DMAX=500, NEAR=60, KNIGHT_H=3.6, COMMANDER_SCALE=3, FACE=0 /* asker ters bakıyorsa Math.PI yap */, KNIGHT_SCALE=0, VF=24 /* animasyon kare sayısı */;
+const SC=KNIGHT_H/1.8, REACH=1.6*SC, GRID=8, GRAB_R=3.5, GRAB_MAX=1 /* tek seferde taşınan asker sayısı (1=tek asker) */, PICK=400;
+const $=id=>document.getElementById(id), rnd=(a,b)=>a+Math.random()*(b-a), clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const riverZ=x=>150*Math.sin(x*.004)+60*Math.sin(x*.011);
+const Hh=(x,z)=>{const h=(Math.sin(x*.012)*7+Math.cos(z*.015)*7+Math.sin((x+z)*.006)*12+Math.sin(x*.04)*Math.cos(z*.035)*2)*.3,c=Math.exp(-(((z-riverZ(x))/18)**2));return h*(1-c*.85)-c*7};
+const R=new THREE.WebGLRenderer({canvas:$('c'),antialias:true});R.setPixelRatio(Math.min(devicePixelRatio,2));
+const S=new THREE.Scene();S.background=new THREE.Color(0x8fd0ff);S.fog=new THREE.Fog(0xbfe6ff,150,950);
+const cam=new THREE.PerspectiveCamera(65,1,.5,3000);cam.rotation.order='YXZ';
+const skyLight=new THREE.HemisphereLight(0xffffff,0x6a8a50,1.1);S.add(skyLight);
+const sun=new THREE.DirectionalLight(0xfff2d0,1.6);sun.position.set(200,300,100);S.add(sun);
+// ---- ekstra arayüz (artı işareti, mod yazısı, dokunmatik tuşlar) ----
+{const st=document.createElement('style');st.textContent=`
+#cross{position:fixed;left:50%;top:50%;width:28px;height:28px;transform:translate(-50%,-50%);pointer-events:none;z-index:5;--cc:#fff}
+#cross:before,#cross:after{content:'';position:absolute;background:var(--cc);box-shadow:0 0 3px #000}
+#cross:before{left:13px;top:0;width:2px;height:28px}#cross:after{top:13px;left:0;height:2px;width:28px}
+#tgt{top:calc(50% + 26px);left:50%;transform:translateX(-50%);white-space:nowrap;font-weight:700;display:none}
+#mode{top:58px;left:50%;transform:translateX(-50%);white-space:nowrap;font-weight:700;background:rgba(20,60,100,.7)}
+#help{bottom:70px;left:6px;max-width:92vw;line-height:1.5}`;document.head.appendChild(st);
+ for(const [id,cls] of [['cross',''],['tgt','p'],['mode','p']]){const d=document.createElement('div');d.id=id;d.className=cls;document.body.appendChild(d)}}
+const DIRT=new THREE.Color(0x9c8a5c);let terrainMesh=null,waterMesh=null;
+// arazi (savaş alanı: ortası çiğnenmiş toprak)
+{const g=new THREE.PlaneGeometry(W*2.2,W*2.2,260,260);g.rotateX(-Math.PI/2);const p=g.attributes.position,col=[],c=new THREE.Color();
+for(let i=0;i<p.count;i++){const x=p.getX(i),z=p.getZ(i),y=Hh(x,z);p.setY(i,y);const sl=Math.abs(Hh(x+3,z)-y)+Math.abs(Hh(x,z+3)-y);
+ const n=.5+.5*Math.sin(x*.05)*Math.cos(z*.045);
+ if(y<-1.5)c.set(0xd9c68a);else if(sl>3.2)c.set(0x9b8458);else{c.set(0x62b83c).lerp(new THREE.Color(0xa6dc5a),n*.6+Math.max(0,y)*.01);c.lerp(DIRT,clamp(1-(Math.hypot(x,z)-110)/150,0,1)*(.5+.3*n))}col.push(c.r,c.g,c.b)}
+g.setAttribute('color',new THREE.Float32BufferAttribute(col,3));g.computeVertexNormals();
+terrainMesh=new THREE.Mesh(g,new THREE.MeshToonMaterial({vertexColors:true}));S.add(terrainMesh);
+waterMesh=new THREE.Mesh(new THREE.PlaneGeometry(W*3,W*3).rotateX(-Math.PI/2),new THREE.MeshToonMaterial({color:0x3fb0e0,transparent:true,opacity:.8}));waterMesh.position.y=-3.2;S.add(waterMesh)}
+// hazır modeller (Gobkit)
+const gl=new GLTFLoader();
+async function prop(name,n,th,ok,gen){try{const g=await gl.loadAsync(`assets/nature/${name}.glb`);let m;g.scene.traverse(o=>{if(o.isMesh&&!m)m=o});
+ m.geometry.computeBoundingBox();const hh=m.geometry.boundingBox.max.y-m.geometry.boundingBox.min.y,o=m.material;
+ const I=new THREE.InstancedMesh(m.geometry,new THREE.MeshToonMaterial({map:o.map,color:o.color,vertexColors:!!m.geometry.attributes.color}),n),d=new THREE.Object3D();let c=0;
+ for(let t=0;t<n*10&&c<n;t++){let x,z,y;if(gen)[x,z,y]=gen(c);else{x=rnd(-W*.95,W*.95);z=rnd(-W*.95,W*.95);if(!ok(x,z))continue;y=Hh(x,z)-.2}
+  d.position.set(x,y,z);d.rotation.y=rnd(0,6.28);d.scale.setScalar(th/hh*rnd(.75,1.3));d.updateMatrix();I.setMatrixAt(c++,d.matrix)}
+ I.count=c;I.frustumCulled=false;S.add(I)}catch(e){window.show&&show('model yüklenemedi: '+name+' -> '+e.message)}}
+const dry=(x,z)=>Math.abs(z-riverZ(x))>40, forest=(x,z)=>dry(x,z)&&Math.hypot(x,z)>250&&Math.sin(x*.01)*Math.cos(z*.012)>-.15, steep=(x,z)=>Math.abs(Hh(x+3,z)-Hh(x,z))>1.6;
+const ring=(r,y)=>i=>{const a=i*2.4;return[Math.cos(a)*r,Math.sin(a)*r,y]};
+$('load').textContent='Harita yükleniyor...';
+await Promise.all([
+ ...['TreeHigh001','TreeHigh002','TreeMed001','TreeMed002','TreeLow001','TreeLow002'].map(n=>prop(n,10,13,forest)),
+ ...['Bush001','Bush002'].map(n=>prop(n,10,2,dry)),...['Grass001','Grass002','Grass003'].map(n=>prop(n,35,1.5,dry)),
+ ...['Rock001','Rock002','Rock003'].map(n=>prop(n,8,3,dry)),...['Cliff001','Cliff002','Cliff003'].map(n=>prop(n,4,22,steep)),
+ ...['MountainFar001','MountainFar002','MountainFar003'].map((n,i)=>prop(n,7,i?200:300,null,ring(1100+i*40,-40))),
+ ...['Cloud001','Cloud002','Cloud003'].map(n=>prop(n,8,45,null,()=>[rnd(-900,900),rnd(160,260),rnd(-900,900)]))
+]);
+// ---- savaş alanı: kaleler ve çadırlar ----
+{const M=c=>new THREE.MeshToonMaterial({color:c}),stone=M(0xb7b0a0),dark=M(0x6d675b),roof=M(0xb8432f),wood=M(0x6b4a2b);
+ const box=(g,w,h,d,x,y,z,m)=>{const o=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),m);o.position.set(x,y,z);g.add(o);return o};
+ const flag=(g,x,y,z,c)=>{box(g,.5,12,.5,x,y+6,z,wood);box(g,6,3.5,.3,x+3,y+10,z,M(c))};
+ function castle(cx,cz,col){const g=new THREE.Group();g.position.set(cx,Hh(cx,cz),cz);g.rotation.y=Math.atan2(-cx,-cz);const T=34;
+  for(const [sx,sz] of [[-1,-1],[1,-1],[-1,1],[1,1]]){const t=new THREE.Mesh(new THREE.CylinderGeometry(6,6.5,38,12),stone);t.position.set(sx*T,13,sz*T);g.add(t);
+   const r=new THREE.Mesh(new THREE.ConeGeometry(8,10,12),roof);r.position.set(sx*T,37,sz*T);g.add(r);flag(g,sx*T,40,sz*T,col)}
+  box(g,64,22,4,0,5,-T,stone);box(g,4,22,64,-T,5,0,stone);box(g,4,22,64,T,5,0,stone);
+  box(g,26,22,4,-19,5,T,stone);box(g,26,22,4,19,5,T,stone);box(g,12,6,4,0,13,T,dark);
+  box(g,22,36,22,0,12,-6,stone);const k=new THREE.Mesh(new THREE.ConeGeometry(17,12,4),roof);k.rotation.y=Math.PI/4;k.position.set(0,36,-6);g.add(k);flag(g,0,42,-6,col);S.add(g)}
+ const tg=new THREE.ConeGeometry(3.6,4.2,8),tcol=[0xc0392b,0xe8e0c8,0x2e6fb0,0xd9a53a];
+ function camp(cx,cz,col,i){const y=Hh(cx,cz);for(let k=0;k<3;k++){const a=k*2.1+i,x=cx+Math.cos(a)*7,z=cz+Math.sin(a)*7,t=new THREE.Mesh(tg,M(tcol[(i+k)%4]));t.position.set(x,Hh(x,z)+2.1,z);t.rotation.y=a;S.add(t)}
+  const f=new THREE.Mesh(new THREE.ConeGeometry(1,1.6,6),M(0xff8a1f));f.position.set(cx,y+.8,cz);S.add(f);const g=new THREE.Group();g.position.set(cx,y,cz);flag(g,3,0,3,col);S.add(g)}
+ castle(-480,-260,0x2e6fb0);castle(480,260,0xc0392b);
+ for(let i=0;i<10;i++){const a=i/10*Math.PI*2+.3,r=290+(i%3)*35,x=Math.cos(a)*r,z=Math.sin(a)*r;if(Math.abs(z-riverZ(x))<50)continue;camp(x,z,i%2?0x2e6fb0:0xc0392b,i)}}
+// savaşçı (KayKit manken + animasyon dosyaları)
+let KN=null,clips=[],dbgT='';
+try{$('load').textContent='Savaşçı yükleniyor...';const Ld=u=>gl.loadAsync('assets/knight/'+u);
+ const [mm,a1,a2,a3]=await Promise.all([Ld('Mannequin_Medium.glb'),Ld('Rig_Medium_CombatMelee.glb'),Ld('Rig_Medium_General.glb'),Ld('Rig_Medium_MovementBasic.glb')]);
+ clips=[...a1.animations,...a2.animations,...a3.animations];
+ const f=mm.scene;f.updateMatrixWorld(true);const bb=new THREE.Box3().setFromObject(f),h=bb.max.y-bb.min.y;
+ let tx=null;f.traverse(o=>{if(o.isMesh&&!tx&&o.material&&o.material.map)tx=o.material.map});f.userData.map=tx;
+ // kılıç: sağ ele (hand.r) bağlanır. Yönü: SWORD_DIR (elin yerel ekseni; ileri-yukarı)
+ let hb=null;f.traverse(o=>{if(o.isBone&&o.name.replace(/[._\s]/g,'')==='handr')hb=o});
+ if(hb){
+  const sw=new THREE.Group(),steel=new THREE.MeshToonMaterial({color:0xe8eef4}),gold=new THREE.MeshToonMaterial({color:0xe6b94d}),leather=new THREE.MeshToonMaterial({color:0x5b2f1d});
+  const blade=new THREE.Mesh(new THREE.CylinderGeometry(.055,.11,1.18,4).translate(0,.93,0),steel);
+  const tip=new THREE.Mesh(new THREE.ConeGeometry(.11,.28,4).translate(0,1.66,0),steel);
+  const guard=new THREE.Mesh(new THREE.BoxGeometry(.46,.09,.09).translate(0,.29,0),gold);
+  const grip=new THREE.Mesh(new THREE.CylinderGeometry(.055,.055,.29,8).translate(0,.1,0),leather);
+  const pommel=new THREE.Mesh(new THREE.SphereGeometry(.09,10,8).translate(0,-.07,0),gold);
+  for(const part of[blade,tip,guard,grip,pommel]){part.userData.noTint=true;sw.add(part)}
+  sw.name='sword';const SWORD_DIR=new THREE.Vector3(-1,-.6,0).normalize();sw.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),SWORD_DIR);
+  const ws=new THREE.Vector3();hb.getWorldScale(ws);sw.scale.setScalar(1/(ws.x||1));hb.add(sw)}
+ else window.show&&show('hand.r kemiği bulunamadı, kılıç eklenmedi');
+  // ZIRH: parçalar modelin dinlenme (T-poz) koordinatlarında kurulur, sonra kemiklere bağlanır (animasyonla birlikte hareket eder)
+ {const Bn=n=>{let r=null;f.traverse(o=>{if(o.isBone&&o.name.replace(/[._\s]/g,'')===n)r=o});return r};
+  const STEEL=[.31,.12],DARK=[.19,.12],GOLD=[.82,.2],RED=[.94,.2],AM=new THREE.MeshToonMaterial({map:tx,side:THREE.DoubleSide});
+  const add=(bone,parts)=>{if(!bone){window.show&&show('zırh kemiği bulunamadı');return}
+   const gs=parts.map(([g,c,p,sc,r])=>{const n=g.attributes.position.count,a=new Float32Array(n*2);for(let i=0;i<n;i++){a[i*2]=c[0];a[i*2+1]=c[1]}g.setAttribute('uv',new THREE.BufferAttribute(a,2));
+    if(sc)g.scale(sc[0],sc[1],sc[2]);if(r){g.rotateX(r[0]);g.rotateY(r[1]);g.rotateZ(r[2])}if(p)g.translate(p[0],p[1],p[2]);return g});
+   const m=new THREE.Mesh(mergeGeometries(gs),AM);m.name='zirh';f.add(m);m.updateMatrixWorld(true);bone.attach(m)};
+  const PI=Math.PI,Sph=(a,b,c,d,e)=>new THREE.SphereGeometry(1,18,12,a,b,c,d),Bx=(w,h,d)=>new THREE.BoxGeometry(w,h,d),Cy=(o)=>new THREE.CylinderGeometry(1,.88,1,18,1,o),To=(t)=>new THREE.TorusGeometry(1,t,6,20);
+  // kask: önü açık kubbe + kırmızı tepelik + arka tüy
+  add(Bn('head'),[[new THREE.SphereGeometry(1,20,14,PI/2+.45,PI*2-.9,0,PI*.62),STEEL,[0,1.72,.02],[.5,.56,.58]],[Bx(.08,.2,.95),RED,[0,2.3,-.02]],[Bx(.08,.34,.24),RED,[0,2.22,-.5]],[Bx(.06,.3,.06),GOLD,[0,1.55,.57]]]);
+  // göğüs zırhı, altın kuşak, arma, pelerin
+  add(Bn('chest'),[[Cy(true),STEEL,[0,.85,.02],[.41,.5,.33]],[To(.06).rotateX(PI/2),GOLD,[0,1.1,.02],[.41,1,.33]],[To(.06).rotateX(PI/2),GOLD,[0,.6,.02],[.4,1,.32]],[Bx(.2,.24,.05),RED,[0,.88,.35]],[Bx(.62,.95,.04),RED,[0,.6,-.36],null,[.12,0,0]]]);
+  // omuzluklar
+  for(const [n,sx] of [['upperarmr',-1],['upperarml',1]])add(Bn(n),[[new THREE.SphereGeometry(1,14,10,0,PI*2,0,PI*.55),STEEL,[sx*.3,1.2,0],[.27,.21,.27]],[To(.04).rotateX(PI/2),GOLD,[sx*.3,1.2,0],[.27,1,.27]]]);
+  // kalkan (sol kol)
+  add(Bn('lowerarml'),[[new THREE.CylinderGeometry(1,1,.07,22).rotateX(PI/2),RED,[.62,1.08,.2],[.4,.4,1]],[To(.05),GOLD,[.62,1.08,.24],[.4,.4,1]],[Sph(0,PI*2,0,PI).scale(.1,.1,.08),GOLD,[.62,1.08,.28]]]);
+ }
+ f.userData.k=KNIGHT_SCALE||(h>1e-4?KNIGHT_H/h:1);f.userData.y0=bb.min.y;KN=f;dbgT=`Savaşçı: boy=${h.toFixed(2)} animasyon=${clips.length}`}
+catch(e){window.show&&show('Savaşçı yüklenemedi: '+e.message)}
+const clip=n=>clips.find(c=>c.name===n);
+const durOf=n=>(clip(n)||{duration:1.2}).duration,ATK_D=[durOf('Melee_1H_Attack_Slice_Horizontal'),durOf('Melee_1H_Attack_Chop')],HIT_T=ATK_D.map(d=>d*.42);
+// ---- Animasyonlu toplu çizim (VAT): her kemik animasyonu önceden dokuya pişirilir, GPU 4000 askeri animasyonlu çizer ----
+function bake(){
+ const names=['Idle_A','Running_A','Melee_1H_Attack_Slice_Horizontal','Death_A','Melee_1H_Attack_Chop'],C=5,F=VF,TW=2048;
+ const cl=names.map(n=>clip(n)||clip('Idle_A')||clips[0]);if(!cl[0])throw new Error('animasyon bulunamadı');
+ const root=SU.clone(KN),meshes=[];root.traverse(o=>{if(o.isMesh)meshes.push(o)});
+ let V=0;const off=[];for(const m of meshes){off.push(V);V+=m.geometry.attributes.position.count}
+ if(!V||V>40000)throw new Error('vertex sayısı uygun değil: '+V);
+ const ROWS=Math.ceil(V/TW),H=ROWS*F*C;if(H>R.capabilities.maxTextureSize)throw new Error('doku çok büyük');
+ const P=new Float32Array(TW*H*4),N=new Float32Array(TW*H*4);
+ // her mesh için ön hazırlık
+ const pre=meshes.map(m=>{const g=m.geometry,pa=g.attributes.position,na=g.attributes.normal,n=pa.count,sk=!!(m.isSkinnedMesh&&m.skeleton&&g.attributes.skinIndex);
+  const pos=new Float32Array(n*3),nor=new Float32Array(n*3),si=new Uint16Array(n*4),sw=new Float32Array(n*4);
+  for(let v=0;v<n;v++){pos[v*3]=pa.getX(v);pos[v*3+1]=pa.getY(v);pos[v*3+2]=pa.getZ(v);if(na){nor[v*3]=na.getX(v);nor[v*3+1]=na.getY(v);nor[v*3+2]=na.getZ(v)}else nor[v*3+1]=1;
+   if(sk){const a=g.attributes.skinIndex,b=g.attributes.skinWeight;si[v*4]=a.getX(v);si[v*4+1]=a.getY(v);si[v*4+2]=a.getZ(v);si[v*4+3]=a.getW(v);sw[v*4]=b.getX(v);sw[v*4+1]=b.getY(v);sw[v*4+2]=b.getZ(v);sw[v*4+3]=b.getW(v)}}
+  return{n,sk,pos,nor,si,sw}});
+ const mx=new THREE.AnimationMixer(root),M4=new THREE.Matrix4(),B4=new THREE.Matrix4();
+ for(let c=0;c<C;c++){
+  mx.stopAllAction();const act=mx.clipAction(cl[c]);if(c===3){act.setLoop(THREE.LoopOnce,1);act.clampWhenFinished=true}act.play();
+  for(let f=0;f<F;f++){
+   mx.setTime(cl[c].duration*(c===3?f/(F-1):f/F));root.updateMatrixWorld(true);
+   meshes.forEach((m,mi)=>{const d=pre[mi];let ML;
+    if(d.sk){const sk=m.skeleton;sk.update();const nb=sk.bones.length;ML=new Float32Array(nb*16);
+     for(let j=0;j<nb;j++){M4.multiplyMatrices(m.matrixWorld,m.bindMatrixInverse);B4.fromArray(sk.boneMatrices,j*16);M4.multiply(B4).multiply(m.bindMatrix);M4.toArray(ML,j*16)}}
+    else ML=Float32Array.from(m.matrixWorld.elements);
+    for(let v=0;v<d.n;v++){const x=d.pos[v*3],y=d.pos[v*3+1],z=d.pos[v*3+2],nx=d.nor[v*3],ny=d.nor[v*3+1],nz=d.nor[v*3+2];
+     let px=0,py=0,pz=0,qx=0,qy=0,qz=0;
+     if(d.sk){let ws=d.sw[v*4]+d.sw[v*4+1]+d.sw[v*4+2]+d.sw[v*4+3];if(!(ws>0))ws=1;
+      for(let k=0;k<4;k++){const w=d.sw[v*4+k]/ws;if(!w)continue;const o=d.si[v*4+k]*16,e=ML;
+       px+=w*(e[o]*x+e[o+4]*y+e[o+8]*z+e[o+12]);py+=w*(e[o+1]*x+e[o+5]*y+e[o+9]*z+e[o+13]);pz+=w*(e[o+2]*x+e[o+6]*y+e[o+10]*z+e[o+14]);
+       qx+=w*(e[o]*nx+e[o+4]*ny+e[o+8]*nz);qy+=w*(e[o+1]*nx+e[o+5]*ny+e[o+9]*nz);qz+=w*(e[o+2]*nx+e[o+6]*ny+e[o+10]*nz)}}
+     else{const e=ML;px=e[0]*x+e[4]*y+e[8]*z+e[12];py=e[1]*x+e[5]*y+e[9]*z+e[13];pz=e[2]*x+e[6]*y+e[10]*z+e[14];qx=e[0]*nx+e[4]*ny+e[8]*nz;qy=e[1]*nx+e[5]*ny+e[9]*nz;qz=e[2]*nx+e[6]*ny+e[10]*nz}
+     const ql=Math.hypot(qx,qy,qz)||1,g=off[mi]+v,ti=((((c*F+f)*ROWS)+(g/TW|0))*TW+g%TW)*4;
+     P[ti]=px;P[ti+1]=py;P[ti+2]=pz;P[ti+3]=1;N[ti]=qx/ql;N[ti+1]=qy/ql;N[ti+2]=qz/ql;N[ti+3]=0}})}}
+ // boy ölçümü (Idle, ilk kare) ve ölçekleme
+ let mn=1e9,mxY=-1e9;for(let g=0;g<V;g++){const y=P[(((g/TW|0))*TW+g%TW)*4+1];mn=Math.min(mn,y);mxY=Math.max(mxY,y)}
+ const hh=mxY-mn;if(!(hh>1e-6))throw new Error('model boyu ölçülemedi');
+ const k=KNIGHT_SCALE||KNIGHT_H/hh;
+ for(let tf=0;tf<C*F;tf++)for(let g=0;g<V;g++){const ti=((tf*ROWS+(g/TW|0))*TW+g%TW)*4;P[ti]=P[ti]*k;P[ti+1]=(P[ti+1]-mn)*k;P[ti+2]=P[ti+2]*k}
+ KN.userData.k=k;KN.userData.y0=mn; // havuzdaki gerçek modeller de aynı boyda olsun
+ // renkler (malzeme rengi x köşe rengi)
+ const col=new Float32Array(V*3),vid=new Float32Array(V),uvs=new Float32Array(V*2),idx=[];
+ meshes.forEach((m,mi)=>{const g=m.geometry,n=pre[mi].n,cc=g.attributes.color,mats=Array.isArray(m.material)?m.material:[m.material],vm=new Int16Array(n);
+  if(Array.isArray(m.material)&&g.groups&&g.groups.length)for(const gr of g.groups){for(let i=gr.start;i<gr.start+gr.count;i++){const vi=g.index?g.index.getX(i):i;if(vi<n)vm[vi]=gr.materialIndex}}
+  for(let v=0;v<n;v++){const mt=mats[vm[v]]||mats[0],bc=(mt&&mt.color)||new THREE.Color(1,1,1),q=off[mi]+v;
+   col[q*3]=(cc?cc.getX(v):1)*bc.r;col[q*3+1]=(cc?cc.getY(v):1)*bc.g;col[q*3+2]=(cc?cc.getZ(v):1)*bc.b;vid[q]=q;const ua=g.attributes.uv;uvs[q*2]=ua?ua.getX(v):0;uvs[q*2+1]=ua?ua.getY(v):0}
+  if(g.index){for(let i=0;i<g.index.count;i++)idx.push(g.index.getX(i)+off[mi])}else{for(let v=0;v<n;v++)idx.push(off[mi]+v)}});
+ const geo=new THREE.BufferGeometry();
+ geo.setAttribute('position',new THREE.BufferAttribute(new Float32Array(V*3),3));geo.setAttribute('normal',new THREE.BufferAttribute(new Float32Array(V*3),3));
+ geo.setAttribute('color',new THREE.BufferAttribute(col,3));geo.setAttribute('aVid',new THREE.BufferAttribute(vid,1));geo.setAttribute('uv',new THREE.BufferAttribute(uvs,2));
+ const aa=new THREE.InstancedBufferAttribute(new Float32Array((MAX+DMAX)*2),2);aa.setUsage(THREE.DynamicDrawUsage);geo.setAttribute('aAnim',aa);geo.setIndex(idx);
+ const mkT=a=>{const t=new THREE.DataTexture(a,TW,H,THREE.RGBAFormat,THREE.FloatType);t.minFilter=t.magFilter=THREE.NearestFilter;t.generateMipmaps=false;t.needsUpdate=true;return t};
+ const U={uPos:{value:mkT(P)},uNrm:{value:mkT(N)},uTime:{value:0},uFps:{value:cl.map((c,i)=>(i===3?F-1:F)/Math.max(.2,c.duration))}};
+ const head=`uniform highp sampler2D uPos;uniform highp sampler2D uNrm;uniform float uTime;uniform float uFps[5];attribute vec2 aAnim;attribute float aVid;
+ivec2 vatC(){int vid=int(aVid+.5);int cl=int(aAnim.x+.5);float fp=uFps[cl];float fr;
+ if(cl==3)fr=min(floor(aAnim.y*fp),${F-1}.);else fr=floor(mod(uTime*fp+aAnim.y*${F}.,${F}.));
+ return ivec2(vid%${TW},(cl*${F}+int(fr))*${ROWS}+vid/${TW});}`;
+ const mat=new THREE.MeshToonMaterial({vertexColors:true,map:KN.userData.map||null});
+ mat.onBeforeCompile=sh=>{Object.assign(sh.uniforms,U);
+  sh.vertexShader=sh.vertexShader.replace('#include <common>','#include <common>\n'+head)
+   .replace('#include <beginnormal_vertex>','ivec2 vc=vatC();vec3 objectNormal=normalize(texelFetch(uNrm,vc,0).xyz);')
+   .replace('#include <begin_vertex>','vec3 transformed=texelFetch(uPos,vc,0).xyz;')};
+ return{geo,mat,U,V,fps:U.uFps.value}}
+let VAT=null;
+if(KN){try{$('load').textContent='Animasyonlar hazırlanıyor...';VAT=bake();dbgT+=` | VAT vertex=${VAT.V}`}catch(e){window.show&&show('Toplu animasyon kurulamadı (yedek mod): '+e.message)}}
+const pool=[];
+const mk=()=>{const root=new THREE.Group(),m=SU.clone(KN);m.scale.setScalar(KN.userData.k);m.position.y=-KN.userData.y0*KN.userData.k;root.add(m);
+ m.traverse(o=>{if(o.isMesh){o.frustumCulled=false;o.material=Array.isArray(o.material)?o.material.map(x=>x.clone()):o.material.clone()}});
+ const mx=new THREE.AnimationMixer(m),A=[clip('Idle_A'),clip('Running_A'),clip('Melee_1H_Attack_Slice_Horizontal'),null,clip('Melee_1H_Attack_Chop')].map(c=>c&&mx.clipAction(c));
+ root.visible=false;S.add(root);return{root,m,mx,A,st:-1,s:null,army:null}};
+const tint=(it,col)=>it.m.traverse(o=>{if(o.isMesh)(Array.isArray(o.material)?o.material:[o.material]).forEach(x=>{if(!x.color||x.userData.noTint)return;if(!x.userData.c0)x.userData.c0=x.color.clone();x.color.copy(x.userData.c0).multiply(col.clone().lerp(new THREE.Color(1,1,1),.5))})});
+function setAnim(it,st,s){const atk=st===2||st===4;if(it.st!==st||(atk&&s&&it.at!==s.atkT)){const n=it.A[st]||it.A[0],o=it.A[it.st];if(n){n.reset().play();if(atk&&s&&s.sw>=0)n.time=s.sw;if(o&&o!==n)o.crossFadeTo(n,.15,false)}it.st=st;it.at=s?s.atkT:0}}
+if(KN)for(let i=0;i<NEAR;i++)pool.push(mk());
+const PK=KN?mk():null; // askere girince oynadığımız şövalye
+$('load').remove();
+{const d=document.createElement('div');d.id='help';d.className='p';
+ d.innerHTML=(dbgT||'Şövalye YOK')+' | havuz='+pool.length+'<br>TANRI MODU: WASD uç • Space yukarı • C aşağı • Shift hızlı • tekerlek: hız<br>SOL TIK basılı tut: artının üstündeki askerleri taşı (tekerlek: uzaklık) • bırakınca düşerler<br>E: artının üstündeki askere GİR / çık • Askerdeyken: WASD yürü, Space zıpla, sol tık / F vur, V: 1. kişi, fare / sağ tık sürükle: bak';
+ document.body.appendChild(d);setTimeout(()=>d.remove(),30000)}
+// uzak/yedek: animasyonsuz birleşik model (sadece toplu animasyon kurulamazsa)
+let farGeo=new THREE.CylinderGeometry(.35*SC,.35*SC,KNIGHT_H,6).translate(0,KNIGHT_H/2,0),farMat=new THREE.MeshToonMaterial();
+if(KN&&!VAT)try{const gs=[],k=KN.userData.k;KN.updateMatrixWorld(true);KN.traverse(o=>{if(!o.isMesh)return;const g=new THREE.BufferGeometry(),q=o.geometry,mt=Array.isArray(o.material)?o.material[0]:o.material;
+  g.setAttribute('position',q.attributes.position.clone());g.setAttribute('normal',q.attributes.normal.clone());if(q.index)g.setIndex(q.index.clone());
+  const n=g.attributes.position.count,c=new Float32Array(n*3),cc=q.attributes.color,bc=mt.color||new THREE.Color(1,1,1);
+  for(let i=0;i<n;i++){c[i*3]=(cc?cc.getX(i):1)*bc.r;c[i*3+1]=(cc?cc.getY(i):1)*bc.g;c[i*3+2]=(cc?cc.getZ(i):1)*bc.b}
+  g.setAttribute('color',new THREE.BufferAttribute(c,3));g.applyMatrix4(o.matrixWorld);gs.push(g)});
+ const m=mergeGeometries(gs);m.translate(0,-KN.userData.y0,0);m.scale(k,k,k);m.computeBoundingBox();const hh=m.boundingBox.max.y-m.boundingBox.min.y;
+ if(hh>.8&&hh<8){farGeo=m;farMat=new THREE.MeshToonMaterial({vertexColors:true})}}catch(e){window.show&&show('Uzak şövalye oluşturulamadı: '+e.message)}
+const SM=VAT?new THREE.InstancedMesh(VAT.geo,VAT.mat,MAX+DMAX):new THREE.InstancedMesh(farGeo,farMat,MAX+DMAX);
+SM.setColorAt(0,new THREE.Color());SM.frustumCulled=false;S.add(SM);
+const pl=new THREE.Mesh(new THREE.BoxGeometry(1,2,1).translate(0,1,0),new THREE.MeshToonMaterial({color:0xffd23c}));pl.visible=false;S.add(pl);
+// ---- oyun durumu ----
+const P={x:0,z:0,y:Math.max(Hh(0,0),-4)+28,yaw:0,pitch:-.25};
+const A=new Map(),SO=[],DEAD=[],Q=[],names=['Ahmet','Mehmet','Ali','Ayşe','Murat','Can','Hasan','Zeynep','Elif','Burak'];
+let unitSeq=0;
+let ctl=null,hold=null,hover=null,fp=false,spdM=1;
+const MAP_THEMES={plains:{background:0x8fd0ff,fog:0xbfe6ff,terrain:0xffffff,water:0x3fb0e0,sky:0xffffff,ground:0x6a8a50,sun:0xfff2d0},sunset:{background:0xffa66b,fog:0xf3a176,terrain:0xffc28c,water:0xb55d5d,sky:0xffd6a3,ground:0x824b39,sun:0xffc07a},night:{background:0x142348,fog:0x30456e,terrain:0x6f83a2,water:0x244f81,sky:0x8aa8e8,ground:0x273d38,sun:0x9dc6ff}};
+let currentMap=localStorage.getItem('mng_battle_map')||'plains';
+function applyBattleMap(key){const theme=MAP_THEMES[key]||MAP_THEMES.plains;currentMap=MAP_THEMES[key]?key:'plains';S.background.set(theme.background);S.fog.color.set(theme.fog);terrainMesh?.material.color.set(theme.terrain);waterMesh?.material.color.set(theme.water);skyLight.color.set(theme.sky);skyLight.groundColor.set(theme.ground);sun.color.set(theme.sun);localStorage.setItem('mng_battle_map',currentMap);const select=$('battleMapSelect');if(select)select.value=currentMap;}
+applyBattleMap(currentMap);
+const zone=i=>{for(const r of[110,150,70,190]){const a=i/6*Math.PI*2+.3,x=Math.cos(a)*r,z=Math.sin(a)*r;if(Math.abs(z-riverZ(x))>45)return[x,z]}return[Math.cos(i)*110,Math.sin(i)*110+120]};
+const msg=t=>{const b=$('banner');b.innerHTML=t;b.style.opacity=1;clearTimeout(b.t);b.t=setTimeout(()=>b.style.opacity=0,2200)};
+function addGift(raw, coins, avatarUrl = "", giftLabel = ""){
+  const n = '@' + raw.replace(/^@/, ''), k = n.toLowerCase();
+  let a = A.get(k);
+  if(!a){
+    const used = [...A.values()].map(x => x.z);
+    const free = [0,1,2,3,4,5].filter(i => !used.includes(i));
+    const zi = (free.length ? free : [0,1,2,3,4,5])[Math.random() * (free.length || 6) | 0];
+    let [sx, sz] = zone(zi);
+    const av = avatarUrl || `/api/avatar?user=${encodeURIComponent(n)}`;
+    a = {
+      name: n,
+      z: zi,
+      sx, sz,
+      cx: sx, cz: sz,
+      coins: 0,
+      alive: 0,
+      pending: 0,
+      commanderUid: null,
+      avatar: av,
+      color: new THREE.Color().setHSL(Math.random(), 0.8, 0.5),
+      el: document.createElement('div')
+    };
+    a.tint = a.color.clone().lerp(new THREE.Color(1,1,1), 0.5);
+    a.dcol = a.tint.clone().multiplyScalar(0.55);
+    a.el.className = 'lb';
+    a.el.style.color = '#' + a.color.getHexString();
+    a.el.innerHTML = `<img src="${av}" onerror="this.style.display='none'"><span>${n}</span>`;
+    document.body.appendChild(a.el);
+    A.set(k, a);
+  } else if (avatarUrl && !a.avatar) {
+    a.avatar = avatarUrl;
+    a.el.innerHTML = `<img src="${avatarUrl}" onerror="this.style.display='none'"><span>${n}</span>`;
+  }
+  a.coins += coins;
+  a.pending += coins;
+  Q.push({ a, n: coins });
+
+  const f = document.createElement('div');
+  const av = a.avatar || `/api/avatar?user=${encodeURIComponent(n)}`;
+  f.innerHTML = `<img src="${av}" style="width:20px;height:20px;border-radius:50%;object-fit:cover;"> <b>${n}</b> ${giftLabel ? '• ' + giftLabel : ''} • +${coins} asker`;
+  const feed = $('feed');
+  if (feed) {
+    feed.insertBefore(f, feed.children[1] || null);
+    while (feed.children.length > 7) feed.lastChild.remove();
+  }
+  msg(`🎁 YENİ HEDİYE!<br>${n.toUpperCase()}<br>+${coins} ASKER KATILDI!`);
+}
+
+const gift = (c, av = "", lbl = "") => addGift($('nm') ? $('nm').value.trim() || names[Math.random() * names.length | 0] : names[Math.random() * names.length | 0], c, av, lbl);
+let hudOn = true;
+if ($('b1')) $('b1').onclick = () => gift(100);
+if ($('b2')) $('b2').onclick = () => gift(500);
+if ($('b3')) $('b3').onclick = () => gift(1000);
+if ($('bh')) $('bh').onclick = () => { hudOn = !hudOn; ['top','feed','armyLeaderboardPanel','winsPanel'].forEach(i => { const el = $(i); if (el) el.style.display = hudOn ? '' : 'none'; }); };
+// Başlangıçta harita boş - askerler hediye veya test butonlarıyla üretilir
+// ---- girdi ----
+const K={};let mouseL=false,rdrag=false,grabReq=false,eReq=false;
+addEventListener('keydown',e=>{if(e.target.tagName==='INPUT')return;K[e.code]=1;if(e.code==='Space')e.preventDefault();
+ if(!e.repeat){if(e.code==='KeyE')eReq=true;if(e.code==='KeyV')fp=!fp}});
+addEventListener('keyup',e=>K[e.code]=0);
+const cv=$('c');
+cv.addEventListener('mousedown',e=>{if(e.button===0){mouseL=true;grabReq=true;if(!document.pointerLockElement)try{cv.requestPointerLock()}catch(_){}}else if(e.button===2)rdrag=true});
+addEventListener('mouseup',e=>{if(e.button===0)mouseL=false;if(e.button===2)rdrag=false});
+cv.addEventListener('contextmenu',e=>e.preventDefault());
+addEventListener('mousemove',e=>{if(rdrag||document.pointerLockElement){P.yaw-=e.movementX*.003;P.pitch=clamp(P.pitch-e.movementY*.003,-1.5,1.5)}});
+cv.addEventListener('wheel',e=>{e.preventDefault();if(hold)hold.dist=clamp(hold.dist*(e.deltaY>0?1.1:.9),4,PICK);else spdM=clamp(spdM*(e.deltaY>0?.85:1.18),.2,6)},{passive:false});
+let joy=null,look=null;
+cv.addEventListener('touchstart',e=>{e.preventDefault();for(const t of e.changedTouches){if(t.clientX<innerWidth/2&&!joy)joy={id:t.identifier,x:t.clientX,y:t.clientY,dx:0,dy:0};else if(!look)look={id:t.identifier,x:t.clientX,y:t.clientY}}},{passive:false});
+cv.addEventListener('touchmove',e=>{e.preventDefault();for(const t of e.changedTouches){if(joy&&t.identifier===joy.id){joy.dx=(t.clientX-joy.x)/50;joy.dy=(t.clientY-joy.y)/50}else if(look&&t.identifier===look.id){P.yaw-=(t.clientX-look.x)*.005;P.pitch=clamp(P.pitch-(t.clientY-look.y)*.005,-1.5,1.5);look.x=t.clientX;look.y=t.clientY}}},{passive:false});
+cv.addEventListener('touchend',e=>{for(const t of e.changedTouches){if(joy&&t.identifier===joy.id)joy=null;if(look&&t.identifier===look.id)look=null}});
+// dokunmatik düğmeler
+if(matchMedia('(pointer:coarse)').matches||'ontouchstart' in window){
+ const tb=$('tools'),mkb=(txt,dn,up)=>{const b=document.createElement('button');b.textContent=txt;b.style.touchAction='none';
+  b.addEventListener('pointerdown',e=>{e.preventDefault();dn()});if(up){for(const ev of['pointerup','pointercancel','pointerleave'])b.addEventListener(ev,up)}tb.appendChild(b)};
+ mkb('✋/⚔️ TUT-VUR',()=>{mouseL=true;grabReq=true},()=>{mouseL=false});mkb('🎮 GİR/ÇIK',()=>{eReq=true});
+ mkb('⬆',()=>{K.Space=1},()=>{K.Space=0});mkb('⬇',()=>{K.KeyC=1},()=>{K.KeyC=0})}
+function resize(){R.setSize(innerWidth,innerHeight,false);cam.aspect=innerWidth/innerHeight;cam.updateProjectionMatrix()}addEventListener('resize',resize);resize();
+// ---- yardımcılar ----
+// ---- vuruş efekti (kıvılcım) ve hasar ----
+const SPN=300,spP=new Float32Array(SPN*3).fill(-9999),spV=new Float32Array(SPN*3),spL=new Float32Array(SPN);let spI=0,gt=0;
+const spG=new THREE.BufferGeometry();spG.setAttribute('position',new THREE.BufferAttribute(spP,3));
+const spM=new THREE.Points(spG,new THREE.PointsMaterial({color:0xffd060,size:.9,transparent:true,depthWrite:false,blending:THREE.AdditiveBlending}));spM.frustumCulled=false;S.add(spM);
+function spark(x,y,z,n){for(let k=0;k<n;k++){const i=spI++%SPN;spP[i*3]=x;spP[i*3+1]=y;spP[i*3+2]=z;spV[i*3]=rnd(-6,6);spV[i*3+1]=rnd(2,8);spV[i*3+2]=rnd(-6,6);spL[i]=rnd(.25,.5)}}
+function updSpark(dt){for(let i=0;i<SPN;i++){if(spL[i]<=0){spP[i*3+1]=-9999;continue}spL[i]-=dt;spV[i*3+1]-=22*dt;spP[i*3]+=spV[i*3]*dt;spP[i*3+1]+=spV[i*3+1]*dt;spP[i*3+2]+=spV[i*3+2]*dt}spG.attributes.position.needsUpdate=true}
+let lastBattleSound=0,battleAudio=null;
+function ensureBattleAudio(){try{battleAudio=battleAudio||new (window.AudioContext||window.webkitAudioContext)();if(battleAudio.state==='suspended')battleAudio.resume();return battleAudio}catch{return null}}
+function playBattleSound(force=false){const now=performance.now();if(!force&&now-lastBattleSound<85)return;lastBattleSound=now;const ac=ensureBattleAudio();if(!ac)return;try{const t=ac.currentTime,master=ac.createGain(),metal=ac.createOscillator(),ring=ac.createOscillator(),noise=ac.createBufferSource(),filter=ac.createBiquadFilter(),b=ac.createBuffer(1,Math.floor(ac.sampleRate*.18),ac.sampleRate),d=b.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=(Math.random()*2-1)*Math.exp(-i/(d.length*.16));metal.type='triangle';metal.frequency.setValueAtTime(rnd(720,980),t);metal.frequency.exponentialRampToValueAtTime(rnd(170,250),t+.16);ring.type='sine';ring.frequency.setValueAtTime(rnd(1500,2200),t);ring.frequency.exponentialRampToValueAtTime(rnd(700,980),t+.12);noise.buffer=b;filter.type='bandpass';filter.frequency.value=rnd(1800,2800);filter.Q.value=1.4;master.gain.setValueAtTime(.0001,t);master.gain.exponentialRampToValueAtTime(force?.28:.18,t+.004);master.gain.exponentialRampToValueAtTime(.0001,t+.2);metal.connect(master);ring.connect(master);noise.connect(filter);filter.connect(master);master.connect(ac.destination);metal.start(t);ring.start(t);noise.start(t);metal.stop(t+.2);ring.stop(t+.15);noise.stop(t+.18)}catch{}}
+for(const ev of['pointerdown','keydown'])addEventListener(ev,()=>ensureBattleAudio(),{once:true});
+function hurt(e,s,d){e.hp-=d;playBattleSound();const dx=e.x-s.x,dz=e.z-s.z,l=Math.hypot(dx,dz)||1;if(!e.held&&!e.pl){e.x+=dx/l*.7;e.z+=dz/l*.7}
+ const cx=cam.position.x-e.x,cz=cam.position.z-e.z;if(cx*cx+cz*cz<14400)spark(e.x-dx/l*.5,e.y+KNIGHT_H*.6,e.z-dz/l*.5,e.hp<=0?10:4)}
+const fwd=new THREE.Vector3();
+function pickAt(){cam.getWorldDirection(fwd);const o=cam.position;let best=null,bt=1e9;
+ for(const s of SO){if(s.pl||s.held||s.hp<=0)continue;const vx=s.x-o.x,vy=s.y+KNIGHT_H*.5-o.y,vz=s.z-o.z,t=vx*fwd.x+vy*fwd.y+vz*fwd.z;if(t<1||t>PICK||t>=bt)continue;
+  const d2=vx*vx+vy*vy+vz*vz-t*t,r=KNIGHT_H*.5+t*.012;if(d2<r*r){best=s;bt=t}}
+ return best?{s:best,t:bt}:null}
+function exitCtl(text){if(!ctl)return;const s=ctl;s.pl=false;s.sw=-1;s.hp=Math.min(s.hp,10);P.x=s.x;P.z=s.z;P.y=Math.max(s.y+14,Hh(s.x,s.z)+14);P.pitch=-.5;ctl=null;PK&&(PK.root.visible=false);pl.visible=false;msg(text||'Tanrı moduna döndün')}
+// ---- döngü ----
+const dm=new THREE.Object3D(),mv=(s,tx,tz,sp,dt)=>{const dx=tx-s.x,dz=tz-s.z,d=Math.hypot(dx,dz)||1;s.x+=dx/d*sp*dt+(Math.random()-.5)*.1;s.z+=dz/d*sp*dt+(Math.random()-.5)*.1;s.ang=Math.atan2(dx,dz);s.st=1};
+let last=performance.now(),lt=0,lr=0;
+let roundSeconds=300,roundRemaining=300,roundRunning=false,roundFinished=false;
+function renderRoundClock(){const clock=$('roundClock');if(clock){const mins=Math.floor(roundRemaining/60),secs=Math.ceil(roundRemaining%60);clock.textContent=`${String(mins).padStart(2,'0')}:${String(secs).padStart(2,'0')}`;}}
+function finishRound(){if(roundFinished)return;roundFinished=true;roundRunning=false;const winner=[...A.values()].sort((a,b)=>b.alive-a.alive||b.pending-a.pending)[0];if(!winner){msg('Tur bitti. Kazanan çıkmadı.');return}tournamentChange(winner.name,1);msg(`👑 TUR KAZANANI<br><b>${winner.name}</b><br>${winner.alive} asker hayatta kaldı`);}
+function updateRound(dt){if(!roundRunning||roundFinished)return;roundRemaining=Math.max(0,roundRemaining-dt);renderRoundClock();if(roundRemaining<=0)finishRound();}
+function resetRound(){roundSeconds=Math.max(10,Number($('roundDuration')?.value)||300);roundRemaining=roundSeconds;roundRunning=false;roundFinished=false;renderRoundClock();msg('Tur yeniden başlatmaya hazır');}
+renderRoundClock();
+function loop(now){requestAnimationFrame(loop);const dt=Math.min(.05,(now-last)/1e3);last=now;gt=now/1000;updSpark(dt);
+ updateRound(dt);
+ // E: askere gir / çık
+ if(eReq){eReq=false;if(ctl)exitCtl();else if(!hold&&hover&&!hover.s.held&&hover.s.hp>0){const s=hover.s;ctl=s;s.pl=true;s.hp=Math.max(s.hp,80);s.kills=0;s.cd=0;s.swing=0;P.pitch=.25;hover=null;msg(`🎮 ${s.a.name} askerindesin!`)}}
+ // girdi ekseni
+ let f=(K.KeyW?1:0)-(K.KeyS?1:0),r=(K.KeyD?1:0)-(K.KeyA?1:0);if(joy){f+=-joy.dy;r+=joy.dx}
+ const l=Math.hypot(f,r);if(l>1){f/=l;r/=l}
+ if(!ctl){ // TANRI MODU: serbest kamera
+  const sp=(K.ShiftLeft?130:38)*spdM,cp=Math.cos(P.pitch),u=(K.Space?1:0)-(K.KeyC?1:0);
+  P.x+=(-Math.sin(P.yaw)*cp*f+Math.cos(P.yaw)*r)*sp*dt;P.z+=(-Math.cos(P.yaw)*cp*f-Math.sin(P.yaw)*r)*sp*dt;P.y+=(Math.sin(P.pitch)*f+u)*sp*dt;
+  P.x=clamp(P.x,-W,W);P.z=clamp(P.z,-W,W);P.y=clamp(P.y,Math.max(Hh(P.x,P.z),-4)+1.5,700)}
+ // asker doğurma
+ let bud=40;while(bud>0&&Q.length){const q=Q[0],k=Math.min(q.n,bud,MAX-SO.length);if(k<=0)break;const a=q.a,rad=(6+Math.sqrt(a.coins)*.6)*Math.sqrt(SC);
+   for(let i=0;i<k;i++){const t=Math.random()*6.28,d=Math.sqrt(Math.random())*rad,x=a.sx+Math.cos(t)*d,z=a.sz+Math.sin(t)*d,uid=++unitSeq,commander=!a.commanderUid;a.commanderUid=commander?uid:a.commanderUid;SO.push({uid,x,z,y:Hh(x,z),vy:0,air:false,fy:0,hp:commander?60:10,a,commander,cd:0,ang:0,st:0,rich:null,ph:Math.random(),held:false,pl:false,kills:0,swing:0,sw:-1,hit:false,alt:false,atkT:0,target:null,engagedBy:null})}
+  q.n-=k;a.pending-=k;bud-=k;if(q.n<=0)Q.shift()}
+ for(const a of A.values()){a.alive=0;a.mx=0;a.mz=0}
+ const G=new Map();
+ for(const s of SO){s.a.alive++;s.a.mx+=s.x;s.a.mz+=s.z;const k=(Math.floor(s.x/GRID)+400)*1000+Math.floor(s.z/GRID)+400;(G.get(k)||G.set(k,[]).get(k)).push(s)}
+ const AR=[...A.values()];for(const a of AR)if(a.alive){a.cx=a.mx/a.alive;a.cz=a.mz/a.alive}
+ // savaş yapay zekâsı: her asker, hedefi düşene kadar yalnızca tek düşmana odaklanır.
+  for(const s of SO){s.st=0;if(s.hp<=0||s.held||s.pl){if(!s.pl)s.sw=-1;continue}s.cd-=dt;let best=null,bd=1e9;const gx=Math.floor(s.x/GRID)+400,gz=Math.floor(s.z/GRID)+400;
+   if(s.target&&s.target.hp>0&&!s.target.dead&&!s.target.held&&s.target.a!==s.a&&(!s.target.engagedBy||s.target.engagedBy===s)){best=s.target;best.engagedBy=s;bd=Math.hypot(best.x-s.x,best.z-s.z)}else{if(s.target?.engagedBy===s)s.target.engagedBy=null;s.target=null;for(let i=-2;i<=2;i++)for(let j=-2;j<=2;j++){const c=G.get((gx+i)*1000+gz+j);if(c)for(const e of c){if(e.a===s.a||e.hp<=0||e.held||(e.engagedBy&&e.engagedBy!==s))continue;const d=Math.hypot(e.x-s.x,e.z-s.z);if(d<bd){bd=d;best=e}}}if(best){s.target=best;best.engagedBy=s}}
+   if(best){const reach=REACH*(s.commander?1.35:1);if(s.sw>=0){s.sw+=dt;s.st=s.alt?4:2;s.ang=Math.atan2(best.x-s.x,best.z-s.z);const ai=s.alt?1:0;if(!s.hit&&s.sw>=HIT_T[ai]){s.hit=true;if(bd<reach*1.5)hurt(best,s,(s.commander?12:5)+Math.random()*3)}if(s.sw>=ATK_D[ai]){s.sw=-1;s.cd=.1+Math.random()*.25}}
+    else if(bd>reach)mv(s,best.x,best.z,8*SC,dt);
+   else{s.ang=Math.atan2(best.x-s.x,best.z-s.z);if(s.cd<=0){s.sw=0;s.hit=false;s.alt=Math.random()<.5;s.atkT=gt;s.st=s.alt?4:2}}}
+  else{s.sw=-1;let t=null,td=1e9;for(const a of AR){if(a===s.a||!a.alive)continue;const d=Math.hypot(a.cx-s.x,a.cz-s.z);if(d<td){td=d;t=a}}if(t)mv(s,t.cx,t.cz,10*SC,dt)}
+  s.x=clamp(s.x,-W+20,W-20);s.z=clamp(s.z,-W+20,W-20)}
+ // Yakın askerler birbirinin içine girmeden saflar halinde ilerler.
+ const SEP=.72*SC,SEP2=SEP*SEP;
+ for(const s of SO){if(s.hp<=0||s.held||s.pl)continue;const gx=Math.floor(s.x/GRID)+400,gz=Math.floor(s.z/GRID)+400;let corrected=0;
+  for(let i=-1;i<=1&&corrected<6;i++)for(let j=-1;j<=1&&corrected<6;j++){const cell=G.get((gx+i)*1000+gz+j);if(!cell)continue;
+   for(const e of cell){if(e.uid<=s.uid||e.hp<=0||e.held||e.pl)continue;let dx=e.x-s.x,dz=e.z-s.z,d2=dx*dx+dz*dz;if(d2>=SEP2)continue;
+    if(d2<.0001){const a=(s.uid*2.399963)%6.283;dx=Math.cos(a)*.01;dz=Math.sin(a)*.01;d2=.0001}
+    const d=Math.sqrt(d2),push=(SEP-d)*.5,px=dx/d*push,pz=dz/d*push;s.x-=px;s.z-=pz;e.x+=px;e.z+=pz;corrected++}
+  }}
+ // ASKERE GİRİLMİŞSE: oyuncu kontrolü
+ if(ctl){const s=ctl,sp=K.ShiftLeft?30:18,dx=-Math.sin(P.yaw)*f+Math.cos(P.yaw)*r,dz=-Math.cos(P.yaw)*f-Math.sin(P.yaw)*r,moving=l>.05,atk=mouseL||K.KeyF;
+  s.x=clamp(s.x+dx*sp*dt,-W+20,W-20);s.z=clamp(s.z+dz*sp*dt,-W+20,W-20);
+  if(K.Space&&!s.air){s.air=true;s.vy=11;s.fy=s.y}
+  s.cd-=dt;if(atk&&s.cd<=0){s.cd=.55;s.swing=.75;s.sw=0;s.atkT=gt;const fx=Math.sin(s.ang=Math.atan2(-Math.sin(P.yaw),-Math.cos(P.yaw))),fz=Math.cos(s.ang),gx=Math.floor(s.x/GRID)+400,gz=Math.floor(s.z/GRID)+400;let hitTarget=null,hitDistance=Infinity;
+   for(let i=-2;i<=2;i++)for(let j=-2;j<=2;j++){const c=G.get((gx+i)*1000+gz+j);if(c)for(const e of c){if(e.a===s.a||e.hp<=0||e.held)continue;const ex=e.x-s.x,ez=e.z-s.z,d=Math.hypot(ex,ez);
+    if(d<REACH*1.6&&(d<.01||(ex*fx+ez*fz)/d>.1)&&d<hitDistance){hitTarget=e;hitDistance=d}}}if(hitTarget){hurt(hitTarget,s,12);if(hitTarget.hp<=0)s.kills++}}
+  if(s.swing>0){s.swing-=dt;s.st=2;s.ang=Math.atan2(-Math.sin(P.yaw),-Math.cos(P.yaw))}else if(moving){s.st=1;s.ang=Math.atan2(dx,dz)}else s.st=0}
+ // yükseklik / düşme
+ for(const s of SO){if(s.held)continue;const g=Hh(s.x,s.z);
+  if(s.air){s.vy-=30*dt;s.y+=s.vy*dt;s.fy=Math.max(s.fy,s.y);if(s.y<=g){const drop=s.fy-g;if(drop>14)s.hp-=(drop-14)*1.5;s.y=g;s.vy=0;s.air=false;s.fy=0}}else s.y=g}
+ // ölenler -> ceset animasyonu
+  for(let i=SO.length-1;i>=0;i--)if(SO[i].hp<=0){const s=SO[i];s.dead=true;if(s.target?.engagedBy===s)s.target.engagedBy=null;if(s.engagedBy)s.engagedBy.target=null;if(s.commander)s.a.commanderUid=null;if(VAT){if(DEAD.length>=DMAX)DEAD.shift();DEAD.push({x:s.x,y:s.y,z:s.z,ang:s.ang,age:0,col:s.a.dcol})}SO[i]=SO[SO.length-1];SO.pop()}
+  for(const a of AR)if(a.alive&&!a.commanderUid){const next=SO.find(s=>s.a===a&&s.hp>0);if(next){next.commander=true;next.hp=Math.max(next.hp,60);a.commanderUid=next.uid}}
+ for(let i=DEAD.length-1;i>=0;i--){DEAD[i].age+=dt;if(DEAD[i].age>6)DEAD.splice(i,1)}
+ if(ctl&&ctl.hp<=0)exitCtl('💀 Askerin düştü! Tanrı moduna döndün');
+ // ---- kamera ----
+ if(ctl){const s=ctl;P.pitch=clamp(P.pitch,-.9,1.3);const cp=Math.cos(P.pitch),fx=-Math.sin(P.yaw)*cp,fy=Math.sin(P.pitch),fz=-Math.cos(P.yaw)*cp,hx=s.x,hy=s.y+KNIGHT_H*.85,hz=s.z;
+  if(fp)cam.position.set(hx+fx*.4,hy,hz+fz*.4);else{const D=8,cx=hx-fx*D,cz=hz-fz*D;cam.position.set(cx,Math.max(hy-fy*D,Hh(cx,cz)+1.2),cz)}
+  cam.rotation.set(P.pitch,P.yaw,0)}
+ else{cam.position.set(P.x,P.y,P.z);cam.rotation.set(P.pitch,P.yaw,0)}
+ cam.updateMatrixWorld(true);
+ const ct=clamp((cam.position.y-Math.max(Hh(cam.position.x,cam.position.z),-4))/150,0,1);S.fog.near=150+550*ct;S.fog.far=950+1650*ct;
+ // ---- artı işareti: seç / taşı ----
+ if(!ctl){const h=pickAt();hover=h;
+  if(grabReq&&!hold&&h){const L=h.s,list=[L];for(const s of SO){if(list.length>=GRAB_MAX)break;if(s===L||s.pl||s.held||s.hp<=0)continue;if(Math.hypot(s.x-L.x,s.z-L.z)<GRAB_R&&Math.abs(s.y-L.y)<3)list.push(s)}
+   hold={dist:h.t,L,items:list.map(s=>({s,ox:s.x-L.x,oy:s.y-L.y,oz:s.z-L.z}))};for(const s of list){s.held=true;s.air=false}}
+  grabReq=false;
+  if(hold&&!mouseL){for(const it of hold.items){it.s.held=false;it.s.air=true;it.s.vy=0;it.s.fy=it.s.y}hold=null}
+  if(hold){cam.getWorldDirection(fwd);const px=cam.position.x+fwd.x*hold.dist,py=cam.position.y+fwd.y*hold.dist,pz=cam.position.z+fwd.z*hold.dist,ly=Math.max(py,Hh(px,pz)+1);
+   for(const it of hold.items){const s=it.s;s.x=clamp(px+it.ox,-W+20,W-20);s.z=clamp(pz+it.oz,-W+20,W-20);s.y=ly+it.oy;s.st=1}}}
+ else{hover=null;grabReq=false;if(hold)hold=null}
+ const cr=$('cross');cr.style.display=ctl?'none':'';cr.style.setProperty('--cc',hold?'#4cff4c':hover?'#ff4040':'#ffffff');
+ const tg=$('tgt');if(hover&&!hold){tg.style.display='block';tg.textContent=`${hover.s.a.name} • ❤ ${Math.ceil(hover.s.hp)}`;tg.style.color='#'+hover.s.a.color.getHexString()}else tg.style.display='none';
+ // ---- yakındaki askerlere gerçek şövalye modeli ver ----
+ const CX=cam.position.x,CY=cam.position.y,CZ=cam.position.z;
+ lr+=dt;if(pool.length&&lr>.25){lr=0;for(const it of pool){if(it.s)it.s.rich=null;it.s=null}
+  const near=[];for(const s of SO){if(s.pl)continue;const d=(s.x-CX)**2+(s.z-CZ)**2+(s.y-CY)**2;if(d<4900)near.push([d,s])}
+  near.sort((a,b)=>a[0]-b[0]);for(let i=0;i<pool.length&&i<near.length;i++){const s=near[i][1];pool[i].s=s;s.rich=pool[i];const c=pool[i];
+   if(c.army!==s.a){c.army=s.a;tint(c,s.a.color)}}}
+ for(const it of pool){const s=it.s;if(!s||s.dead||s.hp<=0||s.pl){it.root.visible=false;continue}
+   it.root.visible=true;it.root.position.set(s.x,s.y,s.z);it.root.rotation.y=s.ang+FACE;it.root.scale.setScalar(s.commander?COMMANDER_SCALE:1);
+  setAnim(it,s.st,s);it.mx.update(dt)}
+ // oynanan asker (şövalye modeli)
+ if(ctl){const s=ctl;if(PK){PK.root.visible=!fp;PK.root.position.set(s.x,s.y,s.z);PK.root.rotation.y=s.ang+FACE;PK.root.scale.setScalar(s.commander?COMMANDER_SCALE:1);if(PK.army!==s.a){PK.army=s.a;tint(PK,s.a.color)}setAnim(PK,s.st,s);PK.mx.update(dt)}
+  else{pl.visible=!fp;pl.position.set(s.x,s.y,s.z);pl.rotation.y=s.ang}}
+ // ---- toplu çizim (animasyonlu) ----
+ if(VAT)VAT.U.uTime.value=gt;
+ const aa=VAT?SM.geometry.attributes.aAnim:null;
+  let j=0;for(let i=0;i<SO.length;i++){const s=SO[i];if(s.rich||s.pl)continue;dm.position.set(s.x,s.y,s.z);dm.rotation.y=s.ang+FACE;dm.scale.setScalar(s.commander?COMMANDER_SCALE:1);dm.updateMatrix();SM.setMatrixAt(j,dm.matrix);SM.setColorAt(j,s.a.tint);
+  if(aa){aa.array[j*2]=s.st;aa.array[j*2+1]=(s.st===2||s.st===4)?-s.atkT*VAT.fps[s.st]/VF:s.ph}j++}
+ if(aa)for(const d of DEAD){if(j>=MAX+DMAX)break;dm.position.set(d.x,d.y-Math.max(0,d.age-4)*.8,d.z);dm.rotation.y=d.ang+FACE;dm.scale.setScalar(1);dm.updateMatrix();SM.setMatrixAt(j,dm.matrix);SM.setColorAt(j,d.col);aa.array[j*2]=3;aa.array[j*2+1]=d.age;j++}
+ SM.count=j;SM.instanceMatrix.needsUpdate=true;SM.instanceColor.needsUpdate=true;if(aa)aa.needsUpdate=true;
+ // ---- etiketler / HUD ----
+  const v=new THREE.Vector3();for(const a of AR){const commander=SO.find(s=>s.uid===a.commanderUid&&s.hp>0);if(commander)v.set(commander.x,commander.y+.1,commander.z);else v.set(a.cx,Hh(a.cx,a.cz)+KNIGHT_H*2.2,a.cz);v.project(cam);
+  const show=hudOn&&v.z<1&&a.alive>0&&Math.abs(v.x)<1.1&&Math.abs(v.y)<1.1;a.el.style.display=show?'':'none';
+   if(show){a.el.style.transform=`translate(${(v.x*.5+.5)*innerWidth}px,${(-v.y*.5+.5)*innerHeight}px) translate(-50%,12px)`;
+     a.el.innerHTML=`<img src="${a.avatar||''}" onerror="this.style.display='none'" style="width:30px;height:30px;border-radius:50%;vertical-align:middle;border:2px solid currentColor"> <span><b>${a.name}</b><small style="display:block">KOMUTAN • ${a.alive} asker</small></span>`}}
+ lt+=dt;if(lt>.25){lt=0;let tot=0;
+  for(const [k,a] of A){if(a.alive===0&&a.pending===0){a.el.remove();A.delete(k)}else tot+=a.alive+a.pending}
+  const totEl=$('tot'); if(totEl) totEl.textContent=`AKTİF ORDULAR: ${A.size} • TOPLAM ASKER: ${tot}`;
+  updateArmyLeaderboard();
+ }
+ R.render(S,cam)}
+requestAnimationFrame(loop);
+
+// ============================================================
+// UI MODÜLÜ: Ayarlar, Sürüklenebilir Paneller, WebSocket
+// ============================================================
+function makeDraggable(panelId, headerId) {
+  const panel = document.getElementById(panelId);
+  const header = document.getElementById(headerId);
+  if (!panel || !header) return;
+  const saved = (() => { try { const p = JSON.parse(localStorage.getItem('mng_battle_panel_' + panelId)); return p; } catch { return null; } })();
+  if (saved) { panel.style.top = saved.top; panel.style.left = saved.left; panel.style.right = 'auto'; panel.style.bottom = 'auto'; }
+  let ox = 0, oy = 0, dragging = false;
+  header.addEventListener('pointerdown', e => {
+    if (e.target.tagName === 'BUTTON') return;
+    dragging = true; header.setPointerCapture(e.pointerId);
+    const r = panel.getBoundingClientRect(); ox = e.clientX - r.left; oy = e.clientY - r.top;
+  });
+  header.addEventListener('pointermove', e => {
+    if (!dragging) return;
+    const left = Math.max(0, Math.min(e.clientX - ox, innerWidth - panel.offsetWidth));
+    const top = Math.max(0, Math.min(e.clientY - oy, innerHeight - panel.offsetHeight));
+    panel.style.left = left + 'px'; panel.style.top = top + 'px'; panel.style.right = 'auto'; panel.style.bottom = 'auto';
+  });
+  header.addEventListener('pointerup', () => {
+    dragging = false;
+    try { localStorage.setItem('mng_battle_panel_' + panelId, JSON.stringify({ top: panel.style.top, left: panel.style.left })); } catch {}
+  });
+}
+makeDraggable('armyLeaderboardPanel', 'armyHeader');
+makeDraggable('winsPanel', 'winsHeader');
+
+// Ordu Liderlik tablosu güncellemesi
+const winsMap = new Map();
+const winnerProfiles = new Map();
+function updateWinsPanel() {
+  const el = document.getElementById('winsList');
+  if (!el) return;
+  const entries = [...winsMap.entries()]
+    .filter(([, count]) => count > 0)
+    .map(([id, count]) => ({ id, count, ...(winnerProfiles.get(id) || {}) }))
+    .sort((a, b) => b.count - a.count || String(a.name || a.id).localeCompare(String(b.name || b.id)));
+  el.replaceChildren();
+  if (!entries.length) { el.innerHTML = '<div style="text-align:center;padding:10px;color:#94a3b8;font-size:12px;">Henüz galip yok</div>'; return; }
+  entries.forEach((entry, index) => {
+    const row = document.createElement('div'); row.className = 'rank-row';
+    const rank = document.createElement('span'); rank.className = 'rank-num'; rank.textContent = index === 0 ? '👑' : String(index + 1);
+    const avatar = document.createElement('img'); avatar.className = 'rank-avatar'; avatar.src = entry.avatar || '/api/avatar?user=' + encodeURIComponent(entry.name || entry.id); avatar.onerror = () => { avatar.src = '/api/avatar?user=winner'; };
+    const info = document.createElement('div'); info.className = 'rank-info';
+    const name = document.createElement('div'); name.className = 'rank-name'; name.textContent = entry.name || entry.id;
+    const wins = document.createElement('div'); wins.className = 'rank-count'; wins.textContent = `${entry.count}X turnuva galibiyeti`;
+    info.append(name, wins); row.append(rank, avatar, info); el.appendChild(row);
+  });
+}
+function updateArmyLeaderboard() {
+  const el = document.getElementById('armyList');
+  if (!el) return;
+  const sorted = [...A.values()].sort((a, b) => (b.alive + b.pending) - (a.alive + a.pending)).slice(0, 10);
+  if (!sorted.length) { el.innerHTML = '<div style="text-align:center;padding:10px;color:#94a3b8;font-size:12px;">Henüz ordu kurulmadı</div>'; return; }
+  el.innerHTML = '';
+  sorted.forEach((a, i) => {
+    const crown = i === 0 ? '👑' : i === 1 ? '🥈' : i === 2 ? '🥉' : '';
+    const wins = winsMap.get(a.name) || 0;
+    const row = document.createElement('div'); row.className = 'rank-row';
+    row.innerHTML = `<span class="rank-num" style="color:${i===0?'#fbbf24':i===1?'#94a3b8':i===2?'#cd7f32':'#64748b'}">${crown||('#'+(i+1))}</span>
+      <img class="rank-avatar" src="${a.avatar||'/api/avatar?user='+encodeURIComponent(a.name)}" onerror="this.src='/api/avatar?user=u'">
+      <div class="rank-info"><div class="rank-name">${a.name}</div><div class="rank-count">⚔ ${a.alive+a.pending} asker | 🏆 ${wins} galibiyet</div></div>
+      <div class="win-controls"><button class="win-btn" onclick="addWin('${a.name}')">+</button><button class="win-btn" onclick="removeWin('${a.name}')">−</button></div>`;
+    el.appendChild(row);
+  });
+  if (ws && ws.readyState === WebSocket.OPEN) {
+    ws.send(JSON.stringify({ type: 'army-leaderboard', entries: sorted.map((a, i) => ({ rank:i+1, name:a.name, avatar:a.avatar||'', soldiers:a.alive+a.pending })) }));
+  }
+}
+function tournamentChange(name, delta) {
+  const army = [...A.values()].find(entry => entry.name === name);
+  const current = Math.max(0, (winsMap.get(name) || 0) + delta);
+  winsMap.set(name, current);
+  if (army) winnerProfiles.set(name, { name: army.name, avatar: army.avatar || '' });
+  updateArmyLeaderboard(); updateWinsPanel();
+  if (ws && ws.readyState === WebSocket.OPEN) {
+    ws.send(JSON.stringify({ type: 'tournament-win', delta, player: { id: name, name, avatar: army?.avatar || '' } }));
+  }
+}
+window.addWin = name => tournamentChange(name, 1);
+window.removeWin = name => tournamentChange(name, -1);
+updateWinsPanel();
+
+// Hediye Kuralları
+const DEFAULT_RULES = [
+  { id: '5655', name: 'Gül', image: '/catalog-assets/gift-images/Rose.png', soldiers: 5 },
+  { id: '6531', name: 'Donut', image: '/catalog-assets/gift-images/Doughnut.png', soldiers: 30 },
+  { id: '7046', name: 'Çay', image: '/catalog-assets/gift-images/Tea.png', soldiers: 50 },
+  { id: '7419', name: 'Para Tabancası', image: '/catalog-assets/gift-images/Money_Gun.png', soldiers: 200 }
+];
+let giftRules = (() => { try { return JSON.parse(localStorage.getItem('mng_battle_rules')) || [...DEFAULT_RULES]; } catch { return [...DEFAULT_RULES]; } })();
+let editingRuleIdx = null;
+let giftCatalogCache = [];
+
+function saveRules() { try { localStorage.setItem('mng_battle_rules', JSON.stringify(giftRules)); } catch {} }
+
+function renderRules() {
+  const el = document.getElementById('rulesListContainer');
+  if (!el) return;
+  el.innerHTML = '';
+  giftRules.forEach((r, i) => {
+    const d = document.createElement('div'); d.className = 'rule-item';
+    d.innerHTML = `<img class="rule-gift-img" src="${r.image}" onerror="this.src='/api/avatar?user=gift'">
+      <span class="rule-gift-name">${r.name}</span>
+      <div class="rule-soldier-count"><span>Asker:</span><input class="rule-soldier-input" type="number" min="1" max="9999" value="${r.soldiers}" data-idx="${i}"></div>
+      <button class="rule-change-btn" data-idx="${i}">Hediye Değiştir</button>
+      <button class="rule-del-btn" data-idx="${i}">🗑</button>`;
+    d.querySelector('.rule-soldier-input').addEventListener('change', e => { giftRules[i].soldiers = Math.max(1, parseInt(e.target.value) || 1); saveRules(); });
+    d.querySelector('.rule-change-btn').addEventListener('click', () => openGiftPicker(i));
+    d.querySelector('.rule-del-btn').addEventListener('click', () => { giftRules.splice(i, 1); saveRules(); renderRules(); });
+    el.appendChild(d);
+  });
+}
+
+async function openGiftPicker(ruleIdx) {
+  editingRuleIdx = ruleIdx;
+  const m = document.getElementById('giftPickerModal'); if (!m) return;
+  m.style.display = 'flex';
+  document.getElementById('giftPickerTitle').textContent = (ruleIdx === null ? 'Yeni Kural için' : giftRules[ruleIdx].name + ' Yerine') + ' Hediye Seçin';
+  document.getElementById('giftPickerSearch').value = '';
+  if (!giftCatalogCache.length) {
+    try { const r = await fetch('/api/gifts?limit=700'); giftCatalogCache = await r.json(); } catch {}
+  }
+  renderGiftPickerItems(giftCatalogCache);
+}
+
+function renderGiftPickerItems(items) {
+  const g = document.getElementById('giftPickerGrid'); if (!g) return;
+  g.innerHTML = '';
+  (items || []).forEach(item => {
+    const d = document.createElement('div'); d.className = 'picker-item';
+    d.innerHTML = `<img src="${item.image}" onerror="this.src=''"><span>${item.name}</span><small>${item.coins} coin</small>`;
+    d.addEventListener('click', () => {
+      if (editingRuleIdx === null) {
+        giftRules.push({ id: String(item.id), name: item.name, image: item.image, soldiers: 10 });
+      } else {
+        giftRules[editingRuleIdx].id = String(item.id);
+        giftRules[editingRuleIdx].name = item.name;
+        giftRules[editingRuleIdx].image = item.image;
+      }
+      saveRules(); renderRules();
+      document.getElementById('giftPickerModal').style.display = 'none';
+    });
+    g.appendChild(d);
+  });
+}
+
+document.getElementById('giftPickerSearch')?.addEventListener('input', e => {
+  const q = e.target.value.toLowerCase().trim();
+  const filtered = q ? giftCatalogCache.filter(g => g.name.toLowerCase().includes(q) || String(g.coins).includes(q)) : giftCatalogCache;
+  renderGiftPickerItems(filtered);
+});
+document.getElementById('closeGiftPickerBtn')?.addEventListener('click', () => { document.getElementById('giftPickerModal').style.display = 'none'; });
+document.getElementById('addRuleBtn')?.addEventListener('click', () => openGiftPicker(null));
+
+// Ayarlar Modal
+const settingsBtn = document.getElementById('openSettingsBtn');
+const closeSettingsBtn = document.getElementById('closeSettingsBtn');
+const settingsModal = document.getElementById('settingsModal');
+if (settingsBtn) settingsBtn.addEventListener('click', () => { renderRules(); settingsModal.style.display = 'flex'; });
+if (closeSettingsBtn) closeSettingsBtn.addEventListener('click', () => { settingsModal.style.display = 'none'; });
+document.getElementById('battleMapSelect')?.addEventListener('change', event => applyBattleMap(event.target.value));
+document.getElementById('roundDuration')?.addEventListener('change', resetRound);
+document.getElementById('roundStartBtn')?.addEventListener('click', () => { if(roundFinished)resetRound();roundRunning=true;msg('⚔️ Tur başladı!'); });
+document.getElementById('roundPauseBtn')?.addEventListener('click', () => { roundRunning=false;msg('⏸ Tur duraklatıldı'); });
+document.getElementById('roundRestartBtn')?.addEventListener('click', resetRound);
+
+// Test Butonları
+const spawnTestGift = (soldiers, label) => {
+  const nm = ['Ahmet','Mehmet','Ali','Ayşe','Murat'][Math.floor(Math.random()*5)];
+  addGift(nm, soldiers, '', label);
+};
+document.getElementById('test10Btn')?.addEventListener('click', () => spawnTestGift(10, 'Gül'));
+document.getElementById('test50Btn')?.addEventListener('click', () => spawnTestGift(50, 'Donut'));
+document.getElementById('test100Btn')?.addEventListener('click', () => spawnTestGift(100, 'Çay'));
+document.getElementById('test500Btn')?.addEventListener('click', () => spawnTestGift(500, 'Para Tabancası'));
+
+// WebSocket Bağlantısı
+let ws = null, wsRetryTimer = null;
+function connectWS() {
+  if (ws && ws.readyState < 2) return;
+  try {
+    ws = new WebSocket(`ws://${location.host}`);
+    ws.addEventListener('open', () => { const autoUser=new URLSearchParams(location.search).get('autoUser'); console.log('MNG Battle Game WS bağlantısı kuruldu.'); if(autoUser)ws.send(JSON.stringify({type:'connect',username:'@'+autoUser})); });
+    ws.addEventListener('message', e => {
+      try {
+        const msg2 = JSON.parse(e.data);
+        if (msg2.type === 'gift') {
+          const p = msg2.player || {};
+          const giftId = String(msg2.giftId || '');
+          const coins = Number(msg2.coins) || 1;
+          const rule = giftRules.find(r => r.id === giftId || r.name.toLowerCase() === (msg2.giftName||'').toLowerCase());
+          const soldiers = rule ? rule.soldiers : Math.max(1, Math.ceil(coins / 10));
+          addGift(p.username || p.nickname || 'İzleyici', soldiers, p.avatar || '', msg2.giftName || '');
+        } else if (msg2.type === 'tournament-winners') {
+          winsMap.clear(); winnerProfiles.clear();
+          (msg2.entries || []).forEach(entry => {
+            const id = String(entry.id || entry.name || '');
+            if (!id) return;
+            winsMap.set(id, Math.max(0, Number(entry.count) || 0));
+            winnerProfiles.set(id, { name: entry.name || id, avatar: entry.avatar || '' });
+          });
+          updateArmyLeaderboard(); updateWinsPanel();
+        } else if (msg2.type === 'status') {
+          const cs = document.getElementById('connectionStatus');
+          if (cs) {
+            const labels = { connecting: '⏳ Bağlanıyor...', connected: '✅ Bağlandı: @' + msg2.username, error: '❌ Hata: ' + msg2.error, disconnected: '🔴 Bağlantı kesildi', streamEnd: '📴 Yayın sona erdi' };
+            cs.textContent = 'Durum: ' + (labels[msg2.status] || msg2.status);
+            cs.style.color = msg2.status === 'connected' ? '#22c55e' : msg2.status === 'error' || msg2.status === 'disconnected' ? '#ef4444' : '#94a3b8';
+          }
+        }
+      } catch {}
+    });
+    ws.addEventListener('close', () => { wsRetryTimer = setTimeout(connectWS, 3000); });
+    ws.addEventListener('error', () => ws.close());
+  } catch (err) { console.warn('WS bağlantısı başlatılamadı:', err.message); }
+}
+connectWS();
+
+async function copyLauncherWidget(mode, label) {
+  try {
+    const response = await fetch('/api/launcher-widget-links', { cache: 'no-store' });
+    const data = await response.json();
+    const url = data.links?.[mode];
+    if (!response.ok || !data.ready || typeof url !== 'string' || new URL(url).protocol !== 'https:') throw new Error(data.message || 'HTTPS yayın bağlantısı hazır değil. Launcher içinden yayın bağlantısını hazırlayın.');
+    try { await navigator.clipboard.writeText(url); msg(label + ' widget bağlantısı kopyalandı'); }
+    catch { prompt('OBS Browser kaynağı bağlantısı:', url); }
+  } catch (error) { msg(error.message || 'HTTPS yayın bağlantısı kullanılamıyor.'); }
+}
+document.getElementById('tournamentWidgetBtn')?.addEventListener('click', () => copyLauncherWidget('winners', 'Turnuva'));
+document.getElementById('armyWidgetBtn')?.addEventListener('click', () => copyLauncherWidget('armies', 'Asker liderleri'));
+document.getElementById('tournamentResetBtn')?.addEventListener('click', () => {
+  winsMap.clear(); winnerProfiles.clear(); updateArmyLeaderboard(); updateWinsPanel();
+  if (ws && ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify({ type: 'tournament-reset' }));
+});
+
+// TikTok Bağlantı Butonu
+document.getElementById('connectTiktokBtn')?.addEventListener('click', () => {
+  const inp = document.getElementById('tiktokUsernameInput');
+  const user = (inp ? inp.value : '').trim().replace(/^@/, '');
+  if (!user) return;
+  if (ws && ws.readyState === 1) {
+    ws.send(JSON.stringify({ type: 'connect', username: '@' + user }));
+  }
+  settingsModal.style.display = 'none';
+});

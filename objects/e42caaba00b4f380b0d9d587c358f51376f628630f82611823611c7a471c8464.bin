@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OBS Profil Puanlama Şeffaf Widget</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html, body {
+            width: 100%;
+            height: 100%;
+            background: transparent !important;
+            overflow: hidden;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            color: #ffffff;
+            user-select: none;
+        }
+
+        .widget-stage {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            pointer-events: none;
+        }
+
+        /* ORTADAKİ SEÇİLİ PROFİL KARTI */
+        .profile-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            opacity: 0;
+            transform: scale(0.85);
+            z-index: 10;
+        }
+
+        .profile-container.visible {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        .avatar-wrapper {
+            position: relative;
+            width: 190px;
+            height: 190px;
+            margin-bottom: 14px;
+        }
+
+        .avatar-glow {
+            position: absolute;
+            inset: -8px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #FE2C55, #25F4EE, #FFD700);
+            filter: blur(14px);
+            opacity: 0.85;
+            animation: pulseGlow 3s infinite alternate;
+        }
+
+        @keyframes pulseGlow {
+            0% { transform: scale(0.96); opacity: 0.7; }
+            100% { transform: scale(1.05); opacity: 1; filter: blur(18px); }
+        }
+
+        .avatar-ring {
+            position: absolute;
+            inset: -4px;
+            border-radius: 50%;
+            border: 4px solid transparent;
+            background: linear-gradient(45deg, #FE2C55, #25F4EE, #FFDF00, #FE2C55) border-box;
+            -webkit-mask: linear-gradient(#fff 0 0) padding-box, linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+            animation: rotateBorder 6s linear infinite;
+        }
+
+        @keyframes rotateBorder {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .avatar-img {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 4px solid #ffffff;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+            background: #111;
+        }
+
+        .user-name {
+            font-size: 26px;
+            font-weight: 800;
+            letter-spacing: 0.5px;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.9), 0 0 20px rgba(0, 0, 0, 0.8);
+            margin-bottom: 8px;
+            color: #ffffff;
+            max-width: 320px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .score-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 24px;
+            background: rgba(15, 15, 25, 0.85);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 2px solid rgba(255, 215, 0, 0.7);
+            border-radius: 50px;
+            box-shadow: 0 8px 25px rgba(255, 215, 0, 0.35), 0 0 15px rgba(0, 0, 0, 0.6);
+            margin-bottom: 10px;
+            transition: transform 0.2s ease;
+        }
+
+        .score-pill.pop {
+            animation: scorePop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        @keyframes scorePop {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.15); }
+            100% { transform: scale(1); }
+        }
+
+        .score-star {
+            font-size: 22px;
+            color: #FFD700;
+            filter: drop-shadow(0 0 6px #FFD700);
+        }
+
+        .score-text {
+            font-size: 28px;
+            font-weight: 900;
+            color: #FFD700;
+            letter-spacing: 0.5px;
+            text-shadow: 0 0 12px rgba(255, 215, 0, 0.5);
+        }
+
+        .score-suffix {
+            font-size: 15px;
+            font-weight: 700;
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .meta-badges {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        /* BÜYÜK VE BELİRGİN SÜRE SAYACI */
+        .timer-banner {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            padding: 8px 26px;
+            margin-top: 4px;
+            margin-bottom: 8px;
+            background: rgba(10, 10, 22, 0.92);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 2.5px solid #25F4EE;
+            border-radius: 40px;
+            box-shadow: 0 0 25px rgba(37, 244, 238, 0.6), inset 0 0 12px rgba(37, 244, 238, 0.3);
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .timer-banner.urgent {
+            border-color: #FE2C55;
+            box-shadow: 0 0 35px rgba(254, 44, 85, 0.85), inset 0 0 15px rgba(254, 44, 85, 0.5);
+            animation: urgentPulse 0.5s infinite alternate;
+        }
+
+        @keyframes urgentPulse {
+            0% { transform: scale(1); filter: drop-shadow(0 0 8px #FE2C55); }
+            100% { transform: scale(1.08); filter: drop-shadow(0 0 22px #FE2C55); }
+        }
+
+        .timer-icon-pulse {
+            font-size: 24px;
+        }
+
+        .timer-text-wrap {
+            display: flex;
+            align-items: baseline;
+            gap: 8px;
+        }
+
+        .timer-label {
+            font-size: 12px;
+            font-weight: 800;
+            letter-spacing: 1.5px;
+            color: rgba(255, 255, 255, 0.75);
+            text-transform: uppercase;
+        }
+
+        .timer-value {
+            font-size: 28px;
+            font-weight: 900;
+            color: #25F4EE;
+            letter-spacing: 1px;
+            text-shadow: 0 0 14px rgba(37, 244, 238, 0.9);
+            min-width: 55px;
+        }
+
+        .timer-banner.urgent .timer-value {
+            color: #FE2C55;
+            text-shadow: 0 0 18px rgba(254, 44, 85, 1);
+        }
+
+        .badge-pill {
+            padding: 5px 14px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 700;
+            background: rgba(0, 0, 0, 0.65);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+        }
+
+        .badge-pill.votes {
+            border-color: #FE2C55;
+            color: #FF8BA7;
+        }
+
+        /* BALON BALON UÇAN OY ANİMASYONLARI */
+        .balloon-spawn-area {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            overflow: hidden;
+            z-index: 20;
+        }
+
+        .vote-balloon {
+            position: absolute;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 6px 14px 6px 8px;
+            border-radius: 40px;
+            background: rgba(18, 18, 28, 0.88);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1.5px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.5), 0 0 15px rgba(37, 244, 238, 0.3);
+            color: #ffffff;
+            animation: floatUp 3.2s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+            will-change: transform, opacity;
+        }
+
+        .balloon-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid #ffffff;
+            background: #222;
+        }
+
+        .balloon-user {
+            font-size: 13px;
+            font-weight: 700;
+            max-width: 110px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            text-shadow: 0 1px 4px rgba(0, 0, 0, 0.9);
+        }
+
+        .balloon-score {
+            font-size: 18px;
+            font-weight: 900;
+            padding: 3px 10px;
+            border-radius: 20px;
+            text-shadow: 0 0 8px rgba(0, 0, 0, 0.8);
+            letter-spacing: 0.5px;
+        }
+
+        /* Skor renk seviyeleri */
+        .score-gold {
+            background: linear-gradient(135deg, #FFD700, #FF8C00);
+            color: #000000;
+            box-shadow: 0 0 12px rgba(255, 215, 0, 0.7);
+        }
+
+        .score-cyan {
+            background: linear-gradient(135deg, #25F4EE, #00A2FF);
+            color: #000000;
+            box-shadow: 0 0 12px rgba(37, 244, 238, 0.7);
+        }
+
+        .score-pink {
+            background: linear-gradient(135deg, #FE2C55, #FF5B79);
+            color: #ffffff;
+            box-shadow: 0 0 12px rgba(254, 44, 85, 0.7);
+        }
+
+        .score-purple {
+            background: linear-gradient(135deg, #9D4EDD, #C77DFF);
+            color: #ffffff;
+            box-shadow: 0 0 10px rgba(157, 78, 221, 0.6);
+        }
+
+        @keyframes floatUp {
+            0% {
+                opacity: 0;
+                transform: translate3d(var(--spawn-x), calc(var(--spawn-y) + 40px), 0) scale(0.3);
+            }
+            15% {
+                opacity: 1;
+                transform: translate3d(var(--spawn-x), var(--spawn-y), 0) scale(1.12);
+            }
+            25% {
+                transform: translate3d(calc(var(--spawn-x) + var(--drift-1)), calc(var(--spawn-y) - 30px), 0) scale(1);
+            }
+            70% {
+                opacity: 1;
+                transform: translate3d(calc(var(--spawn-x) + var(--drift-2)), calc(var(--spawn-y) - 180px), 0) scale(0.96);
+            }
+            100% {
+                opacity: 0;
+                transform: translate3d(calc(var(--spawn-x) + var(--drift-3)), calc(var(--spawn-y) - 260px), 0) scale(1.18);
+            }
+        }
+
+        /* Test & İpucu Yazısı (Sadece tarayıcıda açıldığında, 5 saniye sonra solar) */
+        .hint-text {
+            position: absolute;
+            bottom: 20px;
+            font-size: 13px;
+            color: rgba(255, 255, 255, 0.4);
+            background: rgba(0, 0, 0, 0.6);
+            padding: 6px 16px;
+            border-radius: 20px;
+            letter-spacing: 0.5px;
+            transition: opacity 2s ease;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="widget-stage">
+
+        <!-- Ortadaki Değerlendirilen Profil Kartı -->
+        <div class="profile-container" id="profileContainer">
+            <div class="avatar-wrapper">
+                <div class="avatar-glow"></div>
+                <div class="avatar-ring"></div>
+                <img id="profileAvatar" class="avatar-img" src="" alt="Profil">
+            </div>
+
+            <div class="user-name" id="profileName">@kullanici</div>
+
+            <div class="score-pill" id="scorePill">
+                <span class="score-star">★</span>
+                <span class="score-text" id="scoreAvg">0.0</span>
+                <span class="score-suffix">/ 10</span>
+            </div>
+
+            <!-- Büyük Belirgin Sayaç -->
+            <div class="timer-banner" id="timerBanner">
+                <div class="timer-icon-pulse">⏱️</div>
+                <div class="timer-text-wrap">
+                    <span class="timer-label">KALAN SÜRE:</span>
+                    <span class="timer-value" id="timerValue">30s</span>
+                </div>
+            </div>
+
+            <div class="meta-badges">
+                <div class="badge-pill votes" id="voteCountBadge">👥 0 Oy</div>
+            </div>
+        </div>
+
+        <!-- Uçuşan Balonlar Alanı -->
+        <div class="balloon-spawn-area" id="balloonArea"></div>
+
+    </div>
+
+    <script>
+        let ws = null;
+        let lastState = null;
+        let shownUser = null;
+        let voteHistorySet = new Set();
+
+        function connectWebSocket() {
+            const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+            const wsUrl = `${protocol}//${window.location.host}`;
+
+            try {
+                ws = new WebSocket(wsUrl);
+
+                ws.onopen = () => {
+                    console.log("OBS Widget WebSocket Bağlantısı Başarılı");
+                };
+
+                ws.onmessage = (event) => {
+                    try {
+                        const data = JSON.parse(event.data);
+                        handleServerMessage(data);
+                    } catch (e) {
+                        console.error("Mesaj parse hatası:", e);
+                    }
+                };
+
+                ws.onclose = () => {
+                    setTimeout(connectWebSocket, 2000);
+                };
+
+                ws.onerror = () => {
+                    ws.close();
+                };
+            } catch (err) {
+                setTimeout(connectWebSocket, 2000);
+            }
+        }
+
+        function uretVarsayilanAvatarSvg(isim) {
+            const harf = (isim || "?").trim().charAt(0).toUpperCase() || "?";
+            let hash = 0;
+            for (let i = 0; i < (isim || "").length; i++) {
+                hash = (hash << 5) - hash + (isim || "").charCodeAt(i);
+                hash |= 0;
+            }
+            const renkler = ["#ef4444", "#f97316", "#f59e0b", "#10b981", "#06b6d4", "#3b82f6", "#8b5cf6", "#ec4899"];
+            const bg = renkler[Math.abs(hash) % renkler.length];
+            const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128"><circle cx="64" cy="64" r="64" fill="${bg}"/><text x="64" y="80" font-size="56" font-family="-apple-system,BlinkMacSystemFont,sans-serif" font-weight="bold" fill="#ffffff" text-anchor="middle">${harf}</text></svg>`;
+            return "data:image/svg+xml;utf8," + encodeURIComponent(svg);
+        }
+
+        function fotoProxyUrl(uniqueId, url) {
+            if (!url) return uretVarsayilanAvatarSvg(uniqueId);
+            return "/api/image?highres=1&user=" + encodeURIComponent(uniqueId || "") + "&url=" + encodeURIComponent(url);
+        }
+
+        function handleServerMessage(msg) {
+            // 1. Genel Puanlama Durumu
+            if (msg.type === "puanlamaState" && msg.state) {
+                updateState(msg.state);
+            }
+
+            // 2. Anlık Yeni Oy Bildirimi (Balon patlat!)
+            if (msg.type === "puanlamaYeniOy" && msg.oy) {
+                spawnVoteBalloon(msg.oy);
+            }
+
+            // 3. battleState — hediye ikonu animasyonunu senkronize et
+            if (msg.type === "battleState" && msg.state) {
+                applyGiftAnimation(msg.state.giftAnimasyonTuru, msg.state.giftAnimasyonHizi);
+            }
+        }
+
+        // Hediye ikonu animasyonu — ana ekranla aynı CSS sınıf sistemi.
+        function applyGiftAnimation(tur, hiz) {
+            const body = document.body;
+            ["gift-anim-yok","gift-anim-karart","gift-anim-nabiz","gift-anim-acKapa",
+             "gift-anim-dondur","gift-anim-salla","gift-anim-zipla","gift-anim-parla",
+             "gift-anim-beyaz","gift-anim-siyahBeyaz","gift-anim-altin","gift-anim-neon"]
+                .forEach(function(s) { body.classList.remove(s); });
+            if (tur && tur !== "yok") {
+                body.classList.add("gift-anim-" + tur);
+            }
+            document.documentElement.style.setProperty("--gift-anim-hiz", (hiz || 3) + "s");
+        }
+
+
+        function updateState(state) {
+            lastState = state;
+            const container = document.getElementById("profileContainer");
+            const avatar = document.getElementById("profileAvatar");
+            const nameEl = document.getElementById("profileName");
+            const scoreAvg = document.getElementById("scoreAvg");
+            const timerBadge = document.getElementById("timerBadge");
+            const voteCountBadge = document.getElementById("voteCountBadge");
+            const scorePill = document.getElementById("scorePill");
+
+            if (state.gosterilenKullanici) {
+                container.classList.add("visible");
+                const u = state.gosterilenKullanici;
+
+                if (!shownUser || shownUser.uniqueId !== u.uniqueId) {
+                    shownUser = u;
+                    avatar.src = fotoProxyUrl(u.uniqueId, u.profilePictureUrl);
+                    avatar.onerror = function() { this.onerror = null; this.src = uretVarsayilanAvatarSvg(u.uniqueId); };
+                    nameEl.textContent = "@" + (u.uniqueId || u.nickname || "Profil");
+                }
+
+                // Ortalama Skor
+                let avg = 0;
+                const oylar = state.oylar || [];
+                if (oylar.length > 0) {
+                    const top = oylar.reduce((t, o) => t + o.puan, 0);
+                    avg = top / oylar.length;
+                    scoreAvg.textContent = avg.toFixed(1);
+                } else {
+                    scoreAvg.textContent = "0.0";
+                }
+
+                // Belirgin Süre Sayacı
+                const timerBanner = document.getElementById("timerBanner");
+                const timerVal = document.getElementById("timerValue");
+                const kalan = (state.kalanSaniye !== undefined && state.kalanSaniye !== null) ? state.kalanSaniye : 30;
+
+                if (timerVal) {
+                    timerVal.textContent = `${kalan}s`;
+                }
+
+                if (timerBanner) {
+                    if (kalan <= 5 && state.calisiyorMu) {
+                        timerBanner.classList.add("urgent");
+                    } else {
+                        timerBanner.classList.remove("urgent");
+                    }
+                }
+
+                // Oy Sayısı
+                voteCountBadge.textContent = `👥 ${oylar.length} Oy`;
+
+            } else {
+                // Süre bittiğinde veya gösterilen kullanıcı olmadığında profil ekrandan yok olsun
+                container.classList.remove("visible");
+                shownUser = null;
+            }
+        }
+
+        function playPuanSesi() {
+            try {
+                const ses = new Audio("assets/sounds/puan.mp3");
+                ses.volume = 0.85;
+                ses.play().catch(function () {});
+            } catch (e) {}
+        }
+
+        // BALON OLUŞTURMA VE UÇURMA FONKSİYONU
+        function spawnVoteBalloon(oy) {
+            // Yeni oy geldiğinde Sonic Ring ses efektini çal
+            playPuanSesi();
+
+            const area = document.getElementById("balloonArea");
+            if (!area) return;
+
+            const balloon = document.createElement("div");
+            balloon.className = "vote-balloon";
+
+            // Rastgele X konumu (Profilin etrafında: sol, sağ, alt)
+            // Ekran ortası (50vw) etrafında -220px ile +220px arası
+            const centerW = window.innerWidth / 2;
+            const centerH = window.innerHeight / 2;
+
+            // Rastgele açı ve mesafe
+            const taraf = Math.random() > 0.5 ? 1 : -1;
+            const offsetX = taraf * (140 + Math.random() * 120);
+            const offsetY = 40 + Math.random() * 100;
+
+            const spawnX = (centerW + offsetX) + "px";
+            const spawnY = (centerH + offsetY) + "px";
+
+            // Hafif sağa sola salınım
+            const drift1 = (Math.random() * 40 - 20) + "px";
+            const drift2 = (Math.random() * 60 - 30) + "px";
+            const drift3 = (Math.random() * 80 - 40) + "px";
+
+            balloon.style.setProperty("--spawn-x", spawnX);
+            balloon.style.setProperty("--spawn-y", spawnY);
+            balloon.style.setProperty("--drift-1", drift1);
+            balloon.style.setProperty("--drift-2", drift2);
+            balloon.style.setProperty("--drift-3", drift3);
+
+            // Renk stili (Puan derecesine göre)
+            let scoreClass = "score-cyan";
+            if (oy.puan >= 10) scoreClass = "score-gold";
+            else if (oy.puan >= 8) scoreClass = "score-cyan";
+            else if (oy.puan >= 5) scoreClass = "score-pink";
+            else scoreClass = "score-purple";
+
+            const fotoUrl = fotoProxyUrl(oy.uniqueId, oy.profilePictureUrl);
+            const fallbackSrc = uretVarsayilanAvatarSvg(oy.uniqueId);
+
+            balloon.innerHTML = `
+                <img class="balloon-avatar" src="${fotoUrl}" alt="" onerror="this.onerror=null;this.src='${fallbackSrc}';">
+                <span class="balloon-user">@${oy.nickname || oy.uniqueId || 'İzleyici'}</span>
+                <span class="balloon-score ${scoreClass}">+${oy.puan}</span>
+            `;
+
+            area.appendChild(balloon);
+
+            // Skora hafif titreme/büyüme ver
+            const pill = document.getElementById("scorePill");
+            if (pill) {
+                pill.classList.remove("pop");
+                void pill.offsetWidth; // Reflow
+                pill.classList.add("pop");
+            }
+
+            // Animasyon bitince DOM'dan temizle
+            setTimeout(() => {
+                balloon.remove();
+            }, 3200);
+        }
+
+        // Test Modu: Klavyeden 'T' tuşuna basıldığında sahte balon uçur
+        window.addEventListener("keydown", (e) => {
+            if (e.key === "t" || e.key === "T") {
+                const ornekPuanlar = [10, 9, 8, 7, 5, 10];
+                const rastgelePuan = ornekPuanlar[Math.floor(Math.random() * ornekPuanlar.length)];
+                spawnVoteBalloon({
+                    uniqueId: "test_kullanici_" + Math.floor(Math.random() * 100),
+                    nickname: "İzleyici " + Math.floor(Math.random() * 100),
+                    profilePictureUrl: "",
+                    puan: rastgelePuan
+                });
+            }
+        });
+
+        connectWebSocket();
+    </script>
+</body>
+</html>

@@ -1,0 +1,68 @@
+import { imageSize } from 'image-size';
+import { imageUrl } from './live-events.js';
+
+const domains=['tiktokcdn.com','byteimg.com','ibytedtos.com','tiktokv.com','tiktokcdn-us.com'];
+export function validAvatarUrl(value) {
+  try { const u=new URL(value);return u.protocol==='https:'&&!u.port&&domains.some(d=>u.hostname===d||u.hostname.endsWith('.'+d)); } catch { return false; }
+}
+export function imageResolution(buffer) {
+  try {const {width,height}=imageSize(buffer);return Math.min(width,height)||0;}catch{return 0;}
+}
+export function profileAvatar(html,username) {
+  for(const match of html.matchAll(/<script\b[^>]*\bid=["'](?:__UNIVERSAL_DATA_FOR_REHYDRATION__|SIGI_STATE)["'][^>]*>([\s\S]*?)<\/script>/g)) {
+    let root;try{root=JSON.parse(match[1]);}catch{continue;}
+    const pending=[root];let inspected=0;
+    while(pending.length&&inspected++<20000){
+      const node=pending.pop();if(!node||typeof node!=='object')continue;
+      if(String(node.uniqueId||node.unique_id||'').toLowerCase()===username.toLowerCase()) {
+        const url=imageUrl(node.avatarLarger,node.avatarLarge,node.avatar_larger);
+        if(validAvatarUrl(url))return url;
+      }
+      for(const value of Object.values(node))if(value&&typeof value==='object')pending.push(value);
+    }
+  }
+  return '';
+}
+const headers={'User-Agent':'Mozilla/5.0','Referer':'https://www.tiktok.com/'};
+export async function fetchAvatar(url,fetcher=fetch) {
+  if(!validAvatarUrl(url))return null;
+  try {
+    const response=await fetcher(url,{headers,redirect:'error',signal:AbortSignal.timeout(6000)});
+    const type=response.headers.get('content-type')||'';
+    if(!response.ok||!/^image\/(jpeg|png|webp|gif)/.test(type)||Number(response.headers.get('content-length'))>5e6)return null;
+    const chunks=[];let size=0;
+    for await(const chunk of response.body){size+=chunk.length;if(size>5e6)return null;chunks.push(chunk);}
+    const buffer=Buffer.concat(chunks),resolution=imageResolution(buffer);
+    return resolution?{buffer,type,resolution}:null;
+  }catch{return null;}
+}
+
+export function createProfileResolver(fetcher=fetch) {
+  const cache=new Map(),pending=new Map(),queue=[];let active=0;
+  const schedule=work=>new Promise((resolve,reject)=>{
+    const run=()=>{
+      active++;
+      Promise.resolve().then(work).then(resolve,reject).finally(()=>{
+        active--;queue.shift()?.();
+      });
+    };
+    if(active<3)run();else queue.push(run);
+  });
+  return username=>{
+    if(!/^[\w.]{2,60}$/.test(username))return Promise.resolve('');
+    const key=username.toLowerCase(),cached=cache.get(key);
+    if(cached&&Date.now()-cached.at<cached.ttl)return Promise.resolve(cached.url);
+    if(pending.has(key))return pending.get(key);
+    const job=schedule(async()=>{
+      let url='';
+      try{
+        const response=await fetcher('https://www.tiktok.com/@'+encodeURIComponent(username),{headers,redirect:'error',signal:AbortSignal.timeout(5000)});
+        if(response.ok){let html='';for await(const chunk of response.body){html+=Buffer.from(chunk).toString();if(html.length>3e6)break;}url=profileAvatar(html,username);}
+      }catch{/* An unavailable profile must not block the original live avatar. */}
+      cache.set(key,{url,at:Date.now(),ttl:url?900000:180000});
+      if(cache.size>200)cache.delete(cache.keys().next().value);
+      return url;
+    }).finally(()=>pending.delete(key));
+    pending.set(key,job);return job;
+  };
+}

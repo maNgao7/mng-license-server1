@@ -1,0 +1,17 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>MNG Orbit Liderlik Widget'ı</title>
+  <link rel="stylesheet" href="widget.css">
+</head>
+<body>
+  <aside class="widget">
+    <p>CANLI SIRALAMA</p>
+    <h1>Yörünge Liderleri</h1>
+    <ol id="leaderboard"></ol>
+  </aside>
+  <script src="widget.js"></script>
+</body>
+</html>

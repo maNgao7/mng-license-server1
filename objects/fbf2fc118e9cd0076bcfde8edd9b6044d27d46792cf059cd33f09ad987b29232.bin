@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>MNG Penalty Kick - 3D Canlı Stadyum Penaltı Kupası</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800;900&family=Teko:wght@600;700&display=swap" rel="stylesheet">
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "./libs/three.module.js",
+      "three/addons/": "./libs/addons/"
+    }
+  }
+  </script>
+</head>
+<body>
+  <div id="game-container">
+    <!-- 3D Three.js Render Sahnesi -->
+    <canvas id="three-canvas"></canvas>
+
+    <!-- OYUNA GİRİŞ EKRANI (LOBİ & BAĞLANTI) -->
+    <div id="intro-screen" class="intro-screen-overlay">
+      <div class="intro-card">
+        <div class="intro-brand">
+          <div class="intro-ball-icon">⚽</div>
+          <h1 class="intro-title">MNG PENALTY KICK</h1>
+          <p class="intro-subtitle">TIKTOK LIVE 3D STADYUM PENALTI KUPASI</p>
+        </div>
+
+        <div class="intro-connection-box">
+          <label class="intro-input-label" for="intro-username-input">TikTok Kullanıcı Adınızı Girin:</label>
+          <div class="intro-input-row">
+            <span class="intro-input-prefix">@</span>
+            <input type="text" id="intro-username-input" class="intro-input" placeholder="kullanici_adi" autocomplete="off" spellcheck="false">
+            <button id="btn-intro-connect" class="intro-btn-connect">Bağlan</button>
+          </div>
+          
+          <div class="intro-status-row">
+            <span class="intro-status-dot disconnected" id="intro-status-dot"></span>
+            <span class="intro-status-text" id="intro-status-text">Yayına bağlanmak için kullanıcı adınızı yazıp Bağlan'a basın.</span>
+          </div>
+        </div>
+
+        <!-- Hazır Hediye Şablonu İndirme Butonu (TikTok Live Studio / OBS İçin) -->
+        <div class="intro-template-box">
+          <a href="/hediye-sablonu.png" download="MNG-Penalty-Hediye-Sablonu.png" class="btn-download-gift-template" id="btn-download-gift-template">
+            <span class="dl-btn-icon">🎁</span>
+            <div class="dl-btn-text-group">
+              <span class="dl-btn-title">Hazır Hediye Şablonunu İndir (PNG)</span>
+              <span class="dl-btn-sub">TikTok Live Studio / OBS Yayınına Ekle</span>
+            </div>
+            <span class="dl-btn-arrow">⬇️</span>
+          </a>
+        </div>
+
+        <!-- Oyuna Giriş Butonları -->
+        <div class="intro-actions-group">
+          <button id="btn-intro-start-live" class="intro-btn-play" style="display: none;">
+            <span class="play-btn-icon">⚽</span>
+            <span>OYUNA GİR (YAYINA BAĞLANDI)</span>
+          </button>
+
+          <button id="btn-intro-start-offline" class="intro-btn-offline">
+            <span>🎮 Çevrimdışı / Test Modunda Başla</span>
+          </button>
+        </div>
+
+        <div class="intro-footer-text">
+          <span>🎁 Hediyeler canlı yayında kaleciyi, savunma barajını ve formaları anında tetikler.</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- HUD LAYER -->
+    <div class="hud-layer" id="hud-layer">
+      <!-- ÜST ÇUBUK (Top Bar) -->
+      <div class="top-bar">
+        <!-- Sol: Takım & Oyuncu Rozeti -->
+        <div class="brand-badge" id="hud-team-badge">
+          <div class="team-badge-circle" id="hud-team-circle">🟡🔴</div>
+          <div class="brand-text">
+            <span class="brand-title" id="hud-team-name">GALATASARAY</span>
+            <span class="brand-sub" id="hud-player-name">#45 OSIMHEN</span>
+          </div>
+        </div>
+
+        <!-- ORTA: TV YAYIN SKOR TABLOSU (Gelişmiş GOL ve KURTARIŞ) -->
+        <div class="match-scoreboard">
+          <div class="score-card score-card-goal">
+            <span class="score-badge-icon">⚽</span>
+            <div class="score-data">
+              <span class="score-title">GOL</span>
+              <span class="score-num" id="score-goals">0</span>
+            </div>
+          </div>
+          <div class="score-vs-divider">:</div>
+          <div class="score-card score-card-save">
+            <div class="score-data" style="text-align: right;">
+              <span class="score-title">KURTARIŞ</span>
+              <span class="score-num" id="score-saves">0</span>
+            </div>
+            <span class="score-badge-icon">🧤</span>
+          </div>
+        </div>
+
+        <!-- Sağ: Bağlantı & Menü Butonları -->
+        <div class="top-right-group">
+          <div class="quick-connect-wrap">
+            <input type="text" id="top-tiktok-input" placeholder="@kullanici_adi" class="top-input">
+            <button id="btn-top-connect" class="top-btn-connect">Bağlan</button>
+          </div>
+          <div class="status-pill" id="live-status-pill">
+            <span class="status-dot disconnected" id="status-dot"></span>
+            <span id="status-text">Bağlantı Yok</span>
+          </div>
+          <button class="hud-mode-pill-btn" id="btn-quick-mode" title="Oyun Modunu Değiştir (Şutör / Kaleci)">
+            <span class="mode-icon" id="top-mode-icon">⚽</span>
+            <span class="mode-label" id="top-mode-label">ŞUTÖR MODU</span>
+          </button>
+          <button class="hud-icon-btn hud-lead-btn" id="btn-leaderboard" title="Liderlik Tablosu & Widget Linkleri">🏆</button>
+          <button class="hud-icon-btn hud-sound-btn" id="btn-sound" title="Ses Aç/Kapat">🔊</button>
+          <button class="hud-icon-btn hud-settings-btn" id="btn-settings" title="Ayarlar & Test">⚙️</button>
+        </div>
+      </div>
+
+      <!-- Aktif Güçler / Geri Sayım Rozetleri (Sol Üst Altında) -->
+      <div class="active-buffs-bar" id="active-buffs-bar">
+        <!-- Dinamik rozetler: Mini Kaleci, Savunma Barajı, Tsubasa -->
+      </div>
+
+      <!-- Kaledeki İzleyici Kartı (Sağ Üst Altında) -->
+      <div class="keeper-hud-card" id="keeper-hud-card">
+        <div class="keeper-avatar-wrap">
+          <img id="keeper-avatar-img" src="/api/avatar?user=Kaleci" alt="Kaleci">
+          <span class="keeper-badge-tag" id="keeper-badge-tag">NORMAL</span>
+        </div>
+        <div class="keeper-hud-info">
+          <div class="keeper-role-label">KALEDEKİ İZLEYİCİ:</div>
+          <div class="keeper-username" id="keeper-username">@Kaleci</div>
+          <div class="keeper-stats" id="keeper-stats">Kurtarış: 0 | Gol: 0</div>
+        </div>
+      </div>
+
+      <!-- DİKEY GÜÇ BARI (Vertical Power Gauge) -->
+      <div class="power-meter-container" id="power-meter-container">
+        <div class="power-meter-header">GÜÇ</div>
+        <div class="power-meter-track">
+          <div class="power-bar-fill" id="power-bar-fill" style="height: 0%;"></div>
+          <div class="power-marker marker-sweet"></div>
+          <div class="power-marker marker-max"></div>
+        </div>
+        <div class="power-meter-value" id="power-percent">0%</div>
+      </div>
+
+      <!-- Alt Rehber Kapsülü -->
+      <div class="bottom-prompt-container">
+        <div class="bottom-prompt-pill">
+          <span class="prompt-icon">⚽</span>
+          <span class="prompt-text">Topu kaleye doğru sürükleyin. Falso vermek için kavislendirin ve bırakın!</span>
+        </div>
+      </div>
+
+      <!-- Canlı Bildirimler (Toasts) -->
+      <div id="toast-container"></div>
+    </div>
+
+    <!-- KUTLAMA VE BİLDİRİM BANNERLARI -->
+    <!-- 1. GOL BANNERI -->
+    <div id="goal-overlay" class="celebration-overlay">
+      <div class="goal-burst-glow"></div>
+      <div class="goal-text-wrap">
+        <div class="goal-big-title">GOOOOOL!</div>
+        <div class="goal-player-name" id="goal-player-name">⚽ HARİKA BİR DOKSAN VURUŞU!</div>
+      </div>
+    </div>
+
+    <!-- 2. KURTARIŞ / AUT BANNERI -->
+    <div id="save-overlay" class="celebration-overlay">
+      <div class="save-burst-glow"></div>
+      <div class="save-text-wrap">
+        <div class="save-badge-icon">🧤</div>
+        <div class="save-big-title">KURTARILDI!</div>
+        <div class="save-keeper-name" id="save-keeper-name">@Kaleci DEVLEŞTİ!</div>
+      </div>
+    </div>
+
+    <!-- AYARLAR & TEST ÇEKMECESİ -->
+    <div id="settings-drawer" class="drawer-panel">
+      <div class="drawer-header">
+        <div class="drawer-title-wrap">
+          <span class="drawer-icon">⚙️</span>
+          <div>
+            <h2 class="drawer-title">Oyun ve Hediye Yönetimi</h2>
+            <span class="drawer-subtitle">Eylem Eşleştirme & Test Merkezi</span>
+          </div>
+        </div>
+        <button class="drawer-close-btn" id="btn-close-settings">✕</button>
+      </div>
+
+      <!-- Sekmeler -->
+      <div class="drawer-tabs">
+        <button class="tab-btn active" data-tab="tab-gifts">🎁 Hediye Eşleştirme</button>
+        <button class="tab-btn" data-tab="tab-test">🧪 Test Paneli</button>
+        <button class="tab-btn" data-tab="tab-arena">🏟️ Stadyum Ayarları</button>
+      </div>
+
+      <!-- Sekme 1: Eylem-Öncelikli Hediye Eşleştirme -->
+      <div class="tab-content active" id="tab-gifts">
+        <div class="rules-management-header">
+          <div>
+            <h3 class="rules-header-title">⭐ Aktif Hediye Kuralları</h3>
+            <p class="rules-header-desc">İstediğiniz eylemi ekleyin ve katalogdan hediyesini atayın:</p>
+          </div>
+          <button class="btn-add-action-rule" id="btn-add-action-rule">➕ Yeni Eylem Ekle</button>
+        </div>
+
+        <div class="action-rules-list" id="action-rules-list">
+          <!-- Dinamik kural kartları render edilir -->
+        </div>
+
+        <!-- Beğeni ve Takip Etme Eylemleri -->
+        <div class="stream-events-config-box">
+          <h4 class="stream-events-title">⚡ Canlı Yayın Beğeni & Takip Eylemleri</h4>
+          <div class="stream-event-row">
+            <span class="stream-event-icon">❤️</span>
+            <div class="stream-event-desc">
+              <strong>Beğeni Eylemi:</strong>
+              <span>Her <input type="number" id="input-like-threshold" class="num-compact-input" value="100" min="10" max="1000"> Beğenide Bir:</span>
+            </div>
+            <select id="select-like-action" class="stream-event-select">
+              <option value="keeper_shrink50" selected>🤏 Kaleciyi %50 Küçült</option>
+              <option value="keeper_shrink80">🔬 Kaleciyi %80 Küçült</option>
+              <option value="defense_wall">🧱 Savunma Barajı Kur</option>
+              <option value="power_tsubasa">🔥 Tsubasa Alevli Şut</option>
+              <option value="keeper_boss">👑 Dev Boss Kaleci</option>
+            </select>
+          </div>
+          <div class="stream-event-row">
+            <span class="stream-event-icon">➕</span>
+            <div class="stream-event-desc">
+              <strong>Takip Eylemi:</strong>
+              <span>Biri Takip Ettiğinde:</span>
+            </div>
+            <select id="select-follow-action" class="stream-event-select">
+              <option value="defense_wall" selected>🧱 Savunma Barajı Kur</option>
+              <option value="keeper_shrink50">🤏 Kaleciyi %50 Küçült</option>
+              <option value="power_tsubasa">🔥 Tsubasa Alevli Şut</option>
+              <option value="role_swap_keeper">🧤 Yayıncı Kaleye Geçsin</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sekme 2: Test Paneli (Canlı ve Belirgin Renklerle) -->
+      <div class="tab-content" id="tab-test">
+        <p class="tab-info-text">Yayında olmadan tüm takım formalarını, kalecileri ve güçleri anında deneyin:</p>
+
+        <div class="test-category-title">👕 Forma Değiştirme Testleri</div>
+        <div class="test-buttons-grid">
+          <button class="test-action-btn test-btn-gs" id="test-gs">
+            <span class="btn-badge-icon">🟡🔴</span>
+            <div class="btn-badge-text">
+              <strong>GZ</strong>
+              <small>İzleyici adıyla</small>
+            </div>
+          </button>
+          <button class="test-action-btn test-btn-fb" id="test-fb">
+            <span class="btn-badge-icon">🟡🔵</span>
+            <div class="btn-badge-text">
+              <strong>FB</strong>
+              <small>İzleyici adıyla</small>
+            </div>
+          </button>
+          <button class="test-action-btn test-btn-bjk" id="test-bjk">
+            <span class="btn-badge-icon">⚪⚫</span>
+            <div class="btn-badge-text">
+              <strong>BJK</strong>
+              <small>İzleyici adıyla</small>
+            </div>
+          </button>
+          <button class="test-action-btn test-btn-ts" id="test-ts">
+            <span class="btn-badge-icon">🔴🔵</span>
+            <div class="btn-badge-text">
+              <strong>TB</strong>
+              <small>İzleyici adıyla</small>
+            </div>
+          </button>
+          <button class="test-action-btn test-btn-amed" id="test-amed">
+            <span class="btn-badge-icon">🟢🔴</span>
+            <div class="btn-badge-text">
+              <strong>AMD</strong>
+              <small>İzleyici adıyla</small>
+            </div>
+          </button>
+        </div>
+
+        <div class="test-category-title" style="margin-top: 18px;">🧤 Kaleci & Savunma Testleri</div>
+        <div class="test-buttons-grid">
+          <button class="test-action-btn test-btn-keeper" id="test-keeper-normal">
+            <span class="btn-badge-icon">🧤</span>
+            <div class="btn-badge-text">
+              <strong>Normal Kaleci</strong>
+              <small>Ahmet_Kaleci</small>
+            </div>
+          </button>
+          <button class="test-action-btn test-btn-keeper" id="test-keeper-agile">
+            <span class="btn-badge-icon">⚡</span>
+            <div class="btn-badge-text">
+              <strong>Çevik Kaleci</strong>
+              <small>Panter_Mehmet</small>
+            </div>
+          </button>
+          <button class="test-action-btn test-btn-boss" id="test-keeper-boss">
+            <span class="btn-badge-icon">👑</span>
+            <div class="btn-badge-text">
+              <strong>Dev Boss Kaleci</strong>
+              <small>Devasa Boyut</small>
+            </div>
+          </button>
+          <button class="test-action-btn test-btn-shrink" id="test-keeper-shrink50">
+            <span class="btn-badge-icon">🤏</span>
+            <div class="btn-badge-text">
+              <strong>%50 Küçült</strong>
+              <small>Süreli Kolay Gol</small>
+            </div>
+          </button>
+          <button class="test-action-btn test-btn-shrink" id="test-keeper-shrink80">
+            <span class="btn-badge-icon">🔬</span>
+            <div class="btn-badge-text">
+              <strong>%80 Küçült</strong>
+              <small>Mini Kaleci</small>
+            </div>
+          </button>
+          <button class="test-action-btn test-btn-wall" id="test-defense-wall">
+            <span class="btn-badge-icon">🧱</span>
+            <div class="btn-badge-text">
+              <strong>Savunma Barajı</strong>
+              <small>3 Kişilik Baraj</small>
+            </div>
+          </button>
+          <button class="test-action-btn test-btn-wall" id="test-add-like-defender">
+            <span class="btn-badge-icon">🛡️</span>
+            <div class="btn-badge-text">
+              <strong>100 Beğeni: Baraj Kur</strong>
+              <small>+1 Savunmacı Ekle</small>
+            </div>
+          </button>
+          <button class="test-action-btn test-btn-wall" id="test-follow-wall">
+            <span class="btn-badge-icon">➕</span>
+            <div class="btn-badge-text">
+              <strong>Takip Et: Baraj Kur</strong>
+              <small>+1 Savunmacı Ekle</small>
+            </div>
+          </button>
+          <button class="test-action-btn test-btn-arena" id="test-swap-roles">
+            <span class="btn-badge-icon">🔄</span>
+            <div class="btn-badge-text">
+              <strong>Pozisyon Değiştir</strong>
+              <small>Yayıncı Kaleye Geçsin</small>
+            </div>
+          </button>
+          <button class="test-action-btn test-btn-freekick" id="test-freekick">
+            <span class="btn-badge-icon">🎯</span>
+            <div class="btn-badge-text">
+              <strong>Frikik Pozisyonu</strong>
+              <small>21 Metre Şut</small>
+            </div>
+          </button>
+        </div>
+
+        <div class="test-category-title" style="margin-top: 18px;">🔥 Yayıncı Destek & Saha</div>
+        <div class="test-buttons-grid">
+          <button class="test-action-btn test-btn-tsubasa" id="test-tsubasa">
+            <span class="btn-badge-icon">🔥</span>
+            <div class="btn-badge-text">
+              <strong>Tsubasa Alevli Şut</strong>
+              <small>%90 Gol Oranı</small>
+            </div>
+          </button>
+          <button class="test-action-btn test-btn-arena" id="test-add-spectator">
+            <span class="btn-badge-icon">👥</span>
+            <div class="btn-badge-text">
+              <strong>Tribüne İzleyici Al</strong>
+              <small>Kolları Havada</small>
+            </div>
+          </button>
+          <button class="test-action-btn test-btn-arena" id="test-like-hearts">
+            <span class="btn-badge-icon">❤️</span>
+            <div class="btn-badge-text">
+              <strong>Kalp Patlaması</strong>
+              <small>Beğeni Testi</small>
+            </div>
+          </button>
+          <button class="test-action-btn test-btn-arena" id="test-auto-shoot">
+            <span class="btn-badge-icon">⚽</span>
+            <div class="btn-badge-text">
+              <strong>Otomatik Şut Çek</strong>
+              <small>Test Vuruşu</small>
+            </div>
+          </button>
+          <button class="test-action-btn test-btn-arena" id="test-clear-field">
+            <span class="btn-badge-icon">🔄</span>
+            <div class="btn-badge-text">
+              <strong>Pozisyonu Yenile</strong>
+              <small>Sıfırla</small>
+            </div>
+          </button>
+        </div>
+      </div>
+
+      <!-- Sekme 3: Stadyum, Kamera & Süre Ayarları -->
+      <div class="tab-content" id="tab-arena">
+        <div class="settings-slider-row">
+          <div class="slider-title"><span>🎮 Oyun Modu</span></div>
+          <select id="select-game-mode" class="settings-select">
+            <option value="shooter" selected>⚽ Şutör Modu (Yayıncı Şut Çeker)</option>
+            <option value="keeper">🧤 Kaleci Modu (Yayıncı Kaleyi Korur)</option>
+          </select>
+        </div>
+        <div class="settings-slider-row">
+          <div class="slider-title"><span>🔊 Ana Ses Seviyesi</span><span id="val-sound-vol">80%</span></div>
+          <input type="range" id="slider-sound-vol" min="0" max="100" step="1" value="80">
+        </div>
+        <div class="settings-slider-row">
+          <div class="slider-title"><span>Kamera Açısı (Genişlik)</span><span id="val-cam-fov">52°</span></div>
+          <input type="range" id="slider-fov" min="40" max="75" step="1" value="52">
+        </div>
+        <div class="settings-slider-row">
+          <div class="slider-title"><span>Kamera Yüksekliği</span><span id="val-cam-height">2.4m</span></div>
+          <input type="range" id="slider-cam-height" min="1.6" max="3.8" step="0.1" value="2.4">
+        </div>
+        <div class="settings-slider-row">
+          <div class="slider-title"><span>Stadyum Atmosferi & Işıklar</span></div>
+          <select id="select-atmosphere" class="settings-select">
+            <option value="festival" selected>Festival Arenası (Aydınlık)</option>
+            <option value="dusk">Gün Batımı (Projektörler Açık)</option>
+            <option value="night">Gece Maçı (Stadyum Projektörleri)</option>
+            <option value="day">Açık Gündüz</option>
+          </select>
+        </div>
+        <div class="settings-slider-row">
+          <div class="slider-title"><span>Grafik Kalitesi</span></div>
+          <select id="select-quality" class="settings-select">
+            <option value="ultra">Ultra (Pist Çimi Yoğunluğu & Yumuşak Gölgeler)</option>
+            <option value="high" selected>Yüksek (Önerilen)</option>
+            <option value="medium">Orta</option>
+            <option value="low">Düşük</option>
+          </select>
+        </div>
+        <div class="settings-slider-row">
+          <div class="slider-title"><span>Kaleci Modu Şutör Bekleme Süresi (Saniye)</span></div>
+          <input type="number" id="input-keeper-delay" class="settings-num-input" value="3.5" min="1.5" max="10" step="0.5">
+        </div>
+        <div class="settings-slider-row">
+          <div class="slider-title"><span>Kaleci Küçültme Süresi (Saniye)</span></div>
+          <input type="number" id="input-shrink-duration" class="settings-num-input" value="45" min="10" max="180">
+        </div>
+        <div class="settings-slider-row">
+          <div class="slider-title"><span>Savunma Barajı Süresi (Saniye)</span></div>
+          <input type="number" id="input-wall-duration" class="settings-num-input" value="10" min="5" max="180">
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL 1: EYLEM SEÇİCİ POPUP -->
+    <div id="action-picker-modal" class="full-modal-overlay" style="display:none;">
+      <div class="action-picker-card">
+        <div class="modal-card-header">
+          <div class="modal-card-title-wrap">
+            <span class="modal-icon">⭐</span>
+            <h2 class="modal-title">Eklenecek Eylemi Seçin</h2>
+          </div>
+          <button class="drawer-close-btn" id="btn-close-action-picker">✕</button>
+        </div>
+        <p class="modal-card-desc">Hediyeye bağlamak istediğiniz eylemi seçin. Ardından hediye kataloğundan dilediğiniz hediyeyi atayabilirsiniz:</p>
+        <div class="action-picker-grid" id="action-picker-grid">
+          <!-- Kategorili eylemler -->
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL 2: HEDİYE KATALOĞU SEÇİCİ POPUP -->
+    <div id="catalog-picker-modal" class="full-modal-overlay" style="display:none;">
+      <div class="catalog-picker-card">
+        <div class="modal-card-header">
+          <div class="modal-card-title-wrap">
+            <span class="modal-icon">🎁</span>
+            <div>
+              <h2 class="modal-title">Hediye Kataloğu (630+)</h2>
+              <span class="modal-sub-label" id="catalog-target-action-label">Atanan Eylem: Forma</span>
+            </div>
+          </div>
+          <button class="drawer-close-btn" id="btn-close-catalog-modal">✕</button>
+        </div>
+
+        <div class="catalog-filter-bar">
+          <input type="text" id="catalog-search-input" class="search-input" placeholder="🔍 Hediye ara (Gül, Çay, Donut, Asa, Şapka, Para...)">
+          <div class="catalog-filter-pills">
+            <button class="catalog-filter-pill active" data-filter="all">Tümü</button>
+            <button class="catalog-filter-pill" data-filter="1">1 Jeton</button>
+            <button class="catalog-filter-pill" data-filter="tier2">2 - 99 Jeton</button>
+            <button class="catalog-filter-pill" data-filter="tier3">100 - 999 Jeton</button>
+            <button class="catalog-filter-pill" data-filter="expensive">1000+ Jeton</button>
+          </div>
+        </div>
+
+        <div class="catalog-picker-grid" id="catalog-picker-grid">
+          <!-- 630+ hediye görselleri -->
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL 3: LİDERLİK TABLOSU & OBS WİDGET PANELİ -->
+    <div id="leaderboard-modal" class="full-modal-overlay" style="display:none;">
+      <div class="leaderboard-card">
+        <div class="modal-card-header">
+          <div class="modal-card-title-wrap">
+            <span class="modal-icon">🏆</span>
+            <div>
+              <h2 class="modal-title">Canlı Liderlik Tablosu & Widget</h2>
+              <span class="modal-sub-label">En Çok Kurtaranlar & Takım Gol Krallığı</span>
+            </div>
+          </div>
+          <div style="display: flex; gap: 8px; align-items: center;">
+            <button class="btn-reset-leaderboard" id="btn-reset-leaderboard" title="Tüm kaleci ve takım skorlarını sıfırla">
+              🗑️ Skorları Sıfırla
+            </button>
+            <button class="drawer-close-btn" id="btn-close-leaderboard">✕</button>
+          </div>
+        </div>
+
+        <!-- Sekmeler -->
+        <div class="drawer-tabs" style="margin-bottom: 14px;">
+          <button class="tab-btn active" id="btn-tab-lead-keepers" data-lead-tab="lead-tab-keepers">🧤 En Çok Kurtaranlar</button>
+          <button class="tab-btn" id="btn-tab-lead-teams" data-lead-tab="lead-tab-teams">⚽ Takım Gol Sıralaması</button>
+        </div>
+
+        <!-- Tab 1: Kaleciler -->
+        <div class="lead-tab-content active" id="lead-tab-keepers">
+          <div class="lead-list-container" id="lead-keepers-list">
+            <div class="empty-state">Henüz kurtarış yapılmadı. Penaltı atılınca burada listelenir!</div>
+          </div>
+        </div>
+
+        <!-- Tab 2: Takımlar -->
+        <div class="lead-tab-content" id="lead-tab-teams" style="display: none;">
+          <div class="lead-list-container" id="lead-teams-list">
+            <!-- Takım golleri render edilir -->
+          </div>
+        </div>
+
+        <!-- OBS / TikTok Live Studio Widget Linkleri -->
+        <div class="obs-link-box">
+          <div class="obs-link-header" style="display: flex; justify-content: space-between; align-items: center;">
+            <span>📺 TikTok Live Studio & OBS İçin Doğrudan Localhost Linkleri:</span>
+            <button class="btn-reset-small" id="btn-reset-leaderboard-sub">🗑️ Sıfırla</button>
+          </div>
+          <div class="obs-links-buttons-grid">
+            <button class="btn-copy-widget-pill btn-widget-keepers" id="btn-copy-keepers-widget" data-path="/widget-keepers">
+              <span>🧤 En Çok Kurtaranlar Widget Linki (Localhost)</span>
+              <small>http://localhost:3050/widget-keepers</small>
+            </button>
+            <button class="btn-copy-widget-pill btn-widget-teams" id="btn-copy-teams-widget" data-path="/widget-teams">
+              <span>⚽ Takım Gol Sıralaması Widget Linki (Localhost)</span>
+              <small>http://localhost:3050/widget-teams</small>
+            </button>
+            <button class="btn-copy-widget-pill btn-widget-all" id="btn-copy-obs" data-path="/widget">
+              <span>📺 Birleşik Çift Tablo Widget Linki (Localhost)</span>
+              <small>http://localhost:3050/widget</small>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Ana Uygulama Modülü -->
+  <script type="module" src="app.js"></script>
+</body>
+</html>

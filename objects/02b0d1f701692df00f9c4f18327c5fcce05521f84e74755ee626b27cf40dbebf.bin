@@ -1,0 +1,1925 @@
+// ==========================================================================
+// MNG FESTİVAL STADYUMU - Aydınlık, Profesyonel Stat Mimarisi & Canlı Reklamlar
+// ==========================================================================
+import * as THREE from 'three';
+import { GOAL, PENALTY_SPOT } from './config.js';
+import {
+  stdMat,
+  rbox,
+  createAvatarTexture,
+  createHumanoid,
+  createReferee,
+  blendPose,
+  POSES,
+  createTeddyBear,
+  createAvatarBadge
+} from './characters.js';
+
+export class StadiumBuilder {
+  constructor(scene, quality = 'high') {
+    this.scene = scene;
+    this.quality = quality;
+    this.spectatorRigs = [];
+    this.availableSeats = [];
+    this.nextSpectatorIndex = 0;
+    this.netMesh = null;
+    this.ledCanvas = null;
+    this.ledTexture = null;
+    this.refereeRig = null;
+    this.broadcasterUsername = 'mangao7tv';
+
+    // Festival Arenası Ekstraları
+    this.teddyBear = null;
+    this.teddyBears = [];
+    this.windmillBlades = null;
+    this.clouds = [];
+    this.goal3DText = null;
+    this.buntingMeshes = [];
+    this.cornerFlagMeshes = [];
+    this.windParticles = [];
+    this.heartParticles = [];
+    this.heartTexture = null;
+    this.grassMesh = null;
+  }
+
+  setBroadcasterUsername(username) {
+    if (username && typeof username === 'string') {
+      this.broadcasterUsername = username.replace(/^@/, '');
+    }
+  }
+
+  build(atmosphereKey = 'festival') {
+    const root = new THREE.Group();
+    root.name = 'FestivalStadiumRoot';
+
+    // 1. Zemin ve Saha Çizgileri (Pürüzsüz, Kadife Çim & Birebir Çizgiler)
+    const pitch = this.createPitch();
+    root.add(pitch);
+
+    // 2. Kale Direkleri ve Beyaz Kare File (Ana Kale)
+    const goal = this.createGoal();
+    root.add(goal);
+
+    // 2b. Karşı Kale Direkleri ve File (Z = 74.0)
+    const oppositeGoal = this.createOppositeGoal();
+    root.add(oppositeGoal);
+
+    // 3. LED Reklam Panosu (Canlı kayan yayıncı adı & oyun reklamları)
+    const ledBoards = this.createLedBoards();
+    root.add(ledBoards);
+
+    // 4. Tribünler ve Rengarenk Kapsül Seyirciler (Düzgün simetrik stat tribünleri)
+    const stands = this.createStands();
+    root.add(stands);
+
+    // 5. Stat Projektör Kuleleri (4 Köşeli Profesyonel Aydınlatma)
+    const floodlights = this.createFloodlights();
+    root.add(floodlights);
+
+    // 6. Arka Plan: Uzak Tepeler, Dönen Yel Değirmeni ve Ağaçlar (Tribüne basmaz!)
+    const landscape = this.createLandscape();
+    root.add(landscape);
+
+    // 7. Rengarenk Festival Flamaları (Rüzgarda Salınan Bayraklar)
+    const buntings = this.createBuntingFlags();
+    root.add(buntings);
+
+    // 8. Gökyüzündeki 3D Karikatür Bulutlar
+    const clouds = this.createCartoonClouds();
+    root.add(clouds);
+
+    // 9. Sahadaki Canlı Karakterler: Resmi Hakem, Peluş Ayıcık, Top Piramidi, Köşe Bayrakları
+    const props = this.createPropsAndSidelines();
+    root.add(props);
+
+    // 10. Rüzgarda Uçuşan Çim ve Yaprak Parçacıkları (Hafif Rüzgar Hissi)
+    const wind = this.createWindParticles();
+    root.add(wind);
+
+    // 11. Üst Direkte Patlayan 3D "GOAL!" Yazısı
+    const goalText = this.createGoal3DText();
+    root.add(goalText);
+
+    this.scene.add(root);
+    return root;
+  }
+
+  // --------------------------------------------------------------------------
+  // --------------------------------------------------------------------------
+  // 1. ÇİM ZEMİN & SAHA ÇİZGİLERİ (Pürüzsüz, Kadife Çim & Birebir Çizgiler)
+  // --------------------------------------------------------------------------
+  createPitch() {
+    const group = new THREE.Group();
+    group.name = 'PitchGroup';
+
+    const canvas = document.createElement('canvas');
+    canvas.width = 2048;
+    canvas.height = 4096;
+    const ctx = canvas.getContext('2d');
+
+    // Plane parametreleri: 66m genişlik (X: -33 .. +33), 88m derinlik (Z: -6 .. +82)
+    // Saha merkezi Z = 38.0
+    const W_METERS = 66.0;
+    const D_METERS = 88.0;
+    const PPM_X = 2048 / W_METERS; // 31.03 px/m
+    const PPM_Y = 4096 / D_METERS; // 46.545 px/m
+    const CX = 1024;
+
+    const toY = (z) => (z - (-6.0)) * PPM_Y;
+
+    // 1. Çok kısa profesyonel stadyum çimi: topu ve ayakları örtmeyen mat taban.
+    ctx.fillStyle = '#2b7934';
+    ctx.fillRect(0, 0, 2048, 4096);
+
+    // 2. Kaleye doğru uzanan, dikkat dağıtmayan biçme şeritleri.
+    const stripeH = Math.round(4.4 * PPM_Y);
+    for (let y = 0; y < 4096; y += stripeH * 2) {
+      ctx.fillStyle = '#317f39';
+      ctx.fillRect(0, y, 2048, stripeH);
+      ctx.fillStyle = '#287430';
+      ctx.fillRect(0, y + stripeH, 2048, stripeH);
+    }
+
+    // Yakından kısa lif hissi veren mikro doku. Geometri ve fizik değişmez.
+    let grassSeed = 0x4d4e47;
+    const grassRandom = () => {
+      grassSeed = (grassSeed * 1664525 + 1013904223) >>> 0;
+      return grassSeed / 0xffffffff;
+    };
+    for (let i = 0; i < 52000; i++) {
+      const x = grassRandom() * 2048;
+      const y = grassRandom() * 4096;
+      const light = grassRandom() > 0.48;
+      ctx.fillStyle = light ? 'rgba(170, 207, 142, 0.11)' : 'rgba(6, 42, 18, 0.09)';
+      ctx.fillRect(x, y, 1 + grassRandom() * 1.5, 3 + grassRandom() * 5);
+    }
+
+    // 3. Doğal dairesel kadife çim ton halkaları (Yoğunluk ve yumuşaklık)
+    const seedPatches = [
+      { x: 1024, z: 11.0, rx: 220, ry: 200, a: 0.25 }, // Penaltı noktası 1
+      { x: 1024, z: 2.8, rx: 260, ry: 190, a: 0.22 },  // Kaleci altıpas önü 1
+      { x: 820, z: 6.5, rx: 180, ry: 160, a: 0.18 },
+      { x: 1228, z: 6.5, rx: 180, ry: 160, a: 0.18 },
+      { x: 1024, z: 37.0, rx: 320, ry: 260, a: 0.25 }, // Orta saha dairesi
+      { x: 740, z: 37.0, rx: 220, ry: 180, a: 0.18 },
+      { x: 1308, z: 37.0, rx: 220, ry: 180, a: 0.18 },
+      { x: 1024, z: 63.0, rx: 220, ry: 200, a: 0.25 }, // Penaltı noktası 2
+      { x: 1024, z: 71.2, rx: 260, ry: 190, a: 0.22 }, // Karşı altıpas
+      { x: 820, z: 67.5, rx: 180, ry: 160, a: 0.18 },
+      { x: 1228, z: 67.5, rx: 180, ry: 160, a: 0.18 }
+    ];
+
+    seedPatches.forEach(p => {
+      const cy = toY(p.z);
+      const grad = ctx.createRadialGradient(p.x, cy, 0, p.x, cy, Math.max(p.rx, p.ry));
+      grad.addColorStop(0, `rgba(62, 166, 52, ${p.a})`);
+      grad.addColorStop(0.6, `rgba(50, 142, 42, ${p.a * 0.5})`);
+      grad.addColorStop(1, 'rgba(38, 121, 30, 0.0)');
+
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.ellipse(p.x, cy, p.rx, p.ry, 0, 0, Math.PI * 2);
+      ctx.fill();
+    });
+
+    // 4. Bembeyaz Profesyonel Saha Çizgileri (Tam 1:1 UEFA Standardı - Belirgin & Net)
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 14;
+    ctx.lineCap = 'square';
+    ctx.lineJoin = 'miter';
+
+    const halfTouchW = 24.0 * PPM_X; // ±24m genişlik (toplam 48m taç çizgileri)
+    const goalY1 = toY(0.0);
+    const goalY2 = toY(74.0);
+    const midY = toY(37.0);
+
+    // A) Ana Taç Çizgileri & Kale Çizgileri
+    ctx.beginPath();
+    ctx.moveTo(CX - halfTouchW, goalY1);
+    ctx.lineTo(CX - halfTouchW, goalY2);
+    ctx.moveTo(CX + halfTouchW, goalY1);
+    ctx.lineTo(CX + halfTouchW, goalY2);
+    ctx.moveTo(CX - halfTouchW, goalY1);
+    ctx.lineTo(CX + halfTouchW, goalY1);
+    ctx.moveTo(CX - halfTouchW, goalY2);
+    ctx.lineTo(CX + halfTouchW, goalY2);
+    ctx.stroke();
+
+    // B) Orta Saha Çizgisi & Orta Saha Dairesi (z = 37.0)
+    ctx.beginPath();
+    ctx.moveTo(CX - halfTouchW, midY);
+    ctx.lineTo(CX + halfTouchW, midY);
+    ctx.stroke();
+
+    // Orta Saha Dairesi (Yarıçap 9.15m)
+    const circleRx = 9.15 * PPM_X;
+    const circleRy = 9.15 * PPM_Y;
+    ctx.beginPath();
+    ctx.ellipse(CX, midY, circleRx, circleRy, 0, 0, Math.PI * 2);
+    ctx.stroke();
+
+    // Santra Noktası
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.25)';
+    ctx.beginPath();
+    ctx.arc(CX, midY, 22, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath();
+    ctx.arc(CX, midY, 9, 0, Math.PI * 2);
+    ctx.fill();
+
+    // C) 1. KALE (YAKIN - z = 0.0) CEZA ALANI
+    const sixY1 = toY(5.5);
+    const boxY1 = toY(16.5);
+    const sixHalfW = 9.16 * PPM_X;
+    const boxHalfW = 20.15 * PPM_X;
+    const penY1 = toY(11.0);
+
+    // Altıpas 1
+    ctx.strokeRect(CX - sixHalfW, goalY1, sixHalfW * 2, sixY1 - goalY1);
+    // Ceza sahası 1
+    ctx.strokeRect(CX - boxHalfW, goalY1, boxHalfW * 2, boxY1 - goalY1);
+
+    // Penaltı yayı 1
+    const arcRx = 9.15 * PPM_X;
+    const arcRy = 9.15 * PPM_Y;
+    ctx.beginPath();
+    ctx.ellipse(CX, penY1, arcRx, arcRy, 0, 0.62, Math.PI - 0.62);
+    ctx.stroke();
+
+    // Penaltı noktası 1
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.25)';
+    ctx.beginPath();
+    ctx.arc(CX, penY1, 22, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath();
+    ctx.arc(CX, penY1, 9, 0, Math.PI * 2);
+    ctx.fill();
+
+    // D) 2. KALE (KARŞI - z = 74.0) CEZA ALANI
+    const sixY2 = toY(68.5);
+    const boxY2 = toY(57.5);
+    const penY2 = toY(63.0);
+
+    // Altıpas 2
+    ctx.strokeRect(CX - sixHalfW, sixY2, sixHalfW * 2, goalY2 - sixY2);
+    // Ceza sahası 2
+    ctx.strokeRect(CX - boxHalfW, boxY2, boxHalfW * 2, goalY2 - boxY2);
+
+    // Penaltı yayı 2 (Orta sahaya dönük)
+    ctx.beginPath();
+    ctx.ellipse(CX, penY2, arcRx, arcRy, 0, Math.PI + 0.62, Math.PI * 2 - 0.62);
+    ctx.stroke();
+
+    // Penaltı noktası 2
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.25)';
+    ctx.beginPath();
+    ctx.arc(CX, penY2, 22, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath();
+    ctx.arc(CX, penY2, 9, 0, Math.PI * 2);
+    ctx.fill();
+
+    // E) Köşe Yayları (Corner Arcs - 1m Yarıçap)
+    const crx = 1.0 * PPM_X;
+    const cry = 1.0 * PPM_Y;
+    ctx.beginPath(); ctx.ellipse(CX - halfTouchW, goalY1, crx, cry, 0, 0, Math.PI / 2); ctx.stroke();
+    ctx.beginPath(); ctx.ellipse(CX + halfTouchW, goalY1, crx, cry, 0, Math.PI / 2, Math.PI); ctx.stroke();
+    ctx.beginPath(); ctx.ellipse(CX - halfTouchW, goalY2, crx, cry, 0, Math.PI * 1.5, Math.PI * 2); ctx.stroke();
+    ctx.beginPath(); ctx.ellipse(CX + halfTouchW, goalY2, crx, cry, 0, Math.PI, Math.PI * 1.5); ctx.stroke();
+
+    // Doku ve Kabartma
+    const pitchTex = new THREE.CanvasTexture(canvas);
+    pitchTex.anisotropy = 16;
+    pitchTex.colorSpace = THREE.SRGBColorSpace;
+    pitchTex.wrapS = THREE.ClampToEdgeWrapping;
+    pitchTex.wrapT = THREE.ClampToEdgeWrapping;
+
+    const pitchMat = new THREE.MeshStandardMaterial({
+      map: pitchTex,
+      roughness: 0.92,
+      metalness: 0.0
+    });
+
+    const pitchGeo = new THREE.PlaneGeometry(W_METERS, D_METERS);
+    const pitchMesh = new THREE.Mesh(pitchGeo, pitchMat);
+    pitchMesh.rotation.x = -Math.PI / 2;
+    pitchMesh.position.set(0, 0, 38.0);
+    pitchMesh.receiveShadow = true;
+    group.add(pitchMesh);
+
+    return group;
+  }
+
+  // --------------------------------------------------------------------------
+  // 2. KALE DİREKLERİ & BEYAZ KARE FİLE
+  // --------------------------------------------------------------------------
+  createGoal() {
+    const group = new THREE.Group();
+    group.name = 'GoalGroup';
+
+    const postMat = new THREE.MeshStandardMaterial({
+      color: 0xffffff,
+      roughness: 0.25,
+      metalness: 0.1
+    });
+
+    const hw = GOAL.halfWidth; // 3.66m
+    const h = GOAL.height;     // 2.44m
+    const r = GOAL.postRadius; // 0.06m
+    const postGeo = new THREE.CylinderGeometry(r, r, h, 20);
+
+    // Sol Direk
+    const leftPost = new THREE.Mesh(postGeo, postMat);
+    leftPost.position.set(-hw, h / 2, 0);
+    leftPost.castShadow = true;
+    group.add(leftPost);
+
+    // Sağ Direk
+    const rightPost = new THREE.Mesh(postGeo, postMat);
+    rightPost.position.set(hw, h / 2, 0);
+    rightPost.castShadow = true;
+    group.add(rightPost);
+
+    // Üst Direk
+    const crossbarGeo = new THREE.CylinderGeometry(r, r, hw * 2 + r * 2, 20);
+    const crossbar = new THREE.Mesh(crossbarGeo, postMat);
+    crossbar.rotation.z = Math.PI / 2;
+    crossbar.position.set(0, h, 0);
+    crossbar.castShadow = true;
+    group.add(crossbar);
+
+    // Arka Destek Boruları
+    const depth = GOAL.depth; // 2.0m
+    const subMat = new THREE.MeshStandardMaterial({ color: 0xdddddd, roughness: 0.35 });
+    const topBackGeo = new THREE.CylinderGeometry(0.035, 0.035, depth, 10);
+
+    const leftTopB = new THREE.Mesh(topBackGeo, subMat);
+    leftTopB.rotation.x = Math.PI / 2;
+    leftTopB.position.set(-hw, h - 0.08, -depth / 2);
+    group.add(leftTopB);
+
+    const rightTopB = new THREE.Mesh(topBackGeo, subMat);
+    rightTopB.rotation.x = Math.PI / 2;
+    rightTopB.position.set(hw, h - 0.08, -depth / 2);
+    group.add(rightTopB);
+
+    const backVGeo = new THREE.CylinderGeometry(0.035, 0.035, h - 0.08, 10);
+    const leftBackV = new THREE.Mesh(backVGeo, subMat);
+    leftBackV.position.set(-hw, (h - 0.08) / 2, -depth);
+    group.add(leftBackV);
+
+    const rightBackV = new THREE.Mesh(backVGeo, subMat);
+    rightBackV.position.set(hw, (h - 0.08) / 2, -depth);
+    group.add(rightBackV);
+
+    const backBottomGeo = new THREE.CylinderGeometry(0.035, 0.035, hw * 2, 10);
+    const backBottom = new THREE.Mesh(backBottomGeo, subMat);
+    backBottom.rotation.z = Math.PI / 2;
+    backBottom.position.set(0, 0.035, -depth);
+    group.add(backBottom);
+
+    // Beyaz Kare Desenli File
+    const netCanvas = document.createElement('canvas');
+    netCanvas.width = 256;
+    netCanvas.height = 256;
+    const nctx = netCanvas.getContext('2d');
+    nctx.fillStyle = 'rgba(255,255,255,0.02)';
+    nctx.fillRect(0, 0, 256, 256);
+    nctx.strokeStyle = '#ffffff';
+    nctx.lineWidth = 4;
+    const grid = 24;
+    for (let i = 0; i <= 256; i += grid) {
+      nctx.beginPath(); nctx.moveTo(i, 0); nctx.lineTo(i, 256); nctx.stroke();
+      nctx.beginPath(); nctx.moveTo(0, i); nctx.lineTo(256, i); nctx.stroke();
+    }
+
+    const netTex = new THREE.CanvasTexture(netCanvas);
+    netTex.wrapS = THREE.RepeatWrapping;
+    netTex.wrapT = THREE.RepeatWrapping;
+    netTex.repeat.set(10, 6);
+    netTex.anisotropy = 4;
+
+    const netMat = new THREE.MeshStandardMaterial({
+      map: netTex,
+      transparent: true,
+      opacity: 0.62,
+      side: THREE.DoubleSide,
+      roughness: 0.9,
+      depthWrite: false
+    });
+
+    // Arka file yüzeyi
+    const backNet = new THREE.Mesh(new THREE.PlaneGeometry(hw * 2, h), netMat);
+    backNet.position.set(0, h / 2, -depth);
+    group.add(backNet);
+    this.netMesh = backNet;
+
+    // Üst file tavanı
+    const topNet = new THREE.Mesh(new THREE.PlaneGeometry(hw * 2, depth), netMat);
+    topNet.rotation.x = Math.PI / 2;
+    topNet.position.set(0, h, -depth / 2);
+    group.add(topNet);
+
+    // Yan fileler
+    const sideNetGeo = new THREE.PlaneGeometry(depth, h);
+    const leftNet = new THREE.Mesh(sideNetGeo, netMat);
+    leftNet.rotation.y = Math.PI / 2;
+    leftNet.position.set(-hw, h / 2, -depth / 2);
+    group.add(leftNet);
+
+    const rightNet = new THREE.Mesh(sideNetGeo, netMat);
+    rightNet.rotation.y = -Math.PI / 2;
+    rightNet.position.set(hw, h / 2, -depth / 2);
+    group.add(rightNet);
+
+    return group;
+  }
+
+  // --------------------------------------------------------------------------
+  // 2b. KARŞI KALE DİREKLERİ & BEYAZ KARE FİLE (Z = 74.0m)
+  // --------------------------------------------------------------------------
+  createOppositeGoal() {
+    const group = new THREE.Group();
+    group.name = 'OppositeGoalGroup';
+
+    const postMat = new THREE.MeshStandardMaterial({
+      color: 0xffffff,
+      roughness: 0.25,
+      metalness: 0.1
+    });
+
+    const hw = GOAL.halfWidth; // 3.66m
+    const h = GOAL.height;     // 2.44m
+    const r = GOAL.postRadius; // 0.06m
+    const postGeo = new THREE.CylinderGeometry(r, r, h, 20);
+
+    // Sol Direk (Z = 74.0)
+    const leftPost = new THREE.Mesh(postGeo, postMat);
+    leftPost.position.set(-hw, h / 2, 74.0);
+    group.add(leftPost);
+
+    // Sağ Direk (Z = 74.0)
+    const rightPost = new THREE.Mesh(postGeo, postMat);
+    rightPost.position.set(hw, h / 2, 74.0);
+    group.add(rightPost);
+
+    // Üst Direk
+    const crossbarGeo = new THREE.CylinderGeometry(r, r, hw * 2 + r * 2, 20);
+    const crossbar = new THREE.Mesh(crossbarGeo, postMat);
+    crossbar.rotation.z = Math.PI / 2;
+    crossbar.position.set(0, h, 74.0);
+    group.add(crossbar);
+
+    // Arka Destek Boruları (Z = 74.0'dan 76.0'a uzanır)
+    const depth = GOAL.depth; // 2.0m
+    const subMat = new THREE.MeshStandardMaterial({ color: 0xdddddd, roughness: 0.35 });
+    const topBackGeo = new THREE.CylinderGeometry(0.035, 0.035, depth, 10);
+
+    const leftTopB = new THREE.Mesh(topBackGeo, subMat);
+    leftTopB.rotation.x = Math.PI / 2;
+    leftTopB.position.set(-hw, h - 0.08, 74.0 + depth / 2);
+    group.add(leftTopB);
+
+    const rightTopB = new THREE.Mesh(topBackGeo, subMat);
+    rightTopB.rotation.x = Math.PI / 2;
+    rightTopB.position.set(hw, h - 0.08, 74.0 + depth / 2);
+    group.add(rightTopB);
+
+    const backVGeo = new THREE.CylinderGeometry(0.035, 0.035, h - 0.08, 10);
+    const leftBackV = new THREE.Mesh(backVGeo, subMat);
+    leftBackV.position.set(-hw, (h - 0.08) / 2, 74.0 + depth);
+    group.add(leftBackV);
+
+    const rightBackV = new THREE.Mesh(backVGeo, subMat);
+    rightBackV.position.set(hw, (h - 0.08) / 2, 74.0 + depth);
+    group.add(rightBackV);
+
+    const backBottomGeo = new THREE.CylinderGeometry(0.035, 0.035, hw * 2, 10);
+    const backBottom = new THREE.Mesh(backBottomGeo, subMat);
+    backBottom.rotation.z = Math.PI / 2;
+    backBottom.position.set(0, 0.035, 74.0 + depth);
+    group.add(backBottom);
+
+    // Beyaz Kare Desenli File
+    const netCanvas = document.createElement('canvas');
+    netCanvas.width = 256;
+    netCanvas.height = 256;
+    const nctx = netCanvas.getContext('2d');
+    nctx.fillStyle = 'rgba(255,255,255,0.02)';
+    nctx.fillRect(0, 0, 256, 256);
+    nctx.strokeStyle = '#ffffff';
+    nctx.lineWidth = 4;
+    const grid = 24;
+    for (let i = 0; i <= 256; i += grid) {
+      nctx.beginPath(); nctx.moveTo(i, 0); nctx.lineTo(i, 256); nctx.stroke();
+      nctx.beginPath(); nctx.moveTo(0, i); nctx.lineTo(256, i); nctx.stroke();
+    }
+
+    const netTex = new THREE.CanvasTexture(netCanvas);
+    netTex.wrapS = THREE.RepeatWrapping;
+    netTex.wrapT = THREE.RepeatWrapping;
+    netTex.repeat.set(10, 6);
+    netTex.anisotropy = 4;
+
+    const netMat = new THREE.MeshStandardMaterial({
+      map: netTex,
+      transparent: true,
+      opacity: 0.62,
+      side: THREE.DoubleSide,
+      roughness: 0.9,
+      depthWrite: false
+    });
+
+    const backNet = new THREE.Mesh(new THREE.PlaneGeometry(hw * 2, h), netMat);
+    backNet.position.set(0, h / 2, 74.0 + depth);
+    group.add(backNet);
+
+    const topNet = new THREE.Mesh(new THREE.PlaneGeometry(hw * 2, depth), netMat);
+    topNet.rotation.x = Math.PI / 2;
+    topNet.position.set(0, h, 74.0 + depth / 2);
+    group.add(topNet);
+
+    const sideNetGeo = new THREE.PlaneGeometry(depth, h);
+    const leftNet = new THREE.Mesh(sideNetGeo, netMat);
+    leftNet.rotation.y = Math.PI / 2;
+    leftNet.position.set(-hw, h / 2, 74.0 + depth / 2);
+    group.add(leftNet);
+
+    const rightNet = new THREE.Mesh(sideNetGeo, netMat);
+    rightNet.rotation.y = -Math.PI / 2;
+    rightNet.position.set(hw, h / 2, 74.0 + depth / 2);
+    group.add(rightNet);
+
+    return group;
+  }
+
+  // --------------------------------------------------------------------------
+  // 3. CANLI KAYAN LED REKLAM PANOSU (Streamer, Satın Alma & Launcher)
+  // --------------------------------------------------------------------------
+  createLedBoards() {
+    const group = new THREE.Group();
+
+    this.ledCanvas = document.createElement('canvas');
+    this.ledCanvas.width = 2048;
+    this.ledCanvas.height = 128;
+    this.updateLedCanvas(0);
+
+    this.ledTexture = new THREE.CanvasTexture(this.ledCanvas);
+    this.ledTexture.wrapS = THREE.RepeatWrapping;
+    this.ledTexture.wrapT = THREE.ClampToEdgeWrapping;
+    this.ledTexture.anisotropy = 8;
+
+    const boardMat = new THREE.MeshStandardMaterial({
+      map: this.ledTexture,
+      roughness: 0.35,
+      metalness: 0.15,
+      emissive: new THREE.Color(0x334455),
+      emissiveIntensity: 0.4
+    });
+
+    const boardH = 1.05;
+    const boardDepth = 0.25;
+
+    // Sol arka pano
+    const leftBack = new THREE.Mesh(new THREE.BoxGeometry(18, boardH, boardDepth), boardMat);
+    leftBack.position.set(-14, boardH / 2, -3.2);
+    group.add(leftBack);
+
+    // Sağ arka pano
+    const rightBack = new THREE.Mesh(new THREE.BoxGeometry(18, boardH, boardDepth), boardMat);
+    rightBack.position.set(14, boardH / 2, -3.2);
+    group.add(rightBack);
+
+    // Kale arkası pano
+    const behindNet = new THREE.Mesh(new THREE.BoxGeometry(12, boardH, boardDepth), boardMat);
+    behindNet.position.set(0, boardH / 2, -4.6);
+    group.add(behindNet);
+
+    // Karşı kale arkası LED reklam panosu (Kalecinin karşısındaki canlı reklam panosu)
+    const oppositeBoard = new THREE.Mesh(new THREE.BoxGeometry(52, boardH, boardDepth), boardMat);
+    oppositeBoard.position.set(0, boardH / 2, 75.2);
+    oppositeBoard.rotation.y = Math.PI;
+    group.add(oppositeBoard);
+
+    // Yan LED reklam panoları (Taç çizgileri boyunca kesintisiz profesyonel stat panoları)
+    const leftSideBoard = new THREE.Mesh(new THREE.BoxGeometry(boardDepth, boardH, 74), boardMat);
+    leftSideBoard.position.set(-25.2, boardH / 2, 37.0);
+    group.add(leftSideBoard);
+
+    const rightSideBoard = new THREE.Mesh(new THREE.BoxGeometry(boardDepth, boardH, 74), boardMat);
+    rightSideBoard.position.set(25.2, boardH / 2, 37.0);
+    group.add(rightSideBoard);
+
+    return group;
+  }
+
+  updateLedCanvas(timeSec) {
+    if (!this.ledCanvas) return;
+    const ctx = this.ledCanvas.getContext('2d');
+    const w = this.ledCanvas.width;
+    const h = this.ledCanvas.height;
+
+    ctx.fillStyle = '#060a14';
+    ctx.fillRect(0, 0, w, h);
+
+    const items = [
+      {
+        badge: '👑 MNG ARENA',
+        title: '@MANGAO7TV TİKTOK CANLI PENALTI TURNUVASI ⚽',
+        sub: 'Canlı Yayına Hoş Geldiniz • Hediyelerle Sahayı Siz Yönetin!',
+        bg: '#0f172a',
+        border: '#38bdf8'
+      },
+      {
+        badge: '🛒 SATIN AL',
+        title: 'OYUNU VE SİSTEMİ SATIN ALMAK İÇİN: @MANGAO7TV',
+        sub: 'Satın Almak İçin @mangao7tv Profiline Ulaşın / DM Atın! 💬',
+        bg: '#4c0519',
+        border: '#fb7185'
+      },
+      {
+        badge: '🏆 SÜPER LİG',
+        title: '🟡🔴 GS  •  🟡🔵 FB  •  ⚪⚫ BJK  •  🔴🔵 TS  •  🟢🔴 AMEDSPOR',
+        sub: 'Hediye Gönder, Canlı Yayında Takımının Formasını Giydir!',
+        bg: '#022c22',
+        border: '#34d399'
+      },
+      {
+        badge: '🚀 MNG SİSTEMİ',
+        title: 'MNG TIKTOK GAME LAUNCHER • RESMİ YAYIN SİSTEMİ',
+        sub: 'En Yeni İnteraktif Canlı Yayın Oyunları Tek Çatıda! ⚡',
+        bg: '#311042',
+        border: '#facc15'
+      },
+      {
+        badge: '⚡ ÖZEL GÜÇLER',
+        title: 'DEV BOSS KALECİ • SAVUNMA BARAJI • TSUBASA ALEVLİ ŞUT',
+        sub: 'Kaleciyi Küçült veya Devleştir, Skorunu Zirveye Taşı! 🧤',
+        bg: '#2e1065',
+        border: '#c084fc'
+      }
+    ];
+
+    const cardW = 780;
+    const gap = 24;
+    const stride = cardW + gap;
+    const totalW = items.length * stride;
+    const scrollSpeed = 105; // piksel/saniye
+    const scrollX = (timeSec * scrollSpeed) % totalW;
+
+    items.forEach((item, idx) => {
+      let x = idx * stride - scrollX;
+      while (x < -cardW) x += totalW;
+      while (x > totalW - cardW) x -= totalW;
+
+      if (x > -cardW && x < w + cardW) {
+        ctx.save();
+        ctx.beginPath();
+        if (ctx.roundRect) {
+          ctx.roundRect(x, 6, cardW, h - 12, 12);
+        } else {
+          ctx.rect(x, 6, cardW, h - 12);
+        }
+        ctx.clip();
+
+        // Kart Zemin Rengi
+        ctx.fillStyle = item.bg;
+        ctx.fillRect(x, 6, cardW, h - 12);
+
+        // Üst ve Alt Parlak Neon Şerit
+        ctx.fillStyle = item.border;
+        ctx.shadowColor = item.border;
+        ctx.shadowBlur = 12;
+        ctx.fillRect(x, 6, cardW, 5);
+        ctx.fillRect(x, h - 11, cardW, 5);
+
+        // Sol Rozet Kapsülü
+        ctx.shadowBlur = 0;
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.65)';
+        ctx.beginPath();
+        if (ctx.roundRect) {
+          ctx.roundRect(x + 14, 14, 185, h - 28, 8);
+          ctx.fill();
+        } else {
+          ctx.fillRect(x + 14, 14, 185, h - 28);
+        }
+
+        ctx.fillStyle = item.border;
+        ctx.shadowColor = item.border;
+        ctx.shadowBlur = 10;
+        ctx.font = '900 19px "Montserrat", sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(item.badge, x + 14 + 185 / 2, h / 2);
+
+        // Ana Başlık (Göz alıcı, parlak beyaz)
+        ctx.shadowBlur = 14;
+        ctx.shadowColor = item.border;
+        ctx.textAlign = 'left';
+        ctx.font = '900 30px "Teko", "Montserrat", sans-serif';
+        ctx.fillStyle = '#ffffff';
+        ctx.fillText(item.title, x + 218, h / 2 - 13);
+
+        // Alt Açıklama (Neon parlamalı renk)
+        ctx.shadowBlur = 8;
+        ctx.font = '800 17px "Montserrat", sans-serif';
+        ctx.fillStyle = item.border;
+        ctx.fillText(item.sub, x + 218, h / 2 + 18);
+
+        ctx.restore();
+      }
+    });
+  }
+
+  // --------------------------------------------------------------------------
+  // 4. SİMETRİK STAT TRİBÜNLERİ & SEYİRCİLER (Dağ basması giderildi!)
+  // --------------------------------------------------------------------------
+  createStands() {
+    const group = new THREE.Group();
+
+    // Sıcak kumtaşı/bej stadyum betonu
+    const concMat = new THREE.MeshStandardMaterial({
+      color: 0xded2b9,
+      roughness: 0.82,
+      metalness: 0.05
+    });
+
+    const rows = 12;
+    const rowDepth = 1.05;
+    const rowHeight = 0.58;
+    const startZ = -4.2;
+
+    this.availableSeats = [];
+    const southSeats = [];
+
+    for (let r = 0; r < rows; r++) {
+      const z = startZ - r * rowDepth;
+      const y = (r + 1) * rowHeight;
+      const width = 64; // Geniş, tüm ekranı kaplayan stat tribünü
+
+      const stepGeo = new THREE.BoxGeometry(width, rowHeight, rowDepth);
+      const stepMesh = new THREE.Mesh(stepGeo, concMat);
+      stepMesh.position.set(0, y - rowHeight / 2, z);
+      stepMesh.receiveShadow = true;
+      group.add(stepMesh);
+
+      // Rengarenk sevimli kapsül seyirciler
+      const seatsInRow = 48;
+      const seatSpacing = width / seatsInRow;
+
+      for (let s = 0; s < seatsInRow; s++) {
+        if (s === 12 || s === 24 || s === 36) continue; // Merdiven koridorları
+
+        const sx = -width / 2 + (s + 0.5) * seatSpacing;
+        const sy = y;
+        const sz = z;
+
+        const spec = this.createCapsuleSpectator(sx, sy, sz);
+        group.add(spec.mesh);
+        this.spectatorRigs.push(spec);
+
+        spec.row = r;
+        spec.seatIndex = s;
+        spec.distFromCenter = Math.hypot(sx, r * 1.5);
+        spec.mesh.visible = false; // Canlı yayın izleyicileri geldikçe dolacak
+        southSeats.push(spec);
+      }
+    }
+
+    // Kullanıcı İsteği: "İzleyiciler statta olsun."
+    // Tribün seyircileri sahada yer alır, canlı yayın izleyicileri geldikçe öndeki koltuklar profilleriyle atanır
+    southSeats.forEach(spec => {
+      spec.mesh.visible = true;
+    });
+    southSeats.sort((a, b) => a.distFromCenter - b.distFromCenter);
+    this.availableSeats = [...southSeats];
+
+    // Tribün yan duvarları (stat parapetleri)
+    const wallMat = stdMat('#cbd5e1', 0.7);
+    [-32.1, 32.1].forEach(wx => {
+      const wallMesh = new THREE.Mesh(new THREE.BoxGeometry(0.6, 9.0, 16.0), wallMat);
+      wallMesh.position.set(wx, 4.5, -10.5);
+      group.add(wallMesh);
+    });
+
+    // ========================================================================
+    // KARŞI KUZEY TRİBÜNÜ (Kaleci perspektifinde gökyüzünü dolduran devasa 2 katlı stadyum)
+    // ========================================================================
+    const oppWidth = 88;
+    const oppLowerRows = 12;
+    const oppRowDepth = 0.85;
+    const oppRowHeight = 0.55;
+    const oppStartZ = 76.8;
+
+    // A) Alt Kat Tribün (Lower Tier)
+    for (let r = 0; r < oppLowerRows; r++) {
+      const z = oppStartZ + r * oppRowDepth;
+      const y = (r + 1) * oppRowHeight;
+      const stepMesh = new THREE.Mesh(new THREE.BoxGeometry(oppWidth, oppRowHeight, oppRowDepth), concMat);
+      stepMesh.position.set(0, y - oppRowHeight / 2, z);
+      stepMesh.receiveShadow = true;
+      group.add(stepMesh);
+
+      // Alt Kat Seyircileri
+      const seatsInRow = 44;
+      const seatSpacing = oppWidth / seatsInRow;
+      for (let s = 0; s < seatsInRow; s++) {
+        if (s === 11 || s === 22 || s === 33) continue; // Merdiven koridorları
+        const sx = -oppWidth / 2 + (s + 0.5) * seatSpacing;
+        if (Math.random() < 0.88) {
+          const spec = this.createCapsuleSpectator(sx, y, z);
+          spec.mesh.rotation.y = Math.PI; // Sahaya dönük
+          group.add(spec.mesh);
+          this.spectatorRigs.push(spec);
+        }
+      }
+    }
+
+    // B) Orta Kat LED Reklam / Bilgi Şeridi (Ribbon LED Board)
+    const ribbonMesh = this.createRibbonLedMesh(oppWidth, '⚽ MNG ARENA STADYUMU • SÜPER LİG CANLI PENALTI TURNUVASI ⚽');
+    ribbonMesh.position.set(0, oppLowerRows * oppRowHeight + 0.8, oppStartZ + oppLowerRows * oppRowDepth + 0.4);
+    group.add(ribbonMesh);
+
+    // C) Üst Kat Tribün (Upper Tier - Z=88m'den Z=104m'ye, Y=8m'den Y=22m'ye)
+    const oppUpperRows = 16;
+    const oppUpperDepth = 1.0;
+    const oppUpperHeight = 0.88;
+    const oppUpperStartZ = oppStartZ + oppLowerRows * oppRowDepth + 1.2;
+    const oppUpperBaseY = oppLowerRows * oppRowHeight + 1.6;
+
+    for (let r = 0; r < oppUpperRows; r++) {
+      const z = oppUpperStartZ + r * oppUpperDepth;
+      const y = oppUpperBaseY + (r + 1) * oppUpperHeight;
+      const tierWidth = oppWidth + 6;
+      const stepMesh = new THREE.Mesh(new THREE.BoxGeometry(tierWidth, oppUpperHeight, oppUpperDepth), concMat);
+      stepMesh.position.set(0, y - oppUpperHeight / 2, z);
+      stepMesh.receiveShadow = true;
+      group.add(stepMesh);
+
+      // Üst Kat Seyircileri
+      const seatsInRow = 46;
+      const seatSpacing = tierWidth / seatsInRow;
+      for (let s = 0; s < seatsInRow; s++) {
+        if (s === 11 || s === 23 || s === 35) continue;
+        const sx = -tierWidth / 2 + (s + 0.5) * seatSpacing;
+        if (Math.random() < 0.82) {
+          const spec = this.createCapsuleSpectator(sx, y, z);
+          spec.mesh.rotation.y = Math.PI;
+          group.add(spec.mesh);
+          this.spectatorRigs.push(spec);
+        }
+      }
+    }
+
+    // D) Dev Stadyum LED Video Skorboard Ekranı (X=0, Y=24.5m, Z=98m)
+    const scoreboardMesh = this.createStadiumScoreboardMesh();
+    scoreboardMesh.position.set(0, 24.5, oppUpperStartZ + 10.0);
+    group.add(scoreboardMesh);
+
+    // E) Karşı Tribün Arka Koruma Duvarı
+    const backWallMat = stdMat('#cbd5e1', 0.8);
+    const backWall = new THREE.Mesh(new THREE.BoxGeometry(oppWidth + 10, 27.0, 1.2), backWallMat);
+    backWall.position.set(0, 13.5, oppUpperStartZ + oppUpperRows * oppUpperDepth + 0.6);
+    group.add(backWall);
+
+    // F) Karşı Tribün Devasa Stadyum Çatısı (Stadium Canopy Roof)
+    const roofMat = stdMat('#e2e8f0', 0.65, 0.1);
+    const roofGeo = new THREE.BoxGeometry(oppWidth + 12, 0.65, 34.0);
+    const roofMesh = new THREE.Mesh(roofGeo, roofMat);
+    roofMesh.position.set(0, 28.5, oppStartZ + 15.0);
+    roofMesh.rotation.x = 0.09; // Sahaya doğru hafif eğimli
+    group.add(roofMesh);
+
+    // G) Çatı Taşıyıcı Ağır Çelik Kolonlar
+    const trussMat = stdMat('#64748b', 0.4, 0.5);
+    [-42, -22, 0, 22, 42].forEach(tx => {
+      const pylon = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.45, 29.0, 10), trussMat);
+      pylon.position.set(tx, 14.5, oppUpperStartZ + oppUpperRows * oppUpperDepth);
+      group.add(pylon);
+    });
+
+    // ========================================================================
+    // YAN TRİBÜNLER (DOĞU VE BATI TRİBÜNLERİ - Sahanın iki yanını tamamen kapatır)
+    // ========================================================================
+    const sideRows = 8;
+    const sideRowW = 1.35;
+    const sideRowH = 0.72;
+    const sideStandLength = 84.0; // Z = -4'ten Z = +80'e kadar tüm saha boyu
+    const sideCenterZ = 38.0;
+
+    [-1, 1].forEach(sideDir => {
+      const baseOutX = sideDir * 28.0; // Saha kenarından başlar
+
+      for (let r = 0; r < sideRows; r++) {
+        const stepX = baseOutX + sideDir * (r * sideRowW + sideRowW / 2);
+        const stepY = (r + 1) * sideRowH;
+        const stepGeo = new THREE.BoxGeometry(sideRowW, sideRowH, sideStandLength);
+        const stepMesh = new THREE.Mesh(stepGeo, concMat);
+        stepMesh.position.set(stepX, stepY - sideRowH / 2, sideCenterZ);
+        stepMesh.receiveShadow = true;
+        group.add(stepMesh);
+
+        // Yan Tribün Seyircileri (Saha boyunca oturur)
+        if (r % 2 === 0) { // Performans için her 2 sırada bir yoğun oturum
+          const countSide = 32;
+          const spacingZ = sideStandLength / countSide;
+          for (let si = 0; si < countSide; si++) {
+            const sz = -4.0 + (si + 0.5) * spacingZ;
+            if (Math.random() < 0.78) {
+              const spec = this.createCapsuleSpectator(stepX, stepY, sz);
+              spec.mesh.rotation.y = sideDir > 0 ? -Math.PI / 2 : Math.PI / 2; // Sahaya dönük
+              group.add(spec.mesh);
+              this.spectatorRigs.push(spec);
+            }
+          }
+        }
+      }
+
+      // Yan Tribün Dış Duvarı
+      const outerWallX = baseOutX + sideDir * (sideRows * sideRowW + 0.4);
+      const outerWall = new THREE.Mesh(new THREE.BoxGeometry(0.8, 11.5, sideStandLength + 4), backWallMat);
+      outerWall.position.set(outerWallX, 5.75, sideCenterZ);
+      group.add(outerWall);
+
+      // Yan Tribün Konsol Çatısı (Side Cantilever Roof)
+      const sideRoofGeo = new THREE.BoxGeometry(sideRows * sideRowW + 3.0, 0.45, sideStandLength + 2);
+      const sideRoof = new THREE.Mesh(sideRoofGeo, roofMat);
+      sideRoof.position.set(baseOutX + sideDir * ((sideRows * sideRowW) / 2), 12.0, sideCenterZ);
+      sideRoof.rotation.z = sideDir * -0.06;
+      group.add(sideRoof);
+    });
+
+    return group;
+  }
+
+  createRibbonLedMesh(width = 88, text = '⚽ MNG ARENA STADYUMU • SÜPER LİG CANLI PENALTI TURNUVASI ⚽') {
+    const canvas = document.createElement('canvas');
+    canvas.width = 1024;
+    canvas.height = 96;
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#0a0f1d';
+    ctx.fillRect(0, 0, 1024, 96);
+    ctx.fillStyle = '#38bdf8';
+    ctx.font = 'bold 34px "Segoe UI", Arial, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(text, 512, 48);
+
+    const tex = new THREE.CanvasTexture(canvas);
+    tex.wrapS = THREE.RepeatWrapping;
+    tex.repeat.set(2, 1);
+    const mat = new THREE.MeshStandardMaterial({
+      map: tex,
+      roughness: 0.3,
+      emissive: 0x0284c7,
+      emissiveMap: tex,
+      emissiveIntensity: 0.5
+    });
+
+    const mesh = new THREE.Mesh(new THREE.BoxGeometry(width, 1.4, 0.6), mat);
+    return mesh;
+  }
+
+  createStadiumScoreboardMesh() {
+    const canvas = document.createElement('canvas');
+    canvas.width = 1024;
+    canvas.height = 400;
+    const ctx = canvas.getContext('2d');
+
+    // Koyu lacivert/karbon stadyum LED ekranı
+    ctx.fillStyle = '#070b16';
+    ctx.fillRect(0, 0, 1024, 400);
+
+    // Çerçeve neon ışıltısı
+    ctx.strokeStyle = '#0284c7';
+    ctx.lineWidth = 10;
+    ctx.strokeRect(5, 5, 1014, 390);
+
+    // Üst Başlık Banner
+    ctx.fillStyle = '#0f172a';
+    ctx.fillRect(10, 10, 1004, 75);
+    ctx.fillStyle = '#f8fafc';
+    ctx.font = 'bold 36px "Segoe UI", Arial, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('🏆 MNG ARENA STADYUMU • CANLI YAYIN 🏆', 512, 48);
+
+    // Skor Tablosu
+    // Sol Takım (Ev Sahibi)
+    ctx.fillStyle = '#1e293b';
+    ctx.beginPath();
+    ctx.roundRect(40, 110, 360, 200, 16);
+    ctx.fill();
+    ctx.strokeStyle = '#e11d48';
+    ctx.lineWidth = 6;
+    ctx.stroke();
+
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 38px "Segoe UI", Arial, sans-serif';
+    ctx.fillText('🇹🇷 TÜRKİYE', 220, 170);
+    ctx.fillStyle = '#fbbf24';
+    ctx.font = 'bold 72px "Segoe UI", Arial, sans-serif';
+    ctx.fillText('10', 220, 250);
+
+    // Orta VS & Süre
+    ctx.fillStyle = '#38bdf8';
+    ctx.font = 'bold 44px "Segoe UI", Arial, sans-serif';
+    ctx.fillText('VS', 512, 170);
+    ctx.fillStyle = '#22c55e';
+    ctx.font = 'bold 52px "Segoe UI", Arial, sans-serif';
+    ctx.fillText('89:45', 512, 240);
+
+    // Sağ Takım (Deplasman)
+    ctx.fillStyle = '#1e293b';
+    ctx.beginPath();
+    ctx.roundRect(624, 110, 360, 200, 16);
+    ctx.fill();
+    ctx.strokeStyle = '#3b82f6';
+    ctx.lineWidth = 6;
+    ctx.stroke();
+
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 38px "Segoe UI", Arial, sans-serif';
+    ctx.fillText('⚽ SÜPER LİG', 804, 170);
+    ctx.fillStyle = '#fbbf24';
+    ctx.font = 'bold 72px "Segoe UI", Arial, sans-serif';
+    ctx.fillText('1', 804, 250);
+
+    // Alt Kayan Bilgi Şeridi
+    ctx.fillStyle = '#0284c7';
+    ctx.fillRect(10, 335, 1004, 55);
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 26px "Segoe UI", Arial, sans-serif';
+    ctx.fillText('⭐ TİKTOK CANLI PENALTI KUPASI • RESMİ MNG ARENA TURNUVASI ⭐', 512, 362);
+
+    const tex = new THREE.CanvasTexture(canvas);
+    tex.anisotropy = 8;
+    const mat = new THREE.MeshStandardMaterial({
+      map: tex,
+      roughness: 0.25,
+      metalness: 0.1,
+      emissive: 0x112233,
+      emissiveMap: tex,
+      emissiveIntensity: 0.65
+    });
+
+    const mesh = new THREE.Mesh(new THREE.BoxGeometry(24.0, 9.5, 0.8), mat);
+    return mesh;
+  }
+
+  createCapsuleSpectator(x, y, z) {
+    const root = new THREE.Group();
+    root.position.set(x, y, z);
+
+    const colors = ['#e63946', '#ffb703', '#48cae4', '#f1faee', '#1d3557', '#fb8500', '#52b788', '#a855f7'];
+    const shirtColor = colors[Math.floor(Math.random() * colors.length)];
+    const shirtMat = stdMat(shirtColor, 0.65);
+    const skinMat = stdMat('#e0ac85', 0.6);
+
+    const torsoGeo = new THREE.CapsuleGeometry(0.16, 0.32, 8, 12);
+    const torso = new THREE.Mesh(torsoGeo, shirtMat);
+    torso.position.y = 0.28;
+    torso.castShadow = true;
+    root.add(torso);
+
+    const headGeo = new THREE.SphereGeometry(0.13, 14, 12);
+    const head = new THREE.Mesh(headGeo, skinMat);
+    head.position.y = 0.62;
+    head.castShadow = true;
+    root.add(head);
+
+    const armGeo = new THREE.CapsuleGeometry(0.045, 0.26, 6, 10);
+
+    const leftArm = new THREE.Group();
+    leftArm.position.set(0.18, 0.38, 0);
+    const lMesh = new THREE.Mesh(armGeo, shirtMat);
+    lMesh.position.y = -0.13;
+    leftArm.add(lMesh);
+    root.add(leftArm);
+
+    const rightArm = new THREE.Group();
+    rightArm.position.set(-0.18, 0.38, 0);
+    const rMesh = new THREE.Mesh(armGeo, shirtMat);
+    rMesh.position.y = -0.13;
+    rightArm.add(rMesh);
+    root.add(rightArm);
+
+    return {
+      mesh: root,
+      baseY: y,
+      leftArm,
+      rightArm,
+      head,
+      avatarBadge: null,
+      cheerPhase: Math.random() * Math.PI * 2,
+      isCheering: false,
+      likeTimer: 0
+    };
+  }
+
+  // --------------------------------------------------------------------------
+  // 5. STAT PROJEKTÖR IŞIK KULELERİ (4 Köşeli Büyük Işıklandırma)
+  createFloodlights() {
+    const group = new THREE.Group();
+    const towerMat = stdMat('#64748b', 0.4, 0.6);
+    const lampMat = new THREE.MeshBasicMaterial({ color: 0xfffef0 });
+    this.floodlightSpots = [];
+    this.floodlightLamps = [];
+
+    const createPylon = (x, z, targetX, targetZ) => {
+      const pylon = new THREE.Group();
+      pylon.position.set(x, 0, z);
+
+      // Çelik kafes kule
+      const mast = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.55, 18.0, 8), towerMat);
+      mast.position.y = 9.0;
+      pylon.add(mast);
+
+      // Projektör tablası
+      const head = new THREE.Mesh(new THREE.BoxGeometry(2.8, 1.4, 0.4), towerMat);
+      head.position.set(0, 18.2, 0);
+      head.lookAt(targetX, 4, targetZ);
+      pylon.add(head);
+
+      // 6 adet parlak LED lamba
+      for (let ly = -0.35; ly <= 0.35; ly += 0.7) {
+        for (let lx = -0.9; lx <= 0.9; lx += 0.9) {
+          const lamp = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.25, 0.15, 12), lampMat.clone());
+          lamp.rotation.x = Math.PI / 2;
+          lamp.position.set(lx, ly, 0.2);
+          head.add(lamp);
+          this.floodlightLamps.push(lamp);
+        }
+      }
+
+      // Sahaya gerçek ışık vuran Three.js SpotLight (Gece maçı için stadyum ışığı)
+      const spot = new THREE.SpotLight(0xf2f8ff, 1.2);
+      spot.position.set(x, 18.5, z);
+      spot.target.position.set(targetX, 0, targetZ);
+      spot.angle = 0.65;
+      spot.penumbra = 0.6;
+      spot.decay = 1.1;
+      spot.distance = 75;
+      this.scene.add(spot.target);
+      this.scene.add(spot);
+      this.floodlightSpots.push(spot);
+
+      return pylon;
+    };
+
+    // 4 köşe projektörleri (Sahayı, penaltı noktasını, orta sahayı ve karşı kaleyi aydınlatır)
+    group.add(createPylon(-26, -18, 0, 4));
+    group.add(createPylon(26, -18, 0, 4));
+    group.add(createPylon(-26, 76, 0, 50));
+    group.add(createPylon(26, 76, 0, 50));
+
+    return group;
+  }
+
+  setAtmosphere(atmoKey) {
+    const isNight = atmoKey === 'night';
+    const isDusk = atmoKey === 'dusk';
+    const intensity = isNight ? 5.2 : (isDusk ? 2.6 : 0.6);
+    const colHex = isNight ? 0xedf5ff : (isDusk ? 0xffdfb8 : 0xffffff);
+
+    if (this.floodlightSpots) {
+      this.floodlightSpots.forEach(spot => {
+        spot.intensity = intensity;
+        spot.color.setHex(colHex);
+      });
+    }
+    if (this.floodlightLamps) {
+      this.floodlightLamps.forEach(lamp => {
+        lamp.material.color.setHex(isNight ? 0xffffff : (isDusk ? 0xffeedd : 0xddddcc));
+      });
+    }
+  }
+
+  // --------------------------------------------------------------------------
+  // 6. UZAK DOĞA MANZARASI (Tribünün arkasında, z=-48'de, kesinlikle basmaz!)
+  // --------------------------------------------------------------------------
+  createLandscape() {
+    const group = new THREE.Group();
+
+    const hillMat = new THREE.MeshStandardMaterial({
+      color: 0x90db58,
+      roughness: 0.92,
+      metalness: 0.02
+    });
+
+    // Uzak tepe sırtları (Tribünün çok gerisinde, z=-48)
+    const hill1 = new THREE.Mesh(new THREE.SphereGeometry(24, 24, 16), hillMat);
+    hill1.scale.set(2.2, 0.65, 1.2);
+    hill1.position.set(-28, 2, -48);
+    group.add(hill1);
+
+    const hill2 = new THREE.Mesh(new THREE.SphereGeometry(22, 24, 16), hillMat);
+    hill2.scale.set(2.0, 0.62, 1.1);
+    hill2.position.set(28, 2, -50);
+    group.add(hill2);
+
+    // 1. Dönen Yel Değirmeni (Sol uzak tepede, estetik silüet)
+    const windmill = this.createWindmill();
+    windmill.position.set(-30, 9.5, -45);
+    group.add(windmill);
+
+    // 2. Küre Ağaçlar
+    const treePositions = [
+      { x: -22, y: 7.2, z: -44, s: 1.6 },
+      { x: -14, y: 8.5, z: -46, s: 1.8 },
+      { x: 14,  y: 8.5, z: -46, s: 1.8 },
+      { x: 24,  y: 7.2, z: -44, s: 1.6 }
+    ];
+
+    treePositions.forEach(tp => {
+      const tree = this.createSphereTree();
+      tree.position.set(tp.x, tp.y, tp.z);
+      tree.scale.setScalar(tp.s);
+      group.add(tree);
+    });
+
+    // 3. Dağlardaki Çiçekler (Rengarenk Doğal Alpin Çiçek Öbekleri)
+    const flowerColors = [0xf43f5e, 0xfacc15, 0xa855f7, 0x38bdf8, 0xffffff, 0xf97316];
+    const flowerGeo = new THREE.DodecahedronGeometry(0.26, 0);
+    const flowerMat = new THREE.MeshStandardMaterial({ roughness: 0.6, metalness: 0.05 });
+    const flowerMesh = new THREE.InstancedMesh(flowerGeo, flowerMat, 72);
+    const flowerDummy = new THREE.Object3D();
+
+    for (let i = 0; i < 72; i++) {
+      const isLeft = i < 36;
+      const angle = (Math.random() - 0.5) * 1.35;
+      const r = 18 + Math.random() * 4.5;
+      const fx = isLeft ? (-28 + Math.sin(angle) * r) : (28 + Math.sin(angle) * r);
+      const fz = isLeft ? (-48 + Math.cos(angle) * r * 0.4) : (-50 + Math.cos(angle) * r * 0.4);
+      const fy = 6.2 + Math.random() * 7.8;
+      const s = 0.85 + Math.random() * 0.85;
+
+      flowerDummy.position.set(fx, fy, fz);
+      flowerDummy.scale.set(s, s * 1.15, s);
+      flowerDummy.rotation.set(Math.random() * 0.3, Math.random() * Math.PI, Math.random() * 0.3);
+      flowerDummy.updateMatrix();
+
+      flowerMesh.setMatrixAt(i, flowerDummy.matrix);
+      flowerMesh.setColorAt(i, new THREE.Color(flowerColors[i % flowerColors.length]));
+    }
+    flowerMesh.instanceMatrix.needsUpdate = true;
+    if (flowerMesh.instanceColor) flowerMesh.instanceColor.needsUpdate = true;
+    group.add(flowerMesh);
+
+    return group;
+  }
+
+  createWindmill() {
+    const group = new THREE.Group();
+
+    const towerGeo = new THREE.CylinderGeometry(1.2, 2.2, 7.5, 16);
+    const towerMat = stdMat('#f8fafc', 0.85);
+    const tower = new THREE.Mesh(towerGeo, towerMat);
+    tower.position.y = 3.75;
+    group.add(tower);
+
+    const roofGeo = new THREE.ConeGeometry(1.6, 2.0, 16);
+    const roofMat = stdMat('#c84332', 0.8);
+    const roof = new THREE.Mesh(roofGeo, roofMat);
+    roof.position.y = 8.5;
+    group.add(roof);
+
+    const rotorHub = new THREE.Group();
+    rotorHub.position.set(0, 7.2, 1.4);
+    group.add(rotorHub);
+
+    const bladeMat = stdMat('#d97706', 0.7);
+    const latticeMat = stdMat('#ffffff', 0.6);
+
+    for (let i = 0; i < 4; i++) {
+      const angle = (i * Math.PI) / 2;
+      const bladeArm = new THREE.Group();
+      bladeArm.rotation.z = angle;
+
+      const spar = new THREE.Mesh(new THREE.BoxGeometry(0.1, 4.0, 0.1), bladeMat);
+      spar.position.y = 2.0;
+      bladeArm.add(spar);
+
+      const sail = new THREE.Mesh(new THREE.PlaneGeometry(0.85, 2.8), latticeMat);
+      sail.position.set(0.45, 2.5, 0);
+      sail.material.side = THREE.DoubleSide;
+      bladeArm.add(sail);
+
+      rotorHub.add(bladeArm);
+    }
+
+    this.windmillBlades = rotorHub;
+    return group;
+  }
+
+  createSphereTree() {
+    const tree = new THREE.Group();
+
+    const trunkMat = stdMat('#6b4226', 0.9);
+    const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.35, 4.0, 8), trunkMat);
+    trunk.position.y = 2.0;
+    tree.add(trunk);
+
+    const foliageMat = stdMat('#48ab32', 0.85);
+    const leafGeo = new THREE.IcosahedronGeometry(1.8, 1);
+    const foliage = new THREE.Mesh(leafGeo, foliageMat);
+    foliage.position.y = 4.8;
+    tree.add(foliage);
+
+    return tree;
+  }
+
+  // --------------------------------------------------------------------------
+  // 7. RÜZGARDA SALINAN FESTİVAL FLAMALARI (İpli, Kaleyi & Seyirciyi Kapatmayan Üst Flama)
+  // --------------------------------------------------------------------------
+  createBuntingFlags() {
+    const group = new THREE.Group();
+    const colors = ['#e63946', '#ffb703', '#48cae4', '#fb8500', '#52b788', '#a855f7'];
+
+    const createBuntingString = (startX, endX, y, z) => {
+      const n = 24;
+      const dx = (endX - startX) / n;
+
+      // 1. Gerçek Taşıyıcı İp (Rope Cable)
+      const ropePoints = [];
+      for (let j = 0; j <= 28; j++) {
+        const t = j / 28;
+        const rx = startX + t * (endX - startX);
+        const rDip = Math.sin(t * Math.PI) * 0.45;
+        ropePoints.push(new THREE.Vector3(rx, y - rDip + 0.015, z));
+      }
+      const ropeCurve = new THREE.CatmullRomCurve3(ropePoints);
+      const ropeGeo = new THREE.TubeGeometry(ropeCurve, 28, 0.018, 6, false);
+      const ropeMat = stdMat('#cbd5e1', 0.85);
+      const ropeMesh = new THREE.Mesh(ropeGeo, ropeMat);
+      group.add(ropeMesh);
+
+      // 2. İpe Asılı Rengarenk Flamalar
+      for (let i = 0; i < n; i++) {
+        const x = startX + i * dx + dx * 0.5;
+        const norm = (i + 0.5) / n;
+        const dip = Math.sin(norm * Math.PI) * 0.45;
+
+        const color = colors[i % colors.length];
+        const flagMat = new THREE.MeshBasicMaterial({ color, side: THREE.DoubleSide });
+
+        const shape = new THREE.Shape();
+        shape.moveTo(-0.16, 0);
+        shape.lineTo(0.16, 0);
+        shape.lineTo(0, -0.38);
+        shape.closePath();
+
+        const flagGeo = new THREE.ShapeGeometry(shape);
+        const flagMesh = new THREE.Mesh(flagGeo, flagMat);
+        flagMesh.position.set(x, y - dip, z);
+        group.add(flagMesh);
+        this.buntingMeshes.push({ mesh: flagMesh, baseX: x, phase: i * 0.3 });
+      }
+    };
+
+    // Yalnızca stadyumun en üst çatı hizasındaki yüksek festival flamaları (Tribün önü z=-4 kaldırıldı!)
+    createBuntingString(-22, 22, 7.8, -12);
+
+    return group;
+  }
+
+  // --------------------------------------------------------------------------
+  // 8. 3D KARİKATÜR BULUTLAR
+  // --------------------------------------------------------------------------
+  createCartoonClouds() {
+    const group = new THREE.Group();
+    const cloudMat = stdMat('#ffffff', 0.9, 0, { transparent: true, opacity: 0.95 });
+
+    const makeCloud = (cx, cy, cz, s) => {
+      const cloud = new THREE.Group();
+      cloud.position.set(cx, cy, cz);
+
+      const puffs = [
+        [0, 0, 0, 1.8], [-1.4, -0.2, 0, 1.3], [1.4, -0.2, 0, 1.35],
+        [-0.7, 0.6, 0, 1.4], [0.7, 0.65, 0, 1.45], [0, -0.4, 0.4, 1.2]
+      ];
+
+      puffs.forEach(([x, y, z, r]) => {
+        const m = new THREE.Mesh(new THREE.SphereGeometry(r, 14, 12), cloudMat);
+        m.position.set(x, y, z);
+        cloud.add(m);
+      });
+
+      cloud.scale.setScalar(s);
+      return cloud;
+    };
+
+    const cloudCoords = [
+      [-22, 20, -25, 1.3],
+      [-6, 22, -30, 1.6],
+      [12, 19, -24, 1.4],
+      [24, 21, -28, 1.5]
+    ];
+
+    cloudCoords.forEach(([x, y, z, s]) => {
+      const cloud = makeCloud(x, y, z, s);
+      group.add(cloud);
+      this.clouds.push(cloud);
+    });
+
+    return group;
+  }
+
+  // --------------------------------------------------------------------------
+  // 9. SAHADAKİ PROPLAR: RESMİ HAKEM, PELUŞ AYICIK, TOP PİRAMİDİ, KÖŞE BAYRAKLARI
+  // --------------------------------------------------------------------------
+  createPropsAndSidelines() {
+    const group = new THREE.Group();
+
+    // 1. Profesyonel TV Yayın Ekibi & Saha Dışı Çanak Mikrofonlar (Kalenin dış köşelerinde, kale ağzını kapatmaz)
+    this.cameraman = this.createBroadcastCameraman(8.8, -2.2, -0.55);
+    group.add(this.cameraman);
+
+    this.pitchMics = [];
+    const micPositions = [
+      { x: -7.5, z: -1.8, rot: 0.45 },
+      { x: -9.8, z: -2.5, rot: 0.65 },
+      { x: -11.5, z: -0.6, rot: 0.85 },
+      { x: 7.2,  z: -1.8, rot: -0.45 },
+      { x: 9.8,  z: -2.5, rot: -0.65 },
+      { x: 11.5, z: -0.6, rot: -0.85 }
+    ];
+
+    micPositions.forEach(mp => {
+      const mic = this.createParabolicMic(mp.x, mp.z, mp.rot);
+      group.add(mic);
+      this.pitchMics.push(mic);
+    });
+
+    // 3. Resmi Siyah Giyimli Hakem (Kameranın solunda, penaltı kutusunun kenarında net görünür!)
+    this.refereeRig = createReferee();
+    this.refereeRig.root.position.set(-5.4, 0, 9.2);
+    this.refereeRig.root.rotation.y = 0.58; // Penaltı noktasına ve kaleye dönük
+    blendPose(this.refereeRig, POSES.stand, 1.0);
+    group.add(this.refereeRig.root);
+
+    // 4. Sarı Köşe Bayrakları (Rüzgarda dalgalanır)
+    [-20, 20].forEach(kx => {
+      const flagGroup = new THREE.Group();
+      flagGroup.position.set(kx, 0, 0);
+
+      const flagPole = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 1.6, 8), stdMat('#ffffff', 0.4));
+      flagPole.position.y = 0.8;
+      flagGroup.add(flagPole);
+
+      const flagCloth = new THREE.Mesh(
+        new THREE.PlaneGeometry(0.38, 0.26),
+        new THREE.MeshBasicMaterial({ color: 0xffe600, side: THREE.DoubleSide })
+      );
+      flagCloth.position.set(kx > 0 ? 0.20 : -0.20, 1.45, 0);
+      flagGroup.add(flagCloth);
+
+      group.add(flagGroup);
+      this.cornerFlagMeshes.push({ mesh: flagCloth, side: kx > 0 ? 1 : -1 });
+    });
+
+    return group;
+  }
+
+  createParabolicMic(x, z, rotY = 0) {
+    const group = new THREE.Group();
+    group.position.set(x, 0, z);
+    group.rotation.y = rotY;
+
+    const darkMat = stdMat('#1e293b', 0.5, 0.2);
+    const metalMat = stdMat('#94a3b8', 0.3, 0.7);
+
+    // Tripod bacaklar
+    for (let i = 0; i < 3; i++) {
+      const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.45, 6), metalMat);
+      leg.position.set(Math.sin(i * 2.09) * 0.12, 0.2, Math.cos(i * 2.09) * 0.12);
+      leg.rotation.z = Math.sin(i * 2.09) * 0.25;
+      leg.rotation.x = Math.cos(i * 2.09) * 0.25;
+      group.add(leg);
+    }
+    // Orta direk
+    const post = new THREE.Mesh(new THREE.CylinderGeometry(0.016, 0.016, 0.48, 8), metalMat);
+    post.position.y = 0.24;
+    group.add(post);
+
+    // Şeffaf/füme parabolik çanak
+    const dishGeo = new THREE.SphereGeometry(0.24, 16, 12, 0, Math.PI * 2, 0, Math.PI * 0.5);
+    const dishMat = new THREE.MeshStandardMaterial({
+      color: 0x334155,
+      roughness: 0.2,
+      metalness: 0.1,
+      transparent: true,
+      opacity: 0.85,
+      side: THREE.DoubleSide
+    });
+    const dish = new THREE.Mesh(dishGeo, dishMat);
+    dish.rotation.x = Math.PI / 2;
+    dish.position.set(0, 0.48, 0);
+    group.add(dish);
+
+    // Çanak ortasındaki mikrofon kapsülü
+    const mic = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.12, 8), darkMat);
+    mic.rotation.x = Math.PI / 2;
+    mic.position.set(0, 0.48, 0.06);
+    group.add(mic);
+
+    return group;
+  }
+
+  createBroadcastCameraman(x = 5.2, z = -1.2, rotY = -0.45) {
+    const group = new THREE.Group();
+    group.position.set(x, 0, z);
+    group.rotation.y = rotY;
+
+    const darkMat = stdMat('#0f172a', 0.6);
+    const metalMat = stdMat('#64748b', 0.3, 0.6);
+
+    // 1. Tabure / Koltuk
+    const stool = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.22, 0.45, 12), darkMat);
+    stool.position.y = 0.225;
+    group.add(stool);
+
+    // 2. Kameraman Karakteri (Oturan pozda)
+    const cameraman = createHumanoid({
+      team: { primary: '#22c55e', secondary: '#0f172a', shorts: '#1e293b', socks: '#0f172a', pattern: 'solid' },
+      backName: 'TV CREW',
+      number: '4K'
+    });
+    cameraman.root.position.set(0, 0.25, -0.15);
+    cameraman.root.scale.setScalar(0.9);
+    blendPose(cameraman, POSES.stand, 1.0);
+    group.add(cameraman.root);
+
+    // 3. Ağır Yayın Kamerası Tripodu
+    const tripod = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.08, 0.95, 8), metalMat);
+    tripod.position.set(0, 0.48, 0.4);
+    group.add(tripod);
+
+    // 4. Profesyonel TV Kamerası Gövdesi
+    const camBody = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.26, 0.52), darkMat);
+    camBody.position.set(0, 0.98, 0.4);
+    group.add(camBody);
+
+    // 5. Uzun Telefoto Lens
+    const lens = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.07, 0.38, 16), darkMat);
+    lens.rotation.x = Math.PI / 2;
+    lens.position.set(0, 0.98, 0.65);
+    group.add(lens);
+
+    // 6. Kırmızı Tally Işığı (Canlı yayın lambası)
+    const tally = new THREE.Mesh(new THREE.SphereGeometry(0.025, 8, 8), new THREE.MeshBasicMaterial({ color: 0xff0000 }));
+    tally.position.set(0, 1.12, 0.3);
+    group.add(tally);
+
+    return group;
+  }
+
+  // --------------------------------------------------------------------------
+  // 10. RÜZGAR PARÇACIKLARI (Uçuşan Çim ve Yapraklar - Topu Etkilemez!)
+  // --------------------------------------------------------------------------
+  createWindParticles() {
+    const group = new THREE.Group();
+    const leafGeo = new THREE.PlaneGeometry(0.08, 0.14);
+    const leafMat = new THREE.MeshBasicMaterial({
+      color: 0x86d44d,
+      side: THREE.DoubleSide,
+      transparent: true,
+      opacity: 0.75
+    });
+
+    for (let i = 0; i < 40; i++) {
+      const p = new THREE.Mesh(leafGeo, leafMat);
+      p.position.set(
+        (Math.random() - 0.5) * 36,
+        0.4 + Math.random() * 2.8,
+        -2.0 + Math.random() * 18
+      );
+      p.rotation.set(Math.random() * Math.PI, Math.random() * Math.PI, Math.random() * Math.PI);
+      group.add(p);
+      this.windParticles.push({
+        mesh: p,
+        speedX: 1.2 + Math.random() * 1.5,
+        rotSpeed: 1.5 + Math.random() * 2.5,
+        offset: Math.random() * 10
+      });
+    }
+
+    return group;
+  }
+
+  // --------------------------------------------------------------------------
+  // 11. ÜST DİREKTE PATLAYAN 3D "GOAL!" YAZISI
+  // --------------------------------------------------------------------------
+  createGoal3DText() {
+    const group = new THREE.Group();
+    group.position.set(0, GOAL.height + 0.75, 0);
+
+    const canvas = document.createElement('canvas');
+    canvas.width = 512;
+    canvas.height = 160;
+    const ctx = canvas.getContext('2d');
+
+    ctx.font = '900 110px "Teko", "Montserrat", sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+
+    ctx.strokeStyle = '#000000';
+    ctx.lineWidth = 16;
+    ctx.strokeText('GOAL!', 256, 80);
+
+    const grad = ctx.createLinearGradient(0, 20, 0, 140);
+    grad.addColorStop(0, '#fff275');
+    grad.addColorStop(0.5, '#ff8c00');
+    grad.addColorStop(1, '#ff0033');
+    ctx.fillStyle = grad;
+    ctx.fillText('GOAL!', 256, 80);
+
+    const bannerTex = new THREE.CanvasTexture(canvas);
+    bannerTex.colorSpace = THREE.SRGBColorSpace;
+    const bannerMat = new THREE.MeshBasicMaterial({
+      map: bannerTex,
+      transparent: true,
+      depthTest: false
+    });
+    const bannerGeo = new THREE.PlaneGeometry(3.6, 1.15);
+
+    const bannerMesh = new THREE.Mesh(bannerGeo, bannerMat);
+    bannerMesh.renderOrder = 40;
+    group.add(bannerMesh);
+
+    group.scale.set(0, 0, 0);
+    this.goal3DText = group;
+    return group;
+  }
+
+  showGoalText() {
+    if (this.goal3DText) {
+      this.goal3DText.visible = true;
+      this.goal3DText.scale.set(1.2, 1.2, 1.2);
+    }
+  }
+
+  hideGoalText() {
+    if (this.goal3DText) {
+      this.goal3DText.visible = false;
+      this.goal3DText.scale.set(0, 0, 0);
+    }
+  }
+
+  // --------------------------------------------------------------------------
+  // ANİMASYON DÖNGÜSÜ
+  // --------------------------------------------------------------------------
+  update(dt, timeSec, isGoalScored, isSavedOrMissed) {
+    // 1. Dönen Yel Değirmeni
+    if (this.windmillBlades) {
+      this.windmillBlades.rotation.z += dt * 0.9;
+    }
+
+    // 2. Yavaşça Süzülen Bulutlar
+    this.clouds.forEach(c => {
+      c.position.x += dt * 0.35;
+      if (c.position.x > 35) c.position.x = -35;
+    });
+
+    // 3. Peluş Ayıcık Ailesi Sevinci (Tüm ayıcıklar golde birlikte sevinir)
+    if (this.teddyBears && this.teddyBears.length) {
+      this.teddyBears.forEach((bear, idx) => {
+        bear.update(isGoalScored, timeSec + idx * 0.35);
+      });
+    } else if (this.teddyBear) {
+      this.teddyBear.update(isGoalScored, timeSec);
+    }
+
+    // 4. 3D "GOAL!" Yazısı Canlandırması
+    if (isGoalScored) {
+      this.showGoalText();
+      if (this.goal3DText) {
+        const pulse = 1.0 + Math.sin(timeSec * 8) * 0.12;
+        this.goal3DText.scale.set(pulse, pulse, pulse);
+      }
+    } else {
+      this.hideGoalText();
+    }
+
+    // 5. LED Reklam Panosu (Canlı Kayan Metinler)
+    if (this.ledCanvas && this.ledTexture) {
+      this.updateLedCanvas(timeSec);
+      this.ledTexture.needsUpdate = true;
+    }
+
+    // 6. Seyirciler (Golde kollar havada, beğenide coşkulu zıplama, autta başlarını tutarlar)
+    this.spectatorRigs.forEach(s => {
+      if (!s.mesh.visible) return;
+      if (s.likeTimer > 0) {
+        s.likeTimer -= dt;
+        s.mesh.position.y = (s.baseY ?? s.mesh.position.y) + Math.abs(Math.sin(timeSec * 14)) * 0.24;
+        const wave = Math.sin(timeSec * 12 + s.cheerPhase) * 0.45;
+        s.leftArm.rotation.z = Math.PI * 0.88 + wave;
+        s.rightArm.rotation.z = -Math.PI * 0.88 - wave;
+      } else if (isGoalScored) {
+        s.mesh.position.y = (s.baseY ?? s.mesh.position.y) + Math.abs(Math.sin(timeSec * 8)) * 0.16;
+        s.isCheering = true;
+        const wave = Math.sin(timeSec * 7 + s.cheerPhase) * 0.35;
+        s.leftArm.rotation.z = Math.PI * 0.85 + wave;
+        s.rightArm.rotation.z = -Math.PI * 0.85 - wave;
+      } else if (isSavedOrMissed) {
+        s.mesh.position.y = s.baseY ?? s.mesh.position.y;
+        s.isCheering = false;
+        s.leftArm.rotation.z = THREE.MathUtils.lerp(s.leftArm.rotation.z, 0.05, 0.1);
+        s.rightArm.rotation.z = THREE.MathUtils.lerp(s.rightArm.rotation.z, -0.05, 0.1);
+      } else {
+        s.mesh.position.y = s.baseY ?? s.mesh.position.y;
+        const idle = Math.sin(timeSec * 2 + s.cheerPhase) * 0.06;
+        s.leftArm.rotation.z = THREE.MathUtils.lerp(s.leftArm.rotation.z, 0.12 + idle, 0.08);
+        s.rightArm.rotation.z = THREE.MathUtils.lerp(s.rightArm.rotation.z, -0.12 - idle, 0.08);
+      }
+    });
+
+    // 7. Rüzgarda Salınan Festival Bayrakları
+    this.buntingMeshes.forEach(b => {
+      b.mesh.rotation.x = Math.sin(timeSec * 3.2 + b.phase) * 0.22;
+    });
+
+    // 8. Rüzgarda Dalgalanan Köşe Bayrakları
+    this.cornerFlagMeshes.forEach(cf => {
+      cf.mesh.rotation.y = Math.sin(timeSec * 4.2 + cf.side) * 0.32;
+    });
+
+    // 9. Hafif Rüzgarda Süzülen Çim/Yaprak Parçacıkları (Topu etkilemez!)
+    this.windParticles.forEach(wp => {
+      wp.mesh.position.x += wp.speedX * dt;
+      wp.mesh.position.y += Math.sin(timeSec * 2.5 + wp.offset) * 0.015;
+      wp.mesh.rotation.x += wp.rotSpeed * dt;
+      wp.mesh.rotation.z += wp.rotSpeed * 0.6 * dt;
+
+      if (wp.mesh.position.x > 18) {
+        wp.mesh.position.x = -18;
+        wp.mesh.position.y = 0.4 + Math.random() * 2.6;
+      }
+    });
+
+    // 10. File Dalgalanması
+    if (this.netMesh && this.netMesh.position.z < -GOAL.depth) {
+      this.netMesh.position.z = THREE.MathUtils.lerp(this.netMesh.position.z, -GOAL.depth, 0.1);
+    }
+
+    // 11. Kalp Emojisi Patlamaları (Canlı Yayın Beğenileri - Belirgin & Akıcı)
+    for (let i = this.heartParticles.length - 1; i >= 0; i--) {
+      const hp = this.heartParticles[i];
+      hp.age += dt;
+      hp.sprite.position.x += hp.vx * dt + Math.sin(hp.age * (hp.swaySpeed || 5) + (hp.swayOffset || 0)) * 0.015;
+      hp.sprite.position.y += hp.vy * dt;
+      hp.sprite.position.z += hp.vz * dt;
+      hp.vy = Math.max(0.6, hp.vy - dt * 1.3); // Yavaşça yükselip süzülme
+      const progress = hp.age / hp.lifetime;
+      hp.sprite.material.opacity = Math.max(0, 1.0 - Math.pow(progress, 1.4));
+      const pulse = (hp.baseScale || 0.85) * (1.0 + Math.sin(hp.age * 8) * 0.18);
+      hp.sprite.scale.set(pulse, pulse, pulse);
+
+      if (hp.age >= hp.lifetime) {
+        this.scene.remove(hp.sprite);
+        hp.sprite.material.dispose();
+        this.heartParticles.splice(i, 1);
+      }
+    }
+  }
+
+  rippleNet() {
+    if (this.netMesh) {
+      this.netMesh.position.z = -GOAL.depth - 0.32;
+    }
+  }
+
+  // Pozisyon değiştirildiğinde güney tribünü profil rozetlerini gizle/göster
+  setKeeperMode(isKeeper) {
+    this.isKeeperMode = !!isKeeper;
+    if (this.spectatorRigs) {
+      this.spectatorRigs.forEach(spec => {
+        if (spec.avatarBadge) {
+          const isSouth = spec.mesh.position.z < 0;
+          spec.avatarBadge.visible = isKeeper ? !isSouth : true;
+        }
+      });
+    }
+  }
+
+  assignViewerToCrowd(player) {
+    if (!player || this.spectatorRigs.length === 0) return null;
+    const nick = String(player.nickname || player.username || 'Taraftar').replace(/^@/, '');
+    let spec = this.spectatorRigs.find(s => s.player && (s.player.nickname === nick || s.player.username === nick));
+    if (!spec) {
+      if (this.availableSeats && this.availableSeats.length > 0) {
+        spec = this.availableSeats.shift();
+      } else {
+        const nonLive = this.spectatorRigs.filter(s => !s.isLiveUser);
+        spec = nonLive.length > 0 ? nonLive[0] : this.spectatorRigs[Math.floor(Math.random() * this.spectatorRigs.length)];
+      }
+      spec.mesh.visible = true;
+      spec.player = player;
+      spec.isLiveUser = true;
+    }
+
+    if (spec.avatarBadge) {
+      spec.mesh.remove(spec.avatarBadge);
+      if (spec.avatarBadge.userData?.dispose) spec.avatarBadge.userData.dispose();
+    }
+    // Kullanıcı İsteği: Tribündeki izleyicilerin profilleri ekranı kapatmasın (Zarif mini rozet, isim yazısı yok)
+    const badge = createAvatarBadge(player, { size: 0.30, ring: '#ffbe0b', showLabel: false });
+    badge.position.set(0, 0.95, 0);
+    if (this.isKeeperMode && spec.mesh.position.z < 0) {
+      badge.visible = false;
+    }
+    spec.mesh.add(badge);
+    spec.avatarBadge = badge;
+
+    spec.likeTimer = 2.4;
+    spec.cheerPhase = Math.random() * Math.PI * 2;
+
+    return spec;
+  }
+
+  createHeartTexture(emoji = '❤️', glow = '#ff2a6d') {
+    if (!this.heartTextures) this.heartTextures = {};
+    if (this.heartTextures[emoji]) return this.heartTextures[emoji];
+    const canvas = document.createElement('canvas');
+    canvas.width = 128;
+    canvas.height = 128;
+    const ctx = canvas.getContext('2d');
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.font = '84px "Segoe UI Emoji", "Apple Color Emoji", sans-serif';
+    ctx.shadowColor = glow;
+    ctx.shadowBlur = 24;
+    ctx.fillText(emoji, 64, 66);
+    const tex = new THREE.CanvasTexture(canvas);
+    tex.colorSpace = THREE.SRGBColorSpace;
+    this.heartTextures[emoji] = tex;
+    return tex;
+  }
+
+  // Beğeni geldiğinde izleyicinin üstünden ufak kırmızı kalpler çıkması (Kullanıcı isteği: zarif, ufak kırmızı kalpler)
+  triggerSpectatorLike(player, count = 1) {
+    if (this.spectatorRigs.length === 0) return;
+    let spec = this.spectatorRigs.find(s => s.player && s.player.nickname === player?.nickname);
+    if (!spec) {
+      spec = this.assignViewerToCrowd(player);
+    }
+    if (!spec) {
+      spec = this.spectatorRigs[Math.floor(Math.random() * this.spectatorRigs.length)];
+    }
+
+    const pos = new THREE.Vector3();
+    spec.mesh.getWorldPosition(pos);
+
+    // Seyirci beğeni coşkusuyla hafifçe neşelensin
+    spec.likeTimer = 2.0;
+
+    // Kullanıcı İsteği: "Kalp patlaması kırmızı kalpler halinde ufak ufak şey çıksın."
+    const burstCount = Math.min(8, Math.max(4, Math.floor(count / 2) + 3));
+    const heartTex = this.createHeartTexture('❤️', '#ef4444');
+
+    for (let i = 0; i < burstCount; i++) {
+      const heartMat = new THREE.SpriteMaterial({
+        map: heartTex,
+        transparent: true,
+        opacity: 0.95,
+        depthWrite: false
+      });
+      const sprite = new THREE.Sprite(heartMat);
+      const s = 0.28 + Math.random() * 0.12; // Ufak ve sevimli kırmızı kalpler
+      sprite.scale.set(s, s, s);
+      sprite.position.set(
+        pos.x + (Math.random() - 0.5) * 0.6,
+        pos.y + 1.1 + Math.random() * 0.4,
+        pos.z + (Math.random() - 0.5) * 0.5
+      );
+      this.scene.add(sprite);
+
+      this.heartParticles.push({
+        sprite,
+        baseScale: s,
+        vx: (Math.random() - 0.5) * 0.7,
+        vy: 1.5 + Math.random() * 1.1,
+        vz: (Math.random() - 0.5) * 0.5,
+        swaySpeed: 3 + Math.random() * 3,
+        swayOffset: Math.random() * Math.PI * 2,
+        age: 0,
+        lifetime: 1.8 + Math.random() * 0.8
+      });
+    }
+
+    // Kullanıcı İsteği: "Kullanıcı adı yazısı çıkıyor, ben onu istemiyorum kırmızı şeklinde." (Kaldırıldı)
+  }
+
+  spawnLikeTextBubble(pos, username, count = 1) {
+    // Kaldırıldı: Kullanıcı kırmızı isim yazısını istemiyor
+  }
+
+  // Takip bildirimi 2D UI baloncuğu olarak ekran kenarında gösterilir (Sahayı kirletmez)
+  spawnFollowTextBubble(player) {
+    // 3D sahada büyük afiş açılmaz, 2D UI toast baloncuğu kullanılır
+  }
+}

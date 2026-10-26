@@ -1,0 +1,2249 @@
+// ---------- SAVAŞ DURUMU (SÜRE / SKOR / OYUNCU) ----------
+// ÖNEMLİ: Artık süre ve skor bu ekranda YEREL olarak sayılmıyor.
+// Hepsi sunucudan geliyor (battleState / timerState mesajları) — hangi
+// cihazdan BAŞLAT'a basılırsa basılsın, bağlı tüm cihazlar (bilgisayar,
+// telefon, tablet) aynı anda aynı şeyi gösteriyor.
+
+function applyDurationPreset(value) {
+    if (!value) return;
+    document.getElementById("duration").value = value;
+}
+
+function limitScore(input) {
+    let value = Number(input.value);
+
+    if (isNaN(value)) {
+        input.value = 0;
+        return;
+    }
+
+    if (value < 0) {
+        input.value = 0;
+    }
+
+    if (value > 9999999) {
+        input.value = 9999999;
+    }
+}
+
+// Skor kutusuna elle yazıp kutudan çıkınca (blur/enter) sunucuya bildirir
+// — diğer tüm cihazlarda da aynı skor görünsün diye.
+function syncScoreToServer(side) {
+    const input = document.getElementById(side + "Score");
+    const value = Number(input.value) || 0;
+
+    if (!savasCalisiyorMu && value > Number(input.dataset.serverValue || 0)) {
+        alert("Puanlar tur BAŞLAT'a basıldıktan sonra eklenir.");
+        input.value = input.dataset.serverValue || 0;
+        return;
+    }
+
+    if (liveSocket && liveSocket.readyState === WebSocket.OPEN) {
+        liveSocket.send(JSON.stringify({ type: "battle-score", side: side, value: value }));
+    }
+}
+
+function usernameFromLink(link) {
+    const usernameMatch = link.match(/@([^/?]+)/);
+    return usernameMatch ? "@" + usernameMatch[1] : "PROFİL";
+}
+
+function setProfileImage(side, imageUrl) {
+    const image = document.getElementById(side + "ProfileImage");
+    const placeholder = document.getElementById(side + "Placeholder");
+
+    image.onload = function () {
+        image.style.display = "block";
+        placeholder.style.display = "none";
+    };
+
+    image.onerror = function () {
+        placeholder.textContent = "PP ALINAMADI";
+        placeholder.style.display = "flex";
+        image.style.display = "none";
+    };
+
+    image.src = imageUrl;
+}
+
+// İsteğe bağlı: TikTok'un verdiği küçük fotoğraf yerine, kendi
+// bilgisayarındaki net bir fotoğrafı doğrudan yükleyip kullanmak için.
+function loadPhotoFile(side, file) {
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+        alert("Lütfen bir resim dosyası seç.");
+        return;
+    }
+
+    const reader = new FileReader();
+
+    reader.onload = function (event) {
+        setProfileImage(side, event.target.result);
+
+        // Diğer cihazlarda da aynı fotoğraf görünsün diye sunucuya bildir.
+        if (liveSocket && liveSocket.readyState === WebSocket.OPEN) {
+            liveSocket.send(JSON.stringify({
+                type: "battle-assign",
+                side: side,
+                username: document.getElementById(side + "Username").textContent,
+                link: document.getElementById(side + "Link").value,
+                photoUser: "",
+                photoUrl: event.target.result
+            }));
+        }
+    };
+
+    reader.readAsDataURL(file);
+}
+
+// Manuel link yapıştırıp "PROFİLİ GETİR" ile çekme.
+// Artık kendi sunucumuz üzerinden geçiyor, tarayıcı CORS engeline takılmıyor.
+async function loadProfile(side) {
+    const linkInput = document.getElementById(side + "Link");
+    const usernameElement = document.getElementById(side + "Username");
+    const placeholder = document.getElementById(side + "Placeholder");
+
+    const link = linkInput.value.trim();
+
+    if (!link) {
+        alert("Önce TikTok profil bağlantısını yapıştır.");
+        return;
+    }
+
+    if (!link.includes("tiktok.com")) {
+        alert("Geçerli bir TikTok profil bağlantısı gir.");
+        return;
+    }
+
+    usernameElement.textContent = "YÜKLENİYOR...";
+
+    try {
+        const response = await fetch("/api/profile?url=" + encodeURIComponent(link));
+
+        if (!response.ok) {
+            throw new Error("Profil alınamadı");
+        }
+
+        const data = await response.json();
+        const kullanici = (link.match(/@([^/?]+)/) || [])[1] || "";
+        const gorunenAd = data.author_name || usernameFromLink(link);
+
+        usernameElement.textContent = gorunenAd;
+
+        if (data.thumbnail_url) {
+            // Kullanıcı adını da gönderiyoruz: sunucu böylece kalıcı disk
+            // yedeğini bulabiliyor ve TikTok bir gün engellese bile
+            // fotoğraf ekranda kaliteli kalmaya devam ediyor.
+            setProfileImage(
+                side,
+                "/api/image?highres=1&user=" + encodeURIComponent(kullanici) +
+                "&url=" + encodeURIComponent(data.thumbnail_url)
+            );
+        }
+
+        // Diğer cihazlara da bu atamayı bildir.
+        if (liveSocket && liveSocket.readyState === WebSocket.OPEN) {
+            liveSocket.send(JSON.stringify({
+                type: "battle-assign",
+                side: side,
+                username: gorunenAd,
+                link: link,
+                photoUser: kullanici,
+                photoUrl: data.thumbnail_url || ""
+            }));
+        }
+
+    } catch (error) {
+        console.error(error);
+        usernameElement.textContent = usernameFromLink(link);
+        placeholder.textContent = "PP ALINAMADI";
+    }
+}
+
+function startTimer() {
+    const durationInput = document.getElementById("duration");
+    let duration = Number(durationInput.value);
+
+    if (isNaN(duration) || duration < 5) {
+        duration = 60;
+        durationInput.value = 60;
+    }
+
+    // BAŞLAT'a basınca kısa bir ses efekti çalsın.
+    const baslatSesi = document.getElementById("startSound");
+    if (baslatSesi) {
+        baslatSesi.currentTime = 0;
+        baslatSesi.play().catch(function () {});
+    }
+
+    document.getElementById("leftResult").textContent = "";
+    document.getElementById("rightResult").textContent = "";
+    document.getElementById("leftResult").classList.remove("win-text");
+    document.getElementById("rightResult").classList.remove("win-text");
+    document.getElementById("leftRing").classList.remove("winner");
+    document.getElementById("rightRing").classList.remove("winner");
+
+    if (liveSocket && liveSocket.readyState === WebSocket.OPEN) {
+        liveSocket.send(JSON.stringify({ type: "battle-start", duration: duration }));
+    }
+}
+
+function togglePause() {
+    // Duraklat/Devam'da ses sıfırla — duraklat basınca ses çalmasın,
+    // devam et basınca da geri sayım aniden sesi yeniden tetiklemesin.
+    tumSesleriDurdur();
+    sonBilinenKalanSaniye = null;
+    if (liveSocket && liveSocket.readyState === WebSocket.OPEN) {
+        liveSocket.send(JSON.stringify({ type: "battle-toggle-pause" }));
+    }
+}
+
+// Bir hediye görselinin adresini hazırlar: TikTok CDN'den gelen bir
+// http(s) linkiyse hotlink korumasını aşmak için /api/image proxy'sinden
+// geçirir; kendi eklediğimiz yerel bir dosyaysa (assets/...) doğrudan
+// kullanılır.
+function hediyeGorselYolu(url) {
+    if (!url) return "";
+    if (/^https?:\/\//i.test(url)) {
+        return "/api/image?url=" + encodeURIComponent(url);
+    }
+    return url;
+}
+
+// Profil altındaki 6 hazır hediye butonu (1/5/20/100/500/1000 puan) —
+// tıklanınca o tarafın skoruna doğrudan o kadar puan ekler. Eğer o kutu
+// gerçek bir TikTok hediyesine bağlanmışsa (bkz. giftSlots), o hediyenin
+// GERÇEK coin değeri eklenir; bağlı değilse örnek/sabit değer eklenir.
+const VARSAYILAN_SLOT_PUANLARI = [1, 5, 20, 100, 500, 1000];
+
+// Sunucudan gelen gerçek TikTok hediye kataloğu: [{ id, name, coins, image }]
+let giftCatalog = [];
+
+async function kataloguYukle() {
+    try {
+        const r = await fetch("/api/gift-catalog");
+        const data = await r.json();
+        if (Array.isArray(data) && data.length) {
+            giftCatalog = data;
+            if (acikSlotDuzenleyici) {
+                slotAramaSonuclariniCiz(acikSlotDuzenleyici.side, "");
+            }
+        }
+    } catch (e) {
+        console.warn("Hediye kataloğu yüklenemedi:", e);
+    }
+}
+kataloguYukle();
+
+// Profil kutularının hangi gerçek hediyeye bağlı olduğu:
+// { left: [slot0..slot5], right: [slot0..slot5] } — her biri null ya da
+// { id, name, coins, image }.
+let giftSlots = { left: [null, null, null, null, null, null], right: [null, null, null, null, null, null] };
+
+// Şu an hangi kutunun düzenleme (arama) satırı açık — { side, index } ya da null.
+let acikSlotDuzenleyici = null;
+
+function hizliHediyeEkle(side, index) {
+    if (!savasCalisiyorMu) {
+        alert("Hediye puanları tur BAŞLAT'a basıldıktan sonra eklenir.");
+        return;
+    }
+    const slot = (giftSlots[side] || [])[index];
+    const puan = slot ? slot.coins : VARSAYILAN_SLOT_PUANLARI[index];
+
+    if (liveSocket && liveSocket.readyState === WebSocket.OPEN) {
+        liveSocket.send(JSON.stringify({ type: "quick-score-add", side: side, amount: puan }));
+    }
+}
+
+// Bir kutunun görselini/rozetini günceller: gerçek bir hediyeye bağlıysa
+// o hediyenin GERÇEK görseli + coin rozeti gösterilir; bağlı değilse
+// örnek/varsayılan görsele (baştaki sabit puanlı görsel) geri döner.
+function hediyeSlotGorseliGuncelle(side, index) {
+    const slot = (giftSlots[side] || [])[index];
+    const img = document.getElementById(side + "SlotImg" + index);
+    const rozet = document.getElementById(side + "SlotBadge" + index);
+    const puanYazisi = document.getElementById(side + "SlotPuan" + index);
+    const kutu = img ? img.closest(".quick-gift-slot") : null;
+    if (!img || !rozet) return;
+
+    if (slot) {
+        img.src = slot.image
+            ? hediyeGorselYolu(slot.image)
+            : "assets/gifts/" + side + "-" + VARSAYILAN_SLOT_PUANLARI[index] + ".png";
+        img.alt = slot.name;
+        rozet.textContent = "";
+        rozet.title = slot.name;
+        // Bağlı GERÇEK hediyenin kendi coin değeri kaçsa, puan yazısı
+        // onu gösterir — artık kutunun sabit varsayılan değerini değil.
+        if (puanYazisi) {
+            puanYazisi.textContent = (slot.coins || 0).toLocaleString("tr-TR") + " PUAN";
+        }
+        if (kutu) {
+            kutu.classList.add("bound");
+            kutu.title = "✓ Gerçek hediye: " + slot.name + " — kim atarsa atsın otomatik eklenir";
+        }
+    } else {
+        img.src = "assets/gifts/" + side + "-" + VARSAYILAN_SLOT_PUANLARI[index] + ".png";
+        img.alt = VARSAYILAN_SLOT_PUANLARI[index] + " puan";
+        rozet.textContent = "";
+        rozet.title = "";
+        if (puanYazisi) {
+            puanYazisi.textContent = VARSAYILAN_SLOT_PUANLARI[index].toLocaleString("tr-TR") + " PUAN";
+        }
+        if (kutu) {
+            kutu.classList.remove("bound");
+            kutu.title = "Henüz gerçek bir hediyeye bağlı değil — Değiştir'e basıp bağla, yoksa sadece elle tıklayınca puan ekler";
+        }
+    }
+}
+
+function tumSlotGorselleriniGuncelle() {
+    for (let i = 0; i < 6; i++) {
+        hediyeSlotGorseliGuncelle("left", i);
+        hediyeSlotGorseliGuncelle("right", i);
+    }
+}
+
+// Bir kutunun yanındaki "▾" oku — o kutuyu GERÇEK bir TikTok hediyesiyle
+// eşleştirmek için arama satırını açar/kapatır.
+function hediyeSlotDuzenle(side, index) {
+    if (acikSlotDuzenleyici && acikSlotDuzenleyici.side === side && acikSlotDuzenleyici.index === index) {
+        acikSlotDuzenleyici = null;
+    } else {
+        acikSlotDuzenleyici = { side: side, index: index };
+    }
+    slotDuzenleyiciyiCiz();
+}
+
+function slotDuzenleyiciyiCiz() {
+    ["left", "right"].forEach(function (side) {
+        const kutu = document.getElementById(side + "SlotEditor");
+        if (!kutu) return;
+
+        if (!acikSlotDuzenleyici || acikSlotDuzenleyici.side !== side) {
+            kutu.style.display = "none";
+            kutu.innerHTML = "";
+            return;
+        }
+
+        kutu.style.display = "";
+        kutu.innerHTML = "";
+
+        const baslikSatiri = document.createElement("div");
+        baslikSatiri.style.cssText = "display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;";
+
+        const baslik = document.createElement("div");
+        baslik.className = "gift-slot-editor-title";
+        baslik.textContent = "Kutu " + (acikSlotDuzenleyici.index + 1) + " (" + (side === "left" ? "SOL" : "SAĞ") + ") — Gerçek Hediye Eşleştir:";
+        baslikSatiri.appendChild(baslik);
+
+        const butonlar = document.createElement("div");
+        butonlar.style.cssText = "display:flex; gap:6px;";
+
+        const sifirlaBtn = document.createElement("button");
+        sifirlaBtn.type = "button";
+        sifirlaBtn.className = "btn-secondary";
+        sifirlaBtn.style.cssText = "padding:4px 8px; font-size:11px; background:rgba(239,68,68,0.2); color:#fca5a5; border:1px solid rgba(239,68,68,0.4); border-radius:6px; cursor:pointer;";
+        sifirlaBtn.textContent = "✕ Sıfırla";
+        sifirlaBtn.title = "Bu kutuyu varsayılana sıfırla";
+        sifirlaBtn.onclick = function () {
+            hediyeSlotSifirla(side, acikSlotDuzenleyici.index);
+        };
+        butonlar.appendChild(sifirlaBtn);
+
+        const kapatBtn = document.createElement("button");
+        kapatBtn.type = "button";
+        kapatBtn.className = "btn-secondary";
+        kapatBtn.style.cssText = "padding:4px 8px; font-size:11px; background:rgba(255,255,255,0.1); color:#fff; border:1px solid rgba(255,255,255,0.2); border-radius:6px; cursor:pointer;";
+        kapatBtn.textContent = "✕ Kapat";
+        kapatBtn.onclick = function () {
+            acikSlotDuzenleyici = null;
+            slotDuzenleyiciyiCiz();
+        };
+        butonlar.appendChild(kapatBtn);
+
+        baslikSatiri.appendChild(butonlar);
+        kutu.appendChild(baslikSatiri);
+
+        const input = document.createElement("input");
+        input.type = "text";
+        input.className = "gift-slot-search";
+        input.placeholder = "Bulamıyorsan buraya yaz (ör: Gül, Kalp)...";
+        input.oninput = function () { slotAramaSonuclariniCiz(side, input.value); };
+        kutu.appendChild(input);
+
+        const sonuclar = document.createElement("div");
+        sonuclar.className = "gift-slot-results";
+        sonuclar.id = side + "SlotResults";
+        kutu.appendChild(sonuclar);
+
+        // Odaklanınca klavyeyi otomatik açıp ekranı kaydırmasın diye
+        // focus YOK — kutu açılır açılmaz zaten TÜM hediyelerin
+        // görseli hazır geliyor, yazmaya gerek kalmadan seçilebiliyor.
+        slotAramaSonuclariniCiz(side, "");
+    });
+}
+
+function slotAramaSonuclariniCiz(side, metin) {
+    const kutu = document.getElementById(side + "SlotResults");
+    if (!kutu) return;
+
+    const q = metin.trim().toLocaleLowerCase("tr-TR");
+    const eslesenler = giftCatalog
+        .filter(function (g) { return !q || g.name.toLocaleLowerCase("tr-TR").indexOf(q) !== -1; });
+
+    kutu.innerHTML = "";
+
+    if (giftCatalog.length === 0) {
+        kutu.textContent = "Hediye kataloğu henüz yüklenmedi — TikTok yayınına bağlanınca otomatik gelir.";
+        return;
+    }
+
+    if (eslesenler.length === 0) {
+        kutu.textContent = "Eşleşen hediye yok.";
+        return;
+    }
+
+    eslesenler.forEach(function (g) {
+        const kart = document.createElement("div");
+        kart.className = "gift-slot-result-card";
+        kart.onclick = function () { hediyeSlotSec(side, g); };
+        kart.title = g.name;
+
+        const img = document.createElement("img");
+        img.src = hediyeGorselYolu(g.image);
+        img.alt = g.name;
+        kart.appendChild(img);
+
+        // Fotoğrafı elle değiştirme butonu — TikTok bize resmi hediye
+        // görseli vermediği için Azad'ın kendi PNG'lerinden birini
+        // seçip kalıcı olarak bağlamasını sağlar.
+        const fotoBtn = document.createElement("button");
+        fotoBtn.type = "button";
+        fotoBtn.className = "gift-slot-result-photo-btn";
+        fotoBtn.textContent = "📷";
+        fotoBtn.title = "Bu hediyenin fotoğrafını değiştir";
+        fotoBtn.onclick = function (e) {
+            e.stopPropagation(); // kartın kendi tıklaması (seçme) tetiklenmesin
+            hediyeGorseliniDegistir(g.id);
+        };
+        kart.appendChild(fotoBtn);
+
+        const isim = document.createElement("span");
+        isim.className = "name";
+        isim.textContent = g.name;
+        kart.appendChild(isim);
+
+        const coin = document.createElement("span");
+        coin.className = "coin";
+        coin.textContent = "🪙 " + g.coins.toLocaleString("tr-TR");
+        kart.appendChild(coin);
+
+        kutu.appendChild(kart);
+    });
+}
+
+// Bir hediyenin fotoğrafını elle değiştirmek için dosya seçme
+// penceresini açar; seçilen PNG/JPG sunucuya gönderilip o hediyeye
+// kalıcı olarak bağlanır.
+function hediyeGorseliniDegistir(giftId) {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = "image/png,image/jpeg,image/webp";
+
+    input.onchange = function () {
+        const dosya = input.files[0];
+        if (!dosya) return;
+
+        const okuyucu = new FileReader();
+        okuyucu.onload = function () {
+            if (liveSocket && liveSocket.readyState === WebSocket.OPEN) {
+                liveSocket.send(JSON.stringify({
+                    type: "gift-image-set",
+                    giftId: giftId,
+                    dataUrl: okuyucu.result
+                }));
+            }
+        };
+        okuyucu.readAsDataURL(dosya);
+    };
+
+    input.click();
+}
+
+function hediyeSlotSec(side, hediye) {
+    if (!acikSlotDuzenleyici || acikSlotDuzenleyici.side !== side) return;
+    const index = acikSlotDuzenleyici.index;
+
+    if (liveSocket && liveSocket.readyState === WebSocket.OPEN) {
+        liveSocket.send(JSON.stringify({
+            type: "gift-slot-set",
+            side: side,
+            index: index,
+            giftId: hediye.id
+        }));
+    }
+
+    obsToastGoster("🎁 <strong>" + hediye.name + "</strong> (" + (hediye.coins || 0) + " Puan) " + (side === "left" ? "SOL" : "SAĞ") + " " + (index + 1) + ". kutuya atandı!");
+
+    acikSlotDuzenleyici = null;
+    slotDuzenleyiciyiCiz();
+}
+
+function hediyeSlotSifirla(side, index) {
+    if (liveSocket && liveSocket.readyState === WebSocket.OPEN) {
+        liveSocket.send(JSON.stringify({
+            type: "gift-slot-set",
+            side: side,
+            index: index,
+            giftId: null
+        }));
+    }
+
+    obsToastGoster("🔄 " + (side === "left" ? "SOL" : "SAĞ") + " " + (index + 1) + ". kutu varsayılana sıfırlandı.");
+
+    acikSlotDuzenleyici = null;
+    slotDuzenleyiciyiCiz();
+}
+
+function setPauseButtonLabel(calisiyorMu) {
+    const button = document.getElementById("pauseButton");
+
+    if (!calisiyorMu) {
+        button.textContent = "▶ DEVAM ET";
+        button.classList.add("paused");
+    } else {
+        button.textContent = "⏸ DURAKLAT";
+        button.classList.remove("paused");
+    }
+}
+
+function formatTime(seconds) {
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+
+    return (
+        String(minutes).padStart(2, "0") +
+        ":" +
+        String(remainingSeconds).padStart(2, "0")
+    );
+}
+
+// Sunucudan gelen "süre şu an şu kadar" bilgisini ekrana uygular.
+let sonBilinenKalanSaniye = null;
+let savasCalisiyorMu = false;
+
+function applyTimerState(state) {
+    const timerEl = document.getElementById("timer");
+    const ringEl = document.getElementById("timerRing");
+    const boxEl = document.getElementById("timerBox");
+
+    savasCalisiyorMu = !!state.calisiyorMu;
+    timerEl.textContent = formatTime(state.kalanSaniye);
+    setPauseButtonLabel(state.calisiyorMu);
+
+    // "Sabit kalsın, kendi kendine dönmesin" — süre boyunca hiçbir
+    // animasyon yok. SADECE son 10 saniyede ufak bir titreme.
+    const kritikMi = state.calisiyorMu && state.kalanSaniye <= 10 && state.kalanSaniye > 0;
+    ringEl.classList.toggle("warning", kritikMi);
+    boxEl.classList.toggle("warning", kritikMi);
+
+    // Tam 10'a düştüğü anda (titreme başladığı anda) bir kereliğine
+    // geri sayım sesi çalsın.
+    if (state.calisiyorMu && state.kalanSaniye === 10 && sonBilinenKalanSaniye !== 10) {
+        const geriSayimSesi = document.getElementById("countdownSound");
+        if (geriSayimSesi) {
+            geriSayimSesi.currentTime = 0;
+            geriSayimSesi.play().catch(function () {});
+        }
+    }
+    sonBilinenKalanSaniye = state.kalanSaniye;
+}
+
+// Kazananı (veya berabereyi, ya da temiz durumu) ekrana uygular.
+// "sonuc" değeri null/undefined ise hiçbir WIN/LOSE yazısı gösterilmez
+// — yeni bir profil atandığında veya yeni tur başladığında sunucu
+// bunu null yapıp tüm cihazlara böyle yayınlıyor.
+function kazananCelebrationGoster(sonuc) {
+    if (sonuc !== "left" && sonuc !== "right") return; // beraberlikte gösterilmez
+
+    const overlay = document.getElementById("winnerOverlay");
+    const img = document.getElementById("winnerOverlayImg");
+    const label = document.getElementById("winnerOverlayLabel");
+    const kaynakImg = document.getElementById(sonuc + "ProfileImage");
+    const isim = document.getElementById(sonuc + "Username").textContent || "KAZANDI";
+
+    img.src = (kaynakImg && kaynakImg.src) ? kaynakImg.src : "";
+    label.textContent = "🏆 " + isim;
+
+    overlay.classList.remove("show");
+    // Yeniden başlatınca animasyon tekrar tetiklensin diye bir "reflow".
+    void overlay.offsetWidth;
+    overlay.classList.add("show");
+
+    // Kazanan fotoğrafı ekrana çıktığı anda ses de çalsın.
+    const ses = document.getElementById("winnerSound");
+    if (ses) {
+        ses.currentTime = 0;
+        ses.play().catch(function () {
+            // Tarayıcı otomatik sesi engellemiş olabilir (kullanıcı henüz
+            // sayfayla hiç etkileşime girmediyse) — sessizce görmezden gel.
+        });
+    }
+
+    clearTimeout(kazananOverlayZamanlayici);
+    kazananOverlayZamanlayici = setTimeout(function () {
+        overlay.classList.remove("show");
+    }, 3200);
+}
+
+let kazananOverlayZamanlayici = null;
+
+function applyBattleFinished(sonuc) {
+    const leftResult = document.getElementById("leftResult");
+    const rightResult = document.getElementById("rightResult");
+    const leftRing = document.getElementById("leftRing");
+    const rightRing = document.getElementById("rightRing");
+
+    leftRing.classList.remove("winner");
+    rightRing.classList.remove("winner");
+
+    if (sonuc === "left") {
+        leftResult.textContent = "🏆 WIN";
+        leftResult.classList.add("win-text");
+        leftRing.classList.add("winner");
+        rightResult.textContent = "LOSE";
+        rightResult.classList.remove("win-text");
+    } else if (sonuc === "right") {
+        rightResult.textContent = "🏆 WIN";
+        rightResult.classList.add("win-text");
+        rightRing.classList.add("winner");
+        leftResult.textContent = "LOSE";
+        leftResult.classList.remove("win-text");
+    } else if (sonuc === "draw") {
+        leftResult.textContent = "DRAW";
+        rightResult.textContent = "DRAW";
+        leftResult.classList.remove("win-text");
+        rightResult.classList.remove("win-text");
+    } else {
+        leftResult.textContent = "";
+        rightResult.textContent = "";
+        leftResult.classList.remove("win-text");
+        rightResult.classList.remove("win-text");
+    }
+}
+
+// Sunucudan gelen tam durumu (skor, oyuncu, başlık) ekrana uygular.
+// Aktif olarak yazı yazılan bir kutuyu (odaktaki input) EZMİYORUZ —
+// böylece bir cihazda yazarken diğerinden gelen güncelleme seni
+// bölmüyor.
+function applyBattleState(state) {
+    ["left", "right"].forEach(function (side) {
+        const usernameEl = document.getElementById(side + "Username");
+        const linkEl = document.getElementById(side + "Link");
+        const scoreEl = document.getElementById(side + "Score");
+
+        if (document.activeElement !== usernameEl) {
+            usernameEl.textContent = state[side + "Username"];
+        }
+
+        if (document.activeElement !== linkEl) {
+            linkEl.value = state[side + "Link"] || "";
+        }
+
+        if (document.activeElement !== scoreEl) {
+            scoreEl.value = state[side + "Score"] || 0;
+        }
+        scoreEl.dataset.serverValue = String(state[side + "Score"] || 0);
+
+        const photoUrl = state[side + "PhotoUrl"];
+
+        if (photoUrl) {
+            if (photoUrl.indexOf("data:") === 0) {
+                // Elle yüklenmiş bir fotoğraf — doğrudan kullan.
+                setProfileImage(side, photoUrl);
+            } else {
+                const photoUser = state[side + "PhotoUser"] || "";
+                setProfileImage(
+                    side,
+                    "/api/image?highres=1&user=" + encodeURIComponent(photoUser) +
+                    "&url=" + encodeURIComponent(photoUrl)
+                );
+            }
+        } else {
+            // Kaybeden taraf tur bitince boşaltılıyor (bkz. sunucu) —
+            // eski fotoğraf ekranda asılı kalmasın, placeholder'a dönsün.
+            const image = document.getElementById(side + "ProfileImage");
+            const placeholder = document.getElementById(side + "Placeholder");
+            image.onload = null;
+            image.onerror = null;
+            image.src = "";
+            image.style.display = "none";
+            placeholder.textContent = "TIKTOK";
+            placeholder.style.display = "flex";
+        }
+    });
+
+    const titleEl = document.getElementById("customTitle");
+    if (document.activeElement !== titleEl) {
+        titleEl.textContent = state.customTitle || "";
+    }
+
+    // Kalıcı state'teki sonuç bilgisini de uygula — böylece yeni bağlanan
+    // bir cihaz da doğru WIN/LOSE/DRAW yazısını görür, ve bir profil
+    // değiştiğinde (sunucu sonuc'u null yaptığında) yazı her cihazda
+    // birlikte temizlenir.
+    applyBattleFinished(state.sonuc || null);
+
+    // Tur kazanma listesi (otomatik eklenen isimler + elle silme).
+    tallyGoster("left", state.leftTally || []);
+    tallyGoster("right", state.rightTally || []);
+
+    // Arka plan videosu (tüm cihazlarda/OBS'te aynı görünsün diye).
+    arkaPlanUygula(state.backgroundVideo || null);
+
+    // Hediye ikonu animasyonu (SADECE o PNG'ler) — her cihazda/OBS'te aynı.
+    hediyeAnimasyonuUygula(state.giftAnimasyonTuru, state.giftAnimasyonHizi);
+}
+
+// Sunucudan gelen "leftTally"/"rightTally" listesini (her kayıt
+// {id, name}) o tarafın şeridine çizer. Aynı isim birden fazla
+// kazandıysa TEK satırda birleştirilir: başında kazanma sayısı kadar
+// X, yanında ismin BÜYÜK HARFLİ hâli (örn. "XXX AYCA"). "－" butonu
+// o kişinin EN SON kazanmasını siler (X sayısını bir azaltır).
+function tallyGoster(taraf, liste) {
+    const kutu = document.getElementById(taraf + "TallyMarks");
+    if (!kutu) return;
+
+    const gruplar = []; // [{ name, ids: [...] }]
+    liste.forEach(function (kayit) {
+        const mevcut = gruplar.find(function (g) { return g.name === kayit.name; });
+        if (mevcut) {
+            mevcut.ids.push(kayit.id);
+        } else {
+            gruplar.push({ name: kayit.name, ids: [kayit.id] });
+        }
+    });
+
+    // En çok kazanan en üstte.
+    gruplar.sort(function (a, b) { return b.ids.length - a.ids.length; });
+
+    kutu.innerHTML = "";
+    gruplar.forEach(function (grup) {
+        const satir = document.createElement("div");
+        satir.className = "tally-entry";
+
+        const isim = document.createElement("span");
+        isim.className = "tally-entry-name";
+        isim.textContent = grup.ids.length + "X " + grup.name.toUpperCase();
+
+        const silBtn = document.createElement("button");
+        silBtn.className = "tally-entry-remove";
+        silBtn.textContent = "－";
+        silBtn.title = "Bu kişinin en son kazanmasını sil";
+        silBtn.onclick = function () {
+            tallySil(taraf, grup.ids[grup.ids.length - 1]);
+        };
+
+        satir.appendChild(isim);
+        satir.appendChild(silBtn);
+        kutu.appendChild(satir);
+    });
+}
+
+// Listedeki "－" butonuna basılınca çağrılır.
+function tallySil(taraf, id) {
+    if (liveSocket && liveSocket.readyState === WebSocket.OPEN) {
+        liveSocket.send(JSON.stringify({ type: "battle-tally-remove", side: taraf, id: id }));
+    }
+}
+
+// ---------- ARKA PLAN VİDEOSU SEÇİCİ ----------
+
+let arkaPlanListesi = [];
+
+async function arkaPlanListesiYukle() {
+    try {
+        const res = await fetch("/api/backgrounds");
+        arkaPlanListesi = await res.json();
+    } catch (hata) {
+        arkaPlanListesi = [];
+    }
+}
+
+function arkaPlanPaneliCiz() {
+    const grid = document.getElementById("bgPickerGrid");
+    grid.innerHTML = "";
+
+    const bosKutu = document.createElement("div");
+    bosKutu.className = "bg-picker-item";
+    bosKutu.innerHTML = '<div class="bg-picker-empty">Boş</div>';
+    bosKutu.onclick = function () { arkaPlanSec(null); };
+    grid.appendChild(bosKutu);
+
+    arkaPlanListesi.forEach(function (v) {
+        const kutu = document.createElement("div");
+        kutu.className = "bg-picker-item";
+        const img = document.createElement("img");
+        img.src = v.thumb || v.dosya;
+        img.loading = "lazy";
+        kutu.appendChild(img);
+        kutu.onclick = function () { arkaPlanSec(v.dosya); };
+        grid.appendChild(kutu);
+    });
+}
+
+async function arkaPlanPaneliAc() {
+    const panel = document.getElementById("bgPickerPanel");
+    const aciliyorMu = panel.style.display === "none" || !panel.style.display;
+
+    if (!aciliyorMu) {
+        panel.style.display = "none";
+        return;
+    }
+
+    await arkaPlanListesiYukle();
+    arkaPlanPaneliCiz();
+    panel.style.display = "flex";
+}
+
+function arkaPlanPaneliKapat() {
+    document.getElementById("bgPickerPanel").style.display = "none";
+}
+
+function vsOzelArkaPlanSecildi(event) {
+    const file = event.target.files && event.target.files[0];
+    if (!file) return;
+    const url = URL.createObjectURL(file);
+    const video = document.getElementById("bgVideo");
+    let img = document.getElementById("vsCustomBgImg");
+    if (!img) {
+        img = document.createElement("img");
+        img.id = "vsCustomBgImg";
+        img.style.position = "fixed";
+        img.style.inset = "0";
+        img.style.width = "100%";
+        img.style.height = "100%";
+        img.style.objectFit = "cover";
+        img.style.zIndex = "0";
+        img.style.display = "none";
+        document.body.prepend(img);
+    }
+    if (file.type.startsWith("video/")) {
+        img.style.display = "none";
+        img.removeAttribute("src");
+        if (video) {
+            video.src = url;
+            video.classList.add("active");
+            video.play().catch(function () {});
+        }
+    } else {
+        if (video) {
+            video.classList.remove("active");
+            video.pause();
+        }
+        img.src = url;
+        img.style.display = "block";
+    }
+    arkaPlanPaneliKapat();
+}
+
+function arkaPlanSec(dosyaYolu) {
+    const customImg = document.getElementById("vsCustomBgImg");
+    if (customImg) {
+        customImg.style.display = "none";
+        customImg.removeAttribute("src");
+    }
+    if (liveSocket && liveSocket.readyState === WebSocket.OPEN) {
+        liveSocket.send(JSON.stringify({ type: "background-select", video: dosyaYolu }));
+    }
+    arkaPlanPaneliKapat();
+}
+
+// Sunucudan gelen state.backgroundVideo'yu ekrana uygular — tüm
+// cihazlarda (ve OBS'te) aynı video görünsün diye.
+function arkaPlanUygula(dosyaYolu) {
+    const customImg = document.getElementById("vsCustomBgImg");
+    if (customImg && dosyaYolu) {
+        customImg.style.display = "none";
+        customImg.removeAttribute("src");
+    }
+    const video = document.getElementById("bgVideo");
+    if (!video) return;
+
+    if (dosyaYolu) {
+        if (video.getAttribute("data-current") !== dosyaYolu) {
+            video.src = dosyaYolu;
+            video.setAttribute("data-current", dosyaYolu);
+            video.play().catch(function () {});
+        }
+        video.classList.add("active");
+    } else {
+        video.classList.remove("active");
+        video.removeAttribute("src");
+        video.removeAttribute("data-current");
+    }
+}
+
+// ---------- HEDİYE İKONU ANİMASYONU (sadece o PNG'ler) ----------
+
+function hediyeAnimasyonPaneliAc() {
+    document.getElementById("giftAnimPanel").style.display =
+        document.getElementById("giftAnimPanel").style.display === "flex" ? "none" : "flex";
+}
+
+function hediyeAnimasyonPaneliKapat() {
+    document.getElementById("giftAnimPanel").style.display = "none";
+}
+
+function hediyeAnimasyonuUygulaButon() {
+    const tur = document.getElementById("giftAnimTuru").value;
+    const hiz = document.getElementById("giftAnimHizi").value;
+
+    hediyeAnimasyonuUygula(tur, hiz);
+    try {
+        localStorage.setItem("mng_vs_gift_anim_tur", tur);
+        localStorage.setItem("mng_vs_gift_anim_hiz", hiz);
+    } catch (e) {}
+
+    if (liveSocket && liveSocket.readyState === WebSocket.OPEN) {
+        liveSocket.send(JSON.stringify({ type: "gift-animasyon-ayarla", tur: tur, hiz: hiz }));
+    }
+    hediyeAnimasyonPaneliKapat();
+}
+
+// Sunucudan gelen state.giftAnimasyonTuru/Hizi'nı ekrana uygular —
+// SADECE hediye ikonu PNG'lerini etkiler, başka hiçbir şeye dokunmaz.
+function hediyeAnimasyonuUygula(tur, hiz) {
+    const body = document.body;
+    ["gift-anim-yok", "gift-anim-karart", "gift-anim-nabiz", "gift-anim-acKapa", "gift-anim-dondur", "gift-anim-salla", "gift-anim-zipla", "gift-anim-parla", "gift-anim-beyaz", "gift-anim-siyahBeyaz", "gift-anim-altin", "gift-anim-neon"]
+        .forEach(function (sinif) { body.classList.remove(sinif); });
+
+    if (tur && tur !== "yok") {
+        body.classList.add("gift-anim-" + tur);
+    }
+
+    document.documentElement.style.setProperty("--gift-anim-hiz", (hiz || 3) + "s");
+
+    // Panelin kendisi de son seçimi göstersin.
+    const turSecici = document.getElementById("giftAnimTuru");
+    const hizSecici = document.getElementById("giftAnimHizi");
+    if (turSecici) turSecici.value = tur || "yok";
+    if (hizSecici) hizSecici.value = String(hiz || 3);
+}
+
+try {
+    const kayitliAnimTur = localStorage.getItem("mng_vs_gift_anim_tur");
+    const kayitliAnimHiz = localStorage.getItem("mng_vs_gift_anim_hiz");
+    if (kayitliAnimTur) {
+        hediyeAnimasyonuUygula(kayitliAnimTur, kayitliAnimHiz || "3");
+    }
+} catch (e) {}
+
+// ---------- CANLI YAYIN ENTEGRASYONU ----------
+
+let liveSocket = null;
+let liveSocketYenidenBaglanma = null;
+let liveSocketYenidenBaglanmaGecikme = 1000;
+
+// uniqueId -> { nickname, profilePictureUrl, lastSeen, sonEtkilesim, sira, mesajZamani }
+// Bu SADECE "şu an aktif görünenler" listesi — belli süre sessiz kalan
+// biri buradan düşer (aşağıdaki ayardan seçtiğin süreye göre).
+const seenChatters = new Map();
+
+// Yeni katılan birine verilen sıra numarası — "sirali()" bunu, mesaj
+// yazmamış izleyicileri geldikleri sırada (yeni gelen en altta) dizmek
+// için kullanıyor.
+let izleyiciSiraSayaci = 0;
+
+// uniqueId -> { nickname, profilePictureUrl, coins }
+// Coin sıralaması BİLEREK ayrı bir yapıda tutuluyor: izleyici listesi
+// süreyle temizlense de coin sıralaması ASLA kendiliğinden silinmez.
+// Sadece "SIFIRLA" butonuna basınca ya da sunucu tarafında sıfırlanınca
+// değişir. Sunucu, sunucu yeniden başlasa bile bu veriyi diskte tutuyor.
+const giftTotals = new Map();
+
+const giftFeed = [];        // son hediyeler akışı (bilgi amaçlı, kısa ömürlü)
+const GIFT_FEED_LIMIT = 30;
+const CHAT_LIST_LIMIT = 40;
+
+let aktifSekme = "viewers";
+let listeYenilemeGerekli = false;
+
+// ---------- AYARLAR ----------
+
+function getIdleTimeout() {
+    const secim = document.getElementById("idleTimeout");
+    return secim ? Number(secim.value) : 180000;
+}
+
+function saveSettings() {
+    try {
+        localStorage.setItem("idleTimeout", String(getIdleTimeout()));
+    } catch (e) {}
+    removeIdleChatters();
+}
+
+function loadSettings() {
+    try {
+        const kayit = localStorage.getItem("idleTimeout");
+        const secim = document.getElementById("idleTimeout");
+        if (kayit !== null && secim) {
+            secim.value = kayit;
+        }
+    } catch (e) {}
+}
+
+// ---------- BAŞLIK (artık tüm cihazlarda senkron) ----------
+// NOT: Önceden her cihaz kendi başlığını hatırlıyordu. Şimdi "bilgisayarda
+// yaptığımı telefonda da görmek istiyorum" dediğin için başlık da diğer
+// her şey gibi sunucu üzerinden senkronlanıyor.
+
+let baslikGonderZamanlayici = null;
+
+function saveCustomTitle() {
+    const el = document.getElementById("customTitle");
+
+    // Yazarken her tuşta sunucuyu yormamak için ufak bir gecikmeyle
+    // gönderiyoruz (yazmayı bitirdikten ~400ms sonra).
+    clearTimeout(baslikGonderZamanlayici);
+    baslikGonderZamanlayici = setTimeout(function () {
+        if (liveSocket && liveSocket.readyState === WebSocket.OPEN) {
+            liveSocket.send(JSON.stringify({ type: "battle-title", text: el.textContent }));
+        }
+    }, 400);
+}
+
+function customTitleKeydown(event) {
+    // Enter ile satır atlamak yerine düzenlemeyi bitirsin.
+    if (event.key === "Enter") {
+        event.preventDefault();
+        event.target.blur();
+    }
+}
+
+// ---------- SEKMELER ----------
+
+function switchTab(sekme) {
+    aktifSekme = sekme;
+
+    document.getElementById("tabViewers").classList.toggle("active", sekme === "viewers");
+    document.getElementById("tabGifts").classList.toggle("active", sekme === "gifts");
+
+    document.getElementById("chatList").style.display = sekme === "viewers" ? "" : "none";
+    document.getElementById("giftPanel").style.display = sekme === "gifts" ? "" : "none";
+
+    renderChatList();
+    renderGiftPanel();
+}
+
+// ---------- BAĞLANTI ----------
+
+// Son bağlanılan TikTok yayın kullanıcı adı — bağlantı kopunca otomatik
+// yeniden bağlanmak için saklanıyor.
+let sonBaglanilanLiveKullanici = null;
+let yenidenBaglanmaZamanlayiciWS = null;
+
+// Tüm ses efektlerini durduran yardımcı fonksiyon.
+function tumSesleriDurdur() {
+    ["startSound", "countdownSound"].forEach(function (id) {
+        const ses = document.getElementById(id);
+        if (ses) {
+            ses.pause();
+            ses.currentTime = 0;
+        }
+    });
+}
+
+function connectWebSocket() {
+    // Aynı anda birden çok yeniden bağlanma denemesi açılmasın. Bu
+    // özellikle OBS/uzun yayın oturumlarında bağlantı kopmuş görünme
+    // sorununu önler.
+    if (liveSocket && (liveSocket.readyState === WebSocket.OPEN || liveSocket.readyState === WebSocket.CONNECTING)) return;
+    if (liveSocketYenidenBaglanma) {
+        clearTimeout(liveSocketYenidenBaglanma);
+        liveSocketYenidenBaglanma = null;
+    }
+
+    const protocol = location.protocol === "https:" ? "wss://" : "ws://";
+    liveSocket = new WebSocket(protocol + location.host);
+
+    liveSocket.onopen = function () {
+        liveSocketYenidenBaglanmaGecikme = 1000;
+        // Bağlantı kopup yeniden kurulduğunda TikTok live'ı otomatik
+        // yeniden bağla (kullanıcının elle tekrar bağlanmasına gerek yok).
+        if (sonBaglanilanLiveKullanici) {
+            const statusEl = document.getElementById("liveStatus");
+            if (statusEl) {
+                statusEl.textContent = "Yeniden bağlanılıyor: @" + sonBaglanilanLiveKullanici + "...";
+            }
+            setTimeout(function () {
+                if (liveSocket && liveSocket.readyState === WebSocket.OPEN && sonBaglanilanLiveKullanici) {
+                    liveSocket.send(JSON.stringify({ type: "connect-live", username: sonBaglanilanLiveKullanici }));
+                }
+            }, 800);
+        }
+    };
+
+    liveSocket.onmessage = function (event) {
+        let msg;
+        try {
+            msg = JSON.parse(event.data);
+        } catch (e) {
+            return;
+        }
+
+        if (msg.type === "status") {
+            document.getElementById("liveStatus").textContent = msg.message;
+        }
+
+        if (msg.type === "chat") {
+            addChatter(msg, "💬");
+        }
+
+        // Giren kişiler (👤) ve beğenenler (❤️) artık izleyici listesine EKLENMİYOR —
+        // SADECE yorum yazanlar (💬) ve hediye atanlar (🎁) listede görünür.
+
+
+        if (msg.type === "gift") {
+            handleGift(msg);
+        }
+
+        // Gerçek TikTok hediye kataloğu (yayına bağlanınca otomatik gelir) —
+        // profil altındaki hediye eşleştirme arama kutusu bunu kullanıyor.
+        if (msg.type === "giftCatalog") {
+            giftCatalog = msg.entries || [];
+            // Arama kutusu açıksa sonuçları tazele.
+            if (acikSlotDuzenleyici) {
+                slotDuzenleyiciyiCiz();
+            }
+        }
+
+        // Hangi kutunun hangi gerçek hediyeye bağlı olduğu — tüm cihazlarda
+        // aynı görünsün diye sunucudan geliyor.
+        if (msg.type === "giftSlots") {
+            giftSlots = msg.slots || giftSlots;
+            tumSlotGorselleriniGuncelle();
+        }
+
+        if (msg.type === "puanlamaState") {
+            applyPuanlamaState(msg.state);
+        }
+
+        if (msg.type === "puanlamaYeniOy") {
+            playPuanSesi();
+        }
+
+        if (msg.type === "puanlamaViewers") {
+            applyPuanlamaViewers(msg.viewers);
+        }
+
+        if (msg.type === "puanlamaStatus") {
+            applyPuanlamaStatus(msg.message);
+        }
+
+        // Bir hediyeyi bir kutuya bağlama isteği REDDEDİLDİĞİNDE (aynı
+        // hediye zaten başka bir kutuda kullanılıyorsa) — sadece bu
+        // cihaza, açık olan düzenleme kutusunun üstüne kırmızı uyarı olarak yazılır.
+        if (msg.type === "gift-slot-error") {
+            const kutu = document.getElementById(msg.side + "SlotEditor");
+            if (kutu) {
+                let uyari = kutu.querySelector(".gift-slot-warning");
+                if (!uyari) {
+                    uyari = document.createElement("div");
+                    uyari.className = "gift-slot-warning";
+                    kutu.insertBefore(uyari, kutu.firstChild);
+                }
+                uyari.textContent = "⚠ " + msg.message;
+            }
+        }
+
+        // Sunucudaki tam ve güncel coin sıralaması: bağlanır bağlanmaz
+        // ve her hediyede gelir. Bu sayede telefon/tablet gibi yeni
+        // açılan her ekran sıralamayı sıfırdan değil, olduğu gibi görür.
+        if (msg.type === "giftState") {
+            giftTotals.clear();
+            (msg.entries || []).forEach(function (giris) {
+                giftTotals.set(giris.uniqueId, {
+                    nickname: giris.nickname,
+                    profilePictureUrl: giris.profilePictureUrl,
+                    coins: giris.coins,
+                    credited: giris.credited || 0,
+                    lastGiftName: giris.lastGiftName || null,
+                    lastGiftImage: giris.lastGiftImage || null
+                });
+            });
+            listeYenilemeGerekli = true;
+            renderGiftPanel();
+            puanlamaViewerListesiCiz(); // coin sırası değişmiş olabilir
+        }
+
+        // Sadece "SIFIRLA" butonuna basıldığında (herhangi bir cihazdan) gelir.
+        if (msg.type === "coinReset") {
+            giftTotals.clear();
+            giftFeed.length = 0;
+            renderGiftPanel();
+            listeYenilemeGerekli = true;
+        }
+
+        if (msg.type === "viewerCount") {
+            const badge = document.getElementById("viewerCountBadge");
+            document.getElementById("viewerCountValue").textContent = msg.count;
+            badge.style.display = "block";
+        }
+
+        // ---- Savaş durumu senkronu: bilgisayar ve telefon aynı anda ----
+
+        if (msg.type === "battleState") {
+            applyBattleState(msg.state);
+        }
+
+        if (msg.type === "timerState") {
+            applyTimerState(msg.state);
+        }
+
+        if (msg.type === "battleFinished") {
+            applyBattleFinished(msg.sonuc);
+            kazananCelebrationGoster(msg.sonuc);
+        }
+
+        // Herhangi bir cihaz yeni bir yayına bağlandığında, TÜM cihazların
+        // izleyici listesi birlikte temizlenir (tutarlılık için).
+        if (msg.type === "viewersReset") {
+            seenChatters.clear();
+            listeYenilemeGerekli = true;
+        }
+    };
+
+    liveSocket.onclose = function () {
+        // Bağlantı kopunca sesleri durdur — takılı kalan ses kalmasın.
+        tumSesleriDurdur();
+        const statusEl = document.getElementById("liveStatus");
+        if (statusEl) statusEl.textContent = "Bağlantı koptu, yeniden deneniyor...";
+        liveSocket = null;
+        if (!liveSocketYenidenBaglanma) {
+            liveSocketYenidenBaglanma = setTimeout(function () {
+                liveSocketYenidenBaglanma = null;
+                connectWebSocket();
+            }, liveSocketYenidenBaglanmaGecikme);
+            liveSocketYenidenBaglanmaGecikme = Math.min(liveSocketYenidenBaglanmaGecikme * 1.7, 10000);
+        }
+    };
+}
+
+function connectLive() {
+    const usernameInput = document.getElementById("liveUsername");
+    const username = usernameInput.value.trim().replace("@", "");
+
+    if (!username) {
+        alert("TikTok yayın kullanıcı adını gir.");
+        return;
+    }
+
+    if (!liveSocket || liveSocket.readyState !== WebSocket.OPEN) {
+        alert("Sunucuya bağlanılamadı, sayfayı yenile.");
+        return;
+    }
+
+    // Son bağlanılan kullanıcıyı sakla — bağlantı kopunca otomatik yeniden bağlanır.
+    sonBaglanilanLiveKullanici = username;
+
+    document.getElementById("liveStatus").textContent = "Bağlanıyor...";
+
+    // Sadece "kim şu an aktif" listesi temizlenir. Coin sıralaması
+    // (giftTotals) BİLEREK burada temizlenmiyor — yayına yeniden
+    // bağlansan da sıralama olduğu gibi kalsın istedin.
+    seenChatters.clear();
+    renderChatList();
+    document.getElementById("viewerCountBadge").style.display = "none";
+    liveSocket.send(JSON.stringify({ type: "connect-live", username: username }));
+}
+
+function disconnectLive() {
+    // Elle kesildi: artık otomatik yeniden bağlanma yapma.
+    sonBaglanilanLiveKullanici = null;
+    if (liveSocket && liveSocket.readyState === WebSocket.OPEN) {
+        liveSocket.send(JSON.stringify({ type: "disconnect-live" }));
+    }
+    document.getElementById("liveStatus").textContent = "Bağlı değil";
+}
+
+// ---------- İZLEYİCİ LİSTESİ ----------
+
+function addChatter(msg, etkilesimSimgesi) {
+    const key = msg.uniqueId || msg.nickname;
+    if (!key) return;
+
+    const mevcut = seenChatters.get(key) || {};
+    const ilkKayit = !seenChatters.has(key);
+
+    // Kullanıcı İsteği: Beğenenler (❤️) veya katılanlar (👋) üste çıkmasın!
+    // SADECE yorum yapan ve mesaj atan kişiler (💬) listenin en üstüne çıksın.
+    const aktifEtkilesim = (etkilesimSimgesi === "💬");
+
+    seenChatters.set(key, {
+        nickname: msg.nickname || mevcut.nickname,
+        profilePictureUrl: mevcut.profilePictureUrl || msg.profilePictureUrl,
+        lastSeen: Date.now(),
+        sonEtkilesim: etkilesimSimgesi,
+        sira: ilkKayit ? izleyiciSiraSayaci++ : mevcut.sira,
+        mesajZamani: aktifEtkilesim ? Date.now() : (mevcut.mesajZamani || Date.now())
+    });
+
+    listeYenilemeGerekli = true;
+}
+
+function handleGift(msg) {
+    const key = msg.uniqueId;
+    if (!key) return;
+
+    // İzleyici listesinde hediye atan kişi de anında listenin EN ÜSTÜNE çıksın!
+    const mevcutGoruntu = seenChatters.get(key) || {};
+    const ilkKayit = !seenChatters.has(key);
+    seenChatters.set(key, {
+        nickname: msg.nickname || mevcutGoruntu.nickname,
+        profilePictureUrl: mevcutGoruntu.profilePictureUrl || msg.profilePictureUrl,
+        lastSeen: Date.now(),
+        sonEtkilesim: "🎁",
+        sira: ilkKayit ? izleyiciSiraSayaci++ : mevcutGoruntu.sira,
+        mesajZamani: Date.now() // En üste çıksın
+    });
+
+    // Asıl kalıcı coin toplamı sunucudan geliyor (totalCoins) — burada
+    // sadece o değeri kaydediyoruz, kendimiz toplamıyoruz. "credited"
+    // (şimdiye kadar skora eklenen kısım) da sunucudan gelen "giftState"
+    // ile güncel tutuluyor, burada olduğu gibi korunuyor.
+    const oncekiKayit = giftTotals.get(key) || {};
+    giftTotals.set(key, {
+        nickname: msg.nickname || oncekiKayit.nickname,
+        profilePictureUrl: msg.profilePictureUrl || oncekiKayit.profilePictureUrl,
+        coins: msg.totalCoins,
+        credited: oncekiKayit.credited || 0,
+        lastGiftName: msg.giftName || oncekiKayit.lastGiftName || null,
+        lastGiftImage: msg.giftImage || oncekiKayit.lastGiftImage || null
+    });
+
+    giftFeed.unshift({
+        uniqueId: key,
+        nickname: msg.nickname,
+        giftName: msg.giftName,
+        count: msg.count,
+        coins: msg.coins,
+        zaman: Date.now()
+    });
+
+    if (giftFeed.length > GIFT_FEED_LIMIT) {
+        giftFeed.length = GIFT_FEED_LIMIT;
+    }
+
+    listeYenilemeGerekli = true;
+    renderGiftPanel();
+    puanlamaViewerListesiCiz(); // coin rozeti + hediye atanlar listesi güncellensin
+}
+
+function removeIdleChatters() {
+    const sure = getIdleTimeout();
+
+    // -1 = hiç düşürme
+    if (sure === -1) return;
+
+    // 0 = "hemen" seçildiğinde bile TikTok bize anlık ayrılma bilgisi
+    // vermediği için 20 saniyelik en kısa güvenli süre kullanıyoruz.
+    const esik = sure === 0 ? 20000 : sure;
+
+    const now = Date.now();
+    let degisti = false;
+
+    // NOT: Burada sadece seenChatters (izleyici listesi) temizleniyor.
+    // giftTotals bu işlemden hiç etkilenmez — coin sıralaması kalıcıdır.
+    seenChatters.forEach(function (info, key) {
+        if (now - info.lastSeen > esik) {
+            seenChatters.delete(key);
+            degisti = true;
+        }
+    });
+
+    if (degisti) {
+        listeYenilemeGerekli = true;
+    }
+}
+
+setInterval(removeIdleChatters, 5000);
+
+// Listeyi her olayda değil, saniyede bir çiziyoruz.
+// Yoğun yayınlarda sayfanın kilitlenmesini bu engelliyor.
+setInterval(function () {
+    if (listeYenilemeGerekli) {
+        listeYenilemeGerekli = false;
+        renderChatList();
+        renderGiftPanel();
+    }
+}, 1000);
+
+function sirali() {
+    // Mesaj yazanlar en üstte (en yeni mesaj en üstte). Mesaj yazmamış
+    // olanlar arasında ise geldikleri sırayla dizilirler — yani yeni
+    // katılan biri listenin ALT tarafına eklenir, üsttekiler yerinden
+    // oynamaz. Böylece sadece izleyen (mesaj atmayan) biri katıldığında
+    // liste sürekli karışmış gibi görünmez.
+    return Array.from(seenChatters.entries()).sort(function (a, b) {
+        const am = a[1].mesajZamani || 0;
+        const bm = b[1].mesajZamani || 0;
+        if (am !== bm) return bm - am;
+        return (a[1].sira || 0) - (b[1].sira || 0);
+    });
+}
+
+function coinYazisi(sayi) {
+    if (!sayi) return "";
+    if (sayi >= 1000000) return (sayi / 1000000).toFixed(1).replace(".0", "") + "M";
+    if (sayi >= 1000) return (sayi / 1000).toFixed(1).replace(".0", "") + "B";
+    return String(sayi);
+}
+
+function renderChatList() {
+    const list = document.getElementById("chatList");
+    const sayac = document.getElementById("viewerListCount");
+
+    if (sayac) sayac.textContent = seenChatters.size;
+
+    if (aktifSekme !== "viewers") return;
+
+    const entries = sirali().slice(0, CHAT_LIST_LIMIT);
+
+    list.innerHTML = "";
+
+    if (entries.length === 0) {
+        const bos = document.createElement("div");
+        bos.className = "chat-empty";
+        bos.textContent = "Henüz kimse görünmüyor. Yayına bağlan ve bekle.";
+        list.appendChild(bos);
+        return;
+    }
+
+    entries.forEach(function (giris) {
+        const uniqueId = giris[0];
+        const info = giris[1];
+        const coinBilgisi = giftTotals.get(uniqueId);
+
+        const item = document.createElement("div");
+        item.className = "chat-item";
+
+        const avatar = document.createElement("img");
+        avatar.className = "chat-avatar";
+        avatar.alt = "";
+        avatar.loading = "lazy";
+        if (info.profilePictureUrl) {
+            avatar.src = "/api/image?user=" + encodeURIComponent(uniqueId) +
+                         "&url=" + encodeURIComponent(info.profilePictureUrl);
+        }
+
+        const isimKutusu = document.createElement("div");
+        isimKutusu.className = "chat-name-box";
+
+        const name = document.createElement("span");
+        name.className = "chat-name";
+        name.textContent = (info.sonEtkilesim || "") + " @" + uniqueId;
+        isimKutusu.appendChild(name);
+
+        if (coinBilgisi && coinBilgisi.coins > 0) {
+            const coin = document.createElement("span");
+            coin.className = "coin-badge";
+            coin.textContent = "🪙 " + coinYazisi(coinBilgisi.coins);
+            isimKutusu.appendChild(coin);
+        }
+
+        const toLeft = document.createElement("button");
+        toLeft.className = "to-left";
+        toLeft.textContent = "◀ SOL";
+        toLeft.onclick = function () { assignFromChat("left", uniqueId); };
+
+        const toRight = document.createElement("button");
+        toRight.className = "to-right";
+        toRight.textContent = "SAĞ ▶";
+        toRight.onclick = function () { assignFromChat("right", uniqueId); };
+
+        item.appendChild(avatar);
+        item.appendChild(isimKutusu);
+        item.appendChild(toLeft);
+        item.appendChild(toRight);
+
+        list.appendChild(item);
+    });
+
+    // Profil Puanlama sayfası açıksa oradaki izleyici listesi de
+    // güncel kalsın.
+    puanlamaViewerListesiCiz();
+}
+
+// ============== PROFİL PUANLAMA ==============
+
+let puanlamaSonState = null;
+
+function puanlamaSayfasiniAc() {
+    const ratingPage = document.getElementById("ratingPage");
+    if (ratingPage) ratingPage.style.display = "block";
+
+    // VS ekranını ve arka plandaki tüm panelleri gizle (iki oyun tamamen ayrı)
+    const gizlenecekler = [
+        ".battle",
+        ".vs-obs-card",
+        ".live-connect",
+        ".live-tabs",
+        "#chatList",
+        "#giftPanel",
+        "#bgVideo",
+        "#giftAnimBtn",
+        "#viewerCountBadge",
+        "#ratingTabBtn",
+        ".rating-close-btn"
+    ];
+    gizlenecekler.forEach(function (sel) {
+        const el = document.querySelector(sel);
+        if (el) el.style.display = "none";
+    });
+
+    document.body.style.background = "#080811";
+
+    puanlamaViewerListesiCiz();
+
+    // Puan alanlar ve izleyiciler listesinde aşağıdan yukarıya yumuşak otomatik kaydırma
+    otomatikKaydirmaBaslat("ratingLeaderboardList", 0.65);
+    otomatikKaydirmaBaslat("ratingViewerList", 0.5);
+
+    clearInterval(puanlamaListeYenilemeZamanlayici);
+    puanlamaListeYenilemeZamanlayici = setInterval(puanlamaViewerListesiCiz, 5000);
+}
+
+function puanlamaSayfasiniKapat() {
+    const ratingPage = document.getElementById("ratingPage");
+    if (ratingPage) ratingPage.style.display = "none";
+
+    const gosterilecekler = [
+        ".battle",
+        ".vs-obs-card",
+        ".live-connect",
+        ".live-tabs",
+        "#chatList",
+        "#bgVideo",
+        "#bgPickerBtn",
+        "#giftAnimBtn"
+    ];
+    gosterilecekler.forEach(function (sel) {
+        const el = document.querySelector(sel);
+        if (el) el.style.display = "";
+    });
+
+    document.body.style.background = "";
+
+    clearInterval(puanlamaListeYenilemeZamanlayici);
+}
+
+function ratingDurationPresetUygula(deger) {
+    if (!deger) return;
+    document.getElementById("ratingDuration").value = deger;
+}
+
+function puanlamaGosterButonu(uniqueId) {
+    const info = puanlamaViewerMap.get(uniqueId);
+    if (!info) return;
+
+    if (liveSocket && liveSocket.readyState === WebSocket.OPEN) {
+        liveSocket.send(JSON.stringify({
+            type: "puanlama-goster",
+            uniqueId: uniqueId,
+            nickname: info.nickname || ("@" + uniqueId),
+            profilePictureUrl: info.profilePictureUrl || null
+        }));
+    }
+}
+
+function puanlamaBaslatButon() {
+    const saniye = Number(document.getElementById("ratingDuration").value) || 30;
+    if (liveSocket && liveSocket.readyState === WebSocket.OPEN) {
+        liveSocket.send(JSON.stringify({ type: "puanlama-basla", saniye: saniye }));
+    }
+}
+
+function puanlamaListedenSilButon(id) {
+    if (liveSocket && liveSocket.readyState === WebSocket.OPEN) {
+        liveSocket.send(JSON.stringify({ type: "puanlama-liste-sil", id: id }));
+    }
+}
+
+// Bir profil fotoğrafı URL'sini (uzak TikTok linki ya da yerel) doğru
+// şekilde /api/image proxy'sinden geçirir.
+function uretVarsayilanAvatarSvg(isim) {
+    const harf = (isim || "?").trim().charAt(0).toUpperCase() || "?";
+    let hash = 0;
+    for (let i = 0; i < (isim || "").length; i++) {
+        hash = (hash << 5) - hash + (isim || "").charCodeAt(i);
+        hash |= 0;
+    }
+    const renkler = ["#ef4444", "#f97316", "#f59e0b", "#10b981", "#06b6d4", "#3b82f6", "#8b5cf6", "#ec4899"];
+    const bg = renkler[Math.abs(hash) % renkler.length];
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128"><circle cx="64" cy="64" r="64" fill="${bg}"/><text x="64" y="80" font-size="56" font-family="-apple-system,BlinkMacSystemFont,sans-serif" font-weight="bold" fill="#ffffff" text-anchor="middle">${harf}</text></svg>`;
+    return "data:image/svg+xml;utf8," + encodeURIComponent(svg);
+}
+
+function puanlamaFotoUrl(uniqueId, profilePictureUrl, yuksekKalite) {
+    if (!profilePictureUrl) {
+        return "/api/image?user=" + encodeURIComponent(uniqueId || "") + "&url=";
+    }
+    return "/api/image?" + (yuksekKalite ? "highres=1&" : "") +
+           "user=" + encodeURIComponent(uniqueId || "") +
+           "&url=" + encodeURIComponent(profilePictureUrl);
+}
+
+// Sağdaki "İZLEYİCİLER" listesini çizer — her birinde "Göster" butonu.
+// Ana ekrandan TAMAMEN BAĞIMSIZ — sadece bu sayfanın kendi bağlantısından
+// gelen izleyiciler burada tutulur (uniqueId -> {nickname, profilePictureUrl}).
+let puanlamaViewerMap = new Map();
+let puanlamaListeYenilemeZamanlayici = null;
+
+function obsToastGoster(mesaj, sureMs = 4000) {
+    const toast = document.getElementById("obsToast");
+    if (!toast) return;
+    toast.innerHTML = mesaj;
+    toast.classList.add("show");
+    setTimeout(function () {
+        toast.classList.remove("show");
+    }, sureMs);
+}
+
+async function obsYayinBaglantisiKopyala(game, mode, mesaj) {
+    try {
+        const response = await fetch("/api/launcher-widget-links?game=" + encodeURIComponent(game), {
+            cache: "no-store", signal: AbortSignal.timeout(6000)
+        });
+        if (!response.ok) throw new Error("Widget service unavailable");
+        const data = await response.json();
+        const link = data && data.ready === true && data.links && data.links[mode];
+        if (typeof link !== "string") throw new Error("Widget mode unavailable");
+        const url = new URL(link);
+        if (url.protocol !== "https:") throw new Error("HTTPS widget required");
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            try {
+                await navigator.clipboard.writeText(url.href);
+                obsToastGoster(mesaj);
+            } catch {
+                prompt("OBS Widget Bağlantınız (Kopyalayabilirsiniz):", url.href);
+            }
+        } else {
+            prompt("OBS Widget Bağlantınız (Kopyalayabilirsiniz):", url.href);
+        }
+    } catch {
+        obsToastGoster("<strong>HTTPS yayın bağlantısı hazır değil.</strong><br>Launcher içinden yayın bağlantısını hazırlayın.");
+    }
+}
+
+function obsWidgetUrlKopyala() {
+    return obsYayinBaglantisiKopyala("puanlama", "profile", "✨ <strong>OBS Widget Bağlantısı Kopyalandı!</strong>");
+}
+
+function obsLeaderboardUrlKopyala() {
+    return obsYayinBaglantisiKopyala("puanlama", "leaderboard", "🏆 <strong>OBS Sıralama Widget Bağlantısı Kopyalandı!</strong>");
+}
+
+function obsVsWidgetUrlKopyala() {
+    return obsYayinBaglantisiKopyala("vs", "vs", "⚔️ <strong>OBS VS Widget Bağlantısı Kopyalandı!</strong>");
+}
+
+function obsVsKazananWidgetUrlKopyala() {
+    return obsYayinBaglantisiKopyala("vs", "winners", "🏆 <strong>OBS Kazananlar Widget Bağlantısı Kopyalandı!</strong>");
+}
+
+function playPuanSesi() {
+    try {
+        const ses = new Audio("assets/sounds/puan.mp3");
+        ses.volume = 0.85;
+        ses.play().catch(function () {});
+    } catch (e) {}
+}
+
+function puanlamaBaglanButon() {
+    const input = document.getElementById("ratingUsername");
+    const username = input.value.trim().replace("@", "");
+
+    if (!username) {
+        alert("TikTok kullanıcı adını gir.");
+        return;
+    }
+
+    document.getElementById("ratingConnectStatus").textContent = "Bağlanıyor...";
+
+    if (liveSocket && liveSocket.readyState === WebSocket.OPEN) {
+        liveSocket.send(JSON.stringify({ type: "puanlama-baglan", username: username }));
+    }
+}
+
+function puanlamaBaglantiyiKesButon() {
+    if (liveSocket && liveSocket.readyState === WebSocket.OPEN) {
+        liveSocket.send(JSON.stringify({ type: "puanlama-baglanti-kes" }));
+    }
+}
+
+function applyPuanlamaViewers(viewers) {
+    puanlamaViewerMap = new Map();
+    (viewers || []).forEach(function (v) {
+        puanlamaViewerMap.set(v.uniqueId, {
+            nickname: v.nickname,
+            profilePictureUrl: v.profilePictureUrl,
+            sira: v.sira || 0,
+            mesajZamani: v.mesajZamani || 0,
+            sonEtkilesim: v.sonEtkilesim || null
+        });
+    });
+    puanlamaViewerListesiCiz();
+}
+
+function applyPuanlamaStatus(mesaj) {
+    const el = document.getElementById("ratingConnectStatus");
+    if (el) el.textContent = mesaj;
+}
+
+// Sağdaki "EN ÇOK HEDİYE ATANLAR" listesi — giftTotals'taki (zaten var
+// olan, ana coin verisi) en yüksek coin'e sahip kişileri sıralar.
+function puanlamaGiftersListesiCiz() {
+    const kutu = document.getElementById("ratingGiftersList");
+    if (!kutu || document.getElementById("ratingPage").style.display === "none") return;
+
+    const siraliHediyeVerenler = Array.from(giftTotals.entries())
+        .filter(function (giris) { return (giris[1].coins || 0) > 0; })
+        .sort(function (a, b) { return (b[1].coins || 0) - (a[1].coins || 0); })
+        .slice(0, 30);
+
+    kutu.innerHTML = "";
+
+    if (siraliHediyeVerenler.length === 0) {
+        const bos = document.createElement("div");
+        bos.className = "chat-empty";
+        bos.textContent = "Henüz hediye atan olmadı.";
+        kutu.appendChild(bos);
+        return;
+    }
+
+    siraliHediyeVerenler.forEach(function (giris) {
+        const uniqueId = giris[0];
+        const bilgi = giris[1];
+
+        const item = document.createElement("div");
+        item.className = "rating-gifter-item";
+
+        const avatar = document.createElement("img");
+        avatar.alt = "";
+        avatar.src = puanlamaFotoUrl(uniqueId, bilgi.profilePictureUrl);
+        avatar.onerror = function () { this.onerror = null; this.src = uretVarsayilanAvatarSvg(uniqueId); };
+
+        const yazi = document.createElement("div");
+        yazi.className = "rating-gifter-info";
+
+        const isim = document.createElement("div");
+        isim.className = "rating-gifter-name";
+        isim.textContent = "@" + uniqueId;
+
+        const coin = document.createElement("div");
+        coin.className = "rating-gifter-coin";
+        coin.textContent = "🪙 " + coinYazisi(bilgi.coins || 0);
+
+        yazi.appendChild(isim);
+        yazi.appendChild(coin);
+
+        item.appendChild(avatar);
+        item.appendChild(yazi);
+        kutu.appendChild(item);
+    });
+}
+
+function puanlamaViewerListesiCiz() {
+    puanlamaGiftersListesiCiz();
+
+    const kutu = document.getElementById("ratingViewerList");
+    if (!kutu || document.getElementById("ratingPage").style.display === "none") return;
+
+    kutu.innerHTML = "";
+
+    if (puanlamaViewerMap.size === 0) {
+        const bos = document.createElement("div");
+        bos.className = "chat-empty";
+        bos.textContent = "Şu an aktif yazan/hediye atan kimse yok.";
+        kutu.appendChild(bos);
+        return;
+    }
+
+    // Bu liste SADECE Profil Puanlama sayfasına özel: sadece SON 1
+    // DAKİKA içinde mesaj yazan ya da hediye/coin atan kişiler görünür
+    // (kolayca seçilebilsin diye) — hiç yazmayan sessiz izleyiciler ve
+    // 1 dakikadır sessiz kalanlar listede GÖRÜNMEZ. En yeni aktivite
+    // en üstte. Ana ekrandaki izleyici listesi bundan ETKİLENMİYOR.
+    const AKTIFLIK_SURESI = 60 * 1000;
+    const simdi = Date.now();
+    const siraliGiris = Array.from(puanlamaViewerMap.entries())
+        .filter(function (giris) {
+            const zaman = giris[1].mesajZamani || 0;
+            return zaman > 0 && (simdi - zaman) <= AKTIFLIK_SURESI;
+        })
+        .sort(function (a, b) {
+            return (b[1].mesajZamani || 0) - (a[1].mesajZamani || 0);
+        });
+
+    siraliGiris.forEach(function (giris) {
+        const uniqueId = giris[0];
+        const info = giris[1];
+
+        const item = document.createElement("div");
+        item.className = "rating-viewer-item";
+
+        const avatar = document.createElement("img");
+        avatar.alt = "";
+        avatar.src = puanlamaFotoUrl(uniqueId, info.profilePictureUrl);
+        avatar.onerror = function () { this.onerror = null; this.src = uretVarsayilanAvatarSvg(uniqueId); };
+
+        const bilgi = document.createElement("div");
+        bilgi.className = "rating-viewer-info";
+
+        const isim = document.createElement("span");
+        isim.className = "rating-viewer-name";
+        isim.textContent = (info.sonEtkilesim ? info.sonEtkilesim + " " : "") + "@" + uniqueId;
+        bilgi.appendChild(isim);
+
+        const coin = (giftTotals.get(uniqueId) || {}).coins || 0;
+        if (coin > 0) {
+            const coinRozeti = document.createElement("span");
+            coinRozeti.className = "rating-viewer-coin";
+            coinRozeti.textContent = "🪙 " + coinYazisi(coin);
+            bilgi.appendChild(coinRozeti);
+        }
+
+        const goster = document.createElement("button");
+        goster.className = "rating-viewer-show-btn";
+        goster.textContent = "Göster";
+        goster.onclick = function () { puanlamaGosterButonu(uniqueId); };
+
+        item.appendChild(avatar);
+        item.appendChild(bilgi);
+        item.appendChild(goster);
+        kutu.appendChild(item);
+    });
+}
+
+// Sunucudan gelen puanlamaState'i tüm sayfaya uygular.
+function applyPuanlamaState(state) {
+    puanlamaSonState = state;
+
+    // Ortadaki gösterilen profil.
+    const foto = document.getElementById("ratingShownPhoto");
+    const placeholder = document.getElementById("ratingShownPlaceholder");
+    const isimEl = document.getElementById("ratingShownName");
+    const ortalamaEl = document.getElementById("ratingShownAverage");
+
+    if (state.gosterilenKullanici) {
+        const url = puanlamaFotoUrl(state.gosterilenKullanici.uniqueId, state.gosterilenKullanici.profilePictureUrl, true);
+        if (url) {
+            foto.src = url;
+            foto.onerror = function () {
+                this.onerror = null;
+                this.src = uretVarsayilanAvatarSvg(state.gosterilenKullanici.uniqueId);
+            };
+            foto.classList.add("active");
+            placeholder.style.display = "none";
+        } else {
+            foto.classList.remove("active");
+            placeholder.style.display = "block";
+        }
+        isimEl.textContent = "@" + state.gosterilenKullanici.uniqueId;
+    } else {
+        foto.classList.remove("active");
+        foto.src = "";
+        placeholder.style.display = "block";
+        isimEl.textContent = "";
+    }
+
+    // Anlık ortalama.
+    if (state.oylar && state.oylar.length > 0) {
+        const toplam = state.oylar.reduce(function (t, o) { return t + o.puan; }, 0);
+        const ortalama = toplam / state.oylar.length;
+        ortalamaEl.textContent = ortalama.toFixed(1) + " / 10  (" + state.oylar.length + " oy)";
+    } else {
+        ortalamaEl.textContent = state.calisiyorMu ? "Henüz oy yok" : "";
+    }
+
+    // Süre.
+    document.getElementById("ratingTimer").textContent = state.kalanSaniye;
+
+    // Canlı teşhis sayacı — bağlantıdan gerçekten mesaj gelip gelmediğini
+    // konsola bakmadan buradan görebilirsin.
+    const sayacEl = document.getElementById("ratingDebugCounter");
+    if (sayacEl) {
+        sayacEl.textContent = "Gelen mesaj: " + (state.gelenMesajSayisi || 0) +
+                               " / Geçerli oy: " + (state.gecerliOySayisi || 0);
+    }
+
+    // Canlı oy akışı (kim ne verdi, fotoğrafıyla).
+    const feed = document.getElementById("ratingVotesFeed");
+    feed.innerHTML = "";
+    (state.oylar || []).slice().reverse().forEach(function (oy) {
+        const satir = document.createElement("div");
+        satir.className = "rating-vote-item";
+
+        const img = document.createElement("img");
+        img.alt = "";
+        img.src = puanlamaFotoUrl(oy.uniqueId, oy.profilePictureUrl);
+        img.onerror = function () { this.onerror = null; this.src = uretVarsayilanAvatarSvg(oy.uniqueId); };
+
+        const isim = document.createElement("span");
+        isim.className = "rating-vote-name";
+        isim.textContent = "@" + oy.uniqueId;
+
+        const puan = document.createElement("span");
+        puan.className = "rating-vote-score";
+        puan.textContent = oy.puan + "/10";
+
+        satir.appendChild(img);
+        satir.appendChild(isim);
+        satir.appendChild(puan);
+        feed.appendChild(satir);
+    });
+
+    // Sol taraf: en yüksek ortalama listesi.
+    const liderKutu = document.getElementById("ratingLeaderboardList");
+    liderKutu.innerHTML = "";
+    (state.liste || []).forEach(function (kayit) {
+        const satir = document.createElement("div");
+        satir.className = "rating-leader-item";
+
+        const img = document.createElement("img");
+        img.alt = "";
+        img.src = puanlamaFotoUrl(kayit.uniqueId, kayit.profilePictureUrl);
+        img.onerror = function () { this.onerror = null; this.src = uretVarsayilanAvatarSvg(kayit.uniqueId); };
+
+        const bilgi = document.createElement("div");
+        bilgi.className = "rating-leader-info";
+
+        const isim = document.createElement("div");
+        isim.className = "rating-leader-name";
+        isim.textContent = "@" + kayit.uniqueId;
+
+        const skor = document.createElement("div");
+        skor.className = "rating-leader-score";
+        skor.textContent = kayit.ortalama.toFixed(1) + "/10";
+
+        bilgi.appendChild(isim);
+        bilgi.appendChild(skor);
+
+        const sil = document.createElement("button");
+        sil.className = "rating-leader-remove";
+        sil.textContent = "－";
+        sil.title = "Listeden sil";
+        sil.onclick = function () { puanlamaListedenSilButon(kayit.id); };
+
+        satir.appendChild(img);
+        satir.appendChild(bilgi);
+        satir.appendChild(sil);
+        liderKutu.appendChild(satir);
+    });
+}
+
+// =====================================================================
+// OTOMATİK KAYAN LİSTE MOTORU (Aşağıdan Yukarıya Doğru Pürüzsüz & Başa Dönen)
+// =====================================================================
+const otomatikKaydirmaDurumlari = new Map();
+
+function otomatikKaydirmaBaslat(elementId, hiz = 0.6) {
+    const el = document.getElementById(elementId);
+    if (!el) return;
+
+    if (otomatikKaydirmaDurumlari.has(elementId)) {
+        return; // Zaten aktif
+    }
+
+    const durum = {
+        hiz: hiz,
+        isHovered: false,
+        duraklatildi: false,
+        animId: null
+    };
+
+    el.addEventListener("mouseenter", function () { durum.isHovered = true; });
+    el.addEventListener("mouseleave", function () { durum.isHovered = false; });
+    el.addEventListener("touchstart", function () { durum.isHovered = true; }, { passive: true });
+    el.addEventListener("touchend", function () { durum.isHovered = false; }, { passive: true });
+
+    function kaydirmaAdimi() {
+        if (!durum.isHovered && !durum.duraklatildi) {
+            const maxScroll = el.scrollHeight - el.clientHeight;
+            if (maxScroll > 15) {
+                if (el.scrollTop >= maxScroll - 1) {
+                    // Listenin sonuna ulaştı, 1.8 saniye bekle ve pürüzsüzce başa dön
+                    durum.duraklatildi = true;
+                    setTimeout(function () {
+                        if (!el) return;
+                        el.scrollTo({ top: 0, behavior: "smooth" });
+                        setTimeout(function () {
+                            durum.duraklatildi = false;
+                        }, 1200);
+                    }, 1800);
+                } else {
+                    el.scrollTop += durum.hiz;
+                }
+            }
+        }
+        durum.animId = requestAnimationFrame(kaydirmaAdimi);
+    }
+
+    durum.animId = requestAnimationFrame(kaydirmaAdimi);
+    otomatikKaydirmaDurumlari.set(elementId, durum);
+}
+
+
+
+// Bir "SOL/SAĞ'a ekle" butonunu, o kişiden eklenmeyi bekleyen coin
+// miktarına göre hazırlar: eklenecek bir şey yoksa buton devre dışı
+// kalır ve "✓ EKLENDİ" yazar; varsa ne kadar ekleneceği yazının
+// içinde ve title'da görünür.
+function sagaVeSolaEkleButonuHazirla(buton, etiket, kalan) {
+    if (kalan > 0) {
+        buton.disabled = false;
+        buton.textContent = etiket + " (+" + coinYazisi(kalan) + ")";
+        buton.title = "Bu kişinin eklenmemiş " + kalan.toLocaleString("tr-TR") + " coin'ini skora ekle";
+    } else {
+        buton.disabled = true;
+        buton.textContent = "✓ EKLENDİ";
+        buton.title = "Bu kişinin coini zaten eklendi";
+    }
+}
+
+// ---------- COIN / HEDİYE PANELİ ----------
+
+function renderGiftPanel() {
+    // En yüksek coin atan her zaman en üstte — sıralama coin miktarına göre,
+    // liste sunucudaki kalıcı veriden geliyor.
+    const hediyeVerenler = Array.from(giftTotals.entries())
+        .filter(function (g) { return (g[1].coins || 0) > 0; })
+        .sort(function (a, b) { return b[1].coins - a[1].coins; });
+
+    const toplam = hediyeVerenler.reduce(function (t, g) { return t + g[1].coins; }, 0);
+
+    const rozet = document.getElementById("totalCoinsBadge");
+    if (rozet) rozet.textContent = coinYazisi(toplam) || "0";
+
+    if (aktifSekme !== "gifts") return;
+
+    document.getElementById("totalCoinsValue").textContent = toplam.toLocaleString("tr-TR");
+    document.getElementById("gifterCountValue").textContent = hediyeVerenler.length;
+
+    // Sıralama tablosu
+    const tablo = document.getElementById("giftLeaderboard");
+    tablo.innerHTML = "";
+
+    if (hediyeVerenler.length === 0) {
+        const bos = document.createElement("div");
+        bos.className = "chat-empty";
+        bos.textContent = "Henüz hediye gönderilmedi.";
+        tablo.appendChild(bos);
+    }
+
+    hediyeVerenler.slice(0, 30).forEach(function (giris, sira) {
+        const uniqueId = giris[0];
+        const info = giris[1];
+
+        const item = document.createElement("div");
+        item.className = "gift-row" + (sira < 3 ? " top-" + (sira + 1) : "");
+
+        const madalya = document.createElement("span");
+        madalya.className = "gift-rank";
+        madalya.textContent = sira === 0 ? "🥇" : sira === 1 ? "🥈" : sira === 2 ? "🥉" : "#" + (sira + 1);
+
+        const avatar = document.createElement("img");
+        avatar.className = "chat-avatar";
+        avatar.alt = "";
+        avatar.loading = "lazy";
+        if (info.profilePictureUrl) {
+            avatar.src = "/api/image?user=" + encodeURIComponent(uniqueId) +
+                         "&url=" + encodeURIComponent(info.profilePictureUrl);
+        }
+
+        const isim = document.createElement("span");
+        isim.className = "chat-name";
+        isim.textContent = "@" + uniqueId;
+
+        const coin = document.createElement("span");
+        coin.className = "coin-badge big";
+        coin.textContent = "🪙 " + (info.coins || 0).toLocaleString("tr-TR");
+
+        // Bu kişinin coin'inden henüz skora eklenmemiş kısmı — butonlar
+        // artık kişinin TÜM coin'ini değil, sadece bunu ekliyor. Hepsi
+        // zaten eklenmişse (kalan <= 0) butonlar devre dışı kalır, böylece
+        // aynı coin'i yanlışlıkla iki kez eklemek mümkün olmuyor.
+        const kalan = (info.coins || 0) - (info.credited || 0);
+
+        const solaEkle = document.createElement("button");
+        solaEkle.className = "to-left";
+        sagaVeSolaEkleButonuHazirla(solaEkle, "◀ SOL", kalan);
+        solaEkle.onclick = function () { addCoinsToScore("left", uniqueId); };
+
+        const sagaEkle = document.createElement("button");
+        sagaEkle.className = "to-right";
+        sagaVeSolaEkleButonuHazirla(sagaEkle, "SAĞ ▶", kalan);
+        sagaEkle.onclick = function () { addCoinsToScore("right", uniqueId); };
+
+        item.appendChild(madalya);
+        item.appendChild(avatar);
+        item.appendChild(isim);
+        item.appendChild(coin);
+
+        // Attığı son hediyenin görseli — "hangi hediyeyi attı" görünsün diye.
+        if (info.lastGiftImage) {
+            const hediyeGorseli = document.createElement("img");
+            hediyeGorseli.className = "gift-icon";
+            hediyeGorseli.alt = info.lastGiftName || "hediye";
+            hediyeGorseli.title = info.lastGiftName || "";
+            hediyeGorseli.loading = "lazy";
+            hediyeGorseli.src = "/api/image?url=" + encodeURIComponent(info.lastGiftImage);
+            item.appendChild(hediyeGorseli);
+        } else if (info.lastGiftName) {
+            const hediyeAdi = document.createElement("span");
+            hediyeAdi.className = "gift-name";
+            hediyeAdi.textContent = info.lastGiftName;
+            item.appendChild(hediyeAdi);
+        }
+
+        item.appendChild(solaEkle);
+        item.appendChild(sagaEkle);
+
+        tablo.appendChild(item);
+    });
+
+    // Canlı hediye akışı (son olaylar, bilgi amaçlı)
+    const akis = document.getElementById("giftFeed");
+    akis.innerHTML = "";
+
+    giftFeed.slice(0, 12).forEach(function (h) {
+        const satir = document.createElement("div");
+        satir.className = "gift-feed-row";
+        satir.textContent =
+            "@" + h.uniqueId + " → " + h.giftName +
+            (h.count > 1 ? " x" + h.count : "") +
+            "  =  " + h.coins.toLocaleString("tr-TR") + " coin";
+        akis.appendChild(satir);
+    });
+}
+
+// ÖNEMLİ DÜZELTME: Bu fonksiyon eskiden mevcut skoru okuyup kişinin
+// TÜM coin'ini üzerine ekliyordu. Aynı kişiye iki kez basınca (ya da
+// o kişi yeni hediye attıktan sonra tekrar basınca) coin'ler ikinci
+// kez eklenip skor olması gerekenden fazla artıyordu. Artık hesabı
+// biz yapmıyoruz — sadece "bu kişinin coin'ini şu tarafa ekle"
+// isteğini sunucuya gönderiyoruz; sunucu kimin ne kadarının zaten
+// eklendiğini tutuyor ve sadece eklenmemiş farkı ekliyor.
+function addCoinsToScore(side, uniqueId) {
+    if (liveSocket && liveSocket.readyState === WebSocket.OPEN) {
+        liveSocket.send(JSON.stringify({ type: "credit-gift", uniqueId: uniqueId, side: side }));
+    }
+}
+
+function resetCoins() {
+    if (!confirm("Tüm coin sıralaması kalıcı olarak sıfırlansın mı? (Diğer bağlı cihazlarda da sıfırlanır)")) {
+        return;
+    }
+
+    giftTotals.clear();
+    giftFeed.length = 0;
+    renderGiftPanel();
+    renderChatList();
+
+    // Sunucuya da bildiriyoruz ki: 1) diskteki kayıt silinsin,
+    // 2) bağlı diğer tüm cihazlarda (telefon, tablet) da sıfırlansın.
+    if (liveSocket && liveSocket.readyState === WebSocket.OPEN) {
+        liveSocket.send(JSON.stringify({ type: "reset-coins" }));
+    }
+}
+
+// ---------- OYUNCU ATAMA ----------
+
+function assignFromChat(side, uniqueId) {
+    const info = seenChatters.get(uniqueId);
+    if (!info) return;
+
+    const nickname = info.nickname || ("@" + uniqueId);
+    const link = "https://www.tiktok.com/@" + uniqueId;
+
+    document.getElementById(side + "Username").textContent = nickname;
+    document.getElementById(side + "Link").value = link;
+
+    // Önce elimizdeki fotoğrafı anında göster, ardından profilden
+    // en yüksek çözünürlüklü halini getir.
+    if (info.profilePictureUrl) {
+        setProfileImage(
+            side,
+            "/api/image?highres=1&user=" + encodeURIComponent(uniqueId) +
+            "&url=" + encodeURIComponent(info.profilePictureUrl)
+        );
+    }
+
+    // Diğer cihazlara da bu atamayı bildir.
+    if (liveSocket && liveSocket.readyState === WebSocket.OPEN) {
+        liveSocket.send(JSON.stringify({
+            type: "battle-assign",
+            side: side,
+            username: nickname,
+            link: link,
+            photoUser: uniqueId,
+            photoUrl: info.profilePictureUrl || ""
+        }));
+    }
+
+    loadProfile(side);
+}
+
+loadSettings();
+connectWebSocket();
+tumSlotGorselleriniGuncelle();
+
+// URL parametresi ile oyun modunu belirle (Tamamen bağımsız iki ayrı oyun)
+const isPuanlamaModu = window.location.search.includes("app=puanlama") || window.location.search.includes("mode=puanlama") || window.location.hash === "#puanlama";
+
+if (isPuanlamaModu) {
+    document.title = "Profil Puanlama - MNG TikTok Game";
+    setTimeout(function() {
+        if (typeof puanlamaSayfasiniAc === "function") {
+            puanlamaSayfasiniAc();
+        }
+    }, 50);
+} else {
+    document.title = "TikTok VS Profil - MNG TikTok Game";
+    const ratingPage = document.getElementById("ratingPage");
+    if (ratingPage) ratingPage.style.display = "none";
+    const tabBtn = document.getElementById("ratingTabBtn");
+    if (tabBtn) tabBtn.style.display = "none";
+}
+
+// ── OTOMATİK BAĞLANTI (Launcher'dan gelen autoUser parametresi) ──────
+// Launcher ana ekranında kaydedilen TikTok kullanıcı adı URL'ye
+// "?autoUser=kullanici_adi" olarak ekleniyor. Sayfa açılır açılmaz
+// WebSocket hazır olunca bu kullanıcıya otomatik bağlanıyoruz.
+(function otomatikBaglantiKontrol() {
+    const params = new URLSearchParams(window.location.search);
+    const autoUser = params.get("autoUser");
+    if (!autoUser) return;
+
+    // Input alanına da yaz — kullanıcı görsün, isterse değiştirebilsin.
+    const userInput = document.getElementById("liveUsername");
+    if (userInput) userInput.value = autoUser;
+
+    // WebSocket hazır olana kadar bekle, sonra bağlan.
+    let deneme = 0;
+    const bekle = setInterval(function () {
+        deneme++;
+        if (liveSocket && liveSocket.readyState === WebSocket.OPEN) {
+            clearInterval(bekle);
+            sonBaglanilanLiveKullanici = autoUser;
+            document.getElementById("liveStatus").textContent = "Otomatik bağlanıyor: @" + autoUser + "...";
+            seenChatters.clear();
+            liveSocket.send(JSON.stringify({ type: "connect-live", username: autoUser }));
+        }
+        if (deneme > 30) clearInterval(bekle); // 15sn sonra bırak
+    }, 500);
+})();
