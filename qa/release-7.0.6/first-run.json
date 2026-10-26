@@ -1,0 +1,10 @@
+{
+  "passed": true,
+  "version": "7.0.6",
+  "games": 16,
+  "media": 285,
+  "downloadPause": false,
+  "ttsNames": false,
+  "speechStatus": true,
+  "errors": []
+}

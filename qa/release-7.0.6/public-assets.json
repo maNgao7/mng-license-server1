@@ -1,0 +1,72 @@
+{
+  "passed": true,
+  "public": true,
+  "checks": [
+    {
+      "tag": "game-snake-0.16.0",
+      "name": "647896537dc599e98abfc75bf7423b30e833517d0448145d338f099c4eac0503.bin",
+      "bytes": 9325,
+      "digestVerified": true
+    },
+    {
+      "tag": "game-snake-0.16.0",
+      "name": "d7bf2a477c339d9693f15a6f65271b8ccd18c13d52042abb78f047585b4c957b.bin",
+      "bytes": 44132320,
+      "digestVerified": true
+    },
+    {
+      "tag": "game-snake-0.16.0",
+      "name": "game-content-minecraft-snake-arena-0.16.0.json",
+      "bytes": 2724422,
+      "digestVerified": true
+    },
+    {
+      "tag": "game-snake-0.16.0",
+      "name": "minecraft-snake-arena-0.16.0.zip",
+      "bytes": 824803433,
+      "digestVerified": true
+    },
+    {
+      "tag": "game-snake-0.16.0",
+      "name": "report.json",
+      "bytes": 200,
+      "digestVerified": true
+    },
+    {
+      "tag": "v7.0.6",
+      "name": "TikMnG-Setup-7.0.6.exe",
+      "bytes": 245166489,
+      "digestVerified": true
+    },
+    {
+      "tag": "v7.0.6",
+      "name": "TikMnG-Setup-7.0.6.exe.blockmap",
+      "bytes": 255559,
+      "digestVerified": true
+    },
+    {
+      "tag": "v7.0.6",
+      "name": "TikMnG-7.0.6-Portable.exe",
+      "bytes": 244987922,
+      "digestVerified": true
+    },
+    {
+      "tag": "v7.0.6",
+      "name": "latest.yml",
+      "bytes": 341,
+      "digestVerified": true
+    },
+    {
+      "tag": "v7.0.6",
+      "name": "manifest-7.0.6.json",
+      "bytes": 1081,
+      "digestVerified": true
+    },
+    {
+      "tag": "v7.0.6",
+      "name": "KONTROL-RAPORU.json",
+      "bytes": 925,
+      "digestVerified": true
+    }
+  ]
+}
