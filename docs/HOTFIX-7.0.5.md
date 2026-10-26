@@ -25,7 +25,10 @@ The publisher explicitly retained the red 10-coin heart 5282 and the 20-coin flo
 - Real Electron login test: clicking both fields, keyboard copy/paste, native context menu and native paste succeeded. Hidden announcements cannot intercept login input; their post-login dismissal remains effective.
 - Isolated tests cover old placeholder recovery, exact backup, custom mapping preservation, update fallback validation, independent game installs and launch lifecycle.
 - Full launcher regression suite: 968 passed, zero failed. Packaged 7.0.5 startup reports 16 games and 285 media records. Windows NSIS path tests passed for fresh, existing and explicitly selected installation paths.
+- Public GitHub game downloads: both SHA-256 values verified, both packages installed, saved settings survived, updating the second game left the first game's active pointer and settings unchanged. Reopening the library retained both paths. Browser social-action tests also passed against the publicly downloaded Vak Vak Jump package.
 - Real read-only TikTok observation on serkanwstt: connected; 17 like packets, one gift packet and comments received in the bounded observation. No gifts or comments were sent.
+- A second read-only observation also received follows and streak gifts: 21 like packets, one follow and four raw gift packets (two forwarded after streak deduplication), with no connection errors.
+- Published launcher download: all 245,163,489 bytes downloaded successfully. SHA-256 matched the official GitHub asset digest; SHA-512 matched the public latest.yml feed. Packaged 7.0.4 detected 7.0.5 and displayed its update dialog without installing anything or touching the user's profile.
 - Synthetic gift injection is not evidence of 13 distinct purchased live gifts. Long-term uptime and every possible external network failure cannot be guaranteed by this test.
 
 ## Delivery

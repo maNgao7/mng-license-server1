@@ -3,13 +3,14 @@ import {mkdtemp,readFile,rm} from 'node:fs/promises';
 import path from 'node:path';
 import os from 'node:os';
 import assert from 'node:assert/strict';
+import {pathToFileURL} from 'node:url';
 import {createRequire} from 'node:module';
 const require=createRequire(import.meta.url);
 const {chromium}=require('C:/Users/User/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright');
 const {WebcastEvent}=await import('tiktok-live-connector');
 const directory=await mkdtemp(path.join(os.tmpdir(),'vak-vak-social-'));
 process.env.FROG_SETTINGS_FILE=path.join(directory,'settings.json');
-const {startServer}=await import('../server.js');
+const {startServer}=await import(process.env.FROG_QA_ROOT?pathToFileURL(path.join(process.env.FROG_QA_ROOT,'server.js')).href:'../server.js');
 const connection=new EventEmitter();connection.connect=async()=>({});connection.disconnect=()=>{};
 let server,browser;
 try{
