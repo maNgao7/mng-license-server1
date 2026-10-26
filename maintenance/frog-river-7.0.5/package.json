@@ -1,0 +1,22 @@
+{
+  "name": "mng-frog-river",
+  "version": "7.0.5",
+  "private": true,
+  "type": "module",
+  "main": "desktop.cjs",
+  "scripts": {
+    "start": "node server.js",
+    "desktop": "electron .",
+    "test": "node --test test/*.test.js"
+  },
+  "dependencies": {
+    "express": "4.22.3",
+    "lucide": "0.468.0",
+    "three": "0.170.0",
+    "tiktok-live-connector": "2.4.4",
+    "ws": "8.22.0"
+  },
+  "devDependencies": {
+    "electron": "^44.7.0"
+  }
+}

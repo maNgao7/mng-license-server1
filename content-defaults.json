@@ -1,16 +1,16 @@
 {
   "schemaVersion": 1,
-  "revision": 4,
-  "publishedAt": "2026-10-26T09:34:36.841Z",
+  "revision": 5,
+  "publishedAt": "2026-10-26T17:58:19.594Z",
   "games": [
     {
       "id": "caahr",
       "title": "Sesli Sürüş",
       "description": "Sesinle ya da WASD ile hızlan; rampaları, kavşakları ve dönen trafiği geç. İzleyici hediyeleri seni ileri taşıyabilir, kafese hapsedebilir veya bir hortumla geri savurabilir.",
-      "version": "0.6.11",
-      "url": "https://github.com/maNgao7/mng-license-server1/releases/download/game-caahr-0.6.11/voice-driving-0.6.11.zip",
-      "sha256": "2e95c3c4a63b9ef8366ecdb2cb0b93bd1e3dd2f8010b671d9f82a0b290bfe22e",
-      "bytes": 52163999,
+      "version": "0.6.12",
+      "url": "https://github.com/maNgao7/mng-license-server1/releases/download/game-hotfix-7.0.5/voice-driving-0.6.12.zip",
+      "sha256": "0f253c9c7d547ffad23ed40a75ef7510e61b31b935f4767ecfc6af19758e9f0f",
+      "bytes": 63233577,
       "requirements": "Steam üzerinden CAAAHR Demo ve TikMnG oyun eklentisi gerekir.",
       "resources": []
     },
@@ -200,10 +200,10 @@
       "id": "frog-river",
       "title": "Vak Vak Jump",
       "description": "Kurbağanı seç, nehirdeki nilüferlerden ilerle. Canlı yayından gelen destek ve cezalarla değişen yarışta düşmeden hedefe ulaş.",
-      "version": "6.5.5",
-      "url": "https://mng-license-server1.onrender.com/download/game/frog-river.zip",
-      "sha256": null,
-      "bytes": null,
+      "version": "7.0.5",
+      "url": "https://github.com/maNgao7/mng-license-server1/releases/download/game-hotfix-7.0.5/frog-river-7.0.5.zip",
+      "sha256": "7b709236d6f6f1bfa18abe5031efeb3a2c09f29782d7d67f62ae27b2d028c320",
+      "bytes": 70661187,
       "requirements": "",
       "resources": []
     },

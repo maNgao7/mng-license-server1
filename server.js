@@ -534,9 +534,9 @@ function logEkle(lisansKod, cihazKimlik, islem, ip) {
 // =====================================================================
 // SÜRÜM BİLGİLERİ & İNDİRME LİNKLERİ
 // =====================================================================
-const EN_GUNCEL_SURUM = "7.0.4";
+const EN_GUNCEL_SURUM = "7.0.5";
 const EN_DUSUK_SURUM = "1.0.0";
-const SETUP_INDIRME_LINKI = "https://github.com/maNgao7/mng-license-server1/releases/download/v7.0.4/TikMnG-Setup-7.0.4.exe";
+const SETUP_INDIRME_LINKI = "https://github.com/maNgao7/mng-license-server1/releases/download/v7.0.5/TikMnG-Setup-7.0.5.exe";
 const PORTABLE_INDIRME_LINKI = "https://github.com/maNgao7/mng-license-server1/releases/download/v7.0.4/TikMnG-7.0.4-Portable.exe";
 const SETUP_WEB_LINKI = SETUP_INDIRME_LINKI;
 const VARSAYILAN_PAKET_LINKLERI = Object.freeze({
@@ -551,6 +551,7 @@ const VARSAYILAN_PAKET_LINKLERI = Object.freeze({
 
 // Her güncellemede eklenen/değişen özellikler listesi
 const SURUM_NOTLARI = [
+    "v7.0.5 — Acil düzeltme: Vak Vak Jump tekrarlanan 100 beğenide ve takipte 50 metre; ayrı geri götürme seçenekleri ve kalıcı kayıt. Sesli Sürüş onaylı 13 hediye, GG/külah 1 saniye, eksik hediye satırlarının yedekli onarımı. Gerekli iki oyun paketi oynamadan önce güncellenir. Launcher açıkken güncelleme kontrolü ve doğrulanmış yedek kurulum yolu eklendi. 7.0.1/7.0.2'de bildirim gelmiyorsa güncel kurulumu bir kez mevcut uygulamanın üzerine çalıştırın; lisanslar ve oyunlar korunur.",
     "v7.0.4 — Steam, Minecraft ve TikMnG (Web) kategorileri düzenlendi. Sesli Sürüş, Gelene Geçene ve Vak Vak Jump Steam bölümünde. Windows kurulum yolu hatası ve güncelleme denetimi düzeltildi. Kurulu oyunlar, lisanslar ve eşleştirmeler korunur; oyun paketleri değişmedi.",
     "v7.0.3 — Güncelleme denetimindeki eksik çalışma zamanı bağımlılığı düzeltildi. Oyunlar, lisanslar ve kayıtlı eşleştirmeler korunur; oyun paketleri yeniden indirilmez.",
     "v7.0.2 — Minecraft Yılan Oyunu ile 16 oyun, yenilenen yayın widgetları, düşük coinlerde animasyonlu kanatlar, saydam ve taşan hediye kavanozu, ayarlanabilir 100 beğeni bildirimi, tekrar olay/ses koruması, tek seferlik yeni oyun duyurusu ve belirgin oyun hazırlık adımları. Oyun güncellemeleri dosya doğrulamasıyla bağımsız indirilir; oyunlar, ayarlar ve hediye eşleştirmeleri korunur.",

@@ -1,0 +1,24 @@
+#welcome{top:10%;width:390px}
+.lead{margin-bottom:17px}
+.character-title{margin-bottom:8px;color:#466b5d;font-size:11px;font-weight:900}
+#characters{display:flex;width:300px;gap:8px;margin-bottom:16px}
+.character-option{width:146px;height:64px;padding:8px 10px;justify-content:flex-start;color:#315a4c;background:#ffffffd9;border:2px solid transparent;border-radius:8px;box-shadow:0 4px 16px #274e3b12}
+.character-option:hover{background:#fff}
+.character-option.selected{background:#fff;border-color:#df638c;box-shadow:0 5px 18px #b94c7024}
+.character-option>span:last-child{display:flex;flex-direction:column;align-items:flex-start}
+.character-option b{font-size:12px}
+.character-option small{color:#708d80;font-size:9px}
+.frog-face{position:relative;display:block;flex:0 0 auto;width:43px;height:38px;border:2px solid #3b713c;border-radius:48% 48% 44% 44%;background:linear-gradient(145deg,#9bdd55,#58a936);box-shadow:inset 0 -7px 0 #83c64b,0 4px 9px #23492824}
+.frog-face.female{width:39px;background:linear-gradient(145deg,#b0e866,#6fbf42)}
+.frog-face i{position:absolute;display:block;font-style:normal}
+.frog-eye{top:-5px;width:14px;height:15px;border:2px solid #39713c;border-radius:50%;background:#fff}
+.frog-eye:after{position:absolute;left:4px;top:4px;width:5px;height:6px;border-radius:50%;background:#142b28;content:''}
+.frog-eye.left{left:4px}.frog-eye.right{right:4px}
+.frog-mouth{left:50%;bottom:7px;width:17px;height:7px;border-bottom:2px solid #274e3c;border-radius:50%;transform:translateX(-50%)}
+.frog-hat{left:5px;top:-11px;width:32px;height:9px;border-radius:50%;background:#275a57;transform:rotate(-5deg);box-shadow:0 -6px 0 -1px #326c68}
+.frog-tongue{left:18px;bottom:-8px;width:9px;height:13px;border-radius:2px 2px 8px 8px;background:#ef719a;transform:rotate(8deg)}
+.frog-bow{right:-6px;top:-8px;width:11px;height:11px;border-radius:50%;background:#f15f94;box-shadow:-7px 1px 0 1px #f78ab0,7px 1px 0 1px #f78ab0}
+.frog-blush{top:22px;width:7px;height:4px;border-radius:50%;background:#ee82a4;opacity:.8}.frog-blush.left{left:4px}.frog-blush.right{right:4px}
+#world.look-active{cursor:grabbing}
+body.playing #world{cursor:grab}
+@media(max-width:700px){#welcome{top:auto;bottom:48px}.lead{display:none}#characters{margin-bottom:10px}.character-option{height:54px}.character-title{display:none}h1{margin:10px 0 9px}}

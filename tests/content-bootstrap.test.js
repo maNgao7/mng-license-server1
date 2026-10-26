@@ -5,6 +5,14 @@ import { upgradedBootstrapState } from '../content-bootstrap.js';
 
 const legacy=JSON.parse(fs.readFileSync(new URL('../content-bootstrap-6.5.17.json',import.meta.url),'utf8'));
 const current=JSON.parse(fs.readFileSync(new URL('../content-defaults.json',import.meta.url),'utf8'));
+test('untouched 7.0.4 catalog receives both urgent game packages; customized catalogs stay unchanged',()=>{
+  const previous=JSON.parse(fs.readFileSync(new URL('../content-bootstrap-7.0.4.json',import.meta.url),'utf8'));
+  const state={draft:structuredClone(previous),published:structuredClone(previous)};
+  const upgraded=upgradedBootstrapState(state,previous,current,{allowReleasedBaseline:true});
+  assert.equal(upgraded.published.games.find(g=>g.id==='frog-river').version,'7.0.5');
+  assert.equal(upgraded.published.games.find(g=>g.id==='caahr').version,'0.6.12');
+  state.draft.games[0].title='Custom';assert.equal(upgradedBootstrapState(state,previous,current,{allowReleasedBaseline:true}),null);
+});
 test('only untouched legacy bootstrap upgrades to the current game/media release',()=>{
   const state={draft:structuredClone(legacy),published:structuredClone(legacy)};
   const next=upgradedBootstrapState(state,legacy,current);

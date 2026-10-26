@@ -1,0 +1,1 @@
+{"name":"tikmng-caaahr-voice","private":true,"version":"0.1.0","type":"module","scripts":{"start":"node server.mjs","test":"node --test test/*.test.mjs"},"dependencies":{"express":"4.22.3","lucide":"0.468.0","sharp":"0.35.5","tiktok-live-connector":"2.4.4"}}

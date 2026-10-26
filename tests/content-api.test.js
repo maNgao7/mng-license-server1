@@ -99,10 +99,13 @@ test("public defaults promote 16 games with pinned complete content and retain i
     const byId = Object.fromEntries(response.data.games.map(item => [item.id, item]));
     assert.equal(response.data.games.length, 16);
     assert.equal(response.data.media.length, 285);
-    assert.equal(response.data.revision, 4);
-    assert.equal(byId.caahr.version, '0.6.11');
-    assert.equal(byId.caahr.bytes, 52163999);
-    for (const [id, version, folder] of legacyPackages.filter(([id]) => ['frog-river','gelene-gecene'].includes(id))) {
+    assert.equal(response.data.revision, 5);
+    assert.equal(byId.caahr.version, '0.6.12');
+    assert.equal(byId.caahr.bytes, 63233577);
+    assert.equal(byId['frog-river'].version,'7.0.5');
+    assert.equal(byId['frog-river'].bytes,70661187);
+    for(const id of ['caahr','frog-river']){assert.match(byId[id].sha256,/^[a-f0-9]{64}$/);assert.match(byId[id].url,/\/game-hotfix-7\.0\.5\//);}
+    for (const [id, version, folder] of legacyPackages.filter(([id]) => id==='gelene-gecene')) {
         assert.equal(byId[id].version, version);
         assert.equal(byId[id].url, `https://mng-license-server1.onrender.com/download/game/${folder}.zip`);
         // These routes can redirect via GAME_DOWNLOAD_*_URL or serve a higher-priority data-directory ZIP.
