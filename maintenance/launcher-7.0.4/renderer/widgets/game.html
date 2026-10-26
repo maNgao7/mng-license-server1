@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="tr">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>TikMnG Oyun Widget</title>
+<style>
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;background:transparent;color:#fff;font-family:"Segoe UI",Arial,sans-serif;letter-spacing:0;overflow:hidden}main{width:min(440px,100%);padding:12px}h1{font-size:19px;margin:0 0 10px;text-shadow:0 2px 4px #000}ol{list-style:none;margin:0;padding:0}li{display:grid;grid-template-columns:28px 42px minmax(0,1fr) auto;gap:9px;align-items:center;min-height:56px;padding:6px 8px;border-bottom:1px solid #ffffff38;background:#14161bcf;font-size:15px}li:first-child{border-top:2px solid #ffd86b}img,.face{width:38px;height:38px;border-radius:50%;object-fit:cover;background:#34393f}.face{display:grid;place-items:center;color:#3de6dd;font-weight:700}.name{overflow-wrap:anywhere;min-width:0}strong{white-space:nowrap;font-size:15px;color:#ffd86b}.rank{color:#bac0c8;font-size:13px}
+</style>
+<main hidden><h1></h1><ol></ol></main>
+<script>
+const params=new URLSearchParams(location.search),prefix=location.pathname.match(/^\/overlays\/[A-Za-z0-9_-]{43}(?=\/)/)?.[0]||'';
+const query=new URLSearchParams({type:'game',game:params.get('game')||'',mode:params.get('mode')||''});
+if(!prefix&&params.get('key'))query.set('key',params.get('key'));
+const root=document.querySelector('main'),list=document.querySelector('ol'),title=document.querySelector('h1');
+let last='',busy=false;
+async function poll(){
+ if(busy)return;busy=true;
+ try{
+  const response=await fetch(prefix+'/api/widget/state?'+query,{cache:'no-store',signal:AbortSignal.timeout(6000)});
+  if(!response.ok)throw new Error('Unavailable');
+  const state=await response.json();
+  root.hidden=!state.online||!state.entries?.length;
+  const signature=JSON.stringify({entries:state.entries,label:state.label});
+  if(signature!==last){
+   title.textContent=state.label||'';list.replaceChildren();
+   (state.entries||[]).slice(0,30).forEach((item,index)=>{
+    const row=document.createElement('li'),rank=document.createElement('span'),face=document.createElement('span'),name=document.createElement('span'),value=document.createElement('strong');
+    rank.className='rank';rank.textContent=String(index+1);face.className='face';face.textContent=String(item.name||'?').slice(0,1);name.className='name';name.textContent=item.name||'';
+    if(/^\/widget\/gift-assets\/gameavatar-[a-f0-9]{64}\.png$/.test(item.avatar||'')){
+     const image=document.createElement('img');image.alt='';image.src=prefix+item.avatar+(prefix?'':'?key='+encodeURIComponent(params.get('key')||''));image.onerror=()=>image.replaceWith(face);row.append(rank,image,name,value);
+    }else row.append(rank,face,name,value);
+    value.textContent=Number(item.value||0).toLocaleString('tr-TR')+(item.unit?' '+item.unit:'');list.append(row);
+   });last=signature;
+  }
+ }catch{root.hidden=true;}finally{busy=false;}
+}
+poll();setInterval(poll,1000);
+</script>
+</html>
