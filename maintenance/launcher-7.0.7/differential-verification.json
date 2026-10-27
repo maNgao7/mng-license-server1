@@ -1,0 +1,16 @@
+{
+  "passed": true,
+  "fromVersion": "7.0.6",
+  "toVersion": "7.0.7",
+  "realElectronUpdaterDownloader": true,
+  "publicGitHubDownload": false,
+  "installerLaunched": false,
+  "elapsedMs": 11908,
+  "fullInstallerBytes": 245168634,
+  "downloadBytes": 115845316,
+  "reusedBytes": 129323318,
+  "httpRequests": 1187,
+  "rebuiltSha256": "e6d06fe19997e574bd8235b9aeb8e4cfbbeb63ee529049e2afd661ef6df0a852",
+  "previousInstallerBytePreserved": true,
+  "note": "This tests changed-byte transfer and installer checksums, not a guaranteed internet download speed."
+}

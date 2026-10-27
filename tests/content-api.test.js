@@ -111,6 +111,19 @@ test('server leaves a customized 7.0.6 catalog unchanged during the game release
     assert.equal(fs.existsSync(path.join(f.dir, 'content-state.backup.json')), false);
 });
 
+test('published Minecraft 7.0.3 catalog receives the first-install repair once without overriding custom edits', async t => {
+    const previous = JSON.parse(fs.readFileSync(path.join(root, 'content-bootstrap-minecraft-7.0.3.json'), 'utf8'));
+    const current = JSON.parse(fs.readFileSync(path.join(root, 'content-defaults.json'), 'utf8'));
+    const f = await fixture(t, {}, { initialCatalog: previous });
+    assert.deepEqual(await f.public(), current);
+    assert.deepEqual(JSON.parse(fs.readFileSync(path.join(f.dir, 'content-state.backup.json'), 'utf8')).published, previous);
+    await f.stop(); await f.start();
+    assert.deepEqual(await f.public(), current);
+    const custom = structuredClone(previous); custom.games[0].description = 'Custom live administrator setting';
+    const g = await fixture(t, {}, { initialCatalog: custom });
+    assert.deepEqual(await g.public(), custom);
+});
+
 test("public defaults promote 16 games with pinned complete content and retain independent packages", async t => {
     const f = await fixture(t, {}, {seed:false});
     const response = await f.request("/api/content/catalog", "GET", undefined, false);
@@ -121,7 +134,7 @@ test("public defaults promote 16 games with pinned complete content and retain i
     const byId = Object.fromEntries(response.data.games.map(item => [item.id, item]));
     assert.equal(response.data.games.length, 16);
     assert.equal(response.data.media.length, 285);
-    assert.equal(response.data.revision, 7);
+    assert.equal(response.data.revision, 8);
     assert.equal(byId.caahr.version, '0.6.12');
     assert.equal(byId.caahr.bytes, 63233577);
     assert.equal(byId['frog-river'].version,'7.0.5');
@@ -135,8 +148,8 @@ test("public defaults promote 16 games with pinned complete content and retain i
         assert.equal(byId[id].bytes, null);
     }
     const pinned = [
-        ["battle-royale", "7.0.3", "battle-royale-7.0.3", 956511877, "31c248e7cd6193a827cfcf32a79fa3fa7ecea8288b492a310e26da84660f8b3f", "minecraft-rounds-20261027"],
-        ["snow-war", "7.0.3", "snow-war-7.0.3", 914730012, "218025379a712d8a3399779888330569d824aa5c3f9a1f2f8287ceb392409316", "minecraft-rounds-20261027"],
+        ["battle-royale", "7.0.4", "battle-royale-7.0.4", 956511710, "e2b7f1a3e87b9ded7c0d5afca85df4ded1e7893d054b633295e96fada38d6ac8", "minecraft-install-20261027"],
+        ["snow-war", "7.0.4", "snow-war-7.0.4", 914729845, "0b6ab673a28e50d33909c23e4d7766114e971034364e017bd5980b805428bfc2", "minecraft-install-20261027"],
         ["zombie-war", "6.5.17", "zombie-war", 947576508, "9d2d641f05d2bec905522202d0f523e64bd5b4868e45f03148bfe37ece466749", "zombie-war-6.5.17"]
     ];
     for (const [id, version, folder, bytes, sha256, tag = `v${version}`] of pinned) {
@@ -148,8 +161,8 @@ test("public defaults promote 16 games with pinned complete content and retain i
     for (const id of ['vs','puanlama','orbit','crowd-control','battle-game','duck-hunt','pony-life','penalty-kick','tightrope-balance','battle-royale','snow-war','minecraft-snake-arena']) {
         const game = byId[id];
         const minecraftUpdate=['snow-war','battle-royale'].includes(id);
-        assert.equal(game.version, id === 'minecraft-snake-arena' ? '0.16.0' : minecraftUpdate ? '7.0.3' : '7.0.2');
-        assert.match(game.url, id === 'minecraft-snake-arena' ? /\/game-snake-0\.16\.0\/[^/]+\.zip$/ : minecraftUpdate ? /\/minecraft-rounds-20261027\/[^/]+\.zip$/ : /\/game-installers-7\.0\.2\/[^/]+\.zip$/);
+        assert.equal(game.version, id === 'minecraft-snake-arena' ? '0.16.0' : minecraftUpdate ? '7.0.4' : '7.0.2');
+        assert.match(game.url, id === 'minecraft-snake-arena' ? /\/game-snake-0\.16\.0\/[^/]+\.zip$/ : minecraftUpdate ? /\/minecraft-install-20261027\/[^/]+\.zip$/ : /\/game-installers-7\.0\.2\/[^/]+\.zip$/);
         assert.match(game.sha256, /^[a-f0-9]{64}$/); assert.ok(game.bytes > 0);
         assert.equal(game.files.length, 1); assert.equal(game.files[0].path, '.tikmng-content.json');
         assert.match(game.files[0].sha256, /^[a-f0-9]{64}$/); assert.ok(game.files[0].bytes > 0);

@@ -1,0 +1,13 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>TikMnG oyun yükleniyor</title>
+  <style>
+    *{box-sizing:border-box}body{margin:0;display:grid;place-items:center;min-height:100vh;background:#0b0e12;color:#f7f8fa;font-family:Segoe UI,Arial,sans-serif;overflow:hidden}
+    .wrap{width:min(440px,88vw);text-align:center}.brand{font-weight:900;font-size:28px;letter-spacing:0;color:#fff}.brand b{color:#ef3340}.game{margin:18px 0 22px;font-size:17px;color:#c9d0d8}.track{height:7px;background:#242a32;border-radius:4px;overflow:hidden}.bar{height:100%;width:36%;background:#ef3340;animation:load 1.25s ease-in-out infinite}.note{margin-top:14px;color:#8f9aa7;font-size:12px}@keyframes load{0%{transform:translateX(-110%)}100%{transform:translateX(390%)}}
+  </style>
+</head>
+<body><main class="wrap"><div class="brand">Tik<b>MnG</b></div><div class="game" id="game">Minecraft oyunu yükleniyor...</div><div class="track"><div class="bar"></div></div><div class="note">Oyun motoru ve canlı yayın bağlantısı hazırlanıyor</div></main><script>const q=new URLSearchParams(location.search);document.getElementById('game').textContent=(q.get('game')||'Minecraft oyunu')+' yükleniyor...';</script></body>
+</html>

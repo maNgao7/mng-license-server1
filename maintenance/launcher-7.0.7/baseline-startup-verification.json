@@ -1,0 +1,24 @@
+{
+  "passed": true,
+  "baseline": true,
+  "checkedAt": "2026-10-27T16:24:34.691Z",
+  "isolatedRoot": "D:\\TikMnG-Sesli-Surus-Acilis-20261027\\isolated-HbYQFE",
+  "launcherVersionNotChanged": true,
+  "publicReleaseNotChanged": true,
+  "packageVersion": "0.6.12",
+  "verifiedFiles": 8176,
+  "preparation": {
+    "verificationAndInstallMs": 18234,
+    "duplicateVerificationMs": 17871,
+    "totalMs": 36105,
+    "verifiedFiles": 8176
+  },
+  "backendReadyMs": 36663,
+  "gameAndGiftMenuReadyMs": 47771,
+  "originalUnityWindowVisible": true,
+  "catalogCount": 905,
+  "gameHeartbeatProcessMatched": true,
+  "normalUserSettingsModAndGamePointerUnchanged": true,
+  "realTikTokGiftDeliveryClaimed": false,
+  "originalPluginSha256": "84071ccd365e66c93fe78490baeb6f49efc2a6821dd17101d9dac76b426b3def"
+}

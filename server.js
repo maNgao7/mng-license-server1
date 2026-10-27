@@ -534,10 +534,10 @@ function logEkle(lisansKod, cihazKimlik, islem, ip) {
 // =====================================================================
 // SÜRÜM BİLGİLERİ & İNDİRME LİNKLERİ
 // =====================================================================
-const EN_GUNCEL_SURUM = "7.0.6";
+const EN_GUNCEL_SURUM = "7.0.7";
 const EN_DUSUK_SURUM = "1.0.0";
-const SETUP_INDIRME_LINKI = "https://github.com/maNgao7/mng-license-server1/releases/download/v7.0.6/TikMnG-Setup-7.0.6.exe";
-const PORTABLE_INDIRME_LINKI = "https://github.com/maNgao7/mng-license-server1/releases/download/v7.0.6/TikMnG-7.0.6-Portable.exe";
+const SETUP_INDIRME_LINKI = "https://github.com/maNgao7/mng-license-server1/releases/download/v7.0.7/TikMnG-Setup-7.0.7.exe";
+const PORTABLE_INDIRME_LINKI = "https://github.com/maNgao7/mng-license-server1/releases/download/v7.0.7/TikMnG-7.0.7-Portable.exe";
 const SETUP_WEB_LINKI = SETUP_INDIRME_LINKI;
 const VARSAYILAN_PAKET_LINKLERI = Object.freeze({
     BACKGROUNDS: "https://drive.usercontent.google.com/download?id=1VHwmK2Lt-DN6jVYB1Gp2sbeW6hU_rgB6&export=download&confirm=t",
@@ -551,6 +551,9 @@ const VARSAYILAN_PAKET_LINKLERI = Object.freeze({
 
 // Her güncellemede eklenen/değişen özellikler listesi
 const SURUM_NOTLARI = [
+    "v7.0.7: Sesli Sürüş açılışında aynı paketin iki kez doğrulanması kaldırıldı; gerçek testte oyun ve hediye menüsü 47,8 saniye yerine 20,4 saniyede hazırlandı. Güvenlik kontrolleri korunur; süre donanıma göre değişir.",
+    "v7.0.7: Güncelleme açıklamaları Türkçe ve ayrı maddeler halinde gösterilir; indirme yüzdesindeki uzun ondalık sayılar kısaltılır. İndirme türü ve süreleri gizli bağlantı içermeyen yerel tanılama kaydına yazılır.",
+    "v7.0.7: PUBG ve Kartopu 7.0.4 oyun paketlerinde sıfırdan kurulumu engelleyen boş Java geçici dosyası/ZIP boyut uyuşmazlığı düzeltildi. Hediye eylemleri, diğer oyunlar, lisanslar, yayın/widget bağlantıları ve kayıtlı ayarlar korunur.",
     "v7.0.6 — Saydam yayın widgetları, altı hareketli Viral Benim kanadı ve düzenlenebilir coin eşikleri; daha okunaklı coin/beğeni sıralamaları ve belirgin cam kavanoz. Minecraft Yılan Oyunu 0.16.0: yakın takip, görünür hız izleri ve büyüme bildirimi, gerçek oyuncu üzerinde eylem laboratuvarı. O savaşı başlatır, Tab yayıncıyı oyuna alır. Dosya doğrulama/indirme sınırlı paralellik kullanır; güncelleme sırasında arka plan medya indirmesi bekler. Kayıtlı ayarlar ve diğer oyunlar korunur.",
     "v7.0.5 — Acil düzeltme: Vak Vak Jump tekrarlanan 100 beğenide ve takipte 50 metre; ayrı geri götürme seçenekleri ve kalıcı kayıt. Sesli Sürüş onaylı 13 hediye, GG/külah 1 saniye, eksik hediye satırlarının yedekli onarımı. Gerekli iki oyun paketi oynamadan önce güncellenir. Launcher açıkken güncelleme kontrolü ve doğrulanmış yedek kurulum yolu eklendi. 7.0.1/7.0.2'de bildirim gelmiyorsa güncel kurulumu bir kez mevcut uygulamanın üzerine çalıştırın; lisanslar ve oyunlar korunur.",
     "v7.0.4 — Steam, Minecraft ve TikMnG (Web) kategorileri düzenlendi. Sesli Sürüş, Gelene Geçene ve Vak Vak Jump Steam bölümünde. Windows kurulum yolu hatası ve güncelleme denetimi düzeltildi. Kurulu oyunlar, lisanslar ve eşleştirmeler korunur; oyun paketleri değişmedi.",

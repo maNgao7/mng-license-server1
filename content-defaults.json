@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
-  "revision": 7,
-  "publishedAt": "2026-10-27T15:52:18.312Z",
+  "revision": 8,
+  "publishedAt": "2026-10-27T18:23:42.9440270Z",
   "games": [
     {
       "id": "caahr",
@@ -18,18 +18,18 @@
       "id": "battle-royale",
       "title": "Minecraft, PUBG",
       "description": "İzleyiciler uçaktan paraşütle iner, hediyelerle silahlarını ve zırhlarını geliştirir. Daralan güvenli alanın içinde son kişi olmak için savaşırlar.",
-      "version": "7.0.3",
-      "url": "https://github.com/maNgao7/mng-license-server1/releases/download/minecraft-rounds-20261027/battle-royale-7.0.3.zip",
-      "sha256": "31c248e7cd6193a827cfcf32a79fa3fa7ecea8288b492a310e26da84660f8b3f",
-      "bytes": 956511877,
+      "version": "7.0.4",
+      "url": "https://github.com/maNgao7/mng-license-server1/releases/download/minecraft-install-20261027/battle-royale-7.0.4.zip",
+      "sha256": "e2b7f1a3e87b9ded7c0d5afca85df4ded1e7893d054b633295e96fada38d6ac8",
+      "bytes": 956511710,
       "requirements": "",
       "resources": [],
       "files": [
         {
           "path": ".tikmng-content.json",
-          "url": "https://github.com/maNgao7/mng-license-server1/releases/download/minecraft-rounds-20261027/game-content-battle-royale-7.0.3.json",
-          "bytes": 3702302,
-          "sha256": "2dfbb1acfd16987658a517abf043b691a2ec1a9226de2053493e79cb9de1ef0b"
+          "url": "https://github.com/maNgao7/mng-license-server1/releases/download/minecraft-install-20261027/game-content-battle-royale-7.0.4.json",
+          "bytes": 3701971,
+          "sha256": "8c909189762aeb4009d80b6e39bb42e3f4ce1f0e2084cf69749b70d584029cfc"
         }
       ]
     },
@@ -37,18 +37,18 @@
       "id": "snow-war",
       "title": "Minecraft Kartopu Savaşı",
       "description": "İzleyici profilleri kartopu savaşçılarına dönüşür. Gelen hediyeler takımları, canı ve özel kar saldırılarını güçlendirirken kış arenasında rekabet büyür.",
-      "version": "7.0.3",
-      "url": "https://github.com/maNgao7/mng-license-server1/releases/download/minecraft-rounds-20261027/snow-war-7.0.3.zip",
-      "sha256": "218025379a712d8a3399779888330569d824aa5c3f9a1f2f8287ceb392409316",
-      "bytes": 914730012,
+      "version": "7.0.4",
+      "url": "https://github.com/maNgao7/mng-license-server1/releases/download/minecraft-install-20261027/snow-war-7.0.4.zip",
+      "sha256": "0b6ab673a28e50d33909c23e4d7766114e971034364e017bd5980b805428bfc2",
+      "bytes": 914729845,
       "requirements": "",
       "resources": [],
       "files": [
         {
           "path": ".tikmng-content.json",
-          "url": "https://github.com/maNgao7/mng-license-server1/releases/download/minecraft-rounds-20261027/game-content-snow-war-7.0.3.json",
-          "bytes": 3963323,
-          "sha256": "b514bcd914a873ae0793c15030d9d277f4ca4b160471f9057b2cd9b8dff4ee0b"
+          "url": "https://github.com/maNgao7/mng-license-server1/releases/download/minecraft-install-20261027/game-content-snow-war-7.0.4.json",
+          "bytes": 3962992,
+          "sha256": "f2582c6ca321ca7bcbd0a1c5e9277fb4ea43510e3c6742b172b4f01e4017eaf8"
         }
       ]
     },

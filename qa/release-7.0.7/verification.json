@@ -1,0 +1,53 @@
+{
+  "passed": true,
+  "version": "7.0.7",
+  "createdAt": "2026-10-27T18:55:34.280Z",
+  "launcherTests": {
+    "passed": 988,
+    "failed": 0
+  },
+  "serverTests": {
+    "passed": 66,
+    "failed": 0,
+    "skippedBrowserChecks": 3
+  },
+  "voiceDriving": {
+    "previousStartupMs": 47771,
+    "optimizedStartupMs": 20441,
+    "verifiedFiles": 8176,
+    "nativeGameAnd905GiftCatalogReady": true,
+    "settingsBytePreserved": true
+  },
+  "minecraft": {
+    "version": "7.0.4",
+    "firstInstallErrorReproducedAndFixed": true,
+    "bothFreshInstallsPassed": true,
+    "installedContentFilesHashed": [
+      {
+        "id": "snow-war",
+        "files": 11007
+      },
+      {
+        "id": "battle-royale",
+        "files": 10310
+      }
+    ],
+    "incrementalInstallsPassedWithoutChangedContentDownloads": true,
+    "settingsBytePreserved": true,
+    "gameplayBytesUnchanged": true
+  },
+  "installer": {
+    "bytes": 245168634,
+    "changedDownloadBytesFrom706": 115845316,
+    "electronUpdaterReconstructionHashVerified": true,
+    "signedPublisher": false
+  },
+  "preserved": {
+    "otherGames": 14,
+    "media": 285,
+    "nativeRuntimeDependencies": true,
+    "userLicensesAndSettingsUntouched": true
+  },
+  "publicCatalogDeployment": "pending-user-render",
+  "realPurchasedTikTokGiftTestClaimed": false
+}

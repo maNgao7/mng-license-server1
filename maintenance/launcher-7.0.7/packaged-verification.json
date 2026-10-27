@@ -1,0 +1,24 @@
+{
+  "passed": true,
+  "version": "7.0.7",
+  "games": 16,
+  "media": 285,
+  "ttsNames": false,
+  "unchangedPackagedFiles": 6114,
+  "changedPackagedFiles": [
+    "main.js",
+    "package.json",
+    "lib/app-updates.cjs",
+    "lib/catalog-defaults.json",
+    "lib/voice-driving-package.cjs",
+    "renderer/app.js"
+  ],
+  "publicGameMetadataMatchesApprovedInstallRepair": true,
+  "nativeDllsUnchanged": true,
+  "turkishChangelogItems": 8,
+  "progressText": "%9,1",
+  "pageErrors": [],
+  "isolatedProfile": true,
+  "realInstallerNotLaunched": true,
+  "publicReleaseNotChangedByQa": true
+}

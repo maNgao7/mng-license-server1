@@ -25,11 +25,20 @@ test('an explicitly approved Minecraft candidate upgrades exactly two packages, 
   assert.equal(upgradedBootstrapState(upgraded,launcher706,candidate,{allowReleasedBaseline:true}),null);
 });
 
-test('the user-approved game-only candidate is active without changing the launcher release',()=>{
-  assert.deepEqual(current,candidate);
+test('the approved install repair advances the two Minecraft packages without changing gameplay or media',()=>{
+  const baseline=JSON.parse(fs.readFileSync(new URL('../content-bootstrap-minecraft-7.0.3.json',import.meta.url),'utf8'));
+  assert.deepEqual(baseline,candidate);
+  const upgraded=upgradedBootstrapState({draft:structuredClone(baseline),published:structuredClone(baseline)},baseline,current,{allowReleasedBaseline:true});
+  assert.deepEqual(upgraded.published,current);
+  assert.deepEqual(current.games.filter(g=>!['snow-war','battle-royale'].includes(g.id)),baseline.games.filter(g=>!['snow-war','battle-royale'].includes(g.id)));
+  assert.deepEqual(current.media,baseline.media);
   assert.deepEqual(current.launcher,launcher706.launcher);
   assert.equal(upgradedBootstrapState({draft:current,published:current},launcher706,current,{allowReleasedBaseline:true}),null);
-  for(const id of ['snow-war','battle-royale'])assert.equal(current.games.find(g=>g.id===id).version,'7.0.3');
+  for(const id of ['snow-war','battle-royale'])assert.equal(current.games.find(g=>g.id===id).version,'7.0.4');
+  for(const change of [state=>state.draft.games[0].title='Custom',state=>state.published.revision++]){
+    const state={draft:structuredClone(baseline),published:structuredClone(baseline)};change(state);
+    assert.equal(upgradedBootstrapState(state,baseline,current,{allowReleasedBaseline:true}),null);
+  }
 });
 
 test('Minecraft release retains customized published state and pending administrator edits',()=>{

@@ -1,0 +1,36 @@
+{
+  "passed": true,
+  "checkedAt": "2026-10-27T18:54:55.449Z",
+  "publicGitHubDownloads": false,
+  "actualLauncherArchiveDownloadPreflightExtractionAndActivation": false,
+  "settingsBytePreserved": true,
+  "isolatedLibraryRoot": "D:\\TikMnG-Minecraft-Kurulum-Duzeltmesi-7.0.4\\local-upgrade-IT4VxH",
+  "games": [
+    {
+      "id": "snow-war",
+      "version": "7.0.4",
+      "freshArchiveInstallPassed": false,
+      "previousVersion": "7.0.3",
+      "incrementalWithZeroContentBytes": true,
+      "originalReportedErrorReproduced": true,
+      "installedContentFilesHashed": 11006,
+      "gameplayFilesUnchanged": true,
+      "elapsedMs": 44069,
+      "archiveSha256": "0b6ab673a28e50d33909c23e4d7766114e971034364e017bd5980b805428bfc2",
+      "otherGamePointerAndVersionUnchanged": true
+    },
+    {
+      "id": "battle-royale",
+      "version": "7.0.4",
+      "freshArchiveInstallPassed": false,
+      "previousVersion": "7.0.3",
+      "incrementalWithZeroContentBytes": true,
+      "originalReportedErrorReproduced": true,
+      "installedContentFilesHashed": 10309,
+      "gameplayFilesUnchanged": true,
+      "elapsedMs": 40909,
+      "archiveSha256": "e2b7f1a3e87b9ded7c0d5afca85df4ded1e7893d054b633295e96fada38d6ac8",
+      "otherGamePointerAndVersionUnchanged": true
+    }
+  ]
+}
