@@ -25,10 +25,11 @@ test('an explicitly approved Minecraft candidate upgrades exactly two packages, 
   assert.equal(upgradedBootstrapState(upgraded,launcher706,candidate,{allowReleasedBaseline:true}),null);
 });
 
-test('private Minecraft preview is not promoted by restarting the public server',()=>{
-  assert.deepEqual(current,launcher706);
+test('the user-approved game-only candidate is active without changing the launcher release',()=>{
+  assert.deepEqual(current,candidate);
+  assert.deepEqual(current.launcher,launcher706.launcher);
   assert.equal(upgradedBootstrapState({draft:current,published:current},launcher706,current,{allowReleasedBaseline:true}),null);
-  for(const id of ['snow-war','battle-royale'])assert.equal(current.games.find(g=>g.id===id).version,'7.0.2');
+  for(const id of ['snow-war','battle-royale'])assert.equal(current.games.find(g=>g.id===id).version,'7.0.3');
 });
 
 test('Minecraft release retains customized published state and pending administrator edits',()=>{

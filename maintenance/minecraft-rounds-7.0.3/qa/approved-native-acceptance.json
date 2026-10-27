@@ -1,0 +1,64 @@
+{
+  "recordedAt": "2026-10-27T15:55:18.005Z",
+  "userApprovedGameOnlyPublication": true,
+  "launcherVersionUnchanged": "7.0.6",
+  "launcherUIChanged": false,
+  "approvedGames": [
+    {
+      "id": "snow-war",
+      "testedPrivateVersion": "7.0.3-preview.1",
+      "publicVersion": "7.0.3",
+      "nativeArenaReady": true,
+      "javaReceiverConnected": true,
+      "savedGiftRules": 16,
+      "settingsBytePreserved": true,
+      "authorizedLiveBroadcasterConnected": true,
+      "modSha256": "cf1458cc9dc0e2a72db31f4215e5d917a777012c940285066cb2976bd7fb907f"
+    },
+    {
+      "id": "battle-royale",
+      "testedPrivateVersion": "7.0.3-preview.1",
+      "publicVersion": "7.0.3",
+      "nativeArenaReady": true,
+      "javaReceiverConnected": true,
+      "savedGiftRules": 10,
+      "settingsBytePreserved": true,
+      "authorizedLiveBroadcasterConnected": true,
+      "modSha256": "6a69b5f994c39bee9f0f812cb3b426bfa0f8f1bd5a25d6ec3592ed552759e9d6"
+    }
+  ],
+  "otherGamesPreserved": true,
+  "mediaAndSpeechPreserved": true,
+  "existingLauncherUpdateIndicator": {
+    "passed": true,
+    "checkedAt": "2026-10-27T15:54:37.826Z",
+    "existingLauncherVersion": "7.0.6",
+    "renderSource": "unmodified installed launcher ASAR",
+    "uiStateFixture": true,
+    "realCatalogAndInstalledVersionDetection": true,
+    "installedGamesNotUpdatedByThisCheck": true,
+    "stableProgramAndPointersUnchanged": true,
+    "launcherRebuildRequired": false,
+    "games": [
+      {
+        "id": "snow-war",
+        "installedVersion": "7.0.2",
+        "availableVersion": "7.0.3",
+        "updateAvailable": true,
+        "existingUpdateButtonVisible": true,
+        "existingUpdateButtonEnabled": true
+      },
+      {
+        "id": "battle-royale",
+        "installedVersion": "7.0.2",
+        "availableVersion": "7.0.3",
+        "updateAvailable": true,
+        "existingUpdateButtonVisible": true,
+        "existingUpdateButtonEnabled": true
+      }
+    ]
+  },
+  "realGiftDeliveryNotClaimed": true,
+  "publicDownloadsVerified": true,
+  "renderDeployment": "pending"
+}
