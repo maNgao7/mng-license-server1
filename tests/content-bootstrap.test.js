@@ -6,10 +6,11 @@ import { upgradedBootstrapState } from '../content-bootstrap.js';
 const legacy=JSON.parse(fs.readFileSync(new URL('../content-bootstrap-6.5.17.json',import.meta.url),'utf8'));
 const current=JSON.parse(fs.readFileSync(new URL('../content-defaults.json',import.meta.url),'utf8'));
 const launcher706=JSON.parse(fs.readFileSync(new URL('../content-bootstrap-7.0.6.json',import.meta.url),'utf8'));
+const candidate=JSON.parse(fs.readFileSync(new URL('../maintenance/minecraft-rounds-7.0.3/qa/catalog-candidate.json',import.meta.url),'utf8'));
 
-test('game-only Minecraft release upgrades exactly two packages, without a launcher or media update',()=>{
+test('an explicitly approved Minecraft candidate upgrades exactly two packages, without a launcher or media update',()=>{
   const state={draft:structuredClone(launcher706),published:structuredClone(launcher706)};
-  const upgraded=upgradedBootstrapState(state,launcher706,current,{allowReleasedBaseline:true});
+  const upgraded=upgradedBootstrapState(state,launcher706,candidate,{allowReleasedBaseline:true});
   assert.ok(upgraded);
   const ids=['snow-war','battle-royale'];
   assert.deepEqual(upgraded.published.games.filter(g=>!ids.includes(g.id)),launcher706.games.filter(g=>!ids.includes(g.id)));
@@ -21,14 +22,20 @@ test('game-only Minecraft release upgrades exactly two packages, without a launc
     assert.match(game.url,/\/minecraft-rounds-20261027\//);
   }
   assert.deepEqual(state.draft,launcher706);
-  assert.equal(upgradedBootstrapState(upgraded,launcher706,current,{allowReleasedBaseline:true}),null);
+  assert.equal(upgradedBootstrapState(upgraded,launcher706,candidate,{allowReleasedBaseline:true}),null);
+});
+
+test('private Minecraft preview is not promoted by restarting the public server',()=>{
+  assert.deepEqual(current,launcher706);
+  assert.equal(upgradedBootstrapState({draft:current,published:current},launcher706,current,{allowReleasedBaseline:true}),null);
+  for(const id of ['snow-war','battle-royale'])assert.equal(current.games.find(g=>g.id===id).version,'7.0.2');
 });
 
 test('Minecraft release retains customized published state and pending administrator edits',()=>{
   for(const change of [state=>state.draft.games[0].title='Custom',state=>state.published.games[0].title='Custom',state=>state.draft.revision++,state=>state.published.media.pop()]){
     const state={draft:structuredClone(launcher706),published:structuredClone(launcher706)};
     change(state);
-    assert.equal(upgradedBootstrapState(state,launcher706,current,{allowReleasedBaseline:true}),null);
+    assert.equal(upgradedBootstrapState(state,launcher706,candidate,{allowReleasedBaseline:true}),null);
   }
 });
 
