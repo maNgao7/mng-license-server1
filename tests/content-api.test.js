@@ -54,6 +54,7 @@ async function fixture(t, downloadOverrides = {}, { seed = true, initialCatalog 
         const env = { ...process.env, HOST: "127.0.0.1", PORT: String(port), ADMIN_SIFRE: secret, MNG_DATA_DIR: dir,
             GITHUB_TOKEN: "", GITHUB_LICENSE_TOKEN: "", GITHUB_LICENSE_REPO: "", BACKUP_REPO: "" };
         for (const [, , folder] of legacyPackages) env[`GAME_DOWNLOAD_${folder.toUpperCase().replaceAll("-", "_")}_URL`] = "";
+        for (const folder of ["SNOW_WAR", "BATTLE_ROYALE"]) env[`GAME_DOWNLOAD_${folder}_URL`] = "";
         Object.assign(env, downloadOverrides);
         child = spawn(process.execPath, ["server.js"], { cwd: root, env, windowsHide: true, stdio: "ignore" });
         base = `http://127.0.0.1:${port}`;
@@ -193,6 +194,19 @@ test("legacy download URLs map to real root ZIPs and the existing Gelene Geçene
         assert.equal(expected.readUInt32LE(0), 0x04034b50);
         assert.deepEqual(Buffer.from(await response.arrayBuffer()), expected);
         assert.equal(response.headers.get("content-range"), `bytes 0-15/${fs.statSync(local).size}`);
+    }
+});
+
+test("legacy Minecraft links redirect to the corrected published archives", async t => {
+    const f = await fixture(t);
+    const catalog = await f.public();
+    for (const id of ["snow-war", "battle-royale"]) {
+        const game = catalog.games.find(item => item.id === id);
+        const response = await fetch(f.base + `/download/game/${id}.zip`, { redirect: "manual" });
+        assert.equal(response.status, 302);
+        assert.equal(response.headers.get("location"), game.url);
+        assert.match(game.url, /\/minecraft-install-20261027\/[^/]+-7\.0\.4\.zip$/);
+        await response.arrayBuffer();
     }
 });
 

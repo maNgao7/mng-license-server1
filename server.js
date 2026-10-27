@@ -542,8 +542,8 @@ const SETUP_WEB_LINKI = SETUP_INDIRME_LINKI;
 const VARSAYILAN_PAKET_LINKLERI = Object.freeze({
     BACKGROUNDS: "https://drive.usercontent.google.com/download?id=1VHwmK2Lt-DN6jVYB1Gp2sbeW6hU_rgB6&export=download&confirm=t",
     MNG_ORBIT: "https://github.com/maNgao7/mng-license-server1/releases/download/v6.5.16/mng-orbit.zip",
-    BATTLE_ROYALE: "https://github.com/maNgao7/mng-license-server1/releases/download/v6.5.16/battle-royale.zip",
-    SNOW_WAR: "https://github.com/maNgao7/mng-license-server1/releases/download/v6.5.16/snow-war.zip",
+    BATTLE_ROYALE: "https://github.com/maNgao7/mng-license-server1/releases/download/minecraft-install-20261027/battle-royale-7.0.4.zip",
+    SNOW_WAR: "https://github.com/maNgao7/mng-license-server1/releases/download/minecraft-install-20261027/snow-war-7.0.4.zip",
     PENALTY_KICK: "https://github.com/maNgao7/mng-license-server1/releases/download/v6.5.10/penalty-kick.zip",
     TIGHTROPE_BALANCE: "https://github.com/maNgao7/mng-license-server1/releases/download/v6.5.10/tightrope-balance.zip",
     ZOMBIE_WAR: "https://github.com/maNgao7/mng-license-server1/releases/download/zombie-war-6.5.17/zombie-war.zip"
