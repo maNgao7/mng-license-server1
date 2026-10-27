@@ -23,13 +23,14 @@ const legacyPackages = [
     ["frog-river", "6.5.5", "frog-river"], ["gelene-gecene", "6.1.2", "gelene-gecene"]
 ];
 
-async function fixture(t, downloadOverrides = {}, { seed = true } = {}) {
+async function fixture(t, downloadOverrides = {}, { seed = true, initialCatalog } = {}) {
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), "tikmng-content-test-"));
     for (const name of licenseFiles) fs.writeFileSync(path.join(dir, `${name}.json`), "[]");
     if (seed) {
         const initial = JSON.parse(fs.readFileSync(path.join(root, 'content-defaults.json'), 'utf8'));
         initial.revision = 0; initial.publishedAt = null; initial.media = [];
-        fs.writeFileSync(path.join(dir, 'content-state.json'), JSON.stringify({draft:initial,published:initial}));
+        const catalog = initialCatalog || initial;
+        fs.writeFileSync(path.join(dir, 'content-state.json'), JSON.stringify({draft:catalog,published:catalog}));
     }
     const secret = crypto.randomBytes(32).toString("hex");
     let child;
@@ -89,6 +90,27 @@ function draftGame() {
         sha256: null, bytes: null, requirements: "Windows", resources: [{ title: "Guide", url: "https://93.184.216.34/guide" }] }], media: [] };
 }
 
+test('server upgrades a stored 7.0.6 catalog once, preserving a backup and unrelated packages', async t => {
+    const previous = JSON.parse(fs.readFileSync(path.join(root, 'content-bootstrap-7.0.6.json'), 'utf8'));
+    const current = JSON.parse(fs.readFileSync(path.join(root, 'content-defaults.json'), 'utf8'));
+    const f = await fixture(t, {}, { initialCatalog: previous });
+    assert.deepEqual(await f.public(), current);
+    const backup = path.join(f.dir, 'content-state.backup.json');
+    assert.deepEqual(JSON.parse(fs.readFileSync(backup, 'utf8')).published, previous);
+    const retained = fs.readFileSync(backup, 'utf8');
+    await f.stop(); await f.start();
+    assert.deepEqual(await f.public(), current);
+    assert.equal(fs.readFileSync(backup, 'utf8'), retained);
+});
+
+test('server leaves a customized 7.0.6 catalog unchanged during the game release', async t => {
+    const previous = JSON.parse(fs.readFileSync(path.join(root, 'content-bootstrap-7.0.6.json'), 'utf8'));
+    previous.games[0].description = 'Administrator custom description';
+    const f = await fixture(t, {}, { initialCatalog: previous });
+    assert.deepEqual(await f.public(), previous);
+    assert.equal(fs.existsSync(path.join(f.dir, 'content-state.backup.json')), false);
+});
+
 test("public defaults promote 16 games with pinned complete content and retain independent packages", async t => {
     const f = await fixture(t, {}, {seed:false});
     const response = await f.request("/api/content/catalog", "GET", undefined, false);
@@ -99,7 +121,7 @@ test("public defaults promote 16 games with pinned complete content and retain i
     const byId = Object.fromEntries(response.data.games.map(item => [item.id, item]));
     assert.equal(response.data.games.length, 16);
     assert.equal(response.data.media.length, 285);
-    assert.equal(response.data.revision, 6);
+    assert.equal(response.data.revision, 7);
     assert.equal(byId.caahr.version, '0.6.12');
     assert.equal(byId.caahr.bytes, 63233577);
     assert.equal(byId['frog-river'].version,'7.0.5');
@@ -113,8 +135,8 @@ test("public defaults promote 16 games with pinned complete content and retain i
         assert.equal(byId[id].bytes, null);
     }
     const pinned = [
-        ["battle-royale", "7.0.2", "battle-royale-7.0.2", 958445695, "01f1698f85fba3020c3d8a01057d8dbcc00bd4475e30cd0e7a4720a5f027bc68", "game-installers-7.0.2"],
-        ["snow-war", "7.0.2", "snow-war-7.0.2", 914734468, "00fbd267ce37fa7877ebd0d42b38ea47233438b2f5f6dbd5210acdedb3e35fae", "game-installers-7.0.2"],
+        ["battle-royale", "7.0.3", "battle-royale-7.0.3", 956511877, "31c248e7cd6193a827cfcf32a79fa3fa7ecea8288b492a310e26da84660f8b3f", "minecraft-rounds-20261027"],
+        ["snow-war", "7.0.3", "snow-war-7.0.3", 914730012, "218025379a712d8a3399779888330569d824aa5c3f9a1f2f8287ceb392409316", "minecraft-rounds-20261027"],
         ["zombie-war", "6.5.17", "zombie-war", 947576508, "9d2d641f05d2bec905522202d0f523e64bd5b4868e45f03148bfe37ece466749", "zombie-war-6.5.17"]
     ];
     for (const [id, version, folder, bytes, sha256, tag = `v${version}`] of pinned) {
@@ -125,8 +147,9 @@ test("public defaults promote 16 games with pinned complete content and retain i
     }
     for (const id of ['vs','puanlama','orbit','crowd-control','battle-game','duck-hunt','pony-life','penalty-kick','tightrope-balance','battle-royale','snow-war','minecraft-snake-arena']) {
         const game = byId[id];
-        assert.equal(game.version, id === 'minecraft-snake-arena' ? '0.16.0' : '7.0.2');
-        assert.match(game.url, id === 'minecraft-snake-arena' ? /\/game-snake-0\.16\.0\/[^/]+\.zip$/ : /\/game-installers-7\.0\.2\/[^/]+\.zip$/);
+        const minecraftUpdate=['snow-war','battle-royale'].includes(id);
+        assert.equal(game.version, id === 'minecraft-snake-arena' ? '0.16.0' : minecraftUpdate ? '7.0.3' : '7.0.2');
+        assert.match(game.url, id === 'minecraft-snake-arena' ? /\/game-snake-0\.16\.0\/[^/]+\.zip$/ : minecraftUpdate ? /\/minecraft-rounds-20261027\/[^/]+\.zip$/ : /\/game-installers-7\.0\.2\/[^/]+\.zip$/);
         assert.match(game.sha256, /^[a-f0-9]{64}$/); assert.ok(game.bytes > 0);
         assert.equal(game.files.length, 1); assert.equal(game.files[0].path, '.tikmng-content.json');
         assert.match(game.files[0].sha256, /^[a-f0-9]{64}$/); assert.ok(game.files[0].bytes > 0);

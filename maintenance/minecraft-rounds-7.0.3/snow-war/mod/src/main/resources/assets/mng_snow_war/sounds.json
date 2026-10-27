@@ -1,0 +1,5 @@
+{
+  "christmas": { "sounds": [{ "name": "mng_snow_war:christmas", "stream": true }] },
+  "wind": { "sounds": [{ "name": "mng_snow_war:wind", "stream": true }] },
+  "winner": { "sounds": [{ "name": "mng_snow_war:winner" }] }
+}

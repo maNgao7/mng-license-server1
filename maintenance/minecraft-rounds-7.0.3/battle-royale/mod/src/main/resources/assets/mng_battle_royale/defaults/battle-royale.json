@@ -1,0 +1,92 @@
+{
+  "likesPerFighter": 100,
+  "followsPerAction": 1,
+  "nightMode": false,
+  "timeOfDay": "sunset",
+  "musicVolume": 25,
+  "windVolume": 15,
+  "effectVolume": 61,
+  "playerHealth": 100,
+  "winnerDelaySeconds": 10,
+  "zoneIntervalSeconds": 10,
+  "lobbyWaitSeconds": 10,
+  "participantCapacity": 300,
+  "likesAction": "OYUNCU",
+  "likesAmount": 1,
+  "likesDurationSeconds": 10,
+  "followAction": "OYUNCU",
+  "followAmount": 1,
+  "followDurationSeconds": 10,
+  "giftRules": [
+    {
+      "giftName": "Gül",
+      "giftId": "5655",
+      "action": "OYUNCU",
+      "amount": 1,
+      "durationSeconds": 10
+    },
+    {
+      "giftName": "Parfüm",
+      "giftId": "5658",
+      "action": "SILAH_YUKSELT",
+      "amount": 1,
+      "durationSeconds": 10
+    },
+    {
+      "giftName": "Kalp",
+      "giftId": "5282",
+      "action": "ZIRH_1",
+      "amount": 1,
+      "durationSeconds": 10
+    },
+    {
+      "giftName": "Donat",
+      "giftId": "5879",
+      "action": "ZIRH_2",
+      "amount": 1,
+      "durationSeconds": 10
+    },
+    {
+      "giftName": "Çay",
+      "giftId": "5303",
+      "action": "ZIRH_3",
+      "amount": 1,
+      "durationSeconds": 10
+    },
+    {
+      "giftName": "Şapka ve Bıyık",
+      "giftId": "6427",
+      "action": "ZIRH_4",
+      "amount": 1,
+      "durationSeconds": 10
+    },
+    {
+      "giftName": "Blue Bead",
+      "giftId": "5319",
+      "action": "KIT_BAS",
+      "amount": 1,
+      "durationSeconds": 10
+    },
+    {
+      "giftName": "Güneş gözlükleri",
+      "giftId": "5509",
+      "action": "TAM_TECHIZAT",
+      "amount": 1,
+      "durationSeconds": 10
+    },
+    {
+      "giftName": "Türk kahvesi",
+      "giftId": "5994",
+      "action": "EL_BOMBASI",
+      "amount": 1,
+      "durationSeconds": 10
+    },
+    {
+      "giftName": "Beni Sev",
+      "giftId": "7934",
+      "action": "OYUNCU",
+      "amount": 1,
+      "durationSeconds": 10
+    }
+  ]
+}

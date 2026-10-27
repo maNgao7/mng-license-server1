@@ -1,0 +1,6 @@
+{
+  "christmas": { "sounds": [{ "name": "mng_battle_royale:christmas", "stream": true }] },
+  "wind": { "sounds": [{ "name": "mng_battle_royale:wind", "stream": true }] },
+  "lobby_music": { "sounds": [{ "name": "mng_battle_royale:lobby_music", "stream": true }] },
+  "winner": { "sounds": [{ "name": "mng_battle_royale:winner" }] }
+}

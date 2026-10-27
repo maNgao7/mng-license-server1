@@ -1,0 +1,8 @@
+onboardAccessibility:false
+tutorialStep:none
+pauseOnLostFocus:false
+renderDistance:12
+simulationDistance:10
+fullscreen:false
+guiScale:3
+chatVisibility:2

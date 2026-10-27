@@ -5,10 +5,36 @@ import { upgradedBootstrapState } from '../content-bootstrap.js';
 
 const legacy=JSON.parse(fs.readFileSync(new URL('../content-bootstrap-6.5.17.json',import.meta.url),'utf8'));
 const current=JSON.parse(fs.readFileSync(new URL('../content-defaults.json',import.meta.url),'utf8'));
+const launcher706=JSON.parse(fs.readFileSync(new URL('../content-bootstrap-7.0.6.json',import.meta.url),'utf8'));
+
+test('game-only Minecraft release upgrades exactly two packages, without a launcher or media update',()=>{
+  const state={draft:structuredClone(launcher706),published:structuredClone(launcher706)};
+  const upgraded=upgradedBootstrapState(state,launcher706,current,{allowReleasedBaseline:true});
+  assert.ok(upgraded);
+  const ids=['snow-war','battle-royale'];
+  assert.deepEqual(upgraded.published.games.filter(g=>!ids.includes(g.id)),launcher706.games.filter(g=>!ids.includes(g.id)));
+  assert.deepEqual(upgraded.published.launcher,launcher706.launcher);
+  assert.deepEqual(upgraded.published.media,launcher706.media);
+  for(const id of ids){
+    const game=upgraded.published.games.find(g=>g.id===id);
+    assert.equal(game.version,'7.0.3');
+    assert.match(game.url,/\/minecraft-rounds-20261027\//);
+  }
+  assert.deepEqual(state.draft,launcher706);
+  assert.equal(upgradedBootstrapState(upgraded,launcher706,current,{allowReleasedBaseline:true}),null);
+});
+
+test('Minecraft release retains customized published state and pending administrator edits',()=>{
+  for(const change of [state=>state.draft.games[0].title='Custom',state=>state.published.games[0].title='Custom',state=>state.draft.revision++,state=>state.published.media.pop()]){
+    const state={draft:structuredClone(launcher706),published:structuredClone(launcher706)};
+    change(state);
+    assert.equal(upgradedBootstrapState(state,launcher706,current,{allowReleasedBaseline:true}),null);
+  }
+});
 
 test('untouched 7.0.5 receives snake 0.16.0 without changing other game packages',()=>{
   const old=JSON.parse(fs.readFileSync(new URL('../content-bootstrap-7.0.5.json',import.meta.url),'utf8'));
-  const upgraded=upgradedBootstrapState({draft:structuredClone(old),published:structuredClone(old)},old,current,{allowReleasedBaseline:true});
+  const upgraded=upgradedBootstrapState({draft:structuredClone(old),published:structuredClone(old)},old,launcher706,{allowReleasedBaseline:true});
   assert.equal(upgraded.published.games.find(g=>g.id==='minecraft-snake-arena').version,'0.16.0');
   assert.deepEqual(upgraded.published.games.filter(g=>g.id!=='minecraft-snake-arena'),old.games.filter(g=>g.id!=='minecraft-snake-arena'));
 });
