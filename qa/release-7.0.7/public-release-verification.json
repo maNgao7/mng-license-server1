@@ -1,0 +1,69 @@
+{
+  "passed": true,
+  "checkedAt": "2026-10-27T19:04:04.524Z",
+  "public": true,
+  "assets": [
+    {
+      "tag": "minecraft-install-20261027",
+      "name": "battle-royale-7.0.4.zip",
+      "bytes": 956511710,
+      "githubDigestVerified": true
+    },
+    {
+      "tag": "minecraft-install-20261027",
+      "name": "game-content-battle-royale-7.0.4.json",
+      "bytes": 3701971,
+      "githubDigestVerified": true
+    },
+    {
+      "tag": "minecraft-install-20261027",
+      "name": "game-content-snow-war-7.0.4.json",
+      "bytes": 3962992,
+      "githubDigestVerified": true
+    },
+    {
+      "tag": "minecraft-install-20261027",
+      "name": "snow-war-7.0.4.zip",
+      "bytes": 914729845,
+      "githubDigestVerified": true
+    },
+    {
+      "tag": "v7.0.7",
+      "name": "TikMnG-Setup-7.0.7.exe",
+      "bytes": 245168634,
+      "githubDigestVerified": true
+    },
+    {
+      "tag": "v7.0.7",
+      "name": "TikMnG-Setup-7.0.7.exe.blockmap",
+      "bytes": 255109,
+      "githubDigestVerified": true
+    },
+    {
+      "tag": "v7.0.7",
+      "name": "TikMnG-7.0.7-Portable.exe",
+      "bytes": 244990054,
+      "githubDigestVerified": true
+    },
+    {
+      "tag": "v7.0.7",
+      "name": "latest.yml",
+      "bytes": 341,
+      "githubDigestVerified": true
+    },
+    {
+      "tag": "v7.0.7",
+      "name": "manifest-7.0.7.json",
+      "bytes": 1081,
+      "githubDigestVerified": true
+    },
+    {
+      "tag": "v7.0.7",
+      "name": "KONTROL-RAPORU.json",
+      "bytes": 1305,
+      "githubDigestVerified": true
+    }
+  ],
+  "installerLaunched": false,
+  "anonymousInstallerAndManifestsDownloaded": true
+}

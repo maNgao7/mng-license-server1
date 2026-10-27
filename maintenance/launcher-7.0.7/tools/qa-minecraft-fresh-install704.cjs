@@ -101,7 +101,8 @@ async function main() {
         }
     } finally { await new Promise(resolve => server.close(resolve)); }
     const report = { passed: true, checkedAt: new Date().toISOString(), publicGitHubDownloads: usePublic,
-        actualLauncherArchiveDownloadPreflightExtractionAndActivation: !incremental, settingsBytePreserved: incremental,
+        actualLauncherArchiveDownloadPreflightExtractionAndActivation: !incremental,
+        ...(incremental ? { settingsBytePreserved: true } : { settingsPreservationNotApplicableToFreshInstall: true }),
         isolatedLibraryRoot: root, games: results };
     fs.writeFileSync(path.join(output, (usePublic ? 'public-' : '') + (incremental ? 'incremental-verification.json' : 'fresh-install-verification.json')), JSON.stringify(report, null, 2) + '\n');
     console.log(JSON.stringify(report, null, 2));

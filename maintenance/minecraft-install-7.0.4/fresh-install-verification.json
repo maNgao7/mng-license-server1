@@ -27,5 +27,6 @@
       "archiveSha256": "e2b7f1a3e87b9ded7c0d5afca85df4ded1e7893d054b633295e96fada38d6ac8",
       "otherGamePointerAndVersionUnchanged": true
     }
-  ]
+  ],
+  "settingsPreservationNotApplicableToFreshInstall": true
 }

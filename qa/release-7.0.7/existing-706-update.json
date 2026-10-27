@@ -1,0 +1,15 @@
+{
+  "passed": true,
+  "installedNothing": true,
+  "userProfileUntouched": true,
+  "update": {
+    "available": true,
+    "current": "7.0.6",
+    "latest": "7.0.7"
+  },
+  "runtimeSemver": "7.7.4",
+  "updateDialog": {
+    "visible": "flex",
+    "version": "v7.0.7"
+  }
+}
