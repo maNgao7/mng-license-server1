@@ -1,0 +1,63 @@
+{
+  "checkedAt": "2026-10-27T15:09:43.129Z",
+  "release": "https://github.com/maNgao7/mng-license-server1/releases/tag/minecraft-rounds-20261027",
+  "published": true,
+  "publicDownloadsVerified": true,
+  "liveCatalogVerified": false,
+  "launcherUnchanged": true,
+  "unrelatedGamesUnchanged": 14,
+  "assets": [
+    {
+      "name": "6a69b5f994c39bee9f0f812cb3b426bfa0f8f1bd5a25d6ec3592ed552759e9d6.bin",
+      "bytes": 85580970,
+      "sha256": "6a69b5f994c39bee9f0f812cb3b426bfa0f8f1bd5a25d6ec3592ed552759e9d6",
+      "githubDigestVerified": true
+    },
+    {
+      "name": "battle-royale-7.0.3.zip",
+      "bytes": 956511877,
+      "sha256": "31c248e7cd6193a827cfcf32a79fa3fa7ecea8288b492a310e26da84660f8b3f",
+      "githubDigestVerified": true
+    },
+    {
+      "name": "cf1458cc9dc0e2a72db31f4215e5d917a777012c940285066cb2976bd7fb907f.bin",
+      "bytes": 81274741,
+      "sha256": "cf1458cc9dc0e2a72db31f4215e5d917a777012c940285066cb2976bd7fb907f",
+      "githubDigestVerified": true
+    },
+    {
+      "name": "game-content-battle-royale-7.0.3.json",
+      "bytes": 3702302,
+      "sha256": "2dfbb1acfd16987658a517abf043b691a2ec1a9226de2053493e79cb9de1ef0b",
+      "githubDigestVerified": true
+    },
+    {
+      "name": "game-content-snow-war-7.0.3.json",
+      "bytes": 3963323,
+      "sha256": "b514bcd914a873ae0793c15030d9d277f4ca4b160471f9057b2cd9b8dff4ee0b",
+      "githubDigestVerified": true
+    },
+    {
+      "name": "snow-war-7.0.3.zip",
+      "bytes": 914730012,
+      "sha256": "218025379a712d8a3399779888330569d824aa5c3f9a1f2f8287ceb392409316",
+      "githubDigestVerified": true
+    }
+  ],
+  "games": [
+    {
+      "id": "snow-war",
+      "version": "7.0.3",
+      "manifestDownloadedAndHashed": true,
+      "modDownloadedAndHashed": true,
+      "archiveRange": true
+    },
+    {
+      "id": "battle-royale",
+      "version": "7.0.3",
+      "manifestDownloadedAndHashed": true,
+      "modDownloadedAndHashed": true,
+      "archiveRange": true
+    }
+  ]
+}

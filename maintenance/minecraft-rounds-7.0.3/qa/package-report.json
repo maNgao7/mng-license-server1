@@ -1,0 +1,26 @@
+[
+    {
+        "game":  "snow-war",
+        "version":  "7.0.3",
+        "previousModSha256":  "00a9741947f5c34195f9f7f94d86e04ac992b332fd1cfabffd92fe9be3c23646",
+        "modSha256":  "cf1458cc9dc0e2a72db31f4215e5d917a777012c940285066cb2976bd7fb907f",
+        "updateBytes":  81274741,
+        "archiveBytes":  914730012,
+        "manifestBytes":  3963323,
+        "archiveSha256":  "218025379a712d8a3399779888330569d824aa5c3f9a1f2f8287ceb392409316",
+        "manifestSha256":  "b514bcd914a873ae0793c15030d9d277f4ca4b160471f9057b2cd9b8dff4ee0b",
+        "changedContentFiles":  1
+    },
+    {
+        "game":  "battle-royale",
+        "version":  "7.0.3",
+        "previousModSha256":  "2c7111fd7f116454782d6a8814ca5d1d966b1697b622831fac84465d1461db95",
+        "modSha256":  "6a69b5f994c39bee9f0f812cb3b426bfa0f8f1bd5a25d6ec3592ed552759e9d6",
+        "updateBytes":  85580970,
+        "archiveBytes":  956511877,
+        "manifestBytes":  3702302,
+        "archiveSha256":  "31c248e7cd6193a827cfcf32a79fa3fa7ecea8288b492a310e26da84660f8b3f",
+        "manifestSha256":  "2dfbb1acfd16987658a517abf043b691a2ec1a9226de2053493e79cb9de1ef0b",
+        "changedContentFiles":  1
+    }
+]

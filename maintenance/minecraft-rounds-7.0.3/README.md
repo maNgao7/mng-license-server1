@@ -34,3 +34,15 @@ The report is saved to the staging folder as remote-verification.json.
 
 The server migrates only an exact untouched previous catalog. Custom administrator
 catalogs stay unchanged. Launcher release endpoints and other 14 games are retained.
+
+## Explicit Saved Gift Reset
+
+`apply-standard-gifts.cjs` applies the approved 10/16-row presets only to explicitly
+selected profiles or the current active versions in an explicitly selected library.
+It removes extra assigned rules, corrects quantities, backs up changed files and
+retains all non-gift settings. It is not run automatically on other users' custom
+profiles. Previewing without `--apply` does not write files.
+
+Run `node --test standard-gifts.test.cjs` to check backups, persistence, no extra
+rules, dry runs and active-pointer safety. The user's stable/preview/prototype
+profiles were explicitly checked; private profile paths stay in the local report.
