@@ -6,6 +6,7 @@ import { upgradedBootstrapState } from '../content-bootstrap.js';
 const legacy=JSON.parse(fs.readFileSync(new URL('../content-bootstrap-6.5.17.json',import.meta.url),'utf8'));
 const current=JSON.parse(fs.readFileSync(new URL('../content-defaults.json',import.meta.url),'utf8'));
 const launcher706=JSON.parse(fs.readFileSync(new URL('../content-bootstrap-7.0.6.json',import.meta.url),'utf8'));
+const launcher707=JSON.parse(fs.readFileSync(new URL('../content-bootstrap-7.0.7.json',import.meta.url),'utf8'));
 const candidate=JSON.parse(fs.readFileSync(new URL('../maintenance/minecraft-rounds-7.0.3/qa/catalog-candidate.json',import.meta.url),'utf8'));
 
 test('an explicitly approved Minecraft candidate upgrades exactly two packages, without a launcher or media update',()=>{
@@ -26,6 +27,7 @@ test('an explicitly approved Minecraft candidate upgrades exactly two packages, 
 });
 
 test('the approved install repair advances the two Minecraft packages without changing gameplay or media',()=>{
+  const current=launcher707;
   const baseline=JSON.parse(fs.readFileSync(new URL('../content-bootstrap-minecraft-7.0.3.json',import.meta.url),'utf8'));
   assert.deepEqual(baseline,candidate);
   const upgraded=upgradedBootstrapState({draft:structuredClone(baseline),published:structuredClone(baseline)},baseline,current,{allowReleasedBaseline:true});
@@ -39,6 +41,18 @@ test('the approved install repair advances the two Minecraft packages without ch
     const state={draft:structuredClone(baseline),published:structuredClone(baseline)};change(state);
     assert.equal(upgradedBootstrapState(state,baseline,current,{allowReleasedBaseline:true}),null);
   }
+});
+
+test('7.0.8 removes only Crowd Control and preserves every remaining game and media descriptor',()=>{
+  assert.deepEqual(current.games,launcher707.games.filter(game=>game.id!=='crowd-control'));
+  assert.deepEqual(current.media,launcher707.media);
+  assert.deepEqual(current.launcher,launcher707.launcher);
+  assert.equal(current.games.length,15);
+  const state={draft:structuredClone(launcher707),published:structuredClone(launcher707)};
+  const upgraded=upgradedBootstrapState(state,launcher707,current,{allowReleasedBaseline:true});
+  assert.deepEqual(upgraded.published,current);
+  assert.deepEqual(state.published,launcher707);
+  assert.equal(upgradedBootstrapState(upgraded,launcher707,current,{allowReleasedBaseline:true}),null);
 });
 
 test('Minecraft release retains customized published state and pending administrator edits',()=>{

@@ -104,12 +104,16 @@ test('server upgrades the approved game catalog once and preserves the previous 
     assert.equal(fs.readFileSync(backup, 'utf8'), retained);
 });
 
-test('server leaves a customized 7.0.6 catalog unchanged during the game release', async t => {
+test('server retains customized catalog data and hides only the withdrawn Crowd Control game', async t => {
     const previous = JSON.parse(fs.readFileSync(path.join(root, 'content-bootstrap-7.0.6.json'), 'utf8'));
     previous.games[0].description = 'Administrator custom description';
     const f = await fixture(t, {}, { initialCatalog: previous });
-    assert.deepEqual(await f.public(), previous);
+    assert.deepEqual(await f.public(), { ...previous, games: previous.games.filter(game => game.id !== 'crowd-control') });
+    assert.deepEqual((await f.get()).published, previous);
+    assert.deepEqual((await f.get()).draft, previous);
     assert.equal(fs.existsSync(path.join(f.dir, 'content-state.backup.json')), false);
+    await f.stop(); await f.start();
+    assert.deepEqual((await f.get()).published, previous);
 });
 
 test('published Minecraft 7.0.3 catalog receives the first-install repair once without overriding custom edits', async t => {
@@ -122,10 +126,11 @@ test('published Minecraft 7.0.3 catalog receives the first-install repair once w
     assert.deepEqual(await f.public(), current);
     const custom = structuredClone(previous); custom.games[0].description = 'Custom live administrator setting';
     const g = await fixture(t, {}, { initialCatalog: custom });
-    assert.deepEqual(await g.public(), custom);
+    assert.deepEqual(await g.public(), { ...custom, games: custom.games.filter(game => game.id !== 'crowd-control') });
+    assert.deepEqual((await g.get()).published, custom);
 });
 
-test("public defaults promote 16 games with pinned complete content and retain independent packages", async t => {
+test("public defaults retain 15 independent games and exclude only Crowd Control", async t => {
     const f = await fixture(t, {}, {seed:false});
     const response = await f.request("/api/content/catalog", "GET", undefined, false);
     assert.equal(response.status, 200); assert.equal(response.data.schemaVersion, 1);
@@ -133,9 +138,10 @@ test("public defaults promote 16 games with pinned complete content and retain i
     assert.match(response.headers.get("etag"), /^"[a-f0-9]{64}"$/);
     assert.equal(response.data.launcher, undefined);
     const byId = Object.fromEntries(response.data.games.map(item => [item.id, item]));
-    assert.equal(response.data.games.length, 16);
+    assert.equal(response.data.games.length, 15);
+    assert.equal(byId['crowd-control'], undefined);
     assert.equal(response.data.media.length, 285);
-    assert.equal(response.data.revision, 8);
+    assert.equal(response.data.revision, 9);
     assert.equal(byId.caahr.version, '0.6.12');
     assert.equal(byId.caahr.bytes, 63233577);
     assert.equal(byId['frog-river'].version,'7.0.5');
@@ -159,7 +165,7 @@ test("public defaults promote 16 games with pinned complete content and retain i
         assert.equal(byId[id].bytes, bytes);
         assert.equal(byId[id].sha256, sha256);
     }
-    for (const id of ['vs','puanlama','orbit','crowd-control','battle-game','duck-hunt','pony-life','penalty-kick','tightrope-balance','battle-royale','snow-war','minecraft-snake-arena']) {
+    for (const id of ['vs','puanlama','orbit','battle-game','duck-hunt','pony-life','penalty-kick','tightrope-balance','battle-royale','snow-war','minecraft-snake-arena']) {
         const game = byId[id];
         const minecraftUpdate=['snow-war','battle-royale'].includes(id);
         assert.equal(game.version, id === 'minecraft-snake-arena' ? '0.16.0' : minecraftUpdate ? '7.0.4' : '7.0.2');

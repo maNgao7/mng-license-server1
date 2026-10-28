@@ -16,6 +16,7 @@ const hotfixBaseline = JSON.parse(fs.readFileSync(new URL("./content-bootstrap-7
 const snakeBaseline = JSON.parse(fs.readFileSync(new URL("./content-bootstrap-7.0.5.json", import.meta.url), "utf8"));
 const minecraftBaseline = JSON.parse(fs.readFileSync(new URL("./content-bootstrap-7.0.6.json", import.meta.url), "utf8"));
 const minecraftInstallBaseline = JSON.parse(fs.readFileSync(new URL("./content-bootstrap-minecraft-7.0.3.json", import.meta.url), "utf8"));
+const launcher707Baseline = JSON.parse(fs.readFileSync(new URL("./content-bootstrap-7.0.7.json", import.meta.url), "utf8"));
 const clone = value => structuredClone(value);
 const fail = (message, status = 400) => { throw Object.assign(new Error(message), { status }); };
 
@@ -234,7 +235,8 @@ export function registerContentRoutes(app, { dataDir, adminKontrol }) {
         atomicWrite(stateFile, JSON.stringify(state));
     }
     const currentDefaults = catalogShape(defaults, assetsDir).catalog;
-    const upgraded = upgradedBootstrapState(state, catalogShape(minecraftInstallBaseline, assetsDir).catalog, currentDefaults, { allowReleasedBaseline: true })
+    const upgraded = upgradedBootstrapState(state, catalogShape(launcher707Baseline, assetsDir).catalog, currentDefaults, { allowReleasedBaseline: true })
+        || upgradedBootstrapState(state, catalogShape(minecraftInstallBaseline, assetsDir).catalog, currentDefaults, { allowReleasedBaseline: true })
         || upgradedBootstrapState(state, catalogShape(minecraftBaseline, assetsDir).catalog, currentDefaults, { allowReleasedBaseline: true })
         || upgradedBootstrapState(state, catalogShape(snakeBaseline, assetsDir).catalog, currentDefaults, { allowReleasedBaseline: true })
         || upgradedBootstrapState(state, catalogShape(hotfixBaseline, assetsDir).catalog, currentDefaults, { allowReleasedBaseline: true })
@@ -272,7 +274,7 @@ export function registerContentRoutes(app, { dataDir, adminKontrol }) {
         }
     };
     app.get("/api/content/catalog", (req, res) => {
-        const body = JSON.stringify(state.published);
+        const body = JSON.stringify({ ...state.published, games: state.published.games.filter(game => game.id !== 'crowd-control') });
         res.set({ "Cache-Control": "no-store", ETag: `"${crypto.createHash("sha256").update(body).digest("hex")}"` }).type("json").send(body);
     });
     app.get("/api/admin/content", adminKontrol, route((req, res) => res.json(state)));

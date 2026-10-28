@@ -1,0 +1,255 @@
+{
+  "schemaVersion": 1,
+  "revision": 1,
+  "totalGames": 14,
+  "available": 8,
+  "missing": 6,
+  "bundledBytes": 17321113,
+  "games": [
+    {
+      "gameId": "battle-royale",
+      "packageId": "battle-royale",
+      "title": "Minecraft, PUBG",
+      "available": true,
+      "guide": {
+        "id": "battle-royale",
+        "gameId": "battle-royale",
+        "packageId": "battle-royale",
+        "gameTitle": "Minecraft, PUBG",
+        "title": "Hazır hediye görseli (PNG)",
+        "filename": "TikMnG-Minecraft-PUBG-Hediyeler.png",
+        "mimeType": "image/png",
+        "version": "2026-10-20.1",
+        "sha256": "cd8de10c40f8cd7896197e6eed7da2197f383efc64059b1b4807220ada02f66d",
+        "bytes": 1798915,
+        "width": 5636,
+        "height": 2600
+      },
+      "missingReason": null,
+      "audit": "sha256-size-png-verified"
+    },
+    {
+      "gameId": "snow-war",
+      "packageId": "snow-war",
+      "title": "Minecraft Kartopu Savaşı",
+      "available": true,
+      "guide": {
+        "id": "snow-war",
+        "gameId": "snow-war",
+        "packageId": "snow-war",
+        "gameTitle": "Minecraft Kartopu Savaşı",
+        "title": "Hazır hediye görseli (PNG)",
+        "filename": "TikMnG-Kartopu-Savasi-Hediye-Listesi.png",
+        "mimeType": "image/png",
+        "version": "2026-10-20.1",
+        "sha256": "91f0f8f20c0a61cffa3da5e652784d774bc0d85c9f70949f96273871fcfb1d42",
+        "bytes": 4122436,
+        "width": 8121,
+        "height": 4470
+      },
+      "missingReason": null,
+      "audit": "sha256-size-png-verified"
+    },
+    {
+      "gameId": "vs",
+      "packageId": "tiktok-vs",
+      "title": "TikTok VS Profil",
+      "available": false,
+      "guide": null,
+      "missingReason": "No verified ready gift-guide PNG found. Per-gift left/right icons are not a complete guide. Shared package does not imply the Profil Puanlama guide applies.",
+      "audit": "missing-source-asset"
+    },
+    {
+      "gameId": "puanlama",
+      "packageId": "tiktok-vs",
+      "title": "Profil Puanlama",
+      "available": false,
+      "guide": null,
+      "missingReason": "No verified ready gift-guide PNG found for this game. Do not reuse the VS artwork solely because both games use tiktok-vs.",
+      "audit": "missing-source-asset"
+    },
+    {
+      "gameId": "orbit",
+      "packageId": "mng-orbit",
+      "title": "MNG Orbit",
+      "available": true,
+      "guide": {
+        "id": "orbit",
+        "gameId": "orbit",
+        "packageId": "mng-orbit",
+        "gameTitle": "MNG Orbit",
+        "title": "Hazır hediye görseli (PNG)",
+        "filename": "TikMnG-Orbit-Hediyeler.png",
+        "mimeType": "image/png",
+        "version": "2026-10-20.1",
+        "sha256": "b38ca2be2b3d0e8eaf4004be49c5ba247040223606664353f3a19282954d0a7a",
+        "bytes": 1209402,
+        "width": 6610,
+        "height": 1000
+      },
+      "missingReason": null,
+      "audit": "sha256-size-png-verified"
+    },
+    {
+      "gameId": "crowd-control",
+      "packageId": "crowd-control",
+      "title": "MNG Crowd Control",
+      "available": false,
+      "guide": null,
+      "missingReason": "Only individual catalog gift icons and in-app action rules found; no ready guide image.",
+      "audit": "missing-source-asset"
+    },
+    {
+      "gameId": "battle-game",
+      "packageId": "battle-game",
+      "title": "Şövalye Savaşı",
+      "available": false,
+      "guide": null,
+      "missingReason": "Only individual gift icons and soldier rules found; no ready guide image.",
+      "audit": "missing-source-asset"
+    },
+    {
+      "gameId": "gelene-gecene",
+      "packageId": "gelene-gecene",
+      "title": "Gelene Geçene",
+      "available": false,
+      "guide": null,
+      "missingReason": "No verified ready guide found in local game/resource locations. The catalog has no gift-image resource for this game.",
+      "audit": "missing-source-asset"
+    },
+    {
+      "gameId": "duck-hunt",
+      "packageId": "duck-hunt",
+      "title": "MNG Dodge Hunter",
+      "available": true,
+      "guide": {
+        "id": "duck-hunt",
+        "gameId": "duck-hunt",
+        "packageId": "duck-hunt",
+        "gameTitle": "MNG Dodge Hunter",
+        "title": "Hazır hediye görseli (PNG)",
+        "filename": "TikMnG-Dodge-Hunter-Hediyeler.png",
+        "mimeType": "image/png",
+        "version": "2026-10-22.1",
+        "sha256": "c6e8fe9963bff8699c2d27d8b9061930e479e48058c5702b00e7ce8d5a78528e",
+        "bytes": 91140,
+        "width": 1024,
+        "height": 247
+      },
+      "missingReason": null,
+      "audit": "sha256-size-png-verified"
+    },
+    {
+      "gameId": "pony-life",
+      "packageId": "pony-life",
+      "title": "Pony Katırı",
+      "available": false,
+      "guide": null,
+      "missingReason": "Only the game logo and model textures found; neither is a ready gift guide.",
+      "audit": "missing-source-asset"
+    },
+    {
+      "gameId": "frog-river",
+      "packageId": "frog-river",
+      "title": "Vak Vak Jump",
+      "available": true,
+      "guide": {
+        "id": "frog-river",
+        "gameId": "frog-river",
+        "packageId": "frog-river",
+        "gameTitle": "Vak Vak Jump",
+        "title": "Hazır hediye görseli (PNG)",
+        "filename": "TikMnG-Vak-Vak-Jump-Hediyeler.png",
+        "mimeType": "image/png",
+        "version": "2026-10-22.1",
+        "sha256": "e18f6ee42fdc05041707c07a9cb87790a3a5e3e31bc197a94123c615a80138a6",
+        "bytes": 100569,
+        "width": 1024,
+        "height": 660
+      },
+      "missingReason": null,
+      "audit": "sha256-size-png-verified"
+    },
+    {
+      "gameId": "penalty-kick",
+      "packageId": "penalty-kick",
+      "title": "Süper Lig (Penaltı)",
+      "available": true,
+      "guide": {
+        "id": "penalty-kick",
+        "gameId": "penalty-kick",
+        "packageId": "penalty-kick",
+        "gameTitle": "Süper Lig (Penaltı)",
+        "title": "Hazır hediye görseli (PNG)",
+        "filename": "TikMnG-Penalti-Hediye-Sablonu.png",
+        "mimeType": "image/png",
+        "version": "2026-10-22.1",
+        "sha256": "9ad7af971e03db19d11ad4dc8781715e6796f3a16a51fd3e2989506b596f6dae",
+        "bytes": 2771365,
+        "width": 5485,
+        "height": 4095
+      },
+      "missingReason": null,
+      "audit": "sha256-size-png-verified"
+    },
+    {
+      "gameId": "tightrope-balance",
+      "packageId": "tightrope-balance",
+      "title": "Dengesiz Yayıncı",
+      "available": true,
+      "guide": {
+        "id": "tightrope-balance",
+        "gameId": "tightrope-balance",
+        "packageId": "tightrope-balance",
+        "gameTitle": "Dengesiz Yayıncı",
+        "title": "Hazır hediye görseli (PNG)",
+        "filename": "TikMnG-Denge-Hediye-Listesi.png",
+        "mimeType": "image/png",
+        "version": "2026-10-22.1",
+        "sha256": "f8e6afbd58da553f44f101f914a10a788df2b206eca7e7ee87482cce43ff261d",
+        "bytes": 3812664,
+        "width": 7968,
+        "height": 5920
+      },
+      "missingReason": null,
+      "audit": "sha256-size-png-verified"
+    },
+    {
+      "gameId": "zombie-war",
+      "packageId": "zombie-war",
+      "title": "Zombie War",
+      "available": true,
+      "guide": {
+        "id": "zombie-war",
+        "gameId": "zombie-war",
+        "packageId": "zombie-war",
+        "gameTitle": "Zombie War",
+        "title": "Hazır hediye görseli (PNG)",
+        "filename": "TikMnG-Zombie-War-Hediye-Listesi.png",
+        "mimeType": "image/png",
+        "version": "2026-10-21.1",
+        "sha256": "9c8fab556afa507002232f1ef99e0c5b5edde0aaf35e5c74c95fcabf7dce7f52",
+        "bytes": 3414622,
+        "width": 8091,
+        "height": 4695
+      },
+      "missingReason": null,
+      "audit": "sha256-size-png-verified"
+    }
+  ],
+  "integration": {
+    "module": "lib/game-resources.cjs",
+    "buttonLookup": "getGuide(gameId): metadata or null; verified on every call",
+    "save": "downloadGuide(gameId, nativeSaveDialogPath, { overwrite: true }): verified PNG bytes; no game install/network needed",
+    "ipcInput": "Only accept a known game ID from the renderer. Obtain the output path in the main process with showSaveDialog.",
+    "notice": "Ready images describe the default gift actions; this helper does not regenerate images from user-customized assignments.",
+    "uiIntegrated": false
+  },
+  "findings": [
+    "Denge public/hediye-sablonu.png is actually the Penalty guide; use denge-hediye-listesi.png.",
+    "PUBG source still contains a snow-war guide in its guide folder; use downloads/MC-PUBG.png, matching the user's supplied image.",
+    "VS and Profil Puanlama share tiktok-vs but have separate resource entries; no guide inferred between them.",
+    "Only Zombie War currently has an explicit ready-PNG catalog resource. Local assets avoid that network dependency.",
+    "All eight selected originals were visually inspected; images are copied unchanged, not generated covers."
+  ]
+}

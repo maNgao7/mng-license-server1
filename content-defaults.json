@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
-  "revision": 8,
-  "publishedAt": "2026-10-27T18:23:42.9440270Z",
+  "revision": 9,
+  "publishedAt": "2026-10-28T13:00:00.000Z",
   "games": [
     {
       "id": "caahr",
@@ -106,25 +106,6 @@
           "url": "https://github.com/maNgao7/mng-license-server1/releases/download/games-7.0.2/game-content-mng-orbit-7.0.2.json",
           "bytes": 1015066,
           "sha256": "605756fdf6026146b9cf26c1cd6890952f7d37b0cff0abf0d25fdb8f9f62093f"
-        }
-      ]
-    },
-    {
-      "id": "crowd-control",
-      "title": "MNG Crowd Control",
-      "description": "İzleyicilerin hediyeleri bir anda engel ya da desteğe dönüşür. Etrafını saran tehditlerden kaç, güçlen ve boss karşılaşmalarını aş.",
-      "version": "7.0.2",
-      "url": "https://github.com/maNgao7/mng-license-server1/releases/download/game-installers-7.0.2/crowd-control-7.0.2.zip",
-      "sha256": "2ef794dc7524479d23ec0352b55079752c26a15f5908f592e170c0a6875ebf4f",
-      "bytes": 5176638,
-      "requirements": "",
-      "resources": [],
-      "files": [
-        {
-          "path": ".tikmng-content.json",
-          "url": "https://github.com/maNgao7/mng-license-server1/releases/download/games-7.0.2/game-content-crowd-control-7.0.2.json",
-          "bytes": 1010770,
-          "sha256": "cd653927dbe146e12e23aef3af2c7f8b0ff4f235aae09ed004ce8a79ef1cdeea"
         }
       ]
     },

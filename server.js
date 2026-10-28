@@ -534,10 +534,10 @@ function logEkle(lisansKod, cihazKimlik, islem, ip) {
 // =====================================================================
 // SÜRÜM BİLGİLERİ & İNDİRME LİNKLERİ
 // =====================================================================
-const EN_GUNCEL_SURUM = "7.0.7";
+const EN_GUNCEL_SURUM = "7.0.8";
 const EN_DUSUK_SURUM = "1.0.0";
-const SETUP_INDIRME_LINKI = "https://github.com/maNgao7/mng-license-server1/releases/download/v7.0.7/TikMnG-Setup-7.0.7.exe";
-const PORTABLE_INDIRME_LINKI = "https://github.com/maNgao7/mng-license-server1/releases/download/v7.0.7/TikMnG-7.0.7-Portable.exe";
+const SETUP_INDIRME_LINKI = "https://github.com/maNgao7/mng-license-server1/releases/download/v7.0.8/TikMnG-Setup-7.0.8.exe";
+const PORTABLE_INDIRME_LINKI = "https://github.com/maNgao7/mng-license-server1/releases/download/v7.0.8/TikMnG-7.0.8-Portable.exe";
 const SETUP_WEB_LINKI = SETUP_INDIRME_LINKI;
 const VARSAYILAN_PAKET_LINKLERI = Object.freeze({
     BACKGROUNDS: "https://drive.usercontent.google.com/download?id=1VHwmK2Lt-DN6jVYB1Gp2sbeW6hU_rgB6&export=download&confirm=t",
@@ -551,6 +551,12 @@ const VARSAYILAN_PAKET_LINKLERI = Object.freeze({
 
 // Her güncellemede eklenen/değişen özellikler listesi
 const SURUM_NOTLARI = [
+    "v7.0.8: Racon Kralı, Yayın Güzeli ve Yayın Yakışıklısı eklendi. Her widget için ayrı saydam HTTPS yayın bağlantısı ve hediye seçimi bulunur; seçilen hediyeyi en son gönderenin profili görünür.",
+    "v7.0.8: Üç yeni widgetta başlık ile kullanıcı adı animasyonlu olarak dönüşümlü gösterilir. Yeni widget duyurusu kapatıldıktan sonra tekrar açılmaz. Viral Benim başlığı büyütüldü ve profilin arkasındaki hediye görseli ortalandı.",
+    "v7.0.8: Özel Giriş Videoları bölümü eklendi. Kullanıcı adına özel yüklenen veya HTTPS adresinden eklenen videolar; ilk girişte, yorumda, seçilen hediyede veya etkileşimde oynatılabilir. İlk giriş videosu yayın başına bir kez oynar; takip tetikleyicisi kaldırıldı.",
+    "v7.0.8: Özel giriş videosu ancak oynatılmaya başladığında kullanılmış sayılır. Geç açılan yayın kaynağı, kısa bağlantı kesintisi ve kaybolan oynatma onayı için kuyruk ve sınırlı tekrar denemesi eklendi; test oynatımı ilk giriş hakkını tüketmez.",
+    "v7.0.8: Sesli Yorumlar ilk ses yüklenirken yorumları bekletir. Geçici ses üretim hatasında sınırlı tekrar denenir, başarısız tek yorum diğerlerini silmez; zaman aşımında kalan ses işi iptal edilir. Kullanıcı adları okunmaz.",
+    "v7.0.8: Yalnızca MNG Crowd Control oyun listesinden kaldırıldı. Diğer 15 oyun, kurulu oyun dosyaları, lisanslar, kayıtlı videolar, hediye eşleştirmeleri ve yayın bağlantıları korunur; oyun paketleri bu sürümde değişmedi.",
     "v7.0.7: Sesli Sürüş açılışında aynı paketin iki kez doğrulanması kaldırıldı; gerçek testte oyun ve hediye menüsü 47,8 saniye yerine 20,4 saniyede hazırlandı. Güvenlik kontrolleri korunur; süre donanıma göre değişir.",
     "v7.0.7: Güncelleme açıklamaları Türkçe ve ayrı maddeler halinde gösterilir; indirme yüzdesindeki uzun ondalık sayılar kısaltılır. İndirme türü ve süreleri gizli bağlantı içermeyen yerel tanılama kaydına yazılır.",
     "v7.0.7: PUBG ve Kartopu 7.0.4 oyun paketlerinde sıfırdan kurulumu engelleyen boş Java geçici dosyası/ZIP boyut uyuşmazlığı düzeltildi. Hediye eylemleri, diğer oyunlar, lisanslar, yayın/widget bağlantıları ve kayıtlı ayarlar korunur.",
