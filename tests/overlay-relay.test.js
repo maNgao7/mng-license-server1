@@ -116,6 +116,43 @@ function signClaims(claims) {
     return payload + "." + createHmac("sha256", SECRET).update("overlay-ticket-v1:" + payload).digest("base64url");
 }
 
+test('only revision-scoped private media may cache; state, HTML, duplicates and redirects never cache', async t => {
+    const f = await fixture(t), session = await f.session(), publisher = await f.connect(session.ticket);
+    const revision = 'a'.repeat(24);
+    for (const [route, cache, status = 200] of [
+        [FILE + '?revision=' + revision, true],
+        [FILE, false],
+        [FILE + '?revision=' + revision + '&revision=' + revision, false],
+        [FILE + '?revision=' + revision + '&unknown=1', false],
+        ['/api/widget/state?revision=' + revision, false],
+        ['/tikmng/media?revision=' + revision, false],
+        [FILE + '?revision=' + revision, false, 404]
+    ]) {
+        const pending = f.read(session.path + route);
+        const request = await publisher.next('request');
+        respond(publisher, request, 'test', { 'cache-control': 'private, max-age=3600' }, status);
+        const response = await pending;
+        assert.equal(response.headers['cache-control'], cache ? 'private, max-age=3600, no-transform' : 'no-store, no-transform');
+    }
+});
+
+test('static gift artwork can use a private cache, but errors, HTML and live state never do', async t => {
+    const f=await fixture(t),session=await f.session(),publisher=await f.connect(session.ticket);
+    for(const [route,type,status,cache] of [
+        ['/widget/gift-assets/racon-list-seat-v2.png','image/png',200,true],
+        ['/widget/gift-assets/7934.png','image/png',200,true],
+        ['/widget/gift-assets/7934.png','image/png',404,false],
+        ['/widget/gift-assets/7934.png','text/html',200,false],
+        ['/api/widget/state','image/png',200,false],
+        ['/widget-overlay.html','text/html',200,false]
+    ]){
+        const pending=f.read(session.path+route),request=await publisher.next('request');
+        respond(publisher,request,'test',{'content-type':type,'cache-control':'public, max-age=86400'},status);
+        const response=await pending;
+        assert.equal(response.headers['cache-control'],cache?'private, max-age=3600, no-transform':'no-store, no-transform');
+    }
+});
+
 test("session authorizes exact input and issues stable owner/device/install/channel tokens", async t => {
     const seen = [];
     const f = await fixture(t, { authorize: input => { seen.push(input); return { ownerId: input.licenseCode === "other" ? "owner-2" : "owner-1" }; } });

@@ -1,0 +1,70 @@
+{
+  "enabled": true,
+  "revision": 2026103001,
+  "games": [
+    {
+      "id": "battle-royale",
+      "previousVersion": "7.0.4",
+      "version": "7.0.5",
+      "sha256": "c7b568fd217e48bc7a255b8dc37a2637960a22a33b59f8fc1e24ded6556e4b8b",
+      "bytes": 179840132,
+      "url": "https://github.com/maNgao7/mng-license-server1/releases/download/game-components-7.0.9/c7b568fd217e48bc7a255b8dc37a2637960a22a33b59f8fc1e24ded6556e4b8b.zip",
+      "files": [
+        {
+          "path": ".tikmng-content.json",
+          "bytes": 1741882,
+          "sha256": "51db1494f06b9019f17ccc4ab4ca21fba78a2099662a2a38dfd75085d3fab99e",
+          "url": "https://github.com/maNgao7/mng-license-server1/releases/download/game-components-7.0.9/51db1494f06b9019f17ccc4ab4ca21fba78a2099662a2a38dfd75085d3fab99e.json"
+        }
+      ]
+    },
+    {
+      "id": "snow-war",
+      "previousVersion": "7.0.4",
+      "version": "7.0.5",
+      "sha256": "1b23b7ab972015e23960a8a2d46230ebe7b20f69eaa052a2fa54d118d29bc7ea",
+      "bytes": 105807861,
+      "url": "https://github.com/maNgao7/mng-license-server1/releases/download/game-components-7.0.9/1b23b7ab972015e23960a8a2d46230ebe7b20f69eaa052a2fa54d118d29bc7ea.zip",
+      "files": [
+        {
+          "path": ".tikmng-content.json",
+          "bytes": 1872173,
+          "sha256": "730a5e6b1aa37a02e092c4de0f55fb106a55d71a04defbcad9da5b76f11ade85",
+          "url": "https://github.com/maNgao7/mng-license-server1/releases/download/game-components-7.0.9/730a5e6b1aa37a02e092c4de0f55fb106a55d71a04defbcad9da5b76f11ade85.json"
+        }
+      ]
+    },
+    {
+      "id": "minecraft-snake-arena",
+      "previousVersion": "0.16.0",
+      "version": "0.17.0",
+      "sha256": "4674cd04ee5ccf0282958069cdb838e7ff121d6072b9f2cc5fb7b89fdf12e48f",
+      "bytes": 49085896,
+      "url": "https://github.com/maNgao7/mng-license-server1/releases/download/game-components-7.0.9/4674cd04ee5ccf0282958069cdb838e7ff121d6072b9f2cc5fb7b89fdf12e48f.zip",
+      "files": [
+        {
+          "path": ".tikmng-content.json",
+          "bytes": 1252313,
+          "sha256": "e9171eb2603f5546c6bb85235eb8223957182f81538131603598f9b43d65a899",
+          "url": "https://github.com/maNgao7/mng-license-server1/releases/download/game-components-7.0.9/e9171eb2603f5546c6bb85235eb8223957182f81538131603598f9b43d65a899.json"
+        }
+      ]
+    },
+    {
+      "id": "zombie-war",
+      "previousVersion": "6.5.17",
+      "version": "6.5.18",
+      "sha256": "a52ae142d105715cff7578e1c66b80bfc6d72dd8989b6829ddaa7bbd1810c86d",
+      "bytes": 174352665,
+      "url": "https://github.com/maNgao7/mng-license-server1/releases/download/game-components-7.0.9/a52ae142d105715cff7578e1c66b80bfc6d72dd8989b6829ddaa7bbd1810c86d.zip",
+      "files": [
+        {
+          "path": ".tikmng-content.json",
+          "bytes": 1905040,
+          "sha256": "c8fe001340b1bedb6e26d53fe41449b0f221e4184a5f99ddb0c853a5150e1019",
+          "url": "https://github.com/maNgao7/mng-license-server1/releases/download/game-components-7.0.9/c8fe001340b1bedb6e26d53fe41449b0f221e4184a5f99ddb0c853a5150e1019.json"
+        }
+      ]
+    }
+  ]
+}

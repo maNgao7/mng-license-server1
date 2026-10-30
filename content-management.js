@@ -4,7 +4,10 @@ import path from "node:path";
 import crypto from "node:crypto";
 import net from "node:net";
 import { lookup } from "node:dns/promises";
+import { fileURLToPath } from 'node:url';
 import { upgradedBootstrapState } from "./content-bootstrap.js";
+import { componentCatalog, readComponentRollout } from './component-catalog.js';
+const componentRollout = readComponentRollout(fileURLToPath(new URL('.', import.meta.url)));
 
 export const MAX_UPLOAD_BYTES = 100 * 1024 * 1024;
 const MAX_CATALOG_BYTES = 2 * 1024 * 1024;
@@ -274,7 +277,8 @@ export function registerContentRoutes(app, { dataDir, adminKontrol }) {
         }
     };
     app.get("/api/content/catalog", (req, res) => {
-        const body = JSON.stringify({ ...state.published, games: state.published.games.filter(game => game.id !== 'crowd-control') });
+        const selected = componentCatalog(state.published, req.get('X-TikMnG-Content'), componentRollout);
+        const body = JSON.stringify({ ...selected, games: selected.games.filter(game => game.id !== 'crowd-control') });
         res.set({ "Cache-Control": "no-store", ETag: `"${crypto.createHash("sha256").update(body).digest("hex")}"` }).type("json").send(body);
     });
     app.get("/api/admin/content", adminKontrol, route((req, res) => res.json(state)));

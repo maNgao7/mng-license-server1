@@ -534,10 +534,10 @@ function logEkle(lisansKod, cihazKimlik, islem, ip) {
 // =====================================================================
 // SÜRÜM BİLGİLERİ & İNDİRME LİNKLERİ
 // =====================================================================
-const EN_GUNCEL_SURUM = "7.0.8";
+const EN_GUNCEL_SURUM = "7.0.9";
 const EN_DUSUK_SURUM = "1.0.0";
-const SETUP_INDIRME_LINKI = "https://github.com/maNgao7/mng-license-server1/releases/download/v7.0.8/TikMnG-Setup-7.0.8.exe";
-const PORTABLE_INDIRME_LINKI = "https://github.com/maNgao7/mng-license-server1/releases/download/v7.0.8/TikMnG-7.0.8-Portable.exe";
+const SETUP_INDIRME_LINKI = "https://github.com/maNgao7/mng-license-server1/releases/download/v7.0.9/TikMnG-Setup-7.0.9.exe";
+const PORTABLE_INDIRME_LINKI = "https://github.com/maNgao7/mng-license-server1/releases/download/v7.0.9/TikMnG-7.0.9-Portable.exe";
 const SETUP_WEB_LINKI = SETUP_INDIRME_LINKI;
 const VARSAYILAN_PAKET_LINKLERI = Object.freeze({
     BACKGROUNDS: "https://drive.usercontent.google.com/download?id=1VHwmK2Lt-DN6jVYB1Gp2sbeW6hU_rgB6&export=download&confirm=t",
@@ -551,6 +551,13 @@ const VARSAYILAN_PAKET_LINKLERI = Object.freeze({
 
 // Her güncellemede eklenen/değişen özellikler listesi
 const SURUM_NOTLARI = [
+    "v7.0.9: Minecraft oyunları ortak Java ve oyun motorunu bir kez kurup paylaşır; TLauncher gerekmez. Sonraki oyunlar yalnızca oyuna özel paketi indirir. İlk kurulum ortak motoru da içerir. Yeni biçim yalnızca uyumlu launcher'a sunulur; kurulu oyunlar, kayıtlar ve hediye ayarları korunur.",
+    "v7.0.9: Video kuyruğu, yeniden bağlanma ve özel giriş videolarının tekrar aralığı düzenlendi. Değişmeyen videolar ve onaylı hediye görselleri özel tarayıcı önbelleğini kullanabilir; canlı olaylar ve ayarlar önbelleğe alınmaz. Performans donanım, internet ve video kodlamasına bağlıdır.",
+    "v7.0.9: Sesli Yorumlar için isteğe bağlı küfür filtresi ve seçilebilir başlangıç işareti eklendi. Hayran kulübü mesajdaki FANS rozeti, kulüp seviyesi veya gözlenen Beni Sev girişiyle tanınır; TikTok'un göndermediği üyelik bilgisi tahmin edilmez.",
+    "v7.0.9: Racona Girenler widget'ı seçilen hediyenin adetlerini X olarak sıralar. İlk üç kişi özel koltuklarda görünür. Havuz yayın ve uygulama kapandıktan sonra korunur; kullanıcı aranabilir, X artırılıp azaltılabilir ve kişiler silinebilir. Düzenleme sırasında gelen hediyeler kaybolmaz.",
+    "v7.0.9: Racon Kralı, Yayın Güzeli ve Yayın Yakışıklısı hediye eşleşmeleri düzeltildi. Canlı PK widget'ı resmî sol/sağ takım puanlarını, büyük skorları ve profilleri gösterir; ikiye iki takım bilgisi gelmezse gruplar tahmin edilmez.",
+    "v7.0.9: Yılan oyununda ayarlanabilir daralmayla zemin dıştan içe yok olur; yılanlar güvenli iç alana yönelir, zeminsiz kalanlar düşerek elenir. Duraklatma daralma saatini durdurur; yeni turda zemin yenilenir. Kartopu Savaşı yarışmacıları yayıncıyı hedeflemez veya ona hasar vermez; P bildirimi üst-ortadadır.",
+    "v7.0.9: Oyun güncellemesi varsa önce Güncelle gösterilir ve tamamlanmadan Oyna açılmaz. Yeni hediye tasarımlarında kontur 3, üst sıra soldan başlangıç oldu. WhatsApp destek ve TikTok profil bağlantıları eklendi. Mevcut lisans ve özel ayarlar korunur.",
     "v7.0.8: Racon Kralı, Yayın Güzeli ve Yayın Yakışıklısı eklendi. Her widget için ayrı saydam HTTPS yayın bağlantısı ve hediye seçimi bulunur; seçilen hediyeyi en son gönderenin profili görünür.",
     "v7.0.8: Üç yeni widgetta başlık ile kullanıcı adı animasyonlu olarak dönüşümlü gösterilir. Yeni widget duyurusu kapatıldıktan sonra tekrar açılmaz. Viral Benim başlığı büyütüldü ve profilin arkasındaki hediye görseli ortalandı.",
     "v7.0.8: Özel Giriş Videoları bölümü eklendi. Kullanıcı adına özel yüklenen veya HTTPS adresinden eklenen videolar; ilk girişte, yorumda, seçilen hediyede veya etkileşimde oynatılabilir. İlk giriş videosu yayın başına bir kez oynar; takip tetikleyicisi kaldırıldı.",
