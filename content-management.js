@@ -20,6 +20,7 @@ const snakeBaseline = JSON.parse(fs.readFileSync(new URL("./content-bootstrap-7.
 const minecraftBaseline = JSON.parse(fs.readFileSync(new URL("./content-bootstrap-7.0.6.json", import.meta.url), "utf8"));
 const minecraftInstallBaseline = JSON.parse(fs.readFileSync(new URL("./content-bootstrap-minecraft-7.0.3.json", import.meta.url), "utf8"));
 const launcher707Baseline = JSON.parse(fs.readFileSync(new URL("./content-bootstrap-7.0.7.json", import.meta.url), "utf8"));
+const launcher709Baseline = JSON.parse(fs.readFileSync(new URL("./content-bootstrap-7.0.9.json", import.meta.url), "utf8"));
 const clone = value => structuredClone(value);
 const fail = (message, status = 400) => { throw Object.assign(new Error(message), { status }); };
 
@@ -238,7 +239,8 @@ export function registerContentRoutes(app, { dataDir, adminKontrol }) {
         atomicWrite(stateFile, JSON.stringify(state));
     }
     const currentDefaults = catalogShape(defaults, assetsDir).catalog;
-    const upgraded = upgradedBootstrapState(state, catalogShape(launcher707Baseline, assetsDir).catalog, currentDefaults, { allowReleasedBaseline: true })
+    const upgraded = upgradedBootstrapState(state, catalogShape(launcher709Baseline, assetsDir).catalog, currentDefaults, { allowReleasedBaseline: true })
+        || upgradedBootstrapState(state, catalogShape(launcher707Baseline, assetsDir).catalog, currentDefaults, { allowReleasedBaseline: true })
         || upgradedBootstrapState(state, catalogShape(minecraftInstallBaseline, assetsDir).catalog, currentDefaults, { allowReleasedBaseline: true })
         || upgradedBootstrapState(state, catalogShape(minecraftBaseline, assetsDir).catalog, currentDefaults, { allowReleasedBaseline: true })
         || upgradedBootstrapState(state, catalogShape(snakeBaseline, assetsDir).catalog, currentDefaults, { allowReleasedBaseline: true })

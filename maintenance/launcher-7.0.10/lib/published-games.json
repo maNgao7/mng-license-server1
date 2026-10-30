@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 1,
+  "games": [
+    {
+      "id": "profile-contest",
+      "title": "Profil Yarışması",
+      "cover": "profile-contest-v1",
+      "announcementId": "profile-contest-0.3.0",
+      "definition": {"id":"profile-contest","klasor":"profile-contest","boyut":"Küçük oyun paketi","paketSurumu":"0.3.0"}
+    },
+    {
+      "id": "minecraft-snake-arena",
+      "title": "Minecraft Yılan Oyunu",
+      "cover": "minecraft-yilan-cover-v2",
+      "announcementId": "minecraft-snake-arena-0.15.0",
+      "definition": {
+        "id": "minecraft-snake-arena",
+        "klasor": "minecraft-snake-arena",
+        "boyut": "787 MB",
+        "paketSurumu": "0.16.0",
+        "minecraft": true,
+        "modFile": "tikmng_snake_arena-0.16.0.jar",
+        "configFile": "tikmng-snake-arena.json"
+      }
+    }
+  ]
+}

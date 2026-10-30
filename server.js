@@ -534,10 +534,10 @@ function logEkle(lisansKod, cihazKimlik, islem, ip) {
 // =====================================================================
 // SÜRÜM BİLGİLERİ & İNDİRME LİNKLERİ
 // =====================================================================
-const EN_GUNCEL_SURUM = "7.0.9";
+const EN_GUNCEL_SURUM = "7.0.10";
 const EN_DUSUK_SURUM = "1.0.0";
-const SETUP_INDIRME_LINKI = "https://github.com/maNgao7/mng-license-server1/releases/download/v7.0.9/TikMnG-Setup-7.0.9.exe";
-const PORTABLE_INDIRME_LINKI = "https://github.com/maNgao7/mng-license-server1/releases/download/v7.0.9/TikMnG-7.0.9-Portable.exe";
+const SETUP_INDIRME_LINKI = "https://github.com/maNgao7/mng-license-server1/releases/download/v7.0.10/TikMnG-Setup-7.0.10.exe";
+const PORTABLE_INDIRME_LINKI = "https://github.com/maNgao7/mng-license-server1/releases/download/v7.0.10/TikMnG-7.0.10-Portable.exe";
 const SETUP_WEB_LINKI = SETUP_INDIRME_LINKI;
 const VARSAYILAN_PAKET_LINKLERI = Object.freeze({
     BACKGROUNDS: "https://drive.usercontent.google.com/download?id=1VHwmK2Lt-DN6jVYB1Gp2sbeW6hU_rgB6&export=download&confirm=t",
@@ -551,6 +551,10 @@ const VARSAYILAN_PAKET_LINKLERI = Object.freeze({
 
 // Her güncellemede eklenen/değişen özellikler listesi
 const SURUM_NOTLARI = [
+    "v7.0.10: Yeni oyun Profil Yarışması: iki, üç veya dört profil yan yana yarışır. İzleyici çerçeve numarasıyla taraf seçer; sonraki her hediyesi seçtiği kişiye coin değeri kadar puan kazandırır. Ayarlanabilir süre, duraklatma, 30 çerçeve, hediye bildirimleri, kazanan ekranı ve saydam HTTPS widget bulunur. Java veya başka launcher gerekmez.",
+    "v7.0.10: Racon Kralı, Yayın Güzeli, Yayın Yakışıklısı ve Etkileşim Bildirimleri için altı işlemeli çerçeve seçeneği eklendi. Profil fotoğrafları orijinal yüksek çözünürlüklü kaynaklardan çözümlenir; küçük fotoğraf büyük olanın üzerine yazılmaz. Kaynakta bulunmayan kalite yapay olarak üretilmez.",
+    "v7.0.10: Beğeni sıralaması, Racona Girenler, canlı PK, beğeni şelalesi ve hediye havai fişeği görünümü yenilendi. Yayın Arkadaşları yorum yapanları ve beğenenleri de alır; yoğun yayında kişiler dönüşümlü gösterilir. Hediye kavanozunun taşma hareketi düzenlendi.",
+    "v7.0.10: Büyük Gelişmiş Doğal Türkçe motoru ve indirme arayüzü kaldırıldı. Okur ve Ema korunur; eski büyük motor seçimi Okur'a geçirilirken okuma kitlesi ve diğer ayarlar saklanır. Sesli yorumların açık/kapalı kontrolü büyütüldü. Lisanslar, oyun kayıtları, videolar ve özel giriş ayarları korunur; uygulamayı kaldırmanız gerekmez.",
     "v7.0.9: Minecraft oyunları ortak Java ve oyun motorunu bir kez kurup paylaşır; TLauncher gerekmez. Sonraki oyunlar yalnızca oyuna özel paketi indirir. İlk kurulum ortak motoru da içerir. Yeni biçim yalnızca uyumlu launcher'a sunulur; kurulu oyunlar, kayıtlar ve hediye ayarları korunur.",
     "v7.0.9: Video kuyruğu, yeniden bağlanma ve özel giriş videolarının tekrar aralığı düzenlendi. Değişmeyen videolar ve onaylı hediye görselleri özel tarayıcı önbelleğini kullanabilir; canlı olaylar ve ayarlar önbelleğe alınmaz. Performans donanım, internet ve video kodlamasına bağlıdır.",
     "v7.0.9: Sesli Yorumlar için isteğe bağlı küfür filtresi ve seçilebilir başlangıç işareti eklendi. Hayran kulübü mesajdaki FANS rozeti, kulüp seviyesi veya gözlenen Beni Sev girişiyle tanınır; TikTok'un göndermediği üyelik bilgisi tahmin edilmez.",

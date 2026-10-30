@@ -130,7 +130,7 @@ test('published Minecraft 7.0.3 catalog receives the first-install repair once w
     assert.deepEqual((await g.get()).published, custom);
 });
 
-test("public defaults retain 15 independent games and exclude only Crowd Control", async t => {
+test("public defaults add Profile Contest, retain 15 existing games and exclude Crowd Control", async t => {
     const f = await fixture(t, {}, {seed:false});
     const response = await f.request("/api/content/catalog", "GET", undefined, false);
     assert.equal(response.status, 200); assert.equal(response.data.schemaVersion, 1);
@@ -138,10 +138,13 @@ test("public defaults retain 15 independent games and exclude only Crowd Control
     assert.match(response.headers.get("etag"), /^"[a-f0-9]{64}"$/);
     assert.equal(response.data.launcher, undefined);
     const byId = Object.fromEntries(response.data.games.map(item => [item.id, item]));
-    assert.equal(response.data.games.length, 15);
+    assert.equal(response.data.games.length, 16);
+    assert.equal(byId['profile-contest'].version, '0.3.0');
+    assert.equal(byId['profile-contest'].bytes, 47218844);
+    assert.equal(byId['profile-contest'].sha256, 'bfea65a15399612a8cfea4a74bc6e0718b757e220544451aa4ab583d02dca7ab');
     assert.equal(byId['crowd-control'], undefined);
     assert.equal(response.data.media.length, 285);
-    assert.equal(response.data.revision, 9);
+    assert.equal(response.data.revision, 10);
     assert.equal(byId.caahr.version, '0.6.12');
     assert.equal(byId.caahr.bytes, 63233577);
     assert.equal(byId['frog-river'].version,'7.0.5');

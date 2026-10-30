@@ -7,6 +7,7 @@ const legacy=JSON.parse(fs.readFileSync(new URL('../content-bootstrap-6.5.17.jso
 const current=JSON.parse(fs.readFileSync(new URL('../content-defaults.json',import.meta.url),'utf8'));
 const launcher706=JSON.parse(fs.readFileSync(new URL('../content-bootstrap-7.0.6.json',import.meta.url),'utf8'));
 const launcher707=JSON.parse(fs.readFileSync(new URL('../content-bootstrap-7.0.7.json',import.meta.url),'utf8'));
+const launcher709=JSON.parse(fs.readFileSync(new URL('../content-bootstrap-7.0.9.json',import.meta.url),'utf8'));
 const candidate=JSON.parse(fs.readFileSync(new URL('../maintenance/minecraft-rounds-7.0.3/qa/catalog-candidate.json',import.meta.url),'utf8'));
 
 test('an explicitly approved Minecraft candidate upgrades exactly two packages, without a launcher or media update',()=>{
@@ -44,6 +45,7 @@ test('the approved install repair advances the two Minecraft packages without ch
 });
 
 test('7.0.8 removes only Crowd Control and preserves every remaining game and media descriptor',()=>{
+  const current=launcher709;
   assert.deepEqual(current.games,launcher707.games.filter(game=>game.id!=='crowd-control'));
   assert.deepEqual(current.media,launcher707.media);
   assert.deepEqual(current.launcher,launcher707.launcher);
@@ -53,6 +55,17 @@ test('7.0.8 removes only Crowd Control and preserves every remaining game and me
   assert.deepEqual(upgraded.published,current);
   assert.deepEqual(state.published,launcher707);
   assert.equal(upgradedBootstrapState(upgraded,launcher707,current,{allowReleasedBaseline:true}),null);
+});
+
+test('7.0.10 adds only Profile Contest and preserves administrator changes',()=>{
+  assert.deepEqual(current.games.filter(game=>game.id!=='profile-contest'),launcher709.games);
+  assert.deepEqual(current.media,launcher709.media);
+  assert.deepEqual(current.launcher,launcher709.launcher);
+  assert.equal(current.games.length,16);
+  const state={draft:structuredClone(launcher709),published:structuredClone(launcher709)};
+  assert.deepEqual(upgradedBootstrapState(state,launcher709,current,{allowReleasedBaseline:true}).published,current);
+  state.draft.games[0].title='Custom';
+  assert.equal(upgradedBootstrapState(state,launcher709,current,{allowReleasedBaseline:true}),null);
 });
 
 test('Minecraft release retains customized published state and pending administrator edits',()=>{

@@ -1,0 +1,18 @@
+{
+  "passed": true,
+  "version": "7.0.10",
+  "createdAt": "2026-10-30T20:09:50.654Z",
+  "launcherTests": {
+    "passed": 990,
+    "failed": 0,
+    "skipped": 0
+  },
+  "packagedIPC": true,
+  "actualHTTPSWidget": true,
+  "original1080Bytes": true,
+  "royalFrameVariants": 18,
+  "notificationFrames": 6,
+  "realPaidGiftTest": false,
+  "signedPublisher": false,
+  "publicAdminMetadataPreserved": true
+}

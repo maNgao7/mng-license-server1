@@ -1,8 +1,19 @@
 {
   "schemaVersion": 1,
-  "revision": 9,
-  "publishedAt": "2026-10-28T13:00:00.000Z",
+  "revision": 10,
+  "publishedAt": "2026-10-30T15:30:00.000Z",
   "games": [
+    {
+      "id": "profile-contest",
+      "title": "Profil Yarışması",
+      "description": "İki, üç veya dört izleyiciyi yan yana yarıştır. İzleyicinin son yazdığı çerçeve numarası tercihini belirler; gönderdiği her hediye seçtiği kişiye coin değeri kadar puan kazandırır. Süreyi yönet, çerçeveleri seç ve kazananı saydam widget üzerinden göster.",
+      "version": "0.3.0",
+      "url": "https://github.com/maNgao7/mng-license-server1/releases/download/v7.0.10/profile-contest-0.3.0.zip",
+      "sha256": "bfea65a15399612a8cfea4a74bc6e0718b757e220544451aa4ab583d02dca7ab",
+      "bytes": 47218844,
+      "requirements": "Windows 10/11 64 bit. Java, Minecraft veya başka bir launcher kurulumu gerekmez.",
+      "resources": []
+    },
     {
       "id": "caahr",
       "title": "Sesli Sürüş",

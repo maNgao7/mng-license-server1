@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="utf-8"?>
+<testsuites>
+	<testcase name="agency key fits the deployed launcher, uses the entered name and rejects tampering" time="0.002092" classname="test" file="D:\TikMnG-Release-7.0.0-source\tests\agency-api.test.js"/>
+	<testcase name="deployed server mounts authenticated overlay sessions and WebSocket relay without activating new seats" time="0.381687" classname="test" file="D:\TikMnG-Release-7.0.0-source\tests\agency-api.test.js"/>
+	<testcase name="20 seats admit exactly 20 different devices, not 21; every device passes later checks" time="0.891380" classname="test" file="D:\TikMnG-Release-7.0.0-source\tests\agency-api.test.js"/>
+	<testcase name="concurrent first registrations cannot overbook a capacity of five" time="0.266170" classname="test" file="D:\TikMnG-Release-7.0.0-source\tests\agency-api.test.js"/>
+	<testcase name="agency management is authenticated, capacity changes persist and blocked members stay blocked" time="0.766269" classname="test" file="D:\TikMnG-Release-7.0.0-source\tests\agency-api.test.js"/>
+	<testcase name="creation rejects invalid capacities, names and durations without creating records" time="0.422535" classname="test" file="D:\TikMnG-Release-7.0.0-source\tests\agency-api.test.js"/>
+	<testcase name="legacy agency and individual keys remain compatible; signed new keys can recover" time="0.360128" classname="test" file="D:\TikMnG-Release-7.0.0-source\tests\agency-api.test.js"/>
+	<testcase name="token-only recovery retains agency type and capacity for multiple members" time="0.743004" classname="test" file="D:\TikMnG-Release-7.0.0-source\tests\agency-api.test.js"/>
+	<testcase name="revoked, expired and archived agencies reject both verification paths" time="0.551790" classname="test" file="D:\TikMnG-Release-7.0.0-source\tests\agency-api.test.js"/>
+	<testcase name="a failed durable write is an error and does not consume a seat" time="0.254296" classname="test" file="D:\TikMnG-Release-7.0.0-source\tests\agency-api.test.js"/>
+	<testcase name="admin assets are reachable, private data stays behind session auth, and public requests work" time="0.341930" classname="test" file="D:\TikMnG-Release-7.0.0-source\tests\agency-api.test.js"/>
+	<testcase name="expired individual licenses renew on the same key and device; active renewals preserve paid time" time="0.656370" classname="test" file="D:\TikMnG-Release-7.0.0-source\tests\agency-api.test.js"/>
+	<testcase name="agency renewal and rename preserve every registered device and the original key" time="0.342550" classname="test" file="D:\TikMnG-Release-7.0.0-source\tests\agency-api.test.js"/>
+	<testcase name="deleted unlimited licenses cannot be reopened, renewed, edited or resurrected by stale backups" time="0.849669" classname="test" file="D:\TikMnG-Release-7.0.0-source\tests\agency-api.test.js"/>
+	<testcase name="pending durations start only at first activation and invalid edits are atomic" time="0.398420" classname="test" file="D:\TikMnG-Release-7.0.0-source\tests\agency-api.test.js"/>
+	<testcase name="changing unlimited individual licenses to finite time issues a finite recovery receipt" time="0.488665" classname="test" file="D:\TikMnG-Release-7.0.0-source\tests\agency-api.test.js"/>
+	<testcase name="old launchers receive unchanged compatible catalog; only explicit capability selects new format" time="0.000561" classname="test" file="D:\TikMnG-Release-7.0.0-source\tests\component-catalog.test.js"/>
+	<testcase name="administrator newer package is not overridden and bad manifests fail closed" time="0.000162" classname="test" file="D:\TikMnG-Release-7.0.0-source\tests\component-catalog.test.js"/>
+	<testcase name="invalid payload integrity never replaces a working published package" time="0.000520" classname="test" file="D:\TikMnG-Release-7.0.0-source\tests\component-catalog.test.js"/>
+	<testcase name="server upgrades the approved game catalog once and preserves the previous catalog as backup" time="0.479878" classname="test" file="D:\TikMnG-Release-7.0.0-source\tests\content-api.test.js"/>
+	<testcase name="server retains customized catalog data and hides only the withdrawn Crowd Control game" time="0.465695" classname="test" file="D:\TikMnG-Release-7.0.0-source\tests\content-api.test.js"/>
+	<testcase name="published Minecraft 7.0.3 catalog receives the first-install repair once without overriding custom edits" time="0.679510" classname="test" file="D:\TikMnG-Release-7.0.0-source\tests\content-api.test.js"/>
+	<testcase name="public defaults add Profile Contest, retain 15 existing games and exclude Crowd Control" time="0.215513" classname="test" file="D:\TikMnG-Release-7.0.0-source\tests\content-api.test.js"/>
+	<testcase name="legacy download URLs map to real root ZIPs and the existing Gelene Geçene mod package" time="0.327308" classname="test" file="D:\TikMnG-Release-7.0.0-source\tests\content-api.test.js"/>
+	<testcase name="legacy Minecraft links redirect to the corrected published archives" time="0.246535" classname="test" file="D:\TikMnG-Release-7.0.0-source\tests\content-api.test.js"/>
+	<testcase name="legacy overrides cannot replace the immutable published package or its hash" time="0.221294" classname="test" file="D:\TikMnG-Release-7.0.0-source\tests\content-api.test.js"/>
+	<testcase name="admin reads, saves, publishing and binary uploads require the existing cookie session" time="0.278834" classname="test" file="D:\TikMnG-Release-7.0.0-source\tests\content-api.test.js"/>
+	<testcase name="draft is private, expectedRevision protects save/publish, immutable snapshots and backup survive restart" time="0.704308" classname="test" file="D:\TikMnG-Release-7.0.0-source\tests\content-api.test.js"/>
+	<testcase name="parallel writers cannot overwrite a revision" time="0.244511" classname="test" file="D:\TikMnG-Release-7.0.0-source\tests\content-api.test.js"/>
+	<testcase name="controlled fields, bounded lists, duplicate IDs, plain text, integrity and public-only URLs validate atomically" time="1.163234" classname="test" file="D:\TikMnG-Release-7.0.0-source\tests\content-api.test.js"/>
+	<testcase name="per-file patches and optional launcher metadata round-trip without changing release endpoints" time="0.561225" classname="test" file="D:\TikMnG-Release-7.0.0-source\tests\content-api.test.js"/>
+	<testcase name="complete content descriptors round-trip, while nested, mixed and oversized control files are rejected" time="0.312042" classname="test" file="D:\TikMnG-Release-7.0.0-source\tests\content-api.test.js"/>
+	<testcase name="MP4 and WebM uploads are immutable, hashed, ranged, private storage paths stay hidden and assets survive restart" time="0.797795" classname="test" file="D:\TikMnG-Release-7.0.0-source\tests\content-api.test.js"/>
+	<testcase name="video upload rejects executable data, MIME/header mismatches, traversal, encoding and oversized declarations" time="0.374736" classname="test" file="D:\TikMnG-Release-7.0.0-source\tests\content-api.test.js"/>
+	<testcase name="chunked uploads enforce the streaming byte limit and remove partial files" time="0.369392" classname="test" file="D:\TikMnG-Release-7.0.0-source\tests\content-api.test.js"/>
+	<testcase name="backup recovery preserves the previous committed catalog and skips orphan immutable revision numbers" time="0.510493" classname="test" file="D:\TikMnG-Release-7.0.0-source\tests\content-api.test.js"/>
+	<testcase name="failed durable saves and publications leave committed memory, public catalog and snapshots unchanged" time="0.313235" classname="test" file="D:\TikMnG-Release-7.0.0-source\tests\content-api.test.js"/>
+	<testcase name="browser forms cover login, game patches, media upload/edit/delete, launcher opt-in, conflicts and responsive layout" time="0.000101" classname="test" file="D:\TikMnG-Release-7.0.0-source\tests\content-api.test.js">
+		<skipped type="skipped" message="true"/>
+	</testcase>
+	<testcase name="an explicitly approved Minecraft candidate upgrades exactly two packages, without a launcher or media update" time="0.003469" classname="test" file="D:\TikMnG-Release-7.0.0-source\tests\content-bootstrap.test.js"/>
+	<testcase name="the approved install repair advances the two Minecraft packages without changing gameplay or media" time="0.005302" classname="test" file="D:\TikMnG-Release-7.0.0-source\tests\content-bootstrap.test.js"/>
+	<testcase name="7.0.8 removes only Crowd Control and preserves every remaining game and media descriptor" time="0.002447" classname="test" file="D:\TikMnG-Release-7.0.0-source\tests\content-bootstrap.test.js"/>
+	<testcase name="7.0.10 adds only Profile Contest and preserves administrator changes" time="0.001663" classname="test" file="D:\TikMnG-Release-7.0.0-source\tests\content-bootstrap.test.js"/>
+	<testcase name="Minecraft release retains customized published state and pending administrator edits" time="0.002029" classname="test" file="D:\TikMnG-Release-7.0.0-source\tests\content-bootstrap.test.js"/>
+	<testcase name="untouched 7.0.5 receives snake 0.16.0 without changing other game packages" time="0.001979" classname="test" file="D:\TikMnG-Release-7.0.0-source\tests\content-bootstrap.test.js"/>
+	<testcase name="untouched 7.0.4 catalog receives both urgent game packages; customized catalogs stay unchanged" time="0.002384" classname="test" file="D:\TikMnG-Release-7.0.0-source\tests\content-bootstrap.test.js"/>
+	<testcase name="only untouched legacy bootstrap upgrades to the current game/media release" time="0.000613" classname="test" file="D:\TikMnG-Release-7.0.0-source\tests\content-bootstrap.test.js"/>
+	<testcase name="the exact 7.0.1 baseline upgrades once; customized released catalogs are retained" time="0.002038" classname="test" file="D:\TikMnG-Release-7.0.0-source\tests\content-bootstrap.test.js"/>
+	<testcase name="administrator revisions, changed fields, custom media and unpublished edits are never replaced" time="0.000479" classname="test" file="D:\TikMnG-Release-7.0.0-source\tests\content-bootstrap.test.js"/>
+	<testcase name="already upgraded state is retained without a second migration" time="0.000140" classname="test" file="D:\TikMnG-Release-7.0.0-source\tests\content-bootstrap.test.js"/>
+	<testcase name="overlay authorization requires an existing active bound license without activating devices" time="0.000848" classname="test" file="D:\TikMnG-Release-7.0.0-source\tests\overlay-authorization.test.js"/>
+	<testcase name="agency link is available only to enrolled and unblocked devices" time="0.000169" classname="test" file="D:\TikMnG-Release-7.0.0-source\tests\overlay-authorization.test.js"/>
+	<testcase name="only revision-scoped private media may cache; state, HTML, duplicates and redirects never cache" time="0.038173" classname="test" file="D:\TikMnG-Release-7.0.0-source\tests\overlay-relay.test.js"/>
+	<testcase name="static gift artwork can use a private cache, but errors, HTML and live state never do" time="0.007992" classname="test" file="D:\TikMnG-Release-7.0.0-source\tests\overlay-relay.test.js"/>
+	<testcase name="session authorizes exact input and issues stable owner/device/install/channel tokens" time="0.007277" classname="test" file="D:\TikMnG-Release-7.0.0-source\tests\overlay-relay.test.js"/>
+	<testcase name="session denies unauthorized input, caller-selected tokens, bad JSON and unavailable authorization" time="0.006183" classname="test" file="D:\TikMnG-Release-7.0.0-source\tests\overlay-relay.test.js"/>
+	<testcase name="offline browser documents retry transparently but media and state keep error responses" time="0.005486" classname="test" file="D:\TikMnG-Release-7.0.0-source\tests\overlay-relay.test.js"/>
+	<testcase name="a real browser source opened offline recovers after publisher connects without refresh" time="0.000088" classname="test" file="D:\TikMnG-Release-7.0.0-source\tests\overlay-relay.test.js">
+		<skipped type="skipped" message="Set OVERLAY_RELAY_PLAYWRIGHT for browser verification"/>
+	</testcase>
+	<testcase name="bridge requires signed unexpired bound tickets in Authorization, never in URLs" time="0.009507" classname="test" file="D:\TikMnG-Release-7.0.0-source\tests\overlay-relay.test.js"/>
+	<testcase name="public reads forward only scoped paths and safe headers, preserving exact body and CSP nonce" time="0.003367" classname="test" file="D:\TikMnG-Release-7.0.0-source\tests\overlay-relay.test.js"/>
+	<testcase name="media Range, HEAD and binary bodies retain HTTP semantics" time="0.004022" classname="test" file="D:\TikMnG-Release-7.0.0-source\tests\overlay-relay.test.js"/>
+	<testcase name="allowlist includes media polling and legacy widget reads, and blocks APIs/traversal/writes" time="0.025002" classname="test" file="D:\TikMnG-Release-7.0.0-source\tests\overlay-relay.test.js"/>
+	<testcase name="only validated HTTPS 307 media-file redirects pass through" time="0.006559" classname="test" file="D:\TikMnG-Release-7.0.0-source\tests\overlay-relay.test.js"/>
+	<testcase name="SSE streams immediately, forwards Last-Event-ID and cancels on reader disconnect" time="0.003633" classname="test" file="D:\TikMnG-Release-7.0.0-source\tests\overlay-relay.test.js"/>
+	<testcase name="publisher errors and disconnects release requests; replacement bridge owns future reads" time="0.005449" classname="test" file="D:\TikMnG-Release-7.0.0-source\tests\overlay-relay.test.js"/>
+	<testcase name="64 inflight requests bound each publisher and cancellation frees capacity" time="0.036755" classname="test" file="D:\TikMnG-Release-7.0.0-source\tests\overlay-relay.test.js"/>
+	<testcase name="backpressure emits flow paused/resumed without changing binary output" time="0.007157" classname="test" file="D:\TikMnG-Release-7.0.0-source\tests\overlay-relay.test.js"/>
+	<testcase name="malformed frames, invalid headers and oversized WS payloads terminate only their publisher" time="0.010630" classname="test" file="D:\TikMnG-Release-7.0.0-source\tests\overlay-relay.test.js"/>
+	<testcase name="headers have a deadline while SSE remains open beyond the normal response lifetime" time="0.004050" classname="test" file="D:\TikMnG-Release-7.0.0-source\tests\overlay-relay.test.js"/>
+	<testcase name="aggregate buffering is capped at 2 MiB when a publisher ignores flow control" time="0.020728" classname="test" file="D:\TikMnG-Release-7.0.0-source\tests\overlay-relay.test.js"/>
+	<testcase name="heartbeat accepts pong and optional license revalidation disconnects revoked publishers" time="0.004353" classname="test" file="D:\TikMnG-Release-7.0.0-source\tests\overlay-relay.test.js"/>
+	<testcase name="ticket expiration and missing heartbeat pong disconnect publishers" time="0.004031" classname="test" file="D:\TikMnG-Release-7.0.0-source\tests\overlay-relay.test.js"/>
+	<testcase name="close is idempotent, detaches upgrades and leaves the HTTP server usable" time="0.004237" classname="test" file="D:\TikMnG-Release-7.0.0-source\tests\overlay-relay.test.js"/>
+	<testcase name="configuration rejects weak secrets and non-origin public URLs" time="0.000301" classname="test" file="D:\TikMnG-Release-7.0.0-source\tests\overlay-relay.test.js"/>
+	<testcase name="sandboxed HTML polls from an opaque origin, loads nonce scripts/CSS and embeds across origins" time="0.000037" classname="test" file="D:\TikMnG-Release-7.0.0-source\tests\overlay-relay.test.js">
+		<skipped type="skipped" message="Set OVERLAY_RELAY_PLAYWRIGHT to a Playwright module for browser verification"/>
+	</testcase>
+	<testcase name="Zombie War distribution contains exactly the requested 15 gift mappings" time="0.001228" classname="test" file="D:\TikMnG-Release-7.0.0-source\tests\zombie-gift-standards.test.js"/>
+	<testcase name="downloadable guide is the unmodified user image at full resolution" time="0.006233" classname="test" file="D:\TikMnG-Release-7.0.0-source\tests\zombie-gift-standards.test.js"/>
+	<testcase name="catalog keeps the independent game update while the approved launcher release advances" time="0.001429" classname="test" file="D:\TikMnG-Release-7.0.0-source\tests\zombie-gift-standards.test.js"/>
+	<!-- tests 77 -->
+	<!-- suites 0 -->
+	<!-- pass 74 -->
+	<!-- fail 0 -->
+	<!-- cancelled 0 -->
+	<!-- skipped 3 -->
+	<!-- todo 0 -->
+	<!-- duration_ms 8437.1251 -->
+</testsuites>
