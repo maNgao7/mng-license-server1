@@ -1,0 +1,25 @@
+'use strict';
+const fs=require('node:fs'),path=require('node:path'),vm=require('node:vm');
+const {createRequire}=require('node:module'),{TikTokLiveConnection}=require('tiktok-live-connector');
+const {createStudio}=require('../lib/widget-studio.cjs'),{createSpeechAudience}=require('../lib/tts-audience.cjs');
+const {failureReason}=require('../lib/live-session.cjs');
+const source=fs.readFileSync(path.resolve(__dirname,'../main.js'),'utf8'),context={require:createRequire(path.resolve(__dirname,'../main.js'))};
+vm.runInNewContext(source.slice(source.indexOf('function widgetTikTokProfiliniOku('),source.indexOf('function widgetTikTokYenidenBaglan(')),context);
+const values=new Map(),studio=createStudio({get:(k,f)=>structuredClone(values.get(k)??f),set:(k,v)=>values.set(k,structuredClone(v))},()=>''),audience=createSpeechAudience();
+const key=fs.readFileSync('C:/Users/User/Desktop/MNG-TikTok-Game/apps/tiktok-vs/euler-api-key.txt','utf8').trim();
+const connection=new TikTokLiveConnection('barbarpm',{processInitialData:false,signApiKey:key});
+const report={username:'barbarpm',readOnly:true,status:'connecting',pkEvents:0,pkPlayers:0,officialScoresValid:false,giftEvents:0,royalMatchedEvents:0,beniSevObserved:false};
+connection.on('error',()=>{});
+connection.on('linkMicArmies',message=>{studio.ingestPK('qa',message);report.pkEvents++;const state=studio.state('qa').pk;report.pkPlayers=state?.players?.length||0;report.officialScoresValid=report.pkPlayers>=2&&state.players.every(p=>Number.isSafeInteger(p.score)&&p.score>=0);});
+connection.on('linkMicBattle',message=>studio.ingestPK('qa',message));
+connection.on('gift',message=>{
+    const normalized={...context.widgetTikTokProfiliniOku(message),...context.widgetTikTokHediyesiniOku(message)};
+    if(Number(normalized.giftType)===1&&![true,1,'1','true'].includes(normalized.repeatEnd))return;
+    if(!normalized.giftId||!normalized.username)return;
+    report.giftEvents++;for(const id of ['raconking','streambeauty','streamhandsome'])studio.save('qa',id,{giftId:normalized.giftId});
+    studio.ingest('qa',{...normalized,id:String(normalized.eventId||report.giftEvents),type:'gift',createdAt:Date.now()});
+    if(Object.values(studio.state('qa').royalLeaders).every(row=>row.username===normalized.username))report.royalMatchedEvents++;
+    audience.observe('gift',normalized,'qa');if(normalized.giftId==='7934')report.beniSevObserved=audience.allows({username:normalized.username},{audience:'fanclub'},'qa');
+});
+let deadline;
+(async()=>{try{await Promise.race([connection.connect(),new Promise((_,reject)=>{deadline=setTimeout(()=>reject(new Error('timeout')),25000);})]);clearTimeout(deadline);report.status='connected';await new Promise(resolve=>setTimeout(resolve,22000));}catch(error){report.status=failureReason(error);}finally{clearTimeout(deadline);connection.disconnect();const output=path.resolve(__dirname,'../qa/20261030/live-feature-report.json');fs.mkdirSync(path.dirname(output),{recursive:true});fs.writeFileSync(output,JSON.stringify(report,null,2));console.log(JSON.stringify(report));}})().catch(()=>{process.exitCode=1;});

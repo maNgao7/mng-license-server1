@@ -1,0 +1,243 @@
+<!doctype html><html lang="tr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>TikMnG</title><style>* { box-sizing: border-box; }
+.widget{transform-origin:center;--title-period:5s}
+[data-design="racon"] .portrait-window{left:35.05%;top:25.9%;width:29.9%;height:26.2%;border:1px solid #e0a135;box-shadow:0 0 12px #ffc45a50}
+[data-design="racon"] .gift{left:58.4%;top:46.8%;width:12%}
+[data-design="racon"] .title-well{left:20%;top:69.4%;width:60%;height:10.5%}
+[data-design="racon"] .brand{display:none}
+.portrait .avatar-photo{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transform:none}
+.portrait .avatar-initial{position:absolute;inset:0;display:grid;place-items:center;font:700 80px/1 Arial,sans-serif;color:#e7d9b6;background:#172023}
+.portrait-window[hidden],.gift[hidden]{display:none}
+[data-demo-index="0"] .preview-sheet{left:0}
+[data-demo-index="1"] .preview-sheet{left:-100%}
+.widget.no-title-animation .letter{animation:none}
+.widget.alternate-name .letter{animation:none}
+.widget.no-lighting .illumination,.widget.no-lighting .sparkles,.widget.no-lighting .glints{display:none}
+.letter{animation-duration:var(--title-period)!important}
+:root { color-scheme: dark; }
+html, body { width: 100%; height: 100%; margin: 0; background: transparent; }
+body { display: grid; place-items: center; overflow: hidden; }
+.widget { position: relative; width: min(670px, 96vw, 96vh); aspect-ratio: 1; isolation: isolate; user-select: none; }
+.art { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.illumination { opacity: .08; filter: brightness(1.32); animation: glow 4.4s ease-in-out infinite; }
+.portrait-window { position: absolute; overflow: hidden; border-radius: 50%; z-index: 2; background: #181717; }
+[data-design="beauty"] .portrait-window { left: 25.4%; top: 24.5%; width: 49.2%; height: 45.8%; }
+[data-design="handsome"] .portrait-window { left: 23%; top: 20.5%; width: 54%; height: auto; aspect-ratio: 1; z-index: 1; }
+[data-design="handsome"] .art { z-index: 2; }
+.portrait { position: absolute; inset: 0; opacity: 0; transform: scale(.94) rotateY(-25deg); transition: opacity .6s ease, transform .8s cubic-bezier(.2,.8,.2,1); }
+.portrait.active { opacity: 1; transform: scale(1) rotateY(0); }
+[data-design="handsome"] .portrait { transform: scale(.97); }
+[data-design="handsome"] .portrait.active { transform: scale(1); }
+.portrait img { position: absolute; width: 200%; max-width: none; height: auto; top: 50%; transform: translateY(-50%); }
+.portrait[data-profile="0"] img { left: 0; }
+.portrait[data-profile="1"] img { left: -100%; }
+.gift { position: absolute; width: 14.5%; aspect-ratio: 1; display: grid; place-items: center; background: #121617ef; border: 2px solid #f0cf91; border-radius: 50%; box-shadow: 0 3px 12px #0008; z-index: 4; }
+[data-design="beauty"] .gift { left: 69%; top: 62%; border-color: #f0bfa2; }
+[data-design="handsome"] .gift { left: 69%; top: 59%; border-color: #d9e3d8; }
+.gift img { width: 83%; height: 83%; object-fit: contain; filter: drop-shadow(0 2px 3px #0009); }
+.title-well { position: absolute; display: grid; place-items: center; overflow: hidden; z-index: 4; }
+[data-design="beauty"] .title-well { left: 21%; top: 80%; width: 58%; height: 8.5%; }
+[data-design="handsome"] .title-well { left: 14%; top: 73.8%; width: 72%; height: 8.5%; }
+.title { display: inline-flex; align-items: center; justify-self: center; align-self: center; width: max-content; white-space: nowrap; margin: 0; font: 800 48px/1.2 Georgia, 'Times New Roman', serif; letter-spacing: 0; color: #ffe5bd; }
+.letter-slot { display: inline-block; flex: 0 0 auto; perspective: 180px; }
+.word-gap { display: inline-block; flex: 0 0 .22em; width: .22em; }
+.letter { display: inline-block; transform-origin: 50% 50%; backface-visibility: hidden; background: linear-gradient(115deg, #c59151 10%, #fff1d5 40%, #d9aa69 65%, #fff6de 80%, #c59151 95%); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; filter: drop-shadow(0 2px 1px #422b1c) drop-shadow(0 0 3px #ffe2a333); animation: letter-turn 5s calc(var(--letter-index) * .11s) ease-in-out infinite; }
+[data-design="handsome"] .letter { background-image: linear-gradient(115deg, #b3c4c7 10%, #fff9de 40%, #c8d3d5 65%, #fffef3 80%, #c5a765 95%); }
+.brand { position: absolute; left: 40%; width: 20%; display: flex; justify-content: center; align-items: center; height: 3.7%; z-index: 4; font: 800 15px/1 Arial, sans-serif; color: #171717; background: linear-gradient(115deg, #d5a365, #ffedc7 45%, #d4a066); border: 1px solid #936532; clip-path: polygon(0 25%, 8% 0, 92% 0, 100% 25%, 100% 75%, 92% 100%, 8% 100%, 0 75%); box-shadow: inset 0 1px #fff6; letter-spacing: 0; }
+[data-design="beauty"] .brand { top: 90.6%; }
+[data-design="handsome"] .brand { top: 85.1%; }
+.brand .m { color: #1369cd; }
+.brand .g { color: #c31538; }
+.sparkles { position: absolute; inset: 0; pointer-events: none; z-index: -1; }
+.glints { position: absolute; inset: 0; pointer-events: none; z-index: 3; }
+.glint { position: absolute; left: var(--x); top: var(--y); width: var(--size); height: var(--size); background: #fff3dd; opacity: 0; clip-path: polygon(50% 0, 58% 41%, 100% 50%, 58% 59%, 50% 100%, 42% 59%, 0 50%, 42% 41%); filter: drop-shadow(0 0 5px #ffc393); animation: jewel-glint var(--duration) var(--delay) ease-in-out infinite; }
+[data-design="handsome"] .glint { background: #e9fff6; filter: drop-shadow(0 0 5px #7cd8b9); }
+.spark { position: absolute; left: var(--x); top: var(--y); width: var(--size); height: var(--size); opacity: 0; background: #ffe7ba; clip-path: polygon(50% 0, 60% 39%, 100% 50%, 60% 61%, 50% 100%, 40% 61%, 0 50%, 40% 39%); animation: twinkle var(--duration) var(--delay) ease-in-out infinite; }
+[data-design="handsome"] .spark { background: #d0f3dc; }
+.arrival .gift { animation: arrival .9s cubic-bezier(.2,.7,.2,1) both; }
+.arrival .illumination { animation: arrival-glow 1.2s ease-out both, glow 4.4s 1.2s ease-in-out infinite; }
+@keyframes glow { 0%,100% { opacity: .06; } 50% { opacity: .36; } }
+@keyframes letter-turn { 0%,60% { transform: rotateY(0deg); } 76%,100% { transform: rotateY(360deg); } }
+@keyframes jewel-glint { 0%,20%,100% { opacity: 0; transform: scale(.3) rotate(0deg); } 44% { opacity: 1; transform: scale(1.12) rotate(20deg); } 75% { opacity: .1; transform: scale(.45) rotate(45deg); } }
+@keyframes twinkle { 0%,100% { opacity: 0; transform: translateY(6px) scale(.3) rotate(0); } 45% { opacity: .9; transform: translateY(-5px) scale(1) rotate(22deg); } 80% { opacity: .15; transform: translateY(-14px) scale(.45) rotate(45deg); } }
+@keyframes arrival { 0% { opacity: 0; transform: translateY(16px) scale(.6); } 60% { opacity: 1; transform: translateY(-3px) scale(1.1); } 100% { opacity: 1; transform: translateY(0) scale(1); } }
+@keyframes arrival-glow { 0%,100% { opacity: .06; } 35% { opacity: .5; } }
+@media (max-width: 430px) { .brand { font-size: 11px; } }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
+</style></head><body><main class="widget"><div class="sparkles" aria-hidden="true"></div><img class="art" alt=""><img class="art illumination" alt=""><div class="portrait-window" hidden><div class="portrait active"></div></div><div class="gift"><img alt="Seçili hediye"></div><div class="title-well"><h1 class="title"></h1></div><div class="brand" aria-label="TikMnG">Tik<span class="m">M</span>n<span class="g">G</span></div><div class="glints" aria-hidden="true"></div></main><script>'use strict';
+(() => {
+    const params = new URLSearchParams(location.search);
+    const definitions = {
+        raconking: { design: 'racon', title: 'RACON KRALI', file: 'royal-racon.png', giftId: '6427' },
+        streambeauty: { design: 'beauty', title: 'YAYIN GÜZELİ', file: 'royal-beauty.png', giftId: '5655' },
+        streamhandsome: { design: 'handsome', title: 'YAYIN YAKIŞIKLISI', file: 'royal-handsome.png', giftId: '5282' }
+    };
+    const type = params.get('type');
+    const definition = definitions[type];
+    if (!definition) return;
+    const preview = params.get('preview') === '1';
+    const prefix = location.pathname.match(/^\/overlays\/[^/]+/)?.[0] || '';
+    const endpoint = pathname => {
+        const url = new URL(prefix + pathname, location.origin);
+        for (const key of ['key', 'channel', 'type']) if (params.has(key)) url.searchParams.set(key, params.get(key));
+        return url.href;
+    };
+    const giftURL = id => /^\d{1,12}$/.test(String(id)) ? endpoint('/widget/gift-assets/' + id + '.png') : '';
+    const imageURL = raw => {
+        if (!raw) return '';
+        try {
+            const url = new URL(raw, location.href);
+            const pathname = url.pathname.replace(/^\/overlays\/[^/]+/, '');
+            if (/^\/widget\/gift-assets\/[A-Za-z0-9_-]+\.(png|webp|jpe?g)$/.test(pathname)) return endpoint(pathname);
+            return url.protocol === 'https:' && !url.username && !url.password ? url.href : '';
+        } catch { return ''; }
+    };
+    document.body.dataset.design = definition.design;
+    document.title = 'TikMnG | ' + definition.title;
+    const widget = document.querySelector('.widget');
+    const title = document.querySelector('.title');
+    const well = document.querySelector('.title-well');
+    const portraitWindow = document.querySelector('.portrait-window');
+    const portrait = document.querySelector('.portrait');
+    const gift = document.querySelector('.gift');
+    const giftImage = gift.querySelector('img');
+    for (const image of document.querySelectorAll('.art')) image.src = endpoint('/widget/gift-assets/' + definition.file);
+    function buildTitle(value) {
+        title.replaceChildren(); title.setAttribute('aria-label', value);
+        let letterIndex = 0;
+        for (const character of value) {
+            const slot = document.createElement('span'); slot.setAttribute('aria-hidden', 'true');
+            slot.className = character === ' ' ? 'word-gap' : 'letter-slot';
+            if (character !== ' ') {
+                const letter = document.createElement('span'); letter.className = 'letter'; letter.textContent = character;
+                letter.style.setProperty('--letter-index', letterIndex++); slot.append(letter);
+            }
+            title.append(slot);
+        }
+    }
+    buildTitle(definition.title);
+    for (const [index, position] of [[13,19],[25,8],[75,8],[87,19],[6,39],[94,40],[5,63],[94,65],[12,82],[87,83],[29,94],[72,94]].entries()) {
+        const spark = document.createElement('i'); spark.className = 'spark';
+        for (const [key, value] of Object.entries({x:position[0]+'%',y:position[1]+'%',size:(5+index%3*3)+'px',duration:(3.6+index%4*.4)+'s',delay:(index*-.53)+'s'})) spark.style.setProperty('--'+key,value);
+        document.querySelector('.sparkles').append(spark);
+    }
+    const glints = document.querySelector('.glints');
+    for (const [index, position] of [[50,12],[26,29],[74,29],[21,49],[79,49],[31,72],[69,72],[23,85],[77,85]].entries()) {
+        const glint = document.createElement('i'); glint.className = 'glint';
+        for (const [key, value] of Object.entries({x:position[0]+'%',y:position[1]+'%',size:(8+index%3*3)+'px',duration:(3.8+index%4*.5)+'s',delay:(index*-.58)+'s'})) glint.style.setProperty('--'+key,value);
+        glints.append(glint);
+    }
+    let config = {}, draft = null, lastState = null, signature = '', generation = 0, failures = 0, timer;
+    let titleTimer, titleRevision = 0, titleKey = '', titleAnimations = [];
+    function stopTitle() {
+        clearTimeout(titleTimer); titleRevision++;
+        for (const animation of titleAnimations) animation.cancel();
+        titleAnimations = [];
+    }
+    function syncTitle(row) {
+        const username = row?.demo ? '@ornek_yayinci' : row?.username ? '@' + String(row.username).replace(/^@/, '').slice(0, 64) : '';
+        const owner = config.showUsername ? username : '';
+        const key = JSON.stringify([owner, config.titleAnimation, config.titleInterval]);
+        if (key === titleKey) return;
+        titleKey = key; stopTitle(); buildTitle(definition.title); fit();
+        widget.classList.toggle('alternate-name', Boolean(owner));
+        if (!owner) return;
+        const revision = titleRevision;
+        let showingName = false;
+        const arm = () => { titleTimer = setTimeout(turn, Math.max(3, Number(config.titleInterval) || 5) * 1000); };
+        const animate = async entering => {
+            if (!config.titleAnimation || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+            titleAnimations = [...title.querySelectorAll('.letter')].map((letter, index) => letter.animate(
+                entering ? [{ transform:'rotateY(-90deg)' }, { transform:'rotateY(0deg)' }] : [{ transform:'rotateY(0deg)' }, { transform:'rotateY(90deg)' }],
+                { duration:entering?420:320, delay:index*Math.min(80,800/Math.max(1,title.textContent.length)), easing:'ease-in-out', fill:'both' }
+            ));
+            await Promise.allSettled(titleAnimations.map(animation=>animation.finished));
+        };
+        const turn = async () => {
+            await animate(false);
+            if (revision !== titleRevision) return;
+            for (const animation of titleAnimations) animation.cancel();
+            showingName = !showingName; buildTitle(showingName ? owner : definition.title); fit();
+            await animate(true);
+            if (revision !== titleRevision) return;
+            for (const animation of titleAnimations) animation.cancel();
+            titleAnimations = []; arm();
+        };
+        arm();
+    }
+    function fit() {
+        title.style.fontSize = definition.design === 'racon' ? '56px' : '48px';
+        const size = parseFloat(title.style.fontSize);
+        title.style.fontSize = Math.min(size, size * well.clientWidth * .94 / Math.max(1,title.offsetWidth), size * well.clientHeight * .78 / Math.max(1,title.offsetHeight)) + 'px';
+    }
+    function readConfig(saved = {}) {
+        config = { scale:100, opacity:100, offsetX:0, offsetY:0, showGift:true, showUsername:true, titleAnimation:true, titleInterval:5, lighting:true, giftId:definition.giftId, ...saved };
+        if (preview) {
+            for (const [key, value] of params) if (Object.hasOwn(config,key)) config[key] = typeof config[key] === 'boolean' ? value === 'true' : typeof config[key] === 'number' ? Number(value) : value;
+            if (draft) Object.assign(config,draft);
+        }
+        widget.style.transform = `translate(${Number(config.offsetX)||0}px,${Number(config.offsetY)||0}px) scale(${Math.max(.4,Math.min(1.8,Number(config.scale)/100||1))})`;
+        widget.style.opacity = Math.max(.1,Math.min(1,Number(config.opacity)/100||1));
+        widget.style.setProperty('--title-period',Math.max(3,Math.min(30,Number(config.titleInterval)||5))+'s');
+        widget.classList.toggle('no-title-animation',!config.titleAnimation);
+        widget.classList.toggle('no-lighting',!config.lighting);
+        gift.hidden = !config.showGift || !giftURL(config.giftId);
+        const nextGift = giftURL(config.giftId);
+        if (nextGift && giftImage.src !== nextGift) giftImage.src = nextGift;
+        fit();
+    }
+    function display(row) {
+        const nextSignature = row ? JSON.stringify([row.id,row.avatar,row.nickname,row.giftId]) : '';
+        if (signature === nextSignature) return;
+        signature = nextSignature; const version = ++generation;
+        if (!row) { portraitWindow.hidden = true; portrait.replaceChildren(); return; }
+        const finish = child => {
+            if (version !== generation) return;
+            portrait.classList.remove('active');
+            portrait.replaceChildren(child); portraitWindow.hidden = false;
+            portrait.dataset.eventId = String(row.id || '');
+            void portrait.offsetWidth; portrait.classList.add('active');
+            widget.classList.remove('arrival'); void widget.offsetWidth; widget.classList.add('arrival');
+        };
+        if (row.demo) {
+            const image = document.createElement('img'); image.className = 'preview-sheet'; image.alt = 'Örnek profil';
+            portrait.dataset.demoIndex = definition.design === 'beauty' ? '1' : '0';
+            image.src = endpoint('/widget/gift-assets/royal-demo.png'); finish(image); return;
+        }
+        const fallback = () => {
+            const initial = document.createElement('span'); initial.className = 'avatar-initial'; initial.textContent = String(row.nickname||row.username||'T').slice(0,1).toLocaleUpperCase('tr-TR'); finish(initial);
+        };
+        const url = imageURL(row.avatar);
+        if (!url) return fallback();
+        const image = new Image(); image.className = 'avatar-photo'; image.alt = String(row.nickname||row.username||'İzleyici'); image.referrerPolicy = 'no-referrer';
+        image.onload = () => finish(image); image.onerror = fallback; image.src = url;
+    }
+    function paint(data) {
+        lastState = data;
+        readConfig(data.studio?.settings?.[type]);
+        let row = data.studio?.royalLeaders?.[type] || null;
+        if (row?.giftId !== config.giftId) row = null;
+        if (preview) {
+            const test = data.studio?.tests?.[type];
+            if (test?.expiresAt > Date.now()) row = test.events.filter(event=>String(event.giftId)===config.giftId).at(-1) || row;
+            if (!row && config.giftId) row = { id:'demo:'+config.giftId, giftId:config.giftId, demo:true };
+        }
+        syncTitle(row); display(row);
+    }
+    async function poll() {
+        const controller = new AbortController(); const timeout = setTimeout(()=>controller.abort(),8000);
+        try {
+            const response = await fetch(endpoint('/api/widget/state'),{cache:'no-store',signal:controller.signal});
+            if (!response.ok) throw new Error('Widget state unavailable');
+            paint(await response.json()); failures = 0;
+        } catch { failures++; }
+        finally { clearTimeout(timeout); timer = setTimeout(poll,preview&&document.hidden?10000:Math.min(10000,800*2**Math.min(3,failures))); }
+    }
+    addEventListener('message',event=>{
+        if (!preview || event.source !== parent || ![location.origin, 'null', 'file://'].includes(event.origin)) return;
+        if (event.data?.type === 'tikmng-widget-draft') { draft = event.data.settings; if(lastState)paint(lastState); }
+    });
+    addEventListener('pagehide',()=>{clearTimeout(timer);stopTitle();},{once:true});
+    new ResizeObserver(fit).observe(well);
+    readConfig(); poll();
+})();
+</script></body></html>
