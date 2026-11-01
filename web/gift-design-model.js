@@ -77,7 +77,7 @@
     const items = [];
     for (const [region, group] of Object.entries(groups)) {
       const horizontal = region.startsWith('top');
-      let cursor = horizontal ? (width - rowWidth(group)) / 2 : sideY;
+      let cursor = horizontal ? 0 : sideY;
       for (const item of group) {
         const x = horizontal ? cursor : region === 'right' ? width - rightWidth + (rightWidth - item.width) / 2 : region === 'left-secondary' ? leftWidth + s.giftGap + (secondWidth - item.width) / 2 : (leftWidth - item.width) / 2;
         const y = horizontal ? region === 'top-secondary' ? topHeight + (topHeight ? s.giftGap : 0) : 0 : cursor;

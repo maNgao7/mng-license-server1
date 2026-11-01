@@ -537,10 +537,10 @@ function logEkle(lisansKod, cihazKimlik, islem, ip) {
 // =====================================================================
 // SÜRÜM BİLGİLERİ & İNDİRME LİNKLERİ
 // =====================================================================
-const EN_GUNCEL_SURUM = "7.0.12";
+const EN_GUNCEL_SURUM = "7.0.13";
 const EN_DUSUK_SURUM = "1.0.0";
-const SETUP_INDIRME_LINKI = "https://github.com/maNgao7/mng-license-server1/releases/download/v7.0.12/TikMnG-Setup-7.0.12.exe";
-const PORTABLE_INDIRME_LINKI = "https://github.com/maNgao7/mng-license-server1/releases/download/v7.0.12/TikMnG-7.0.12-Portable.exe";
+const SETUP_INDIRME_LINKI = "https://github.com/maNgao7/mng-license-server1/releases/download/v7.0.13/TikMnG-Setup-7.0.13.exe";
+const PORTABLE_INDIRME_LINKI = "https://github.com/maNgao7/mng-license-server1/releases/download/v7.0.13/TikMnG-7.0.13-Portable.exe";
 const SETUP_WEB_LINKI = SETUP_INDIRME_LINKI;
 const VARSAYILAN_PAKET_LINKLERI = Object.freeze({
     BACKGROUNDS: "https://drive.usercontent.google.com/download?id=1VHwmK2Lt-DN6jVYB1Gp2sbeW6hU_rgB6&export=download&confirm=t",
@@ -554,6 +554,11 @@ const VARSAYILAN_PAKET_LINKLERI = Object.freeze({
 
 // Her güncellemede eklenen/değişen özellikler listesi
 const SURUM_NOTLARI = [
+    "v7.0.13: Kartopu Savaşı 7.0.6 ayrı oyun güncellemesiyle hediye gönderenlerin kimlikleri ve büyük katılım dalgalarının doğma konumları düzeltildi. Ortak motor yeniden indirilmez; kayıtlı oyun ayarları korunur.",
+    "v7.0.13: Yeni düşük trafikli widget protokolü, bütün listeyi ve değişmeyen profil fotoğraflarını tekrar göndermek yerine yalnızca değişen puanı veya olayı taşır. Bağlantı yenilenmesinde, kaynak sıfırlamasında ve veri uyuşmazlığında otomatik tam eşitleme korunur.",
+    "v7.0.13: Görünen sıralama satırları ve gerekli sıfırlama kayıtları taşınır; kavanoz geçmişi her olayda yeniden gönderilmez. Eşzamanlı aynı sorgular birleştirilir. Oyun widgetlarında profil öğeleri korunur; puan artışı bütün fotoğrafları yeniden indirmez. Kalite, lisans ve kayıtlı ayarlar korunur; tasarruf kullanıma bağlıdır.",
+    "v7.0.13: Widget başlıkları değiştirilebilir. Viral Benim tek hediyenin coin değerine göre lider seçer; profil alanı büyütüldü ve animasyonlu temalar eklendi. PK tarafı, profil sırası ve boşluğu ayarlanabilir. Coin/beğeni listeleri hizalandı, kavanoz görselleri hediyenin birim değerine göre boyutlanır. Eylem çarkı yalnızca seçilen hediyeyle açılıp sonucu gösterdikten sonra gizlenir.",
+    "v7.0.13: Özel giriş videolarına büyük Oynat düğmesi eklendi; mevcut yayın bağlantısında oynar, otomatik giriş hakkını veya tekrar süresini tüketmez. Hediye tasarımının üst sırası soldan başlar, web demoları kaldırıldı ve oyun ayrıntıları genişletildi. Güncellemeden sonra açık Live Studio bağlantı kaynaklarını bir kez yenileyin; URL'ler değişmez.",
     "v7.0.12: Değişmeyen widget verileri tekrar gönderilmez; puan, hediye ve ayar değişiklikleri bekleyen bağlantıya iletilir. Sayaçlar yerelde ilerler. Boş video kaynakları sık sorgu yerine olay bekler; gerçek yayın kaynakları arka planda çalışır.",
     "v7.0.12: Orijinal profil fotoğrafları ve sürümlü yerel medya için özel tarayıcı önbelleği iyileştirildi. Uygun kısa videolar yüklenen kopyadan yeniden oynatılır; kalite düşürülmez. Gizli galeri ön izlemeleri durur. Mevcut oyunlar, lisanslar ve ayarlar korunur. Trafik tasarrufu kullanıma bağlıdır; toplam fatura için sabit yüzde veya ücret garantisi yoktur.",
     "v7.0.11: Canlı PK dört köşe görünümü, gerçek yayıncı profilleri ve maç bazında tek seferlik galibiyet sayacı. Racona Girenler için altı çerçeve, belirgin başlık ve tüm kalıcı havuzu dolaşan liste eklendi.",

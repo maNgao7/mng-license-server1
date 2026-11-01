@@ -54,12 +54,13 @@ test('state breakdown uses only bounded widget/transport labels and never stores
     for (const route of [
         '/overlays/PRIVATE/api/widget/state?type=coinjar&key=SECRET',
         '/overlays/PRIVATE/api/widget/state?type=coinjar&transport=changes&channel=USERNAME',
+        '/overlays/PRIVATE/api/widget/state?type=topliker&transport=changes&patch=1&base=PRIVATE',
         '/overlays/PRIVATE/widget/top-likes/state',
         '/overlays/PRIVATE/api/widget/state?type=SECRET',
         '/overlays/PRIVATE/api/widget/state?channel=USERNAME'
     ]) await (await fetch(base + route)).text();
     const snapshot = traffic.snapshot();
-    assert.equal(snapshot.categories.find(row => row.name === 'overlay-state').bodyBytes, 25);
-    assert.deepEqual(snapshot.stateWidgets.map(row => row.name).sort(), ['coinjar:changes', 'coinjar:snapshot', 'legacy-top-likes:snapshot', 'unknown:snapshot', 'unscoped:snapshot']);
+    assert.equal(snapshot.categories.find(row => row.name === 'overlay-state').bodyBytes, 30);
+    assert.deepEqual(snapshot.stateWidgets.map(row => row.name).sort(), ['coinjar:changes', 'coinjar:snapshot', 'legacy-top-likes:snapshot', 'topliker:delta', 'unknown:snapshot', 'unscoped:snapshot']);
     assert.equal(/PRIVATE|SECRET|USERNAME/.test(JSON.stringify(snapshot)), false);
 });

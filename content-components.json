@@ -1,6 +1,6 @@
 {
   "enabled": true,
-  "revision": 2026103001,
+  "revision": 2026110102,
   "games": [
     {
       "id": "battle-royale",
@@ -21,16 +21,16 @@
     {
       "id": "snow-war",
       "previousVersion": "7.0.4",
-      "version": "7.0.5",
-      "sha256": "1b23b7ab972015e23960a8a2d46230ebe7b20f69eaa052a2fa54d118d29bc7ea",
-      "bytes": 105807861,
-      "url": "https://github.com/maNgao7/mng-license-server1/releases/download/game-components-7.0.9/1b23b7ab972015e23960a8a2d46230ebe7b20f69eaa052a2fa54d118d29bc7ea.zip",
+      "version": "7.0.6",
+      "sha256": "b8cae611264a6518c1ff9d3ac358b1bdf1230c81cd6e11346387f33265882dc2",
+      "bytes": 105812215,
+      "url": "https://github.com/maNgao7/mng-license-server1/releases/download/game-snow-war-7.0.6/b8cae611264a6518c1ff9d3ac358b1bdf1230c81cd6e11346387f33265882dc2.zip",
       "files": [
         {
           "path": ".tikmng-content.json",
-          "bytes": 1872173,
-          "sha256": "730a5e6b1aa37a02e092c4de0f55fb106a55d71a04defbcad9da5b76f11ade85",
-          "url": "https://github.com/maNgao7/mng-license-server1/releases/download/game-components-7.0.9/730a5e6b1aa37a02e092c4de0f55fb106a55d71a04defbcad9da5b76f11ade85.json"
+          "bytes": 1872495,
+          "sha256": "aa5fe53955162ec5fa640b7d914891d09ca5e66a2dba9266c94ff7f7ea74432c",
+          "url": "https://github.com/maNgao7/mng-license-server1/releases/download/game-snow-war-7.0.6/aa5fe53955162ec5fa640b7d914891d09ca5e66a2dba9266c94ff7f7ea74432c.json"
         }
       ]
     },

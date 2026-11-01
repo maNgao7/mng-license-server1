@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="tr">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>TikMnG Oyun Widget</title>
+<style>
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;background:transparent;color:#fff;font-family:"Segoe UI",Arial,sans-serif;letter-spacing:0;overflow:hidden}main{width:min(440px,100%);padding:12px}h1{font-size:19px;margin:0 0 10px;text-shadow:0 2px 4px #000}ol{list-style:none;margin:0;padding:0}li{display:grid;grid-template-columns:28px 42px minmax(0,1fr) auto;gap:9px;align-items:center;min-height:56px;padding:6px 8px;border-bottom:1px solid #ffffff38;background:#14161bcf;font-size:15px}li:first-child{border-top:2px solid #ffd86b}img,.face{width:38px;height:38px;border-radius:50%;object-fit:cover;background:#34393f}.face{display:grid;place-items:center;color:#3de6dd;font-weight:700}.name{overflow-wrap:anywhere;min-width:0}strong{white-space:nowrap;font-size:15px;color:#ffd86b}.rank{color:#bac0c8;font-size:13px}
+</style>
+<main hidden><h1></h1><ol></ol></main>
+<script>
+const params=new URLSearchParams(location.search),prefix=location.pathname.match(/^\/overlays\/[A-Za-z0-9_-]{43}(?=\/)/)?.[0]||'';
+const query=new URLSearchParams({type:'game',game:params.get('game')||'',mode:params.get('mode')||'',items:'30'});
+if(!prefix&&params.get('key'))query.set('key',params.get('key'));
+const root=document.querySelector('main'),list=document.querySelector('ol'),title=document.querySelector('h1');
+let rows=new Map(),busy=false;
+function clearRows(){root.hidden=true;title.textContent='';list.replaceChildren();rows.clear();}
+function createRow(){
+ const row=document.createElement('li'),rank=document.createElement('span'),face=document.createElement('span'),name=document.createElement('span'),value=document.createElement('strong');
+ rank.className='rank';face.className='face';name.className='name';row.append(rank,face,name,value);
+ return {row,rank,face,name,value,portrait:face,avatar:'',failures:0,retryAt:0};
+}
+function reconcile(entries){
+ const next=new Map(),available=new Map([...rows].map(([key,group])=>[key,[...group]]));let before=list.firstElementChild;
+ for(const [index,item] of entries.slice(0,30).entries()){
+  const id=item.id,hasId=typeof id==='string'&&id!==''||typeof id==='number';
+  const key=JSON.stringify(hasId?['id',id]:['name',item.name||'']);
+  const name=String(item.name||''),rank=String(index+1),value=Number(item.value||0).toLocaleString('tr-TR')+(item.unit?' '+item.unit:'');
+  const avatar=/^\/widget\/gift-assets\/gameavatar-[a-f0-9]{64}\.png$/.test(item.avatar||'')?prefix+item.avatar+(prefix?'':'?key='+encodeURIComponent(params.get('key')||'')):'';
+  let group=next.get(key);if(!group){group=[];next.set(key,group);}
+  const candidates=available.get(key)||[],match=candidates.findIndex(view=>view.name.textContent===name&&view.avatar===avatar);
+  const view=candidates.splice(Math.max(0,match),1)[0]||createRow();group.push(view);
+  if(view.rank.textContent!==rank)view.rank.textContent=rank;
+  if(view.name.textContent!==name)view.name.textContent=name;
+  if(view.value.textContent!==value)view.value.textContent=value;
+  const initial=String(item.name||'?').slice(0,1);if(view.face.textContent!==initial)view.face.textContent=initial;
+  const changed=view.avatar!==avatar;
+  if(changed||avatar&&view.portrait===view.face&&performance.now()>=view.retryAt){
+   if(changed){view.failures=0;view.retryAt=0;}
+   const portrait=avatar?document.createElement('img'):view.face;
+   if(avatar){
+    portrait.alt='';portrait.src=avatar;
+    portrait.onload=()=>{if(view.portrait===portrait){view.failures=0;view.retryAt=0;}};
+    portrait.onerror=()=>{if(view.portrait===portrait){portrait.replaceWith(view.face);view.portrait=view.face;view.retryAt=performance.now()+(++view.failures===1?15000:60000);}};
+   }
+   view.portrait.replaceWith(portrait);view.portrait=portrait;view.avatar=avatar;
+  }
+  if(view.row!==before)list.insertBefore(view.row,before);
+  before=view.row.nextElementSibling;
+ }
+ for(const group of available.values())for(const view of group)view.row.remove();
+ rows=next;
+}
+async function poll(){
+ if(busy)return;busy=true;
+ try{
+  const response=await fetch(prefix+'/api/widget/state?'+query,{cache:'no-store',signal:AbortSignal.timeout(15000)});
+  if(!response.ok)throw new Error('Unavailable');
+  const state=await response.json();
+  if(!state.online||!Array.isArray(state.entries)||!state.entries.length){clearRows();return;}
+  const label=String(state.label||'');if(title.textContent!==label)title.textContent=label;
+  reconcile(state.entries);root.hidden=false;
+ }catch{clearRows();}finally{busy=false;}
+}
+poll();setInterval(poll,1000);
+</script>
+</html>

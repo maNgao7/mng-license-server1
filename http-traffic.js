@@ -8,7 +8,8 @@ function stateKind(url) {
     const type = parsed.searchParams.get('type');
     const legacy = /\/(top-gift|top-likes|leaderboard|activity)\/state$/.exec(parsed.pathname)?.[1];
     const widget = WIDGET_TYPES.has(type) ? type : legacy ? 'legacy-' + legacy : type ? 'unknown' : 'unscoped';
-    return widget + ':' + (parsed.searchParams.get('transport') === 'changes' ? 'changes' : 'snapshot');
+    return widget + ':' + (parsed.searchParams.get('transport') === 'changes' ?
+        parsed.searchParams.get('patch') === '1' ? 'delta' : 'changes' : 'snapshot');
 }
 
 function category(url) {

@@ -1,0 +1,28 @@
+#workspaceRoot .guide-download {
+    min-height: 44px;
+    max-width: 100%;
+    border-color: #4ee1d6;
+    background: #173333;
+    color: #f5fffd;
+    box-shadow: 0 0 14px #37dad22e;
+    animation: guide-border-shift 6s ease-in-out infinite;
+    transition: background .2s, box-shadow .2s;
+}
+#workspaceRoot .guide-download:hover,
+#workspaceRoot .guide-download:focus-visible {
+    animation-play-state: paused;
+    background: #224441;
+    box-shadow: 0 0 0 1px #84eee1, 0 0 20px #37dad257;
+}
+#workspaceRoot .guide-download:disabled {
+    animation: none;
+    box-shadow: none;
+}
+@keyframes guide-border-shift {
+    0%, 100% { border-color: #4ee1d6; box-shadow: 0 0 14px #37dad22e; }
+    40% { border-color: #6aaaff; box-shadow: 0 0 16px #6aaaff35; }
+    70% { border-color: #ff779a; box-shadow: 0 0 16px #ff779a35; }
+}
+@media (prefers-reduced-motion: reduce) {
+    #workspaceRoot .guide-download { animation: none; transition: none; }
+}

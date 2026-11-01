@@ -137,3 +137,4 @@
 @media(max-width:370px) { .brand-title { display:none; } }
 @media(prefers-reduced-motion:reduce) { .catalog-art img,.catalog-card { transition:none; } .catalog-open:hover .catalog-art img,.catalog-card:hover { transform:none; } }
 .game-setup-notes{font-size:12px;line-height:1.6;color:#556769;padding-left:18px;margin:18px 0 0}.game-setup-notes li+li{margin-top:6px}
+.catalog-features{list-style:none;margin:12px 0 16px;padding:0;display:grid;gap:6px;color:var(--muted,#aebdc8);font-size:12px;line-height:1.45}.catalog-features li{padding-left:13px;position:relative}.catalog-features li:before{content:'';position:absolute;left:0;top:6px;width:5px;height:5px;background:#25d8d0}.catalog-copy{height:100%;display:flex;flex-direction:column}.catalog-copy .catalog-command{margin-top:auto}.catalog-copy p{min-height:38px}

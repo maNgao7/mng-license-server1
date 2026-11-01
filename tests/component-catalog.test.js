@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
 import { componentCatalog } from '../component-catalog.js';
 const old = { revision: 100, games: [{ id: 'snow-war', version: '7.0.4', title: 'Snow', url: 'https://example.test/legacy.zip' },
     { id: 'battle-royale', version: '7.0.4', title: 'Royale', url: 'https://example.test/legacy2.zip' }] };
@@ -24,5 +25,22 @@ test('invalid payload integrity never replaces a working published package', () 
     for (const [key, value] of [['sha256', 'invalid'], ['bytes', 0], ['bytes', -1], ['bytes', 1.5]]) {
         const bad = structuredClone(rollout); bad.games[0][key] = value;
         assert.equal(componentCatalog(old, 'shared-runtime-v2', bad), old);
+    }
+});
+
+test('7.0.6 Snow rollout preserves legacy clients, unrelated descriptors and administrator versions', () => {
+    const current=JSON.parse(fs.readFileSync(new URL('../content-components.json',import.meta.url),'utf8'));
+    const published={...old,media:[{id:'unchanged'}]};
+    const next=componentCatalog(published,'shared-runtime-v2',current);
+    assert.equal(next.games[0].version,'7.0.6');
+    assert.equal(next.games[0].bytes,105812215);
+    assert.equal(next.games[0].sha256,'b8cae611264a6518c1ff9d3ac358b1bdf1230c81cd6e11346387f33265882dc2');
+    assert.equal(next.media,published.media);
+    assert.equal(componentCatalog(published,undefined,current),published);
+    const customized={...published,games:[{...old.games[0],version:'7.0.7'},old.games[1]]};
+    assert.equal(componentCatalog(customized,'shared-runtime-v2',current).games[0],customized.games[0]);
+    for(const id of ['battle-royale','minecraft-snake-arena','zombie-war']){
+        const original=current.games.find(game=>game.id===id);
+        assert.equal(original.version,id==='battle-royale'?'7.0.5':id==='minecraft-snake-arena'?'0.17.0':'6.5.18');
     }
 });

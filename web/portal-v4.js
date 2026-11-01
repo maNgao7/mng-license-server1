@@ -7,6 +7,15 @@ document.addEventListener('DOMContentLoaded', () => {
   const search = document.getElementById('gameSearch');
   let category = '';
   const normalize = value => value.toLocaleLowerCase('tr').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/ı/g,'i');
+  for (const game of games) {
+    const copy = document.querySelector(`[data-game="${game.id}"] .catalog-copy`);
+    if (!copy) continue;
+    const details = document.createElement('ul'); details.className='catalog-features';
+    for (const feature of (game.features || []).slice(0,2)) {
+      const item=document.createElement('li'); item.textContent=feature; details.append(item);
+    }
+    copy.querySelector('.catalog-command')?.before(details);
+  }
   function filterGames() {
     let count = 0;
     for (const game of games) {
@@ -76,8 +85,6 @@ document.addEventListener('DOMContentLoaded', () => {
   newsButton.addEventListener('click', () => openNews(newsButton));
   document.querySelectorAll('[data-news-open]').forEach(button => button.addEventListener('click', () => openNews(button)));
   // The catalogue is the next primary experience after the announcement band.
-  const demo = document.querySelector('.portal-demo');
-  demo.before(document.getElementById('games'));
   window.dispatchEvent(new Event('resize'));
   window.lucide?.createIcons();
 });

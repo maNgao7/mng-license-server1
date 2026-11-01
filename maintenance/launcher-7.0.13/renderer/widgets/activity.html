@@ -1,0 +1,31 @@
+<!doctype html><html lang="tr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Canlı Etkinlik</title><style>
+:root{--accent:#fe2c55;--cyan:#25f4ee}*{box-sizing:border-box}html,body{width:100%;height:100%;margin:0;overflow:hidden;background:transparent;font-family:Inter,"Segoe UI",Arial,sans-serif;color:#fff}body{display:grid;place-items:center;padding:16px}.stage{width:min(520px,100%);min-height:210px;display:grid;place-items:center}.event{position:relative;display:grid;grid-template-columns:82px minmax(0,1fr) 78px;align-items:center;gap:16px;width:100%;padding:18px 20px;overflow:hidden;border:1px solid rgba(255,255,255,.23);border-radius:8px;background:linear-gradient(130deg,rgba(4,13,25,.94),rgba(36,8,35,.91));box-shadow:0 24px 70px rgba(0,0,0,.5),0 0 38px color-mix(in srgb,var(--accent) 30%,transparent);animation:burst .7s cubic-bezier(.16,.9,.25,1) both}.event:before{content:"";position:absolute;inset:auto -10% 0;height:4px;background:linear-gradient(90deg,var(--cyan),var(--accent));box-shadow:0 0 22px var(--accent)}.avatar,.fallback{width:78px;height:78px;border:4px solid #fff;border-radius:50%;object-fit:cover;box-shadow:0 0 0 4px var(--cyan),0 12px 30px #000}.fallback{display:grid;place-items:center;background:linear-gradient(145deg,var(--cyan),var(--accent));font-size:28px;font-weight:1000}.eyebrow{color:#ffc1ce;font-size:10px;font-weight:1000}.name{margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:21px;font-weight:1000}.detail{margin-top:4px;color:#c7d5e6;font-size:12px}.gift{width:74px;height:74px;object-fit:contain;filter:drop-shadow(0 8px 14px rgba(0,0,0,.65));animation:float 1.25s ease-in-out infinite}.heart{font-size:58px;color:var(--accent);filter:drop-shadow(0 0 18px var(--accent));animation:beat .8s ease-in-out infinite}.empty{color:rgba(255,255,255,.65);font-size:13px}.spark{position:absolute;width:7px;height:7px;border-radius:50%;background:var(--cyan);box-shadow:0 0 10px var(--cyan);animation:spark 1.2s ease-out infinite}.spark:nth-child(1){left:12%;top:12%}.spark:nth-child(2){left:72%;top:15%;animation-delay:.25s}.spark:nth-child(3){left:88%;top:72%;animation-delay:.5s}@keyframes burst{from{opacity:0;transform:translateY(28px) scale(.78) rotate(-2deg)}60%{transform:translateY(-5px) scale(1.04) rotate(.5deg)}to{opacity:1;transform:none}}@keyframes float{50%{transform:translateY(-8px) rotate(5deg)}}@keyframes beat{50%{transform:scale(1.15)}}@keyframes spark{to{opacity:0;transform:translateY(-34px) scale(2)}}
+</style></head><body><main class="stage" id="stage"><div class="empty">Canlı etkinlik bekleniyor</div></main><script>
+const overlayBase=location.pathname.match(/^\/overlays\/[A-Za-z0-9_-]{43}(?=\/)/)?.[0]||'';
+function prefixURL(value){
+ if(!overlayBase||typeof value!=='string'||!/^\/(?!\/)/.test(value)||/[\\\u0000-\u0020]/.test(value))return value;
+ try{
+  const url=new URL(value,location.origin),path=url.pathname.startsWith(overlayBase+'/')?url.pathname.slice(overlayBase.length):url.pathname;
+  if(url.origin!==location.origin||!/^(?:\/(?:api\/)?widget\/(?:state|(?:top-gift|top-likes|leaderboard|activity)\/state)|\/widget\/(?:vendor\/matter\.js|physical-jar\.js)|\/widget\/gift-assets\/[A-Za-z0-9_-][A-Za-z0-9_.%-]*\.(?:png|gif|webp|jpe?g)|\/assets\/widgets\/glass-gift-jar\.png)$/.test(path))return value;
+  url.searchParams.delete('key');
+  return overlayBase+path+url.search+url.hash;
+ }catch{return value}
+}
+function widgetImageURL(value){
+ if(!overlayBase||typeof value!=='string')return value;
+ if(value.startsWith('/'))return prefixURL(value);
+ try{
+  const url=new URL(value);
+  if(!url.username&&!url.password&&/^https?:$/.test(url.protocol)&&(url.origin===location.origin||['127.0.0.1','localhost','[::1]'].includes(url.hostname))&&url.pathname.startsWith('/widget/gift-assets/')){const path=prefixURL(url.pathname+url.search+url.hash);if(path.startsWith(overlayBase+'/widget/gift-assets/'))return path}
+ }catch{}
+ return value;
+}
+const params=new URLSearchParams(location.search),accent=params.get('accent');if(accent&&/^#[0-9a-f]{6}$/i.test(accent))document.documentElement.style.setProperty('--accent',accent);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));let shown='';
+function render(e){
+ if(!e||e.id===shown)return;shown=e.id;const gift=e.type==='gift';
+ stage.innerHTML=`<article class="event"><i class="spark"></i><i class="spark"></i><i class="spark"></i>${e.avatar?`<img class="avatar" src="${esc(widgetImageURL(e.avatar))}" alt="">`:`<span class="fallback">${esc((e.nickname||e.username||'?')[0].toLocaleUpperCase('tr-TR'))}</span>`}<div><div class="eyebrow">${gift?'YENİ HEDİYE':'BEĞENİ YAĞMURU'}</div><div class="name">@${esc(e.username)}</div><div class="detail">${gift?`${esc(e.giftName)} · x${e.count} · ${Number(e.coins||0).toLocaleString('tr-TR')} coin`:`${Number(e.count||0).toLocaleString('tr-TR')} yeni beğeni`}</div></div>${gift&&e.giftImage?`<img class="gift" src="${esc(widgetImageURL(e.giftImage))}" alt="">`:'<span class="heart">♥</span>'}</article>`;
+}
+async function update(){try{const q=new URLSearchParams({key:params.get('key')||'',channel:params.get('channel')||''});const r=await fetch(prefixURL(`/api/widget/activity/state?${q}`),{cache:'no-store'});if(r.ok)render((await r.json()).entries?.[0])}catch{}}
+update();setInterval(update,700);
+</script></body></html>

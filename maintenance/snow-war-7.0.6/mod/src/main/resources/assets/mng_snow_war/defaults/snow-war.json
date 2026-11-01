@@ -1,0 +1,116 @@
+{
+  "giftRules": [
+    {
+      "giftName": "Gül",
+      "giftId": "5655",
+      "action": "OYUNCU",
+      "amount": 2,
+      "durationSeconds": 10
+    },
+    {
+      "giftName": "Blue Bead",
+      "giftId": "5319",
+      "action": "OYUNCU",
+      "amount": 5,
+      "durationSeconds": 10
+    },
+    {
+      "giftName": "Donat",
+      "giftId": "5879",
+      "action": "OYUNCU",
+      "amount": 25,
+      "durationSeconds": 10
+    },
+    {
+      "giftName": "Parfüm",
+      "giftId": "5658",
+      "action": "TAKIM_KALKANI",
+      "amount": 5,
+      "durationSeconds": 10
+    },
+    {
+      "giftName": "Çay",
+      "giftId": "5303",
+      "action": "KAR_HORTUMU",
+      "amount": 1,
+      "durationSeconds": 15
+    },
+    {
+      "giftName": "Şapka ve Bıyık",
+      "giftId": "6427",
+      "action": "AGIR_KARTOPU",
+      "amount": 5,
+      "durationSeconds": 10
+    },
+    {
+      "giftName": "Tek Vuruş",
+      "giftId": "127088",
+      "action": "IYILESTIR",
+      "amount": 1,
+      "durationSeconds": 10
+    },
+    {
+      "giftName": "Keçi Sokak Müzisyeni",
+      "giftId": "626064",
+      "action": "EKSTRA_CAN",
+      "amount": 1,
+      "durationSeconds": 10
+    },
+    {
+      "giftName": "Buket",
+      "giftId": "17473",
+      "action": "KAR_ADAMI",
+      "amount": 10,
+      "durationSeconds": 10
+    },
+    {
+      "giftName": "Şapka",
+      "giftId": "6104",
+      "action": "BUZ_TUZAGI",
+      "amount": 1,
+      "durationSeconds": 15
+    },
+    {
+      "giftName": "Mishka Bear",
+      "giftId": "5566",
+      "action": "KARTOPU_SILAHI",
+      "amount": 1,
+      "durationSeconds": 15
+    },
+    {
+      "giftName": "Galaksi",
+      "giftId": "11046",
+      "action": "HERKESI_DUSUR",
+      "amount": 1,
+      "durationSeconds": 10
+    },
+    {
+      "giftName": "Para Tabancası",
+      "giftId": "7168",
+      "action": "CIG",
+      "amount": 1,
+      "durationSeconds": 10
+    },
+    {
+      "giftName": "Güneş gözlükleri",
+      "giftId": "5509",
+      "action": "TAKIM_KALKANI",
+      "amount": 30,
+      "durationSeconds": 10
+    },
+    {
+      "giftName": "Beni Sev",
+      "giftId": "7934",
+      "action": "OYUNCU",
+      "amount": 5,
+      "durationSeconds": 10
+    },
+    {
+      "giftName": "Kalp",
+      "giftId": "5282",
+      "action": "OYUNCU",
+      "amount": 10,
+      "durationSeconds": 10
+    }
+  ]
+}
