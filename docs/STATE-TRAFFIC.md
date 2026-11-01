@@ -24,9 +24,9 @@ was unchanged, and the slowest gzip response in this run was 5 ms.
 This is one synthetic workload, not a guaranteed production or invoice reduction.
 Existing uncompressed traffic has already accrued and cannot be removed.
 
-The full server suite passed 87 tests with zero failures and zero skips, including
+The full server suite passed 89 tests with zero failures and zero skips, including
 browser form tests, source reconnection, media ranges, private portrait cache,
-license enforcement, cancellation, flow control and malformed publisher frames.
+license enforcement, cancellation, flow control, stalled gzip output and malformed publisher frames.
 
 After deployment, record `/api/admin/http-traffic` again. Its counters restart on
 each server process restart. Compare equal-duration representative active sessions,

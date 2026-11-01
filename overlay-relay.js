@@ -337,8 +337,8 @@ export function registerOverlayRelay(app, { secret, authorize, publicOrigin, rev
             if (frame.type === "end") {
                 if (context.length !== null && context.bytes !== context.length) return fail(context, 502, "Invalid upstream body length");
                 context.ended = true;
-                clearTimeout(context.timer);
-                clearTimeout(context.totalTimer);
+                // The publisher can finish before gzip/socket buffers drain to the reader.
+                idle(context);
                 return (context.compressor || context.res).end();
             }
             if (typeof frame.data !== "string" || frame.data.length > 128 * 1024

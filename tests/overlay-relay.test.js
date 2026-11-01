@@ -535,6 +535,61 @@ test("backpressure emits flow paused/resumed without changing binary output", as
     assert.deepEqual((await pending).body, chunk);
 });
 
+test('gzip state applies upstream flow control and keeps concurrent responses separate', async t => {
+    const f = await fixture(t), session = await f.session(), publisher = await f.connect(session.ticket);
+    const body = Buffer.from(JSON.stringify({ data: randomBytes(50 * 1024).toString('base64') }));
+    const pending = f.read(session.path + '/api/widget/state', { headers: { 'Accept-Encoding': 'gzip' } });
+    const request = await publisher.next('request');
+    publisher.send({ type: 'headers', id: request.id, status: 200, headers: { 'content-type': 'application/json', 'content-length': String(body.length) } });
+    publisher.send({ type: 'chunk', id: request.id, data: body.toString('base64') });
+    await publisher.next('flow', frame => frame.id === request.id && frame.paused);
+    await publisher.next('flow', frame => frame.id === request.id && !frame.paused);
+    publisher.send({ type: 'end', id: request.id });
+    assert.deepEqual(gunzipSync((await pending).body), body);
+    const responses = Array.from({ length: 12 }, (_, index) => ({ index,
+        pending: f.read(session.path + '/widget/state?type=topliker&screen=' + index, { headers: { 'Accept-Encoding': 'gzip' } }) }));
+    for (let i = 0; i < responses.length; i++) {
+        const next = await publisher.next('request');
+        const index = Number(new URL(next.path, f.base).searchParams.get('screen'));
+        respond(publisher, next, JSON.stringify({ index, rows: Array(1000).fill(index) }), { 'content-type': 'application/json' });
+    }
+    for (const { index, pending } of responses) {
+        const response = await pending;
+        assert.equal(response.headers['content-encoding'], 'gzip');
+        const decoded = gunzipSync(response.body);
+        assert.equal(JSON.parse(decoded).index, index);
+    }
+});
+
+test('stalled gzip output still times out after the upstream end frame and releases its slot', async t => {
+    let block = true;
+    const f = await fixture(t, { middleware(req, res) {
+        if (block && req.url.includes('/api/widget/state')) res.write = () => false;
+    } });
+    const session = await f.session(), publisher = await f.connect(session.ticket);
+    t.mock.timers.enable({ apis: ['setTimeout'] });
+    const pending = f.start(session.path + '/api/widget/state', { headers: { 'Accept-Encoding': 'gzip' } });
+    const request = await publisher.next('request');
+    const body = JSON.stringify({ data: randomBytes(80 * 1024).toString('base64') });
+    publisher.send({ type: 'headers', id: request.id, status: 200, headers: { 'content-type': 'application/json', 'content-length': String(Buffer.byteLength(body)) } });
+    const response = await pending.response; response.on('error', () => {});
+    for (let start = 0; start < body.length; start += 4096) {
+        publisher.send({ type: 'chunk', id: request.id, data: Buffer.from(body.slice(start, start + 4096)).toString('base64') });
+        await turn();
+    }
+    publisher.send({ type: 'end', id: request.id });
+    await turn(); await turn();
+    const closed = new Promise(resolve => response.once('close', resolve));
+    t.mock.timers.tick(30001); await turn();
+    await publisher.next('cancel', frame => frame.id === request.id);
+    await closed;
+    t.mock.timers.reset(); block = false;
+    assert.equal(publisher.ws.readyState, WebSocket.OPEN);
+    const nextResponse = f.read(session.path + '/api/widget/state');
+    const next = await publisher.next('request'); respond(publisher, next, '{}', { 'content-type': 'application/json' });
+    assert.equal((await nextResponse).text, '{}');
+});
+
 test("malformed frames, invalid headers and oversized WS payloads terminate only their publisher", async t => {
     const f = await fixture(t);
     const session = await f.session();
