@@ -8,10 +8,12 @@ const TOKEN = /^[A-Za-z0-9_-]{43}$/;
 const UUID = "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}";
 const MEDIA = new RegExp(`^/tikmng/media(?:/(?:${UUID}|client\\.js|client\\.css|events|poll|file/${UUID}))?$`, "i");
 const MEDIA_DOCUMENT = new RegExp(`^/tikmng/media(?:/${UUID})?$`, "i");
+const MOTION_SCRIPT = "/widget/champion-motion.js";
+const WIDGET_DOCUMENT = /^\/(?:widget-(?:overlay|top-gift|top-likes|leaderboard|gift-feed|activity)\.html|widget\/(?:overlay|top-gift|top-likes|leaderboard|gift-feed|activity)(?:\.html)?)$/;
 const WIDGET = new Set([
     "/widget-overlay.html", "/widget/overlay", "/widget/overlay.html",
     "/widget/state", "/api/widget/state", "/widget/vendor/matter.js",
-    "/widget/physical-jar.js", "/assets/widgets/glass-gift-jar.png"
+    "/widget/physical-jar.js", MOTION_SCRIPT, "/assets/widgets/glass-gift-jar.png"
 ]);
 for (const name of ["top-gift", "top-likes", "leaderboard", "gift-feed", "activity"]) {
     WIDGET.add(`/widget/${name}`);
@@ -23,11 +25,13 @@ for (const name of ["top-gift", "top-likes", "leaderboard", "gift-feed", "activi
     }
 }
 const GIFT = /^\/widget\/gift-assets\/[A-Za-z0-9_-][A-Za-z0-9_.-]{0,199}\.(?:png|webp|gif|jpe?g)$/i;
+const IMMUTABLE_GIFT = /^\/widget\/gift-assets\/viral-[A-Za-z0-9_-]+-[a-f0-9]{64}\.webp$/;
+const IMMUTABLE_CACHE = "private, max-age=31536000, immutable";
 const MAX_BUFFER = 2 * 1024 * 1024;
 const MAX_BODY = 512 * 1024 * 1024;
 const HOUR = 60 * 60 * 1000;
 const SAFE_HEADERS = new Set([
-    "content-type", "content-length", "content-range", "accept-ranges",
+    "content-type", "content-length", "content-range", "content-encoding", "accept-ranges",
     "etag", "last-modified", "content-language", "content-security-policy", "location"
 ]);
 const FALLBACK_CSP = "default-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; media-src 'self' blob: https:; connect-src 'self'; font-src 'self' data:";
@@ -300,6 +304,16 @@ export function registerOverlayRelay(app, { secret, authorize, publicOrigin, rev
                         (privatePortrait || /^public,\s*max-age=86400$/.test(frame.headers?.['cache-control'] || ''))) {
                     context.res.setHeader('Cache-Control', privatePortrait?'private, max-age=86400, no-transform':'private, max-age=3600, no-transform');
                 }
+                const script = context.pathname === MOTION_SCRIPT &&
+                    /^(?:application|text)\/javascript(?:;|$)/i.test(headers['content-type'] || '');
+                const html = WIDGET_DOCUMENT.test(context.pathname) && /^text\/html(?:;|$)/i.test(headers['content-type'] || '');
+                const cachePolicy = Object.entries(frame.headers).filter(([name]) => name.toLowerCase() === 'cache-control');
+                // The publisher confirms the current module hash; never infer freshness from the URL alone.
+                if (context.cacheableBundle && frame.status === 200 && !context.rangeRequest && !headers['content-range'] &&
+                        (script || /^image\/webp(?:;|$)/i.test(headers['content-type'] || '') && IMMUTABLE_GIFT.test(context.pathname)) &&
+                        cachePolicy.length === 1 && /^private,\s*max-age=31536000,\s*immutable$/.test(cachePolicy[0][1])) {
+                    context.res.setHeader('Cache-Control', IMMUTABLE_CACHE + ', no-transform');
+                }
                 context.res.setHeader("Content-Security-Policy", publicCsp(headers["content-security-policy"]));
                 context.res.setHeader("Content-Type", headers["content-type"] || "application/octet-stream");
                 context.res.statusCode = frame.status;
@@ -316,10 +330,12 @@ export function registerOverlayRelay(app, { secret, authorize, publicOrigin, rev
                     context.res.setHeader("X-Accel-Buffering", "no");
                     context.res.socket?.setTimeout(0);
                 } else {
-                    // Compress live JSON per request, never cache it or transform media/ranges.
-                    if (context.acceptsGzip && context.stateRequest && frame.status === 200 &&
-                            /^application\/json(?:;|$)/i.test(headers['content-type'] || '') &&
-                            !headers['content-range'] && (context.length === null || context.length >= 1024)) {
+                    // Reuse bounded streaming compression for widget documents, the bundle and live JSON.
+                    const compressible = frame.status === 200 && !context.rangeRequest && !headers['content-range'] &&
+                        !headers['content-encoding'] && (context.length === null || context.length >= 1024) &&
+                        (script || html || context.stateRequest && /^application\/json(?:;|$)/i.test(headers['content-type'] || ''));
+                    if (compressible && (script || html)) context.res.setHeader('Vary', 'Accept-Encoding');
+                    if (context.acceptsGzip && compressible) {
                         const compressor = createGzip({ level: zlibConstants.Z_BEST_SPEED });
                         context.compressor = compressor;
                         context.res.removeHeader('content-length');
@@ -378,6 +394,9 @@ export function registerOverlayRelay(app, { secret, authorize, publicOrigin, rev
         const cacheableMedia = new RegExp(`^/tikmng/media/file/${UUID}$`, 'i').test(match[2]) &&
             query.getAll('revision').length === 1 && /^[a-f0-9]{24}$/.test(query.get('revision') || '') &&
             [...query.keys()].every(name => ['revision', 'channel'].includes(name));
+        const cacheableBundle = (match[2] === MOTION_SCRIPT && query.getAll('v').length === 1 &&
+            /^[a-f0-9]{64}$/.test(query.get('v') || '') && [...query.keys()].every(name => ['v', 'channel'].includes(name))) ||
+            (IMMUTABLE_GIFT.test(match[2]) && [...query.keys()].every(name => name === 'channel'));
         query.set("channel", bridge.claims.channel);
         const headers = { "x-tikmng-overlay-base": "/overlays/" + match[1] };
         if (req.headers.range !== undefined) {
@@ -390,7 +409,8 @@ export function registerOverlayRelay(app, { secret, authorize, publicOrigin, rev
         }
         if (bridge.requests.size >= 64) return reply(res, 503, "Overlay publisher busy");
         const id = randomUUID();
-        const context = { id, bridge, res, method: req.method, pathname: match[2], headers: false, cacheableMedia,
+        const context = { id, bridge, res, method: req.method, pathname: match[2], headers: false, cacheableMedia, cacheableBundle,
+            rangeRequest: req.headers.range !== undefined,
             stateRequest: /^\/(?:api\/)?widget\/(?:state|(?:top-gift|top-likes|leaderboard|activity)\/state)$/.test(match[2]),
             acceptsGzip: Boolean(req.headers['accept-encoding']) && req.acceptsEncodings('gzip', 'identity') === 'gzip',
             sse: false, bytes: 0, paused: false, ended: false };

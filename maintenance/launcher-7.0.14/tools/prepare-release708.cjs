@@ -1,0 +1,21 @@
+'use strict';
+const fs=require('node:fs'),path=require('node:path'),crypto=require('node:crypto'),assert=require('node:assert/strict');
+const asar=require('C:/Users/User/Desktop/MNG-TikTok-Game/launcher/node_modules/@electron/asar');
+const source=path.resolve(__dirname,'..'),repository=path.resolve(source,'../..'),stage='D:/TikMnG-Release-7.0.8-build',output='D:/TikMnG-Release-7.0.8-ready';
+const baseline='D:/TikMnG-Release-7.0.7-ready/win-unpacked/resources/app.asar';
+const read=file=>JSON.parse(fs.readFileSync(file,'utf8')),write=(file,data)=>fs.writeFileSync(file,JSON.stringify(data,null,2)+'\n');
+const replacements=['main.js','preload.js','lib/platform.cjs','lib/entry-videos.cjs','lib/media-studio.cjs','lib/tikfinity.cjs','lib/widget-studio.cjs','lib/widget-announcements.cjs','lib/speech-service.cjs','lib/catalog-defaults.json','renderer/index.html','renderer/workspace.js','renderer/workspace-v3.css','renderer/entry-videos.js','renderer/speech-engine.js','renderer/studio/overlay.js','renderer/widgets/reference-widgets.html','renderer/widgets/royal-widgets.html',...['royal-racon.png','royal-beauty.png','royal-handsome.png','royal-demo.png'].map(file=>'renderer/widgets/royal-assets/'+file)];
+replacements.push('renderer/assets/game-covers/artwork-current.json');
+assert.equal(read(path.join(source,'package.json')).version,'7.0.8');
+if(!fs.existsSync(stage))asar.extractAll(baseline,stage);
+for(const file of replacements){fs.mkdirSync(path.dirname(path.join(stage,file)),{recursive:true});fs.copyFileSync(path.join(source,file),path.join(stage,file));}
+for(const file of ['package.json','package-lock.json'])fs.copyFileSync(path.join(source,file),path.join(stage,file));
+fs.cpSync(path.join(source,'build'),path.join(stage,'build'),{recursive:true});
+fs.cpSync(path.join(source,'tests'),path.join(stage,'tests'),{recursive:true});
+fs.cpSync(path.join(source,'tools'),path.join(stage,'tools'),{recursive:true});
+assert.deepEqual(read(path.join(stage,'lib/admin-games.json')),JSON.parse(asar.extractFile(baseline,'lib/admin-games.json')),'Private administrator paths must not enter the stable release');
+assert.equal(read(path.join(stage,'lib/catalog-defaults.json')).games.length,15);
+assert.ok(fs.readFileSync(path.join(stage,'main.js'),'utf8').includes('support.prepareLaunch('),'Keep the 7.0.7 startup optimization');
+fs.mkdirSync(output,{recursive:true});
+const report={prepared:true,version:'7.0.8',baselineVersion:'7.0.7',baselineSha256:crypto.createHash('sha256').update(fs.readFileSync(baseline)).digest('hex'),stage,output,replacements,privateMetadataPreserved:true};
+write(path.join(output,'build-source.json'),report);console.log(JSON.stringify(report,null,2));

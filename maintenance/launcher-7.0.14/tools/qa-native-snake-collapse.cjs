@@ -1,0 +1,18 @@
+'use strict';
+const fs=require('node:fs'),path=require('node:path'),{spawn}=require('node:child_process');
+const old='D:/TikMnG-Snake-Arena-Prototype',instance=path.resolve(__dirname,'../qa/20261030/native-snake');
+fs.mkdirSync(path.join(instance,'mods'),{recursive:true});fs.mkdirSync(path.join(instance,'config'),{recursive:true});
+fs.copyFileSync(path.resolve(__dirname,'../../game-candidates-20261030/snake/build/libs/tikmng_snake_arena-0.16.0.jar'),path.join(instance,'mods/tikmng_snake_arena.jar'));
+fs.writeFileSync(path.join(instance,'config/tikmng-snake-arena.json'),JSON.stringify({arenaSize:96,schemaVersion:13,username:'',musicVolume:0,effectsVolume:0,collapsingFloor:true,floorWarningSeconds:1,floorMovementSeconds:3}));
+fs.writeFileSync(path.join(instance,'options.txt'),'fullscreen:false\nguiScale:2\nrenderDistance:6\nsimulationDistance:4\npauseOnLostFocus:false\nmaxFps:40\nclouds:false\nfov:0.0\n');
+const {launchArguments}=require(path.join(old,'launch-game.cjs'));
+const oldInstance=path.resolve(old,'instance');
+const args=launchArguments(0,true).map(value=>String(value).split(oldInstance).join(instance));args.unshift('-Dtikmng.snake.collapseQa=true');
+const argumentFile=path.join(instance,'launch-args.txt');fs.writeFileSync(argumentFile,args.map(v=>'"'+v.replace(/\\/g,'\\\\').replace(/"/g,'\\"')+'"').join('\n'));
+const java='C:/Users/User/Desktop/MNG-TikTok-Game/apps/battle-royale/prototype/runtime/java/bin/java.exe';
+const log=fs.createWriteStream(path.join(instance,'launch.log'));
+const child=spawn(java,['@'+argumentFile],{cwd:instance,windowsHide:true,stdio:['ignore','pipe','pipe']});
+child.stdout.on('data',chunk=>{log.write(chunk);const text=String(chunk);if(text.includes('MNG_SNAKE_'))console.log(text.trim());});child.stderr.on('data',chunk=>log.write(chunk));
+const timeout=setTimeout(()=>{console.error('Owned native QA timed out');child.kill();process.exitCode=1;},180000);
+child.once('error',error=>{clearTimeout(timeout);log.end();console.error(error.message);process.exitCode=1;});
+child.once('exit',code=>{clearTimeout(timeout);log.end();const file=path.join(instance,'collapse-result.json');const result=fs.existsSync(file)?JSON.parse(fs.readFileSync(file)):null;console.log(JSON.stringify({exitCode:code,result,instance}));if(code!==0||!result?.passed)process.exitCode=1;});

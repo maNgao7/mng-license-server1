@@ -537,10 +537,10 @@ function logEkle(lisansKod, cihazKimlik, islem, ip) {
 // =====================================================================
 // SÜRÜM BİLGİLERİ & İNDİRME LİNKLERİ
 // =====================================================================
-const EN_GUNCEL_SURUM = "7.0.13";
+const EN_GUNCEL_SURUM = "7.0.14";
 const EN_DUSUK_SURUM = "1.0.0";
-const SETUP_INDIRME_LINKI = "https://github.com/maNgao7/mng-license-server1/releases/download/v7.0.13/TikMnG-Setup-7.0.13.exe";
-const PORTABLE_INDIRME_LINKI = "https://github.com/maNgao7/mng-license-server1/releases/download/v7.0.13/TikMnG-7.0.13-Portable.exe";
+const SETUP_INDIRME_LINKI = "https://github.com/maNgao7/mng-license-server1/releases/download/v7.0.14/TikMnG-Setup-7.0.14.exe";
+const PORTABLE_INDIRME_LINKI = "https://github.com/maNgao7/mng-license-server1/releases/download/v7.0.14/TikMnG-7.0.14-Portable.exe";
 const SETUP_WEB_LINKI = SETUP_INDIRME_LINKI;
 const VARSAYILAN_PAKET_LINKLERI = Object.freeze({
     BACKGROUNDS: "https://drive.usercontent.google.com/download?id=1VHwmK2Lt-DN6jVYB1Gp2sbeW6hU_rgB6&export=download&confirm=t",
@@ -554,6 +554,9 @@ const VARSAYILAN_PAKET_LINKLERI = Object.freeze({
 
 // Her güncellemede eklenen/değişen özellikler listesi
 const SURUM_NOTLARI = [
+    "v7.0.14: Viral Benim için Altın Hazine, Kristal Yörünge ve Alev Mührü animasyonlu çerçeveleri eklendi. Çerçeve tek ayardan seçilir; profil büyük ve tam daire kalır. Mevcut kanatlar ve kayıtlı eşikler korunur. Giriş sesi seçilebilir.",
+    "v7.0.14: Hediye havai fişeğinde patlamadan sonra yalnızca kullanıcı adı görünür ve kaybolur. Coin/beğeni listeleri yakınlaştırıldı, birim yazıları kaldırıldı. Racon Kralı profili büyütüldü, Yayın Güzeli profil hizası düzeltildi. Kavanoz varsayılan sınırı 200; boyut tek hediyenin coin değerine göre kontrollü büyür.",
+    "v7.0.14: Yeni çerçevelerde yalnızca seçilen tasarım yüklenir; puan ve hediye değişimi görselleri yeniden indirmez veya 3D sahneyi yeniden kurmaz. Canlı veri kayıpsız değişiklik protokolünü kullanır. Widget HTML ve animasyon dosyaları sıkıştırılır; yetkili sürümlü tasarım dosyaları özel önbelleğe uygundur. Güvenlik yalıtımı, lisanslar, profil kalitesi ve kullanıcı ayarları korunur. Fatura tasarrufu kullanıma bağlıdır.",
     "v7.0.13: Kartopu Savaşı 7.0.6 ayrı oyun güncellemesiyle hediye gönderenlerin kimlikleri ve büyük katılım dalgalarının doğma konumları düzeltildi. Ortak motor yeniden indirilmez; kayıtlı oyun ayarları korunur.",
     "v7.0.13: Yeni düşük trafikli widget protokolü, bütün listeyi ve değişmeyen profil fotoğraflarını tekrar göndermek yerine yalnızca değişen puanı veya olayı taşır. Bağlantı yenilenmesinde, kaynak sıfırlamasında ve veri uyuşmazlığında otomatik tam eşitleme korunur.",
     "v7.0.13: Görünen sıralama satırları ve gerekli sıfırlama kayıtları taşınır; kavanoz geçmişi her olayda yeniden gönderilmez. Eşzamanlı aynı sorgular birleştirilir. Oyun widgetlarında profil öğeleri korunur; puan artışı bütün fotoğrafları yeniden indirmez. Kalite, lisans ve kayıtlı ayarlar korunur; tasarruf kullanıma bağlıdır.",

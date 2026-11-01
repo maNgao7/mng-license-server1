@@ -2,17 +2,21 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import http from "node:http";
 import { once } from "node:events";
-import { createHmac, randomBytes } from "node:crypto";
+import { createHash, createHmac, randomBytes } from "node:crypto";
 import { pathToFileURL } from "node:url";
+import { readFileSync } from 'node:fs';
 import express from "express";
 import { WebSocket } from "ws";
 import { registerOverlayRelay } from "../overlay-relay.js";
-import { gunzipSync } from 'node:zlib';
+import { gzipSync, gunzipSync } from 'node:zlib';
 
 const SECRET = randomBytes(32);
 const INPUT = { licenseCode: "test-license", deviceId: "device-1", installationId: "install-1", channel: "creator" };
 const ID = "12345678-1234-4234-9234-123456789abc";
 const FILE = "/tikmng/media/file/" + ID;
+const MOTION = '/widget/champion-motion.js';
+const IMMUTABLE = 'private, max-age=31536000, immutable';
+const sha256 = body => createHash('sha256').update(body).digest('hex');
 const turn = () => new Promise(resolve => setImmediate(resolve));
 
 function inbox(ws) {
@@ -141,8 +145,7 @@ test('state gzip honours negotiation and excludes media, SSE, ranges, small bodi
         ['/api/widget/state', 'gzip', 'application/json', 206, { 'content-range': 'bytes 0-2047/4096' }, 'x'.repeat(2048)],
         ['/tikmng/media/poll', 'gzip', 'application/json', 200, {}, 'x'.repeat(2048)],
         ['/tikmng/media/events', 'gzip', 'text/event-stream', 200, {}, 'data: test\n\n'],
-        [FILE, 'gzip', 'video/mp4', 200, {}, 'x'.repeat(2048)],
-        ['/widget-overlay.html', 'gzip', 'text/html', 200, {}, 'x'.repeat(2048)]
+        [FILE, 'gzip', 'video/mp4', 200, {}, 'x'.repeat(2048)]
     ]) {
         const pending = f.read(session.path + route, { headers: { 'Accept-Encoding': encoding } });
         const request = await publisher.next('request');
@@ -173,10 +176,259 @@ test('compressed chunked state streams validate original length and cancel clean
     await publisher.next('cancel', frame => frame.id === next.id);
 });
 
+test('successful widget HTML saves wire bytes with exact gzip decoding and remains no-store', async t => {
+    const f = await fixture(t), session = await f.session(), publisher = await f.connect(session.ticket);
+    const html = Buffer.from('<!doctype html><html><body>' + '<section class="gallery">Gift artwork</section>'.repeat(4000) + '</body></html>');
+    for (const route of ['/widget-overlay.html', '/widget/overlay', '/widget/top-gift.html', '/widget-leaderboard.html']) {
+        const pending = f.read(session.path + route, { headers: { 'Accept-Encoding': 'gzip' } });
+        const request = await publisher.next('request');
+        publisher.send({ type: 'headers', id: request.id, status: 200, headers: { 'content-type': 'text/html; charset=utf-8',
+            'content-length': String(html.length), 'cache-control': IMMUTABLE } });
+        for (let start = 0; start < html.length; start += 16384) {
+            publisher.send({ type: 'chunk', id: request.id, data: html.subarray(start, start + 16384).toString('base64') });
+            await turn();
+        }
+        publisher.send({ type: 'end', id: request.id });
+        const response = await pending;
+        assert.deepEqual(gunzipSync(response.body), html);
+        assert.equal(response.headers['content-encoding'], 'gzip');
+        assert.equal(response.headers['content-length'], undefined);
+        assert.equal(response.headers.vary, 'Accept-Encoding');
+        assert.equal(response.headers['cache-control'], 'no-store, no-transform');
+        assert.ok(response.body.length < html.length / 10);
+        if (route === '/widget-overlay.html') t.diagnostic('Widget HTML gzip: ' + html.length + ' -> ' + response.body.length + ' wire body bytes, exact decode.');
+    }
+});
+
+test('widget HTML gzip excludes unaccepted encoding, HEAD, ranges, preencoded bodies, errors and media documents', async t => {
+    const f = await fixture(t), session = await f.session(), publisher = await f.connect(session.ticket);
+    const body = Buffer.from('<div>widget</div>'.repeat(200));
+    for (const [route, client, status = 200, upstream = {}, bytes = body, method = 'GET'] of [
+        ['/widget-overlay.html', { 'Accept-Encoding': 'gzip;q=0' }],
+        ['/widget-overlay.html', { 'Accept-Encoding': 'gzip' }, 200, {}, Buffer.from('<div>small</div>')],
+        ['/widget-overlay.html', { 'Accept-Encoding': 'gzip' }, 200, {}, body, 'HEAD'],
+        ['/widget-overlay.html', { 'Accept-Encoding': 'gzip', Range: 'bytes=0-99' }],
+        ['/widget-overlay.html', { 'Accept-Encoding': 'gzip' }, 206, { 'content-range': 'bytes 0-99/9000' }],
+        ['/widget-overlay.html', { 'Accept-Encoding': 'gzip' }, 200, { 'Content-Encoding': 'gzip' }, gzipSync(body)],
+        ['/widget-overlay.html', { 'Accept-Encoding': 'gzip' }, 404],
+        ['/widget-overlay.html', { 'Accept-Encoding': 'gzip' }, 204, {}, Buffer.alloc(0)],
+        ['/tikmng/media', { 'Accept-Encoding': 'gzip' }],
+        [MOTION, { 'Accept-Encoding': 'gzip' }]
+    ]) {
+        const pending = f.read(session.path + route, { method, headers: client }), request = await publisher.next('request');
+        respond(publisher, request, bytes, { 'content-type': 'text/html', ...upstream }, status);
+        const response = await pending;
+        assert.equal(response.headers['content-encoding'], upstream['Content-Encoding']);
+        assert.deepEqual(response.body, method === 'HEAD' ? Buffer.alloc(0) : bytes);
+        assert.equal(response.headers['cache-control'], 'no-store, no-transform');
+    }
+});
+
 function signClaims(claims) {
     const payload = Buffer.from(JSON.stringify(claims)).toString("base64url");
     return payload + "." + createHmac("sha256", SECRET).update("overlay-ticket-v1:" + payload).digest("base64url");
 }
+
+test('hashed bundled JS and viral WebP retain only a publisher-confirmed private immutable cache', async t => {
+    const f = await fixture(t), session = await f.session(), publisher = await f.connect(session.ticket);
+    const script = Buffer.from('window.championMotion = "' + 'motion-'.repeat(1000) + '";');
+    const image = Buffer.from('test-WebP-bytes');
+    for (const [route, body, type, encoding] of [
+        [MOTION + '?v=' + sha256(script), script, 'application/javascript; charset=utf-8', 'gzip'],
+        [MOTION + '?v=' + sha256(script), script, 'text/javascript', 'identity'],
+        ['/widget/gift-assets/viral-gift-name_' + '-'.repeat(2) + '-' + sha256(image) + '.webp', image, 'image/webp', 'gzip']
+    ]) {
+        const pending = f.read(session.path + route + (route.includes('?') ? '&' : '?') + 'key=discard&channel=creator', {
+            headers: { 'Accept-Encoding': encoding, Cookie: 'admin=secret', Authorization: 'Bearer secret' }
+        });
+        const request = await publisher.next('request');
+        const query = new URL(request.path, f.base).searchParams;
+        assert.equal(query.get('channel'), INPUT.channel);
+        assert.equal(query.has('key'), false);
+        assert.deepEqual(request.headers, { 'x-tikmng-overlay-base': session.path });
+        respond(publisher, request, body, { 'content-type': type, 'Cache-Control': IMMUTABLE, 'set-cookie': 'secret=1' });
+        const response = await pending;
+        const compressed = route.startsWith(MOTION) && encoding === 'gzip';
+        assert.equal(response.headers['content-encoding'], compressed ? 'gzip' : undefined);
+        assert.equal(response.headers['cache-control'], IMMUTABLE + ', no-transform');
+        assert.equal(response.headers['set-cookie'], undefined);
+        assert.deepEqual(compressed ? gunzipSync(response.body) : response.body, body);
+        assert.equal(response.headers['content-length'], compressed ? undefined : String(body.length));
+        if (route.startsWith(MOTION)) assert.equal(response.headers.vary, 'Accept-Encoding');
+        if (compressed) assert.ok(response.body.length < body.length / 10);
+    }
+});
+
+test('release-sized bundles retain exact bytes and private caching over real WS chunk frames', async t => {
+    const f = await fixture(t), session = await f.session(), publisher = await f.connect(session.ticket);
+    const script = process.env.OVERLAY_RELAY_BUNDLE_FILE ? readFileSync(process.env.OVERLAY_RELAY_BUNDLE_FILE) : Buffer.alloc(514708, 32);
+    if (!process.env.OVERLAY_RELAY_BUNDLE_FILE) {
+        Buffer.from('/*' + randomBytes(256 * 1024).toString('base64')).copy(script);
+        const tail = Buffer.from('*/\nwindow.championMotion = true;'); tail.copy(script, script.length - tail.length);
+    }
+    const image = process.env.OVERLAY_RELAY_ASSET_FILE ? readFileSync(process.env.OVERLAY_RELAY_ASSET_FILE) : randomBytes(1800000);
+    for (const [route, body, type, compressed] of [
+        [MOTION + '?v=' + sha256(script), script, 'text/javascript', true],
+        ['/widget/gift-assets/viral-gold-' + sha256(image) + '.webp', image, 'image/webp', false]
+    ]) {
+        const pending = f.read(session.path + route, { headers: { 'Accept-Encoding': 'gzip' } });
+        const request = await publisher.next('request');
+        publisher.send({ type: 'headers', id: request.id, status: 200, headers: { 'content-type': type,
+            'content-length': String(body.length), 'cache-control': IMMUTABLE } });
+        for (let start = 0; start < body.length; start += 32768) {
+            publisher.send({ type: 'chunk', id: request.id, data: body.subarray(start, start + 32768).toString('base64') });
+            await turn();
+        }
+        publisher.send({ type: 'end', id: request.id });
+        const response = await pending;
+        assert.equal(response.status, 200);
+        assert.equal(response.headers['cache-control'], IMMUTABLE + ', no-transform');
+        assert.equal(response.headers['content-encoding'], compressed ? 'gzip' : undefined);
+        assert.deepEqual(compressed ? gunzipSync(response.body) : response.body, body);
+        if (compressed) {
+            assert.ok(response.body.length < body.length);
+            t.diagnostic((process.env.OVERLAY_RELAY_BUNDLE_FILE ? 'Actual module' : 'Module-size fixture') + ': ' + body.length + ' -> ' + response.body.length + ' wire body bytes; SHA256 ' + sha256(body) + '; exact decode.');
+        } else {
+            assert.equal(response.headers['content-length'], String(body.length));
+            t.diagnostic('WebP' + (process.env.OVERLAY_RELAY_ASSET_FILE ? '' : '-size fixture') + ': ' + body.length + ' unchanged wire body bytes, no recompression.');
+        }
+    }
+});
+
+test('immutable cache rejects ambiguous versions, non-hash artwork, legacy publishers and unrelated routes', async t => {
+    const f = await fixture(t), session = await f.session(), publisher = await f.connect(session.ticket);
+    const hash = 'b'.repeat(64), asset = '/widget/gift-assets/viral-crown-' + hash + '.webp';
+    for (const [route, type, policy = IMMUTABLE, status = 200] of [
+        [MOTION, 'text/javascript'],
+        [MOTION + '?v=', 'text/javascript'],
+        [MOTION + '?v=' + hash.slice(1), 'text/javascript'],
+        [MOTION + '?v=' + hash + 'b', 'text/javascript'],
+        [MOTION + '?v=' + hash.toUpperCase(), 'text/javascript'],
+        [MOTION + '?v=' + hash + '&v=' + hash, 'text/javascript'],
+        [MOTION + '?v=' + hash + '&unknown=1', 'text/javascript'],
+        [MOTION + '?v=' + hash, 'text/html'],
+        [MOTION + '?v=' + hash, 'text/javascript', 'no-store'],
+        [MOTION + '?v=' + hash, 'text/javascript', 'public, max-age=31536000, immutable'],
+        [MOTION + '?v=' + hash, 'text/javascript', 'private, max-age=3600'],
+        [MOTION + '?v=' + hash, 'text/javascript', IMMUTABLE, 404],
+        [asset + '?unknown=1', 'image/webp'],
+        [asset, 'image/png'],
+        [asset, 'image/webp', IMMUTABLE, 404],
+        [asset.replace('crown-', 'crown.v2-'), 'image/webp'],
+        [asset.replace(hash, hash.toUpperCase()), 'image/webp'],
+        [asset.replace(hash, hash.slice(1)), 'image/webp'],
+        [asset.replace('viral-', ''), 'image/webp'],
+        [asset.replace('.webp', '.png'), 'image/png'],
+        ['/widget/gift-assets/7934.webp', 'image/webp'],
+        ['/api/widget/state?v=' + hash, 'application/json'],
+        ['/widget-overlay.html?v=' + hash, 'text/html'],
+        ['/widget/physical-jar.js?v=' + hash, 'text/javascript']
+    ]) {
+        const pending = f.read(session.path + route), request = await publisher.next('request');
+        respond(publisher, request, 'unchanged', { 'content-type': type, 'cache-control': policy }, status);
+        assert.equal((await pending).headers['cache-control'], 'no-store, no-transform', route + ':' + policy);
+    }
+    for (const route of [MOTION + '.map', '/widget/%63hampion-motion.js', '/widget/gift-assets/%2e%2e%2f' + asset.split('/').at(-1)]) {
+        assert.equal((await f.read(session.path + route)).status, 404, route);
+    }
+});
+
+test('bundled JS gzip skips ranges, encodings, HEAD, errors, non-JS and non-negotiating clients', async t => {
+    const f = await fixture(t), session = await f.session(), publisher = await f.connect(session.ticket);
+    const body = Buffer.from('const motion = "' + 'test'.repeat(1000) + '";');
+    const route = session.path + MOTION + '?v=' + sha256(body);
+    for (const [client, type = 'text/javascript', status = 200, upstream = {}, bytes = body, method = 'GET'] of [
+        [{ 'Accept-Encoding': 'gzip;q=0, identity' }],
+        [{ 'Accept-Encoding': 'br' }],
+        [{}],
+        [{ 'Accept-Encoding': 'gzip' }, 'text/javascript', 200, {}, Buffer.from('small')],
+        [{ 'Accept-Encoding': 'gzip' }, 'text/javascript', 404],
+        [{ 'Accept-Encoding': 'gzip' }, 'text/html'],
+        [{ 'Accept-Encoding': 'gzip', Range: 'bytes=0-99' }],
+        [{ 'Accept-Encoding': 'gzip' }, 'text/javascript', 206, { 'content-range': 'bytes 0-99/9000' }],
+        [{ 'Accept-Encoding': 'gzip' }, 'text/javascript', 200, { 'content-range': 'bytes 0-99/9000' }],
+        [{ 'Accept-Encoding': 'gzip' }, 'text/javascript', 200, { 'Content-Encoding': 'gzip' }, gzipSync(body)],
+        [{ 'Accept-Encoding': 'gzip' }, 'text/javascript', 200, {}, body, 'HEAD'],
+        [{ 'Accept-Encoding': 'gzip' }, 'text/javascript', 204, {}, Buffer.alloc(0)],
+        [{ 'Accept-Encoding': 'gzip' }, 'text/javascript', 304, {}, Buffer.alloc(0)]
+    ]) {
+        const pending = f.read(route, { method, headers: client }), request = await publisher.next('request');
+        assert.equal(request.headers.range, client.Range);
+        respond(publisher, request, bytes, { 'content-type': type, 'cache-control': IMMUTABLE, ...upstream }, status);
+        const response = await pending;
+        assert.equal(response.headers['content-encoding'], upstream['Content-Encoding']);
+        assert.deepEqual(response.body, method === 'HEAD' ? Buffer.alloc(0) : bytes);
+        if (method !== 'HEAD' && ![204, 304].includes(status)) assert.equal(response.headers['content-length'], String(bytes.length));
+        if (client.Range || upstream['content-range'] || status !== 200 || type === 'text/html')
+            assert.equal(response.headers['cache-control'], 'no-store, no-transform');
+    }
+});
+
+test('new bundle routes preserve signed publisher authorization, scope and revocation', async t => {
+    t.mock.timers.enable({ apis: ['setTimeout', 'setInterval', 'Date'], now: Date.now() });
+    let allowed = true;
+    const f = await fixture(t, { revalidate: () => allowed }), session = await f.session();
+    assert.equal(await f.rejectUpgrade(), 401);
+    assert.equal(await f.rejectUpgrade(session.ticket.slice(0, -1) + (session.ticket.endsWith('A') ? 'B' : 'A')), 401);
+    const publisher = await f.connect(session.ticket);
+    const routes = [MOTION + '?v=' + 'a'.repeat(64), '/widget/gift-assets/viral-crown-' + 'a'.repeat(64) + '.webp'];
+    for (const route of routes) {
+        assert.equal((await f.read(route)).status, 404);
+        assert.equal((await f.read('/overlays/' + 'x'.repeat(43) + route)).status, 503);
+        const scoped = session.path + route + (route.includes('?') ? '&' : '?');
+        for (const [query, status] of [['channel=other', 403], ['channel=creator&channel=creator', 400], ['key=a&key=b', 400]])
+            assert.equal((await f.read(scoped + query)).status, status);
+    }
+    const ping = once(publisher.ws, 'ping');
+    t.mock.timers.tick(30000);
+    await ping;
+    const pong = once(publisher.ws, 'pong');
+    publisher.ws.ping();
+    await pong;
+    allowed = false;
+    const closed = once(publisher.ws, 'close');
+    t.mock.timers.tick(30000);
+    await closed;
+    for (const route of [...routes, '/api/widget/state']) {
+        const response = await f.read(session.path + route);
+        assert.equal(response.status, 503);
+        assert.equal(response.headers['cache-control'], 'no-store, no-transform');
+    }
+    assert.equal(await f.rejectUpgrade(session.ticket), 403);
+});
+
+test('compressed bundled JS validates original lengths, supports unknown lengths and cancels on disconnect', async t => {
+    const f = await fixture(t), session = await f.session(), publisher = await f.connect(session.ticket);
+    const body = Buffer.from('export const motion = "' + 'frame'.repeat(3000) + '";');
+    const route = session.path + MOTION + '?v=' + sha256(body);
+    const pending = f.read(route, { headers: { 'Accept-Encoding': 'gzip' } });
+    const request = await publisher.next('request');
+    publisher.send({ type: 'headers', id: request.id, status: 200, headers: { 'content-type': 'text/javascript' } });
+    for (let start = 0; start < body.length; start += 4096)
+        publisher.send({ type: 'chunk', id: request.id, data: body.subarray(start, start + 4096).toString('base64') });
+    publisher.send({ type: 'end', id: request.id });
+    assert.deepEqual(gunzipSync((await pending).body), body);
+    for (const length of [body.length - 1, body.length + 1]) {
+        const started = f.start(route, { headers: { 'Accept-Encoding': 'gzip' } });
+        const next = await publisher.next('request');
+        publisher.send({ type: 'headers', id: next.id, status: 200, headers: { 'content-type': 'text/javascript', 'content-length': String(length) } });
+        const response = await started.response;
+        const incomplete = (async () => {
+            try { for await (const chunk of response) {} return false; } catch { return true; }
+        })();
+        publisher.send({ type: 'chunk', id: next.id, data: body.toString('base64') });
+        publisher.send({ type: 'end', id: next.id });
+        await publisher.next('cancel', frame => frame.id === next.id);
+        assert.equal(await incomplete, true, 'A mismatched original length must abort compressed output');
+    }
+    const abandoned = f.start(route, { headers: { 'Accept-Encoding': 'gzip' } });
+    const next = await publisher.next('request');
+    publisher.send({ type: 'headers', id: next.id, status: 200, headers: { 'content-type': 'text/javascript' } });
+    await abandoned.response;
+    abandoned.req.destroy();
+    await publisher.next('cancel', frame => frame.id === next.id);
+    assert.equal(publisher.ws.readyState, WebSocket.OPEN);
+});
 
 test('only revision-scoped private media may cache; state, HTML, duplicates and redirects never cache', async t => {
     const f = await fixture(t), session = await f.session(), publisher = await f.connect(session.ticket);
@@ -269,6 +521,101 @@ test('a real browser reuses an original portrait instead of downloading it after
         const isolated = await browser.newContext(), other = await isolated.newPage();
         await other.goto(f.base + session.path + '/widget-overlay.html'); await other.locator('img').evaluate(img => img.decode());
         assert.equal(downloads, 2, 'An independent browser context obtains its own private copy');
+    } finally { await browser.close(); }
+});
+
+test('a real browser privately reuses repeated hashed bundle loads while state stays fresh', {
+    skip: !process.env.OVERLAY_RELAY_PLAYWRIGHT
+}, async t => {
+    const { chromium } = await import(pathToFileURL(process.env.OVERLAY_RELAY_PLAYWRIGHT).href);
+    const f = await fixture(t), session = await f.session(), publisher = await f.connect(session.ticket);
+    const browser = await chromium.launch({ headless: true, executablePath: process.env.BROWSER_EXECUTABLE });
+    try {
+        const context = await browser.newContext(), page = await context.newPage();
+        const webp = Buffer.from(await page.evaluate(() => {
+            const canvas = document.createElement('canvas');
+            canvas.width = canvas.height = 2;
+            const ctx = canvas.getContext('2d'); ctx.fillStyle = '#16aa75'; ctx.fillRect(0, 0, 2, 2);
+            return canvas.toDataURL('image/webp').split(',')[1];
+        }), 'base64');
+        const asset = '/widget/gift-assets/viral-crown-' + sha256(webp) + '.webp';
+        const statePath = session.path + '/api/widget/state?type=topliker';
+        const source = version => `window.motionVersion = ${version};\n` +
+            '/* bundled motion frame */\n'.repeat(300) +
+            `fetch('${statePath}').then(r=>r.json()).then(state=>{document.querySelector('#result').textContent=String(state.value);});`;
+        let script = source(1), documents = 0, states = 0, images = 0;
+        const modules = [];
+        const csp = "default-src 'none'; script-src 'nonce-bundle123'; img-src 'self'; connect-src 'self'";
+        publisher.ws.on('message', raw => {
+            const request = JSON.parse(raw); if (request.type !== 'request') return;
+            const url = new URL(request.path, f.base);
+            if (url.pathname === '/widget-overlay.html') {
+                documents++;
+                respond(publisher, request, `<div id="result">waiting</div><img src="${session.path + asset}"><script nonce="bundle123" src="${session.path + MOTION}?v=${sha256(script)}"></script>`,
+                    { 'content-type': 'text/html', 'content-security-policy': csp, 'cache-control': IMMUTABLE });
+            } else if (url.pathname === MOTION) {
+                modules.push(url.searchParams.get('v'));
+                respond(publisher, request, script, { 'content-type': 'text/javascript',
+                    'cache-control': url.searchParams.get('v') === sha256(script) ? IMMUTABLE : 'no-store' });
+            } else if (url.pathname === asset) {
+                images++;
+                respond(publisher, request, webp, { 'content-type': 'image/webp', 'cache-control': IMMUTABLE });
+            } else if (url.pathname === '/api/widget/state') {
+                respond(publisher, request, JSON.stringify({ value: ++states }), { 'content-type': 'application/json', 'cache-control': IMMUTABLE });
+            } else respond(publisher, request, 'missing', {}, 404);
+        });
+        const visit = async (target, expected) => {
+            const document = await target.goto(f.base + session.path + '/widget-overlay.html?load=' + expected);
+            assert.equal(document.headers()['cache-control'], 'no-store, no-transform');
+            await target.locator('#result').filter({ hasText: String(expected) }).waitFor({ timeout: 10000 });
+            await target.locator('img').evaluate(img => img.decode());
+        };
+        const firstModule = page.waitForResponse(response => new URL(response.url()).pathname.endsWith(MOTION));
+        const firstImage = page.waitForResponse(response => new URL(response.url()).pathname.endsWith(asset));
+        await visit(page, 1);
+        const moduleResponse = await firstModule, imageResponse = await firstImage;
+        assert.equal(moduleResponse.headers()['content-encoding'], 'gzip');
+        assert.equal(moduleResponse.headers()['cache-control'], IMMUTABLE + ', no-transform');
+        assert.equal(moduleResponse.headers().vary, 'Accept-Encoding');
+        assert.equal(await moduleResponse.text(), script);
+        assert.deepEqual(await imageResponse.body(), webp);
+        assert.equal(imageResponse.headers()['cache-control'], IMMUTABLE + ', no-transform');
+        const loadAssets = async expected => {
+            await page.evaluate(async ({ script, asset }) => {
+                const image = new Image(); image.src = asset;
+                document.querySelector('img').replaceWith(image);
+                const next = document.createElement('script'); next.nonce = 'bundle123'; next.src = script;
+                document.body.append(next);
+                await image.decode();
+            }, { script: session.path + MOTION + '?v=' + sha256(script), asset: session.path + asset });
+            await page.locator('#result').filter({ hasText: String(expected) }).waitFor({ timeout: 10000 });
+        };
+        await loadAssets(2);
+        assert.equal(modules.length, 1, 'Repeated script loads in the same document must reuse the bundle');
+        assert.equal(images, 1, 'Repeated image loads in the same document must reuse immutable artwork');
+        const isolated = await browser.newContext(), other = await isolated.newPage();
+        await visit(other, 3);
+        assert.equal(modules.length, 2, 'A separate browser context downloads its own module');
+        assert.equal(images, 2, 'A separate browser context downloads its own artwork');
+        script = source(2);
+        await loadAssets(4);
+        assert.equal(await page.evaluate(() => window.motionVersion), 2);
+        assert.equal(modules.length, 3, 'Changed content hash must fetch the new module');
+        assert.equal(modules.at(-1), sha256(script));
+        assert.equal(images, 2);
+        assert.equal(documents, 2);
+        assert.equal(states, 4, 'Every script load obtains fresh uncached state');
+        const beforeNavigation = { modules: modules.length, images };
+        await visit(page, 5);
+        assert.equal(modules.length, beforeNavigation.modules + 1);
+        assert.equal(images, beforeNavigation.images + 1);
+        const closed = once(publisher.ws, 'close'); publisher.ws.terminate(); await closed;
+        const offline = await page.evaluate(async route => {
+            const response = await fetch(route);
+            return { status: response.status, cache: response.headers.get('cache-control') };
+        }, f.base + statePath);
+        assert.deepEqual(offline, { status: 503, cache: 'no-store, no-transform' });
+        t.diagnostic('Repeated subresource loads: one module/WebP transfer per sandbox document; a new browser context and a changed hash each fetch privately. Full navigation creates a new opaque sandbox and refetches assets. Five state loads remain fresh; offline state returns 503.');
     } finally { await browser.close(); }
 });
 
@@ -535,23 +882,26 @@ test("backpressure emits flow paused/resumed without changing binary output", as
     assert.deepEqual((await pending).body, chunk);
 });
 
-test('gzip state applies upstream flow control and keeps concurrent responses separate', async t => {
+for (const [label, route, type] of [
+    ['state', '/api/widget/state', 'application/json'],
+    ['bundled JS', MOTION + '?v=' + 'a'.repeat(64), 'text/javascript']
+]) test('gzip ' + label + ' applies upstream flow control and keeps concurrent responses separate', async t => {
     const f = await fixture(t), session = await f.session(), publisher = await f.connect(session.ticket);
     const body = Buffer.from(JSON.stringify({ data: randomBytes(50 * 1024).toString('base64') }));
-    const pending = f.read(session.path + '/api/widget/state', { headers: { 'Accept-Encoding': 'gzip' } });
+    const pending = f.read(session.path + route, { headers: { 'Accept-Encoding': 'gzip' } });
     const request = await publisher.next('request');
-    publisher.send({ type: 'headers', id: request.id, status: 200, headers: { 'content-type': 'application/json', 'content-length': String(body.length) } });
+    publisher.send({ type: 'headers', id: request.id, status: 200, headers: { 'content-type': type, 'content-length': String(body.length) } });
     publisher.send({ type: 'chunk', id: request.id, data: body.toString('base64') });
     await publisher.next('flow', frame => frame.id === request.id && frame.paused);
     await publisher.next('flow', frame => frame.id === request.id && !frame.paused);
     publisher.send({ type: 'end', id: request.id });
     assert.deepEqual(gunzipSync((await pending).body), body);
     const responses = Array.from({ length: 12 }, (_, index) => ({ index,
-        pending: f.read(session.path + '/widget/state?type=topliker&screen=' + index, { headers: { 'Accept-Encoding': 'gzip' } }) }));
+        pending: f.read(session.path + route + (route.includes('?') ? '&' : '?') + 'type=topliker&screen=' + index, { headers: { 'Accept-Encoding': 'gzip' } }) }));
     for (let i = 0; i < responses.length; i++) {
         const next = await publisher.next('request');
         const index = Number(new URL(next.path, f.base).searchParams.get('screen'));
-        respond(publisher, next, JSON.stringify({ index, rows: Array(1000).fill(index) }), { 'content-type': 'application/json' });
+        respond(publisher, next, JSON.stringify({ index, rows: Array(1000).fill(index) }), { 'content-type': type });
     }
     for (const { index, pending } of responses) {
         const response = await pending;
@@ -561,17 +911,20 @@ test('gzip state applies upstream flow control and keeps concurrent responses se
     }
 });
 
-test('stalled gzip output still times out after the upstream end frame and releases its slot', async t => {
+for (const [label, route, type] of [
+    ['state', '/api/widget/state', 'application/json'],
+    ['bundled JS', MOTION + '?v=' + 'a'.repeat(64), 'text/javascript']
+]) test('stalled gzip ' + label + ' still times out after the upstream end frame and releases its slot', async t => {
     let block = true;
     const f = await fixture(t, { middleware(req, res) {
-        if (block && req.url.includes('/api/widget/state')) res.write = () => false;
+        if (block && req.url.includes(route.split('?')[0])) res.write = () => false;
     } });
     const session = await f.session(), publisher = await f.connect(session.ticket);
     t.mock.timers.enable({ apis: ['setTimeout'] });
-    const pending = f.start(session.path + '/api/widget/state', { headers: { 'Accept-Encoding': 'gzip' } });
+    const pending = f.start(session.path + route, { headers: { 'Accept-Encoding': 'gzip' } });
     const request = await publisher.next('request');
     const body = JSON.stringify({ data: randomBytes(80 * 1024).toString('base64') });
-    publisher.send({ type: 'headers', id: request.id, status: 200, headers: { 'content-type': 'application/json', 'content-length': String(Buffer.byteLength(body)) } });
+    publisher.send({ type: 'headers', id: request.id, status: 200, headers: { 'content-type': type, 'content-length': String(Buffer.byteLength(body)) } });
     const response = await pending.response; response.on('error', () => {});
     for (let start = 0; start < body.length; start += 4096) {
         publisher.send({ type: 'chunk', id: request.id, data: Buffer.from(body.slice(start, start + 4096)).toString('base64') });
@@ -585,8 +938,8 @@ test('stalled gzip output still times out after the upstream end frame and relea
     await closed;
     t.mock.timers.reset(); block = false;
     assert.equal(publisher.ws.readyState, WebSocket.OPEN);
-    const nextResponse = f.read(session.path + '/api/widget/state');
-    const next = await publisher.next('request'); respond(publisher, next, '{}', { 'content-type': 'application/json' });
+    const nextResponse = f.read(session.path + route);
+    const next = await publisher.next('request'); respond(publisher, next, '{}', { 'content-type': type });
     assert.equal((await nextResponse).text, '{}');
 });
 

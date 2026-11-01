@@ -1,0 +1,12 @@
+{
+  "frames": {
+    "gold": "viral-gold-b9b17a5fb63c9497dd63391f49987de11f7ae0a1e3b658ee876a55fc08018009.webp",
+    "crystal": "viral-crystal-c52f2ae0053f55e18801dd1c1a21d0cc5e8398498ce51f82ccfe6603154889fe.webp",
+    "ember": "viral-ember-d4c52203408ef9f162f16f9277cd2d18fe088cda06482a76e1ca3e7f9b7a33fb.webp"
+  },
+  "textures": {
+    "coin": "viral-coin-5651f6828a7d8e72e5431b4b7301f350900c1ec35dcb0ee69fdc284627564997.webp",
+    "flame": "viral-flame-cff35dd0575dc25e87d7f1686a02a444cd49f0932d47819e67adbc7e8aaa5545.webp"
+  },
+  "moduleHash": "ab66b5b6fdb910d2ba19310d7935d34932530ad77e41ccac73470028d89d8673"
+}

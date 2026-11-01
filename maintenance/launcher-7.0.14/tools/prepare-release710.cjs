@@ -1,0 +1,12 @@
+'use strict';
+const fs=require('node:fs'),path=require('node:path'),crypto=require('node:crypto');
+const source=path.resolve(__dirname,'..'),stage='D:/TikMnG-Release-7.0.10-build',output='D:/TikMnG-Release-7.0.10-ready',baseline='D:/TikMnG-Release-7.0.9-build';
+for(const directory of [stage,output])fs.mkdirSync(directory,{recursive:true});
+for(const file of ['main.js','preload.js','license-server.txt','package-lock.json'])fs.copyFileSync(path.join(source,file),path.join(stage,file));
+for(const directory of ['lib','renderer','build'])fs.cpSync(path.join(source,directory),path.join(stage,directory),{recursive:true});
+fs.copyFileSync(path.join(baseline,'lib/admin-games.json'),path.join(stage,'lib/admin-games.json'));
+const pkg=JSON.parse(fs.readFileSync(path.join(source,'package.json'),'utf8'));pkg.build.directories.output=output;pkg.build.releaseInfo={releaseNotes:fs.readFileSync(path.join(source,'RELEASE-NOTES-7.0.10.md'),'utf8')};
+pkg.build.files.push('!lib/portrait-engine/**/*');
+fs.writeFileSync(path.join(stage,'package.json'),JSON.stringify(pkg,null,2)+'\n');
+if(!fs.existsSync(path.join(stage,'node_modules')))fs.symlinkSync(path.join(baseline,'node_modules'),path.join(stage,'node_modules'),'junction');
+fs.writeFileSync(path.join(output,'build-source.json'),JSON.stringify({version:pkg.version,source,stage,output,published:false,privatePathsExcluded:true},null,2));console.log(JSON.stringify({stage,output,version:pkg.version}));
