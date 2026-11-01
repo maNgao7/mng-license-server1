@@ -7,6 +7,7 @@ import { pathToFileURL } from "node:url";
 import express from "express";
 import { WebSocket } from "ws";
 import { registerOverlayRelay } from "../overlay-relay.js";
+import { gunzipSync } from 'node:zlib';
 
 const SECRET = randomBytes(32);
 const INPUT = { licenseCode: "test-license", deviceId: "device-1", installationId: "install-1", channel: "creator" };
@@ -110,6 +111,67 @@ function respond(publisher, request, body = "ok", headers = {}, status = 200) {
     if (bytes.length) publisher.send({ type: "chunk", id: request.id, data: bytes.toString("base64") });
     publisher.send({ type: "end", id: request.id });
 }
+
+test('state gzip reduces wire bytes without changing JSON, scopes or private cache policy', async t => {
+    const f = await fixture(t), session = await f.session(), publisher = await f.connect(session.ticket);
+    const body = JSON.stringify({ channel: INPUT.channel, topLikes: Array.from({ length: 100 }, (_, i) =>
+        ({ username: 'viewer-' + i, totalLikes: i, avatar: '/widget/gift-assets/portrait-' + ID + '.png' })) });
+    const pending = f.read(session.path + '/api/widget/state?type=topliker', { headers: { 'Accept-Encoding': 'gzip' } });
+    const request = await publisher.next('request');
+    assert.match(request.path, /channel=creator/);
+    respond(publisher, request, body, { 'content-type': 'application/json; charset=utf-8' });
+    const response = await pending;
+    assert.equal(response.headers['content-encoding'], 'gzip');
+    assert.equal(response.headers.vary, 'Accept-Encoding');
+    assert.equal(response.headers['content-length'], undefined);
+    assert.equal(response.headers['cache-control'], 'no-store, no-transform');
+    assert.equal(gunzipSync(response.body).toString(), body);
+    assert.ok(response.body.length < Buffer.byteLength(body) / 5);
+});
+
+test('state gzip honours negotiation and excludes media, SSE, ranges, small bodies and no-body statuses', async t => {
+    const f = await fixture(t), session = await f.session(), publisher = await f.connect(session.ticket);
+    for (const [route, encoding, type, status, extra, body] of [
+        ['/api/widget/state', 'gzip;q=0, identity', 'application/json', 200, {}, 'x'.repeat(2048)],
+        ['/api/widget/state', '', 'application/json', 200, {}, 'x'.repeat(2048)],
+        ['/api/widget/state', 'br', 'application/json', 200, {}, 'x'.repeat(2048)],
+        ['/api/widget/state', 'gzip', 'application/json', 200, {}, '{}'],
+        ['/api/widget/state', 'gzip', 'application/json', 204, {}, ''],
+        ['/api/widget/state', 'gzip', 'application/json', 404, {}, 'x'.repeat(2048)],
+        ['/api/widget/state', 'gzip', 'application/json', 206, { 'content-range': 'bytes 0-2047/4096' }, 'x'.repeat(2048)],
+        ['/tikmng/media/poll', 'gzip', 'application/json', 200, {}, 'x'.repeat(2048)],
+        ['/tikmng/media/events', 'gzip', 'text/event-stream', 200, {}, 'data: test\n\n'],
+        [FILE, 'gzip', 'video/mp4', 200, {}, 'x'.repeat(2048)],
+        ['/widget-overlay.html', 'gzip', 'text/html', 200, {}, 'x'.repeat(2048)]
+    ]) {
+        const pending = f.read(session.path + route, { headers: { 'Accept-Encoding': encoding } });
+        const request = await publisher.next('request');
+        respond(publisher, request, body, { 'content-type': type, ...extra }, status);
+        const response = await pending;
+        assert.equal(response.headers['content-encoding'], undefined, route + ':' + encoding);
+        assert.equal(response.text, body);
+    }
+});
+
+test('compressed chunked state streams validate original length and cancel cleanly', async t => {
+    const f = await fixture(t), session = await f.session(), publisher = await f.connect(session.ticket);
+    const body = JSON.stringify({ rows: Array(2000).fill({ score: 100, name: 'Test profile' }) });
+    const pending = f.read(session.path + '/widget/state', { headers: { 'Accept-Encoding': 'gzip' } });
+    const request = await publisher.next('request');
+    publisher.send({ type: 'headers', id: request.id, status: 200, headers: { 'content-type': 'application/json' } });
+    const bytes = Buffer.from(body);
+    for (let start = 0; start < bytes.length; start += 4096)
+        publisher.send({ type: 'chunk', id: request.id, data: bytes.subarray(start, start + 4096).toString('base64') });
+    publisher.send({ type: 'end', id: request.id });
+    const response = await pending;
+    assert.equal(gunzipSync(response.body).toString(), body);
+    const abandoned = f.start(session.path + '/api/widget/state', { headers: { 'Accept-Encoding': 'gzip' } });
+    const next = await publisher.next('request');
+    publisher.send({ type: 'headers', id: next.id, status: 200, headers: { 'content-type': 'application/json' } });
+    await abandoned.response;
+    abandoned.req.destroy();
+    await publisher.next('cancel', frame => frame.id === next.id);
+});
 
 function signClaims(claims) {
     const payload = Buffer.from(JSON.stringify(claims)).toString("base64url");

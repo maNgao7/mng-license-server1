@@ -1,6 +1,7 @@
 import { createHmac, randomUUID, timingSafeEqual } from "node:crypto";
 import express from "express";
 import { WebSocket, WebSocketServer } from "ws";
+import { createGzip, constants as zlibConstants } from "node:zlib";
 
 const BRIDGE = "/api/overlay/bridge";
 const TOKEN = /^[A-Za-z0-9_-]{43}$/;
@@ -210,6 +211,7 @@ export function registerOverlayRelay(app, { secret, authorize, publicOrigin, rev
         clearTimeout(context.timer);
         clearTimeout(context.totalTimer);
         clearTimeout(context.blockTimer);
+        context.compressor?.destroy();
         if (cancel) send(context.bridge, { type: "cancel", id: context.id });
     }
 
@@ -313,7 +315,22 @@ export function registerOverlayRelay(app, { secret, authorize, publicOrigin, rev
                     context.length = null;
                     context.res.setHeader("X-Accel-Buffering", "no");
                     context.res.socket?.setTimeout(0);
-                } else idle(context);
+                } else {
+                    // Compress live JSON per request, never cache it or transform media/ranges.
+                    if (context.acceptsGzip && context.stateRequest && frame.status === 200 &&
+                            /^application\/json(?:;|$)/i.test(headers['content-type'] || '') &&
+                            !headers['content-range'] && (context.length === null || context.length >= 1024)) {
+                        const compressor = createGzip({ level: zlibConstants.Z_BEST_SPEED });
+                        context.compressor = compressor;
+                        context.res.removeHeader('content-length');
+                        context.res.setHeader('Content-Encoding', 'gzip');
+                        context.res.setHeader('Vary', 'Accept-Encoding');
+                        compressor.on('error', () => fail(context, 502, 'Overlay compression failed'));
+                        compressor.on('drain', context.resume);
+                        compressor.pipe(context.res);
+                    }
+                    idle(context);
+                }
                 return context.res.flushHeaders();
             }
             if (!context.headers) return protocolError(bridge);
@@ -322,17 +339,18 @@ export function registerOverlayRelay(app, { secret, authorize, publicOrigin, rev
                 context.ended = true;
                 clearTimeout(context.timer);
                 clearTimeout(context.totalTimer);
-                return context.res.end();
+                return (context.compressor || context.res).end();
             }
             if (typeof frame.data !== "string" || frame.data.length > 128 * 1024
                 || !/^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/.test(frame.data)) return protocolError(bridge);
             const chunk = Buffer.from(frame.data, "base64");
             context.bytes += chunk.length;
             if ((!context.sse && context.bytes > MAX_BODY) || (context.length !== null && context.bytes > context.length)) return fail(context, 502, "Overlay body limit exceeded");
-            const buffered = [...bridge.requests.values()].reduce((sum, item) => sum + item.res.writableLength, bridge.ws.bufferedAmount);
+            const buffered = [...bridge.requests.values()].reduce((sum, item) => sum + item.res.writableLength +
+                (item.compressor?.writableLength || 0) + (item.compressor?.readableLength || 0), bridge.ws.bufferedAmount);
             if (buffered + chunk.length > MAX_BUFFER) return protocolError(bridge);
             if (!context.sse) idle(context);
-            if (!context.res.write(chunk) && !context.paused) {
+            if (!(context.compressor || context.res).write(chunk) && !context.paused) {
                 context.paused = true;
                 if (!send(bridge, { type: "flow", id: context.id, paused: true })) return disconnect(bridge);
                 context.blockTimer = setTimeout(() => fail(context, 504, "Overlay reader stalled"), 30000);
@@ -373,6 +391,8 @@ export function registerOverlayRelay(app, { secret, authorize, publicOrigin, rev
         if (bridge.requests.size >= 64) return reply(res, 503, "Overlay publisher busy");
         const id = randomUUID();
         const context = { id, bridge, res, method: req.method, pathname: match[2], headers: false, cacheableMedia,
+            stateRequest: /^\/(?:api\/)?widget\/(?:state|(?:top-gift|top-likes|leaderboard|activity)\/state)$/.test(match[2]),
+            acceptsGzip: Boolean(req.headers['accept-encoding']) && req.acceptsEncodings('gzip', 'identity') === 'gzip',
             sse: false, bytes: 0, paused: false, ended: false };
         bridge.requests.set(id, context);
         idle(context, 15000);
@@ -381,12 +401,13 @@ export function registerOverlayRelay(app, { secret, authorize, publicOrigin, rev
         res.once("finish", () => dispose(context));
         res.once("close", () => dispose(context, !res.writableFinished));
         res.once("error", () => dispose(context, true));
-        res.on("drain", () => {
-            if (!context.paused || !bridge.requests.has(id)) return;
+        context.resume = () => {
+            if (!context.paused || !bridge.requests.has(id) || (context.compressor || res).writableNeedDrain) return;
             context.paused = false;
             clearTimeout(context.blockTimer);
             if (!context.ended && !send(bridge, { type: "flow", id, paused: false })) disconnect(bridge);
-        });
+        };
+        res.on("drain", context.resume);
         if (!send(bridge, { type: "request", id, method: req.method, path: match[2] + "?" + query.toString(), headers })) disconnect(bridge);
     });
 

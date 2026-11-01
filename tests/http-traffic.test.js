@@ -44,3 +44,22 @@ test('HTTP meter does not invent bodies for 204/304 and separates errors from co
     const row = traffic.snapshot().categories.find(row => row.name === 'website');
     assert.equal(row.bodyBytes, 7); assert.equal(row.requests, 3); assert.equal(row.completed, 3); assert.equal(row.errors, 1);
 });
+
+test('state breakdown uses only bounded widget/transport labels and never stores scope or query contents', async t => {
+    const traffic = createHttpTraffic(), app = express(); app.use(traffic.middleware);
+    app.use((req, res) => res.end('12345'));
+    const server = http.createServer(app); server.listen(0, '127.0.0.1'); await once(server, 'listening');
+    t.after(() => new Promise(resolve => server.close(resolve)));
+    const base = 'http://127.0.0.1:' + server.address().port;
+    for (const route of [
+        '/overlays/PRIVATE/api/widget/state?type=coinjar&key=SECRET',
+        '/overlays/PRIVATE/api/widget/state?type=coinjar&transport=changes&channel=USERNAME',
+        '/overlays/PRIVATE/widget/top-likes/state',
+        '/overlays/PRIVATE/api/widget/state?type=SECRET',
+        '/overlays/PRIVATE/api/widget/state?channel=USERNAME'
+    ]) await (await fetch(base + route)).text();
+    const snapshot = traffic.snapshot();
+    assert.equal(snapshot.categories.find(row => row.name === 'overlay-state').bodyBytes, 25);
+    assert.deepEqual(snapshot.stateWidgets.map(row => row.name).sort(), ['coinjar:changes', 'coinjar:snapshot', 'legacy-top-likes:snapshot', 'unknown:snapshot', 'unscoped:snapshot']);
+    assert.equal(/PRIVATE|SECRET|USERNAME/.test(JSON.stringify(snapshot)), false);
+});
