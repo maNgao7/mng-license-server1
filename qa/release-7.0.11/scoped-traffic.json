@@ -1,0 +1,38 @@
+{
+  "syntheticScenario": true,
+  "events": 120,
+  "pollCursor1118": true,
+  "notTotalRenderSavings": true,
+  "rows": [
+    {
+      "type": "myactions",
+      "baseline710Bytes": 174404,
+      "currentBytes": 1401,
+      "reductionPercent": 99.2
+    },
+    {
+      "type": "actionwheel",
+      "baseline710Bytes": 174404,
+      "currentBytes": 1790,
+      "reductionPercent": 99
+    },
+    {
+      "type": "streamtimer",
+      "baseline710Bytes": 174404,
+      "currentBytes": 479,
+      "reductionPercent": 99.7
+    },
+    {
+      "type": "coinjar",
+      "baseline710Bytes": 250753,
+      "currentBytes": 77987,
+      "reductionPercent": 68.9
+    },
+    {
+      "type": "pk",
+      "baseline710Bytes": 275,
+      "currentBytes": 275,
+      "reductionPercent": 0
+    }
+  ]
+}

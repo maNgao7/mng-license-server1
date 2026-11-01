@@ -1,0 +1,170 @@
+{
+  "passed": true,
+  "variants": 18,
+  "notificationFrames": 6,
+  "checks": [
+    {
+      "kind": "raconking",
+      "frame": "sultan",
+      "photoWidth": 412.71875,
+      "artWidth": 670,
+      "within": true,
+      "nameFits": true,
+      "transparent": true
+    },
+    {
+      "kind": "raconking",
+      "frame": "ruby",
+      "photoWidth": 446.21875,
+      "artWidth": 670,
+      "within": true,
+      "nameFits": true,
+      "transparent": true
+    },
+    {
+      "kind": "raconking",
+      "frame": "tulip",
+      "photoWidth": 391.265625,
+      "artWidth": 670,
+      "within": true,
+      "nameFits": true,
+      "transparent": true
+    },
+    {
+      "kind": "raconking",
+      "frame": "emerald",
+      "photoWidth": 367.15625,
+      "artWidth": 670,
+      "within": true,
+      "nameFits": true,
+      "transparent": true
+    },
+    {
+      "kind": "raconking",
+      "frame": "imperial",
+      "photoWidth": 371.171875,
+      "artWidth": 670,
+      "within": true,
+      "nameFits": true,
+      "transparent": true
+    },
+    {
+      "kind": "raconking",
+      "frame": "olympus",
+      "photoWidth": 368.5,
+      "artWidth": 670,
+      "within": true,
+      "nameFits": true,
+      "transparent": true
+    },
+    {
+      "kind": "streambeauty",
+      "frame": "sultan",
+      "photoWidth": 412.71875,
+      "artWidth": 670,
+      "within": true,
+      "nameFits": true,
+      "transparent": true
+    },
+    {
+      "kind": "streambeauty",
+      "frame": "ruby",
+      "photoWidth": 446.21875,
+      "artWidth": 670,
+      "within": true,
+      "nameFits": true,
+      "transparent": true
+    },
+    {
+      "kind": "streambeauty",
+      "frame": "tulip",
+      "photoWidth": 391.265625,
+      "artWidth": 670,
+      "within": true,
+      "nameFits": true,
+      "transparent": true
+    },
+    {
+      "kind": "streambeauty",
+      "frame": "emerald",
+      "photoWidth": 367.15625,
+      "artWidth": 670,
+      "within": true,
+      "nameFits": true,
+      "transparent": true
+    },
+    {
+      "kind": "streambeauty",
+      "frame": "imperial",
+      "photoWidth": 371.171875,
+      "artWidth": 670,
+      "within": true,
+      "nameFits": true,
+      "transparent": true
+    },
+    {
+      "kind": "streambeauty",
+      "frame": "olympus",
+      "photoWidth": 368.5,
+      "artWidth": 670,
+      "within": true,
+      "nameFits": true,
+      "transparent": true
+    },
+    {
+      "kind": "streamhandsome",
+      "frame": "sultan",
+      "photoWidth": 412.71875,
+      "artWidth": 670,
+      "within": true,
+      "nameFits": true,
+      "transparent": true
+    },
+    {
+      "kind": "streamhandsome",
+      "frame": "ruby",
+      "photoWidth": 446.21875,
+      "artWidth": 670,
+      "within": true,
+      "nameFits": true,
+      "transparent": true
+    },
+    {
+      "kind": "streamhandsome",
+      "frame": "tulip",
+      "photoWidth": 391.265625,
+      "artWidth": 670,
+      "within": true,
+      "nameFits": true,
+      "transparent": true
+    },
+    {
+      "kind": "streamhandsome",
+      "frame": "emerald",
+      "photoWidth": 367.15625,
+      "artWidth": 670,
+      "within": true,
+      "nameFits": true,
+      "transparent": true
+    },
+    {
+      "kind": "streamhandsome",
+      "frame": "imperial",
+      "photoWidth": 371.171875,
+      "artWidth": 670,
+      "within": true,
+      "nameFits": true,
+      "transparent": true
+    },
+    {
+      "kind": "streamhandsome",
+      "frame": "olympus",
+      "photoWidth": 368.5,
+      "artWidth": 670,
+      "within": true,
+      "nameFits": true,
+      "transparent": true
+    }
+  ],
+  "errors": []
+}

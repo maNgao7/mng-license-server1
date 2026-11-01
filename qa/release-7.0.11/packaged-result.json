@@ -1,0 +1,15 @@
+{
+  "passed": true,
+  "packagedExecutable": true,
+  "newGameInLibrary": true,
+  "newGameAnnouncement": true,
+  "launchThroughRealIPC": true,
+  "frameSettingsSaved": true,
+  "exactGiftDelivery": true,
+  "eightIndependentGiftPickers": true,
+  "timerAdditiveAndDeduplicated": true,
+  "fastVoicesOnly": true,
+  "savedAudiencePreserved": true,
+  "originalProfileUnchanged": true,
+  "errors": []
+}

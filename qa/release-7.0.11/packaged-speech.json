@@ -1,0 +1,20 @@
+{
+  "passed": true,
+  "actualPackagedExecutable": true,
+  "nativeONNXAbsent": true,
+  "portableWasm": true,
+  "runs": [
+    {
+      "id": "okur-tr-v1",
+      "milliseconds": 875,
+      "bytes": 245804,
+      "rms": 0.09539596271851651
+    },
+    {
+      "id": "ema-tr-v1",
+      "milliseconds": 1086,
+      "bytes": 203564,
+      "rms": 0.054254671394858324
+    }
+  ]
+}

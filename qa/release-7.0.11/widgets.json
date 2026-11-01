@@ -1,0 +1,30 @@
+{
+  "passed": true,
+  "actualHTTPS": true,
+  "real2v2PacketReplay": true,
+  "fourOriginalProfiles": true,
+  "fourCornerGeometry": true,
+  "mobileFit": true,
+  "raconEightPeople": true,
+  "sculptedFrame": true,
+  "wheelHidesBeforeAndAfter": true,
+  "likeThreshold100": true,
+  "streamTimer": true,
+  "smoke": [
+    "likefountain",
+    "topgift",
+    "coindrop",
+    "firework",
+    "gifts",
+    "myactions",
+    "wheel",
+    "actionwheel",
+    "topgifter",
+    "topliker",
+    "streambuddies",
+    "penalty",
+    "coinjar",
+    "giftpusher"
+  ],
+  "errors": []
+}

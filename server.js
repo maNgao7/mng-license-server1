@@ -534,10 +534,10 @@ function logEkle(lisansKod, cihazKimlik, islem, ip) {
 // =====================================================================
 // SÜRÜM BİLGİLERİ & İNDİRME LİNKLERİ
 // =====================================================================
-const EN_GUNCEL_SURUM = "7.0.10";
+const EN_GUNCEL_SURUM = "7.0.11";
 const EN_DUSUK_SURUM = "1.0.0";
-const SETUP_INDIRME_LINKI = "https://github.com/maNgao7/mng-license-server1/releases/download/v7.0.10/TikMnG-Setup-7.0.10.exe";
-const PORTABLE_INDIRME_LINKI = "https://github.com/maNgao7/mng-license-server1/releases/download/v7.0.10/TikMnG-7.0.10-Portable.exe";
+const SETUP_INDIRME_LINKI = "https://github.com/maNgao7/mng-license-server1/releases/download/v7.0.11/TikMnG-Setup-7.0.11.exe";
+const PORTABLE_INDIRME_LINKI = "https://github.com/maNgao7/mng-license-server1/releases/download/v7.0.11/TikMnG-7.0.11-Portable.exe";
 const SETUP_WEB_LINKI = SETUP_INDIRME_LINKI;
 const VARSAYILAN_PAKET_LINKLERI = Object.freeze({
     BACKGROUNDS: "https://drive.usercontent.google.com/download?id=1VHwmK2Lt-DN6jVYB1Gp2sbeW6hU_rgB6&export=download&confirm=t",
@@ -551,6 +551,10 @@ const VARSAYILAN_PAKET_LINKLERI = Object.freeze({
 
 // Her güncellemede eklenen/değişen özellikler listesi
 const SURUM_NOTLARI = [
+    "v7.0.11: Canlı PK dört köşe görünümü, gerçek yayıncı profilleri ve maç bazında tek seferlik galibiyet sayacı. Racona Girenler için altı çerçeve, belirgin başlık ve tüm kalıcı havuzu dolaşan liste eklendi.",
+    "v7.0.11: Eylem Çarkı hediye gelince görünür, rastgele sonucu gösterip kaybolur. Yeni Yayın Süresi widget'ında sekiz hediye için ayrı süre belirlenebilir. Sayaç duraklatılabilir; TikTok yayınını zorla açık tutmaz.",
+    "v7.0.11: Okur ve Ema taşınabilir WebAssembly ses motoruna geçirildi; ek Visual C++ kurulumu gerekmez. Eksik seçili ses paketi etkinleştirme sırasında kurulur. Yaygın emojiler Türkçe adlarıyla okunur.",
+    "v7.0.11: Etkileşim bildirimlerinde kişi başı beğeni eşiği ve hediye başlıkları denetlenir. Penaltı, hediye itici, son hediyeler ve havai fişek kimlik alanları yenilendi. Widget veri yanıtları küçültüldü; oyunlar ve kayıtlı ayarlar korunur.",
     "v7.0.10: Yeni oyun Profil Yarışması: iki, üç veya dört profil yan yana yarışır. İzleyici çerçeve numarasıyla taraf seçer; sonraki her hediyesi seçtiği kişiye coin değeri kadar puan kazandırır. Ayarlanabilir süre, duraklatma, 30 çerçeve, hediye bildirimleri, kazanan ekranı ve saydam HTTPS widget bulunur. Java veya başka launcher gerekmez.",
     "v7.0.10: Racon Kralı, Yayın Güzeli, Yayın Yakışıklısı ve Etkileşim Bildirimleri için altı işlemeli çerçeve seçeneği eklendi. Profil fotoğrafları orijinal yüksek çözünürlüklü kaynaklardan çözümlenir; küçük fotoğraf büyük olanın üzerine yazılmaz. Kaynakta bulunmayan kalite yapay olarak üretilmez.",
     "v7.0.10: Beğeni sıralaması, Racona Girenler, canlı PK, beğeni şelalesi ve hediye havai fişeği görünümü yenilendi. Yayın Arkadaşları yorum yapanları ve beğenenleri de alır; yoğun yayında kişiler dönüşümlü gösterilir. Hediye kavanozunun taşma hareketi düzenlendi.",

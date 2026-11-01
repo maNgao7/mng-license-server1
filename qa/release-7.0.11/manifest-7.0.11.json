@@ -1,0 +1,24 @@
+{
+  "version": "7.0.11",
+  "createdAt": "2026-11-01T10:18:39.106Z",
+  "files": [
+    {
+      "name": "TikMnG-Setup-7.0.11.exe",
+      "bytes": 242649883,
+      "sha256": "a99285bf3c55b3584d724ba59a540396375a4cb39f0303d318dcfa82d61fac84",
+      "sha512": "n1p7a9j4RGUVI3vzpfFw3KS05sGEYXdlnnowG4/ttwHC6KTvolNpkr0es8fnmEsV9afFYvaII7h7ULLdAQpDlQ=="
+    },
+    {
+      "name": "TikMnG-Setup-7.0.11.exe.blockmap",
+      "bytes": 252906,
+      "sha256": "bbbe4ebc3fde2abf39087eadb91bc85bcad6c36be4b6d498a96b32b060cfd52b",
+      "sha512": "8z6BIN+UCqy/IfkF6G+kqfkm6F+ISUOJxUdBly1O6X1KKl7UIXIz5ZTVGQe5Q5afH2KmMeDj/GghSg8UAYUAQg=="
+    },
+    {
+      "name": "TikMnG-7.0.11-Portable.exe",
+      "bytes": 242471313,
+      "sha256": "4d42478d4726268193059300a9b15d92de941e8d07b156b107b5cd9163fc42d6",
+      "sha512": "5nBdcySturV2L25LLmr2aVbPl6a/EBfTiTcWidKlroE9NWSwglMqheVI2DLYQXhu9b9fkHaiL8ABvgGU5jYIuQ=="
+    }
+  ]
+}
