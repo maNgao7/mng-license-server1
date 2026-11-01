@@ -288,13 +288,15 @@ export function registerOverlayRelay(app, { secret, authorize, publicOrigin, rev
                 // Only immutable, revision-scoped owned media may use a private browser cache.
                 // State, HTML, errors, redirects and old publishers always remain no-store.
                 if (context.cacheableMedia && [200, 206].includes(frame.status) &&
-                        /^private,\s*max-age=3600$/.test(frame.headers?.['cache-control'] || '')) {
-                    context.res.setHeader('Cache-Control', 'private, max-age=3600, no-transform');
+                        /^private,\s*max-age=(?:3600|86400)$/.test(frame.headers?.['cache-control'] || '')) {
+                    context.res.setHeader('Cache-Control', frame.headers['cache-control']+', no-transform');
                 }
+                const privatePortrait = /^\/widget\/gift-assets\/portrait-[a-f0-9-]{36}\.png$/i.test(context.pathname) &&
+                    /^private,\s*max-age=86400$/.test(frame.headers?.['cache-control'] || '');
                 if (GIFT.test(context.pathname) && frame.status === 200 &&
                         /^image\/(?:png|webp|gif|jpeg)(?:;|$)/i.test(headers['content-type'] || '') &&
-                        /^public,\s*max-age=86400$/.test(frame.headers?.['cache-control'] || '')) {
-                    context.res.setHeader('Cache-Control', 'private, max-age=3600, no-transform');
+                        (privatePortrait || /^public,\s*max-age=86400$/.test(frame.headers?.['cache-control'] || ''))) {
+                    context.res.setHeader('Cache-Control', privatePortrait?'private, max-age=86400, no-transform':'private, max-age=3600, no-transform');
                 }
                 context.res.setHeader("Content-Security-Policy", publicCsp(headers["content-security-policy"]));
                 context.res.setHeader("Content-Type", headers["content-type"] || "application/octet-stream");

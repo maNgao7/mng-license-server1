@@ -12,11 +12,14 @@ import { assertLicenseEditable, editLicense, renewLicense } from "./license-mana
 import { registerContentRoutes } from "./content-management.js";
 import { registerOverlayRelay } from "./overlay-relay.js";
 import { createOverlayAuthorization } from "./overlay-authorization.js";
+import { createHttpTraffic } from "./http-traffic.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
+const httpTraffic = createHttpTraffic();
+app.use(httpTraffic.middleware);
 const PORT = process.env.PORT || 4000;
 
 // =====================================================================
@@ -534,10 +537,10 @@ function logEkle(lisansKod, cihazKimlik, islem, ip) {
 // =====================================================================
 // SÜRÜM BİLGİLERİ & İNDİRME LİNKLERİ
 // =====================================================================
-const EN_GUNCEL_SURUM = "7.0.11";
+const EN_GUNCEL_SURUM = "7.0.12";
 const EN_DUSUK_SURUM = "1.0.0";
-const SETUP_INDIRME_LINKI = "https://github.com/maNgao7/mng-license-server1/releases/download/v7.0.11/TikMnG-Setup-7.0.11.exe";
-const PORTABLE_INDIRME_LINKI = "https://github.com/maNgao7/mng-license-server1/releases/download/v7.0.11/TikMnG-7.0.11-Portable.exe";
+const SETUP_INDIRME_LINKI = "https://github.com/maNgao7/mng-license-server1/releases/download/v7.0.12/TikMnG-Setup-7.0.12.exe";
+const PORTABLE_INDIRME_LINKI = "https://github.com/maNgao7/mng-license-server1/releases/download/v7.0.12/TikMnG-7.0.12-Portable.exe";
 const SETUP_WEB_LINKI = SETUP_INDIRME_LINKI;
 const VARSAYILAN_PAKET_LINKLERI = Object.freeze({
     BACKGROUNDS: "https://drive.usercontent.google.com/download?id=1VHwmK2Lt-DN6jVYB1Gp2sbeW6hU_rgB6&export=download&confirm=t",
@@ -551,6 +554,8 @@ const VARSAYILAN_PAKET_LINKLERI = Object.freeze({
 
 // Her güncellemede eklenen/değişen özellikler listesi
 const SURUM_NOTLARI = [
+    "v7.0.12: Değişmeyen widget verileri tekrar gönderilmez; puan, hediye ve ayar değişiklikleri bekleyen bağlantıya iletilir. Sayaçlar yerelde ilerler. Boş video kaynakları sık sorgu yerine olay bekler; gerçek yayın kaynakları arka planda çalışır.",
+    "v7.0.12: Orijinal profil fotoğrafları ve sürümlü yerel medya için özel tarayıcı önbelleği iyileştirildi. Uygun kısa videolar yüklenen kopyadan yeniden oynatılır; kalite düşürülmez. Gizli galeri ön izlemeleri durur. Mevcut oyunlar, lisanslar ve ayarlar korunur. Trafik tasarrufu kullanıma bağlıdır; toplam fatura için sabit yüzde veya ücret garantisi yoktur.",
     "v7.0.11: Canlı PK dört köşe görünümü, gerçek yayıncı profilleri ve maç bazında tek seferlik galibiyet sayacı. Racona Girenler için altı çerçeve, belirgin başlık ve tüm kalıcı havuzu dolaşan liste eklendi.",
     "v7.0.11: Eylem Çarkı hediye gelince görünür, rastgele sonucu gösterip kaybolur. Yeni Yayın Süresi widget'ında sekiz hediye için ayrı süre belirlenebilir. Sayaç duraklatılabilir; TikTok yayınını zorla açık tutmaz.",
     "v7.0.11: Okur ve Ema taşınabilir WebAssembly ses motoruna geçirildi; ek Visual C++ kurulumu gerekmez. Eksik seçili ses paketi etkinleştirme sırasında kurulur. Yaygın emojiler Türkçe adlarıyla okunur.",
@@ -1521,6 +1526,11 @@ app.get("/api/admin/istatistikler", adminKontrol, (req, res) => {
 
 app.get("/api/health", (req, res) => {
     res.json({ status: "ok", time: Date.now() });
+});
+
+app.get('/api/admin/http-traffic', adminKontrol, (req, res) => {
+    res.setHeader('Cache-Control', 'no-store');
+    res.json(httpTraffic.snapshot(req.query.hours));
 });
 
 app.use((error, req, res, next) => {

@@ -153,6 +153,63 @@ test('static gift artwork can use a private cache, but errors, HTML and live sta
     }
 });
 
+test('new private media cache age and empty change responses survive the relay unchanged', async t => {
+    const f=await fixture(t),session=await f.session(),publisher=await f.connect(session.ticket);
+    let pending=f.read(session.path+FILE+'?revision='+'a'.repeat(24)),request=await publisher.next('request');
+    respond(publisher,request,'unchanged-original-video',{'cache-control':'private, max-age=86400','content-type':'video/mp4'});
+    let response=await pending;assert.equal(response.headers['cache-control'],'private, max-age=86400, no-transform');assert.equal(response.text,'unchanged-original-video');
+    pending=f.read(session.path+'/api/widget/state?transport=changes&after='+'b'.repeat(32));request=await publisher.next('request');
+    assert.match(request.path,/transport=changes/);respond(publisher,request,'',{'content-type':'application/json'},204);
+    response=await pending;assert.equal(response.status,204);assert.equal(response.body.length,0);assert.equal(response.headers['cache-control'],'no-store, no-transform');
+    pending=f.read(session.path+'/tikmng/media/poll?client='+ID+'&wait=1');request=await publisher.next('request');assert.match(request.path,/wait=1/);
+    respond(publisher,request,'{"events":[]}',{'content-type':'application/json'});assert.equal((await pending).status,200);
+});
+
+test('original private portrait images retain a browser-only cache without caching live state', async t => {
+    const f = await fixture(t), session = await f.session(), publisher = await f.connect(session.ticket);
+    const portrait = '/widget/gift-assets/portrait-' + ID + '.png';
+    for (const [route, contentType, status, cache] of [
+        [portrait, 'image/jpeg', 200, true],
+        [portrait, 'image/png', 404, false],
+        [portrait, 'text/html', 200, false],
+        ['/widget/gift-assets/7934.png', 'image/png', 200, false],
+        ['/api/widget/state', 'application/json', 200, false],
+        [FILE, 'image/jpeg', 200, false]
+    ]) {
+        const pending = f.read(session.path + route), request = await publisher.next('request');
+        respond(publisher, request, 'original-portrait-bytes', { 'content-type': contentType, 'cache-control': 'private, max-age=86400' }, status);
+        const response = await pending;
+        assert.equal(response.headers['cache-control'], cache ? 'private, max-age=86400, no-transform' : 'no-store, no-transform');
+        assert.equal(response.text, 'original-portrait-bytes');
+    }
+});
+
+test('a real browser reuses an original portrait instead of downloading it after each DOM replacement', {
+    skip: !process.env.OVERLAY_RELAY_PLAYWRIGHT
+}, async t => {
+    const { chromium } = await import(pathToFileURL(process.env.OVERLAY_RELAY_PLAYWRIGHT).href);
+    const f = await fixture(t), session = await f.session(), publisher = await f.connect(session.ticket);
+    const portrait = '/widget/gift-assets/portrait-' + ID + '.png';
+    const png = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jZQkAAAAASUVORK5CYII=', 'base64');
+    let downloads = 0;
+    publisher.ws.on('message', raw => {
+        const request = JSON.parse(raw); if (request.type !== 'request') return;
+        if (request.path.split('?')[0] === portrait) { downloads++; respond(publisher, request, png, { 'content-type': 'image/png', 'cache-control': 'private, max-age=86400' }); }
+        else respond(publisher, request, `<img src="${session.path + portrait}">`, { 'content-type': 'text/html' });
+    });
+    const browser = await chromium.launch({ headless: true, executablePath: process.env.BROWSER_EXECUTABLE });
+    try {
+        const context = await browser.newContext(), page = await context.newPage();
+        await page.goto(f.base + session.path + '/widget-overlay.html');
+        await page.locator('img').evaluate(img => img.decode());
+        await page.locator('img').evaluate(async img => { const next = new Image(); next.src = img.src; img.replaceWith(next); await next.decode(); });
+        assert.equal(downloads, 1, 'Same photo must come from the browser cache');
+        const isolated = await browser.newContext(), other = await isolated.newPage();
+        await other.goto(f.base + session.path + '/widget-overlay.html'); await other.locator('img').evaluate(img => img.decode());
+        assert.equal(downloads, 2, 'An independent browser context obtains its own private copy');
+    } finally { await browser.close(); }
+});
+
 test("session authorizes exact input and issues stable owner/device/install/channel tokens", async t => {
     const seen = [];
     const f = await fixture(t, { authorize: input => { seen.push(input); return { ownerId: input.licenseCode === "other" ? "owner-2" : "owner-1" }; } });

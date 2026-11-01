@@ -1,0 +1,52 @@
+{
+  "passed": true,
+  "version": "7.0.12",
+  "createdAt": "2026-11-01T11:37:17.497Z",
+  "launcherTests": {
+    "passed": 1072,
+    "failed": 0,
+    "skipped": 0
+  },
+  "serverTests": {
+    "passed": 83,
+    "failed": 0,
+    "skipped": 0
+  },
+  "packagedIPC": true,
+  "packagedBothVoices": true,
+  "realBrowserLocalRelay": true,
+  "measurements": {
+    "passed": true,
+    "realBrowser": true,
+    "realWebSocketRelay": true,
+    "localOnlyNoRenderTraffic": true,
+    "intervalMs": 12000,
+    "old": {
+      "requests": 17,
+      "bodyBytes": 8738,
+      "initial": "00:05:00",
+      "final": "00:04:49"
+    },
+    "current": {
+      "requests": 3,
+      "bodyBytes": 567,
+      "initial": "00:04:48",
+      "final": "00:04:36"
+    },
+    "stateBodyReductionPercent": 93.51,
+    "giftLatencyMs": 533,
+    "pkScoreUpdates": true,
+    "videoFirstBodyBytes": 18010,
+    "videoSecondBodyBytes": 0,
+    "nativeVideoElementReused": true,
+    "timerContinuesLocally": true,
+    "errors": []
+  },
+  "photoBytesUnchanged": true,
+  "existingGamesUnchanged": true,
+  "userSettingsPreserved": true,
+  "invoiceReductionGuaranteed": false,
+  "realPaidGiftTest": false,
+  "otherCustomerHardwareTest": false,
+  "signedPublisher": false
+}

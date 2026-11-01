@@ -251,7 +251,7 @@ test("a failed durable write is an error and does not consume a seat", async t =
 test("admin assets are reachable, private data stays behind session auth, and public requests work", async t => {
     const f = await fixture(t);
     for (const asset of ["/", "/admin/", "/admin/dashboard.css", "/admin/dashboard.js", "/admin/lucide.js"]) assert.equal((await fetch(f.base + asset)).status, 200);
-    for (const route of ["/api/admin/lisanslar", "/api/admin/talepler", "/api/admin/istatistikler"]) assert.equal((await f.request(route)).status, 401);
+    for (const route of ["/api/admin/lisanslar", "/api/admin/talepler", "/api/admin/istatistikler", "/api/admin/http-traffic"]) assert.equal((await f.request(route)).status, 401);
     const sent = await f.request("/api/talep-gonder", { ad: "Test", iletisim: "test@example.invalid", tur: "lisans", mesaj: "Agency inquiry" });
     assert.equal(sent.data.basarili, true);
     assert.equal((await f.request("/api/admin/talepler", undefined, true)).data.length, 1);

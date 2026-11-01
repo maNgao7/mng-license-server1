@@ -1,0 +1,102 @@
+{
+  "version": 3,
+  "createdAt": "2026-10-21",
+  "policy": "Original concept-based artwork for every current and future game. No screenshots. Replace on user request.",
+  "covers": [
+    {
+      "id": "caahr", "file": "caahr-v2.png", "source": "built-in image_gen",
+      "concept": "Shocked face on the rear of a turquoise car driving an alpine industrial obstacle course; premium original concept art.",
+      "promptFile": "caahr-v2-prompt.txt", "sha256": "c9216bfb985d53278feca10c99eca0eda5669b1b3a0948e6e45c4e9001d4c458"
+    },
+    {
+      "id": "caahr", "file": "caahr-v1.png", "source": "built-in image_gen",
+      "concept": "Original wide 16:9 premium 3D illustration: fully visible vivid green compact car viewed from behind, shocked expressive face on rear facing viewer, four-lane straight mountain track, ramps, rotating industrial hammers and rollers, finish arch, warm bright daylight, cinematic motion, teal and coral accents. No text, screenshot, logos or copied artwork.",
+      "promptFile": "caahr-v1-prompt.txt",
+      "sha256": "d68d5f7ed71ac3e4fac7f4d1c4b30884b4ce910fe58e8b7acb8b256ccbcc29bd"
+    },
+    {
+      "id": "orbit",
+      "file": "orbit-v3.png",
+      "source": "built-in image_gen",
+      "concept": "A large turquoise bubble absorbs a red bubble in an orbit arena; matching rivals burst on collision."
+    },
+    {
+      "id": "snow-war",
+      "file": "snow-war-v3.png",
+      "source": "built-in image_gen",
+      "concept": "Voxel winter warriors throw bursting snowballs beside a lit Christmas tree and giant snowman."
+    },
+    {
+      "id": "battle-royale",
+      "file": "battle-royale-v3.png",
+      "source": "built-in image_gen",
+      "concept": "Voxel soldiers, parachute arrivals, cargo plane, green island village and closing electric blue zone."
+    },
+    {
+      "id": "zombie-war",
+      "file": "zombie-war-v3.png",
+      "source": "built-in image_gen",
+      "concept": "Voxel tactical survivor faces a zombie crowd and mutant in a desert alley with protective guardian."
+    },
+    {
+      "id": "battle-game",
+      "file": "battle-game-v3.png",
+      "source": "built-in image_gen",
+      "concept": "Turquoise and crimson knight armies charge across a castle battlefield."
+    },
+    {
+      "id": "crowd-control",
+      "file": "crowd-control-v3.png",
+      "source": "built-in image_gen",
+      "concept": "Use case: stylized-concept. Asset type: original full bleed landscape 16:10 game cover, not screenshot. Concept: MNG Crowd Control, a lone streamer hero survives an arena where viewers send hordes, bosses, hazards and helpful upgrades. One plucky stylized armored adventurer braces at center with sword and round shield, surrounded by a wave of small goblin-like fantasy opponents and an enormous stone golem boss looming behind. Gift crates release a protective teal energy ring, a playful meteor hazard descends at edge. Circular cracked stone arena with grandstands. Premium high-end stylized 3D game key art, dramatic action, expressive bold silhouettes, turquoise energy contrasted with vermilion and emerald stone, sharp material detail and directional lighting. Distinct from medieval army art: one hero against a monster crowd in close arena. No text, UI, HUD, logos, watermark, frame, gore or screenshot. Keep main subject above bottom fifth for app title."
+    },
+    {
+      "id": "pony-life",
+      "file": "pony-life-v3.png",
+      "source": "built-in image_gen",
+      "concept": "Use case: stylized-concept. Asset: original landscape 16:10 full bleed cover for Pony Katırı, a live audience horse race. Three charming athletic stylized ponies race neck-and-neck toward camera on a lush racetrack, chestnut pony with turquoise tack in front, white pony with red tack leaping alongside, dark pony trailing with a vivid multicolor speed trail representing audience boosts. Flowered grass, a distant checkered finish arch, lively spectator grandstands, green hills, crystal clear afternoon sky. Premium animated feature 3D illustration, playful rather than babyish, beautifully modeled expressive faces and flowing manes, detailed leather and fur, dynamic diagonal composition, lime green turquoise and coral accents. Readable at thumbnail size. No jockey needed. No text, logos, UI, HUD, watermark, frame or screenshot. Keep faces and action above lower fifth for title overlay."
+    },
+    {
+      "id": "frog-river",
+      "file": "frog-river-v3.png",
+      "source": "built-in image_gen",
+      "concept": "Use case: stylized-concept. Asset: original full bleed landscape 16:10 game launcher key art for Vak Vak Jump. A charming bright green frog with huge expressive eyes leaps toward the viewer from a lily pad, droplets suspended around its tiny spread fingers, a trail of lily pads zigzags over a clear rushing turquoise river toward a distant goal. Smooth river stones, reeds, white water lilies, green forest and tall mountains in the background, a small floating gift boost crate on a side pad. High-end animated feature 3D illustration with beautiful wet skin texture, vivid jade and aqua with sunny yellow flower accents, joyful energetic adventure, strong central silhouette readable on small tiles. Do not depict any interface or game screenshot. No text, logos, watermark, frame, HUD. Keep character and river path away from lower fifth for title overlay."
+    },
+    {
+      "id": "penalty-kick",
+      "file": "penalty-kick-v3.png",
+      "source": "built-in image_gen",
+      "concept": "Use case: stylized-concept. Asset: original full bleed landscape 16:10 launcher game cover for a live-audience penalty shootout. Low dynamic camera behind a football striker in a teal and black unbranded kit just as boot strikes ball; football close in foreground with short vivid trajectory, goalkeeper in coral kit dives across a goal with realistic woven white net. Packed brightly lit stadium and green pitch, white penalty spot, confetti from audience energy. Premium polished stylized sports 3D illustration, athletic believable anatomy, strong readable silhouettes, emerald turf with turquoise coral and stadium white lights, exciting decisive match moment. No real footballer, club badge, sponsor, text, logos, scoreboard, UI, HUD, watermark or frame. NOT a game screenshot. Keep main action above bottom fifth for app title overlay."
+    },
+    {
+      "id": "tightrope-balance",
+      "file": "tightrope-balance-v3.png",
+      "source": "built-in image_gen",
+      "concept": "Use case: stylized-concept. Asset: original landscape 16:10 full bleed launcher cover for Dengesiz Yayıncı. A nervous but determined stylized young adult performer walks a thin tightrope high over a dramatic mountain canyon, holding a long balancing pole horizontally. TWO transparent glass jars hang from opposite ends of the pole: left filled with pink gift gems, right filled with turquoise gift gems, visually explaining audience-weight balance. One foot ahead, expressive readable pose, sheer green rocky cliffs and a small goal platform across the canyon, beautiful clouded sky and birds in distant valley. High-end animated 3D illustration, playful thrilling adventure, detailed rope fibers glass and fabric, spectacular depth but main character clear at tile size, teal coral and fresh green accents. No text, logos, UI, HUD, watermark, frame or screenshot. Keep subject above bottom fifth."
+    },
+    {
+      "id": "duck-hunt",
+      "file": "duck-hunt-v3.png",
+      "source": "built-in image_gen",
+      "concept": "Use case: stylized-concept. Asset: original full bleed landscape 16:10 game library key art for MNG Dodge Hunter, a carnival duck-target shooting gallery. Bright glossy yellow TOY duck targets with orange beaks bounce and slide across turquoise rails at a charming carnival booth; one duck target tilts back after a hit, little paper stars burst around it. Foreground left a polished colorful cork-pop target rifle aimed toward the targets, barrel visible not blocking hero duck. Striped red-white carnival awning, warm round fairground lights and wooden booth, festive joyful energy. Premium stylized 3D animated-feature render, tactile toy lacquer and wood, beautiful warm light with turquoise red and lemon palette, crisp composition readable small. No real animals harmed, no blood, no real weapon branding. No words, logos, UI, HUD, watermark, border or screenshot. Keep central ducks above lower fifth for app title."
+    },
+    {
+      "id": "gelene-gecene",
+      "file": "gelene-gecene-v3.png",
+      "source": "built-in image_gen",
+      "concept": "Use case: stylized-concept. Original full bleed landscape 16:10 launcher cover for Gelene Geçene, a low-poly survival game. A low-poly survivor wearing a rugged green backpack runs through an abandoned forest outpost toward a glowing green rescue terminal, hand reaching for its physical emergency button. Angular monster silhouettes and low-poly undead emerge from the pine woods behind; a care package crate offers help beside the terminal. Moody but clearly visible mountain camp with a cabin, fence and rescue antenna, cool forest greens and teal contrasted with warm warning red. Deliberate refined low-poly polygonal 3D art with crisp flat facets, premium cinematic composition and expressive tension. NOT voxel blocks, distinguish it from Minecraft Zombie War. No gore, text, brand logos, UI, HUD, watermark, frame, screenshot. Keep hero and terminal in upper four fifths for title overlay."
+    },
+    {
+      "id": "vs",
+      "file": "vs-v3.png",
+      "source": "built-in image_gen",
+      "concept": "Use case: stylized-concept. Asset: original full bleed landscape 16:10 launcher cover for a live-stream profile-versus-profile game. Two expressive fictional adult creator busts face off, a young man in turquoise jacket on left and a young woman in coral jacket on right, each inside a large luminous circular profile portrait ring. Between them a beautiful energetic clash of turquoise and hot pink lightning, gift-shaped jewels and heart tokens flowing toward each side as audience support. Dark neutral charcoal studio arena behind, a small gold winner trophy at center, dimensional polished materials, bold simple composition readable as small cover. Premium stylized 3D animated-feature artwork, not real people, no resemblance to celebrities. NOT an app screen or screenshot. No words including VS, no numbers, logos, interface, UI, HUD, watermark, frame or border. Keep portraits clearly visible above bottom title-overlay fifth."
+    },
+    {
+      "id": "puanlama",
+      "file": "puanlama-v3.png",
+      "source": "built-in image_gen",
+      "concept": "Use case: stylized-concept. Asset: original full bleed landscape 16:10 game launcher cover for Profil Puanlama, a live audience profile-rating experience. One large circular portrait medallion with a charming fictional young adult woman creator at center, surrounded by FIVE beautifully modeled golden star tokens rising in an elegant arc as the audience votes. Smaller diverse fictional portrait medallions sit in receding tiers around a polished winners podium, little turquoise and coral heart tokens fly toward the main portrait. Rich charcoal studio background with restrained turquoise highlights and gold light. Premium dimensional animated-feature 3D illustration, sophisticated tactile glass and enamel materials, joyful social competition, clear simple main silhouette at thumbnail scale. Distinct from versus combat: one featured rated profile with stars and ranking. No real people or celebrity likenesses. No text, numbers, logos, UI, HUD, app screen, frame, watermark or screenshot. Keep main portrait above bottom title-overlay fifth."
+    }
+  ]
+}

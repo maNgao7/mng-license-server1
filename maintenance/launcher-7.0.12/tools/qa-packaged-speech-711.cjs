@@ -1,0 +1,11 @@
+'use strict';
+const fs=require('node:fs'),path=require('node:path'),assert=require('node:assert/strict'),crypto=require('node:crypto'),{spawn}=require('node:child_process');
+const output=path.resolve(__dirname,'../qa/711'),exe='D:/TikMnG-Release-7.0.11-ready/win-unpacked/TikMnG.exe',archive=path.join(path.dirname(exe),'resources/app.asar');
+async function run(id){
+ const worker=path.join(archive,'lib/vendor/'+(id.startsWith('ema')?'ema':'okur')+'-worker.cjs'),root=path.join(process.env.APPDATA,'mng-tiktok-game/voices/v1',id),started=performance.now();
+ const child=spawn(exe,[worker,'--jsonl'],{windowsHide:true,env:{...process.env,ELECTRON_RUN_AS_NODE:'1'},stdio:['pipe','pipe','pipe']});let out='',err='';child.stdout.on('data',d=>out+=d);child.stderr.on('data',d=>err+=d);const timer=setTimeout(()=>child.kill(),60000);
+ child.stdin.end(JSON.stringify({v:1,id:'1',root,text:'Merhaba. Gülen yüz. İyi yayınlar.',speed:1,seed:0,pause:1,temperature:1})+'\n');
+ const code=await new Promise((resolve,reject)=>{child.on('error',reject);child.on('close',resolve);});clearTimeout(timer);assert.equal(code,0,err);const frame=JSON.parse(out.trim());assert.ok(frame.audio,!frame.error);const bytes=Buffer.from(frame.audio,'base64');assert.equal(bytes.toString('ascii',0,4),'RIFF');let sum=0,n=0;for(let p=44;p+1<bytes.length;p+=2){sum+=(bytes.readInt16LE(p)/32768)**2;n++;}const rms=Math.sqrt(sum/n);assert.ok(rms>.001);fs.writeFileSync(path.join(output,id+'-packaged.wav'),bytes);return {id,milliseconds:Math.round(performance.now()-started),bytes:bytes.length,rms};
+}
+async function main(){fs.mkdirSync(output,{recursive:true});const native=path.join(path.dirname(exe),'resources/app.asar.unpacked/node_modules/onnxruntime-node');assert.equal(fs.existsSync(native),false,'Package must not depend on customer VC++ or ONNX native DLLs');const runs=[];for(const id of ['okur-tr-v1','ema-tr-v1'])runs.push(await run(id));const report={passed:true,actualPackagedExecutable:true,nativeONNXAbsent:true,portableWasm:true,runs};fs.writeFileSync(path.join(output,'packaged-speech.json'),JSON.stringify(report,null,2));console.log(JSON.stringify(report));}
+main().catch(e=>{console.error(e.stack);process.exitCode=1;});
