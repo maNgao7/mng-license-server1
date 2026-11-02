@@ -1,0 +1,18 @@
+{
+  "passed": true,
+  "version": "0.1.23",
+  "verifiedAt": "2026-11-02T16:21:36.570Z",
+  "rulesChecks": 438,
+  "serverTests": 153,
+  "serverSkipped": 0,
+  "actualNativeSuites": 6,
+  "nativeNormalExitCycles": 3,
+  "savedSettingsPreserved": true,
+  "steamBaseRecopiedBytes": 0,
+  "sourceDllSha256": "6ee5ba09a546c236f0a2377c6115b5095dddb5bf4f2eaf6565e2a306c21645d8",
+  "originalSteamBinariesIncluded": false,
+  "liveBridgeUnchanged": true,
+  "realPaidGiftTest": false,
+  "otherCustomerHardwareTest": false,
+  "verificationNotes": "Actual packaged native game; normalized audience/gift fixtures; 180/600 native creature pursuit and both stairs. Preview mouse/R input checked separately. Hardware-specific timings are not a guarantee for customer PCs."
+}

@@ -1,0 +1,25 @@
+{
+  "passed": true,
+  "checks": [
+    "Removed factory divider and machine carving volumes no longer partition the new arena; all seven floor/stair/catwalk route sections are complete",
+    "Native creature crosses the old divider, walks up stair 1 and reaches the player on the upper walkway without teleport rescue",
+    "The same creature replans and follows the player back to the ground from upper walkway 1",
+    "Native creature crosses the old divider, walks up stair -1 and reaches the player on the upper walkway without teleport rescue",
+    "The same creature replans and follows the player back to the ground from upper walkway -1"
+  ],
+  "measurements": [
+    {
+      "side": 1,
+      "seconds": 22.067,
+      "maxY": 9.806801,
+      "maxStep": 2.714155542525102
+    },
+    {
+      "side": -1,
+      "seconds": 22.589,
+      "maxY": 9.651894,
+      "maxStep": 2.710975221051491
+    }
+  ],
+  "nativePhysics": true
+}

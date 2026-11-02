@@ -11,7 +11,7 @@ const root=path.resolve(import.meta.dirname,'..');
 test('Arena public catalog keeps existing layout, free demo and original downloadable gift guide', {skip:!process.env.PLAYWRIGHT_MODULE},async t=>{
   const {chromium}=createRequire(import.meta.url)(process.env.PLAYWRIGHT_MODULE);
   const data=fs.mkdtempSync(path.join(os.tmpdir(),'tikmng-arena-portal715-'));
-  const output=path.join(root,'qa/arena-portal715');fs.mkdirSync(output,{recursive:true});
+  const output=path.resolve(process.env.MNG_ARENA_PORTAL_QA_OUTPUT||path.join(root,'qa/arena-portal715'));fs.mkdirSync(output,{recursive:true});
   const port=await new Promise(resolve=>{const probe=net.createServer().listen(0,'127.0.0.1',()=>{const port=probe.address().port;probe.close(()=>resolve(port));});});
   const child=spawn(process.execPath,['server.js'],{cwd:root,windowsHide:true,stdio:'ignore',env:{...process.env,HOST:'127.0.0.1',PORT:String(port),MNG_DATA_DIR:data,
     ADMIN_SIFRE:crypto.randomBytes(24).toString('hex'),GITHUB_TOKEN:'',GITHUB_LICENSE_TOKEN:'',GITHUB_LICENSE_REPO:'',BACKUP_REPO:''}});

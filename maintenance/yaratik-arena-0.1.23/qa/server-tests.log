@@ -1,0 +1,934 @@
+TAP version 13
+# Subtest: agency key fits the deployed launcher, uses the entered name and rejects tampering
+ok 1 - agency key fits the deployed launcher, uses the entered name and rejects tampering
+  ---
+  duration_ms: 2.3788
+  type: 'test'
+  ...
+# Subtest: deployed server mounts authenticated overlay sessions and WebSocket relay without activating new seats
+ok 2 - deployed server mounts authenticated overlay sessions and WebSocket relay without activating new seats
+  ---
+  duration_ms: 409.5006
+  type: 'test'
+  ...
+# Subtest: 20 seats admit exactly 20 different devices, not 21; every device passes later checks
+ok 3 - 20 seats admit exactly 20 different devices, not 21; every device passes later checks
+  ---
+  duration_ms: 945.5626
+  type: 'test'
+  ...
+# Subtest: concurrent first registrations cannot overbook a capacity of five
+ok 4 - concurrent first registrations cannot overbook a capacity of five
+  ---
+  duration_ms: 327.1342
+  type: 'test'
+  ...
+# Subtest: agency management is authenticated, capacity changes persist and blocked members stay blocked
+ok 5 - agency management is authenticated, capacity changes persist and blocked members stay blocked
+  ---
+  duration_ms: 853.7153
+  type: 'test'
+  ...
+# Subtest: creation rejects invalid capacities, names and durations without creating records
+ok 6 - creation rejects invalid capacities, names and durations without creating records
+  ---
+  duration_ms: 419.0855
+  type: 'test'
+  ...
+# Subtest: legacy agency and individual keys remain compatible; signed new keys can recover
+ok 7 - legacy agency and individual keys remain compatible; signed new keys can recover
+  ---
+  duration_ms: 442.1362
+  type: 'test'
+  ...
+# Subtest: token-only recovery retains agency type and capacity for multiple members
+ok 8 - token-only recovery retains agency type and capacity for multiple members
+  ---
+  duration_ms: 1000.4888
+  type: 'test'
+  ...
+# Subtest: revoked, expired and archived agencies reject both verification paths
+ok 9 - revoked, expired and archived agencies reject both verification paths
+  ---
+  duration_ms: 644.1298
+  type: 'test'
+  ...
+# Subtest: a failed durable write is an error and does not consume a seat
+ok 10 - a failed durable write is an error and does not consume a seat
+  ---
+  duration_ms: 277.5191
+  type: 'test'
+  ...
+# Subtest: admin assets are reachable, private data stays behind session auth, and public requests work
+ok 11 - admin assets are reachable, private data stays behind session auth, and public requests work
+  ---
+  duration_ms: 358.8447
+  type: 'test'
+  ...
+# Subtest: expired individual licenses renew on the same key and device; active renewals preserve paid time
+ok 12 - expired individual licenses renew on the same key and device; active renewals preserve paid time
+  ---
+  duration_ms: 719.4534
+  type: 'test'
+  ...
+# Subtest: agency renewal and rename preserve every registered device and the original key
+ok 13 - agency renewal and rename preserve every registered device and the original key
+  ---
+  duration_ms: 400.789
+  type: 'test'
+  ...
+# Subtest: deleted unlimited licenses cannot be reopened, renewed, edited or resurrected by stale backups
+ok 14 - deleted unlimited licenses cannot be reopened, renewed, edited or resurrected by stale backups
+  ---
+  duration_ms: 861.9057
+  type: 'test'
+  ...
+# Subtest: pending durations start only at first activation and invalid edits are atomic
+ok 15 - pending durations start only at first activation and invalid edits are atomic
+  ---
+  duration_ms: 404.956
+  type: 'test'
+  ...
+# Subtest: changing unlimited individual licenses to finite time issues a finite recovery receipt
+ok 16 - changing unlimited individual licenses to finite time issues a finite recovery receipt
+  ---
+  duration_ms: 573.7724
+  type: 'test'
+  ...
+# Subtest: Arena public catalog keeps existing layout, free demo and original downloadable gift guide
+ok 17 - Arena public catalog keeps existing layout, free demo and original downloadable gift guide
+  ---
+  duration_ms: 7589.5359
+  type: 'test'
+  ...
+# Subtest: old launchers receive unchanged compatible catalog; only explicit capability selects new format
+ok 18 - old launchers receive unchanged compatible catalog; only explicit capability selects new format
+  ---
+  duration_ms: 0.9544
+  type: 'test'
+  ...
+# Subtest: administrator newer package is not overridden and bad manifests fail closed
+ok 19 - administrator newer package is not overridden and bad manifests fail closed
+  ---
+  duration_ms: 0.7912
+  type: 'test'
+  ...
+# Subtest: invalid payload integrity never replaces a working published package
+ok 20 - invalid payload integrity never replaces a working published package
+  ---
+  duration_ms: 0.2434
+  type: 'test'
+  ...
+# Subtest: 7.0.6 Snow rollout preserves legacy clients, unrelated descriptors and administrator versions
+ok 21 - 7.0.6 Snow rollout preserves legacy clients, unrelated descriptors and administrator versions
+  ---
+  duration_ms: 1.0815
+  type: 'test'
+  ...
+# Subtest: server upgrades the approved game catalog once and preserves the previous catalog as backup
+ok 22 - server upgrades the approved game catalog once and preserves the previous catalog as backup
+  ---
+  duration_ms: 601.094
+  type: 'test'
+  ...
+# Subtest: server retains customized catalog data and hides only the withdrawn Crowd Control game
+ok 23 - server retains customized catalog data and hides only the withdrawn Crowd Control game
+  ---
+  duration_ms: 571.289
+  type: 'test'
+  ...
+# Subtest: published Minecraft 7.0.3 catalog receives the first-install repair once without overriding custom edits
+ok 24 - published Minecraft 7.0.3 catalog receives the first-install repair once without overriding custom edits
+  ---
+  duration_ms: 861.6284
+  type: 'test'
+  ...
+# Subtest: actual rev11 catalog receives the current Arena package once, retaining its full backup and launcher latest
+ok 25 - actual rev11 catalog receives the current Arena package once, retaining its full backup and launcher latest
+  ---
+  duration_ms: 571.8875
+  type: 'test'
+  ...
+# Subtest: actual rev12 catalog receives the current Arena package once, retaining its full backup and launcher latest
+ok 26 - actual rev12 catalog receives the current Arena package once, retaining its full backup and launcher latest
+  ---
+  duration_ms: 581.3419
+  type: 'test'
+  ...
+# Subtest: actual rev13 catalog receives the current Arena package once, retaining its full backup and launcher latest
+ok 27 - actual rev13 catalog receives the current Arena package once, retaining its full backup and launcher latest
+  ---
+  duration_ms: 721.3508
+  type: 'test'
+  ...
+# Subtest: Arena hotfix startup and restart retain customized rev11, rev12 and rev13 catalogs and pending administrator drafts
+    # Subtest: rev11 draft: Arena
+    ok 1 - rev11 draft: Arena
+      ---
+      duration_ms: 572.4157
+      type: 'test'
+      ...
+    # Subtest: rev11 draft: other game
+    ok 2 - rev11 draft: other game
+      ---
+      duration_ms: 527.108
+      type: 'test'
+      ...
+    # Subtest: rev11 draft: media
+    ok 3 - rev11 draft: media
+      ---
+      duration_ms: 464.5914
+      type: 'test'
+      ...
+    # Subtest: rev11 draft: launcher
+    ok 4 - rev11 draft: launcher
+      ---
+      duration_ms: 496.7967
+      type: 'test'
+      ...
+    # Subtest: rev11 draft: revision
+    ok 5 - rev11 draft: revision
+      ---
+      duration_ms: 584.2027
+      type: 'test'
+      ...
+    # Subtest: rev11 draft: unpublished timestamp
+    ok 6 - rev11 draft: unpublished timestamp
+      ---
+      duration_ms: 513.2521
+      type: 'test'
+      ...
+    # Subtest: rev11 draft: removed Arena
+    ok 7 - rev11 draft: removed Arena
+      ---
+      duration_ms: 480.6293
+      type: 'test'
+      ...
+    # Subtest: rev11 published: Arena
+    ok 8 - rev11 published: Arena
+      ---
+      duration_ms: 529.0968
+      type: 'test'
+      ...
+    # Subtest: rev11 published: other game
+    ok 9 - rev11 published: other game
+      ---
+      duration_ms: 527.8882
+      type: 'test'
+      ...
+    # Subtest: rev11 published: media
+    ok 10 - rev11 published: media
+      ---
+      duration_ms: 483.698
+      type: 'test'
+      ...
+    # Subtest: rev11 published: launcher
+    ok 11 - rev11 published: launcher
+      ---
+      duration_ms: 499.8356
+      type: 'test'
+      ...
+    # Subtest: rev11 published: revision
+    ok 12 - rev11 published: revision
+      ---
+      duration_ms: 467.9937
+      type: 'test'
+      ...
+    # Subtest: rev11 published: unpublished timestamp
+    ok 13 - rev11 published: unpublished timestamp
+      ---
+      duration_ms: 457.799
+      type: 'test'
+      ...
+    # Subtest: rev11 published: removed Arena
+    ok 14 - rev11 published: removed Arena
+      ---
+      duration_ms: 463.2706
+      type: 'test'
+      ...
+    # Subtest: rev12 draft: Arena
+    ok 15 - rev12 draft: Arena
+      ---
+      duration_ms: 460.7395
+      type: 'test'
+      ...
+    # Subtest: rev12 draft: other game
+    ok 16 - rev12 draft: other game
+      ---
+      duration_ms: 465.0817
+      type: 'test'
+      ...
+    # Subtest: rev12 draft: media
+    ok 17 - rev12 draft: media
+      ---
+      duration_ms: 479.4975
+      type: 'test'
+      ...
+    # Subtest: rev12 draft: launcher
+    ok 18 - rev12 draft: launcher
+      ---
+      duration_ms: 469.5047
+      type: 'test'
+      ...
+    # Subtest: rev12 draft: revision
+    ok 19 - rev12 draft: revision
+      ---
+      duration_ms: 466.1506
+      type: 'test'
+      ...
+    # Subtest: rev12 draft: unpublished timestamp
+    ok 20 - rev12 draft: unpublished timestamp
+      ---
+      duration_ms: 455.2031
+      type: 'test'
+      ...
+    # Subtest: rev12 draft: removed Arena
+    ok 21 - rev12 draft: removed Arena
+      ---
+      duration_ms: 457.2841
+      type: 'test'
+      ...
+    # Subtest: rev12 published: Arena
+    ok 22 - rev12 published: Arena
+      ---
+      duration_ms: 480.791
+      type: 'test'
+      ...
+    # Subtest: rev12 published: other game
+    ok 23 - rev12 published: other game
+      ---
+      duration_ms: 453.1855
+      type: 'test'
+      ...
+    # Subtest: rev12 published: media
+    ok 24 - rev12 published: media
+      ---
+      duration_ms: 456.5275
+      type: 'test'
+      ...
+    # Subtest: rev12 published: launcher
+    ok 25 - rev12 published: launcher
+      ---
+      duration_ms: 466.3158
+      type: 'test'
+      ...
+    # Subtest: rev12 published: revision
+    ok 26 - rev12 published: revision
+      ---
+      duration_ms: 467.5825
+      type: 'test'
+      ...
+    # Subtest: rev12 published: unpublished timestamp
+    ok 27 - rev12 published: unpublished timestamp
+      ---
+      duration_ms: 466.897
+      type: 'test'
+      ...
+    # Subtest: rev12 published: removed Arena
+    ok 28 - rev12 published: removed Arena
+      ---
+      duration_ms: 463.7634
+      type: 'test'
+      ...
+    # Subtest: rev13 draft: Arena
+    ok 29 - rev13 draft: Arena
+      ---
+      duration_ms: 466.9504
+      type: 'test'
+      ...
+    # Subtest: rev13 draft: other game
+    ok 30 - rev13 draft: other game
+      ---
+      duration_ms: 466.621
+      type: 'test'
+      ...
+    # Subtest: rev13 draft: media
+    ok 31 - rev13 draft: media
+      ---
+      duration_ms: 469.8218
+      type: 'test'
+      ...
+    # Subtest: rev13 draft: launcher
+    ok 32 - rev13 draft: launcher
+      ---
+      duration_ms: 465.3124
+      type: 'test'
+      ...
+    # Subtest: rev13 draft: revision
+    ok 33 - rev13 draft: revision
+      ---
+      duration_ms: 447.4068
+      type: 'test'
+      ...
+    # Subtest: rev13 draft: unpublished timestamp
+    ok 34 - rev13 draft: unpublished timestamp
+      ---
+      duration_ms: 468.8864
+      type: 'test'
+      ...
+    # Subtest: rev13 draft: removed Arena
+    ok 35 - rev13 draft: removed Arena
+      ---
+      duration_ms: 455.511
+      type: 'test'
+      ...
+    # Subtest: rev13 published: Arena
+    ok 36 - rev13 published: Arena
+      ---
+      duration_ms: 462.4879
+      type: 'test'
+      ...
+    # Subtest: rev13 published: other game
+    ok 37 - rev13 published: other game
+      ---
+      duration_ms: 480.9583
+      type: 'test'
+      ...
+    # Subtest: rev13 published: media
+    ok 38 - rev13 published: media
+      ---
+      duration_ms: 464.1771
+      type: 'test'
+      ...
+    # Subtest: rev13 published: launcher
+    ok 39 - rev13 published: launcher
+      ---
+      duration_ms: 466.3538
+      type: 'test'
+      ...
+    # Subtest: rev13 published: revision
+    ok 40 - rev13 published: revision
+      ---
+      duration_ms: 467.5341
+      type: 'test'
+      ...
+    # Subtest: rev13 published: unpublished timestamp
+    ok 41 - rev13 published: unpublished timestamp
+      ---
+      duration_ms: 436.7115
+      type: 'test'
+      ...
+    # Subtest: rev13 published: removed Arena
+    ok 42 - rev13 published: removed Arena
+      ---
+      duration_ms: 449.6147
+      type: 'test'
+      ...
+    1..42
+ok 28 - Arena hotfix startup and restart retain customized rev11, rev12 and rev13 catalogs and pending administrator drafts
+  ---
+  duration_ms: 20052.7274
+  type: 'test'
+  ...
+# Subtest: public defaults add Arena, retain 16 existing games and exclude Crowd Control
+ok 29 - public defaults add Arena, retain 16 existing games and exclude Crowd Control
+  ---
+  duration_ms: 215.1864
+  type: 'test'
+  ...
+# Subtest: legacy download URLs map to real root ZIPs and the existing Gelene Geçene mod package
+ok 30 - legacy download URLs map to real root ZIPs and the existing Gelene Geçene mod package
+  ---
+  duration_ms: 325.4152
+  type: 'test'
+  ...
+# Subtest: legacy Minecraft links redirect to the corrected published archives
+ok 31 - legacy Minecraft links redirect to the corrected published archives
+  ---
+  duration_ms: 232.5867
+  type: 'test'
+  ...
+# Subtest: legacy overrides cannot replace the immutable published package or its hash
+ok 32 - legacy overrides cannot replace the immutable published package or its hash
+  ---
+  duration_ms: 232.4015
+  type: 'test'
+  ...
+# Subtest: admin reads, saves, publishing and binary uploads require the existing cookie session
+ok 33 - admin reads, saves, publishing and binary uploads require the existing cookie session
+  ---
+  duration_ms: 309.4728
+  type: 'test'
+  ...
+# Subtest: draft is private, expectedRevision protects save/publish, immutable snapshots and backup survive restart
+ok 34 - draft is private, expectedRevision protects save/publish, immutable snapshots and backup survive restart
+  ---
+  duration_ms: 696.2364
+  type: 'test'
+  ...
+# Subtest: parallel writers cannot overwrite a revision
+ok 35 - parallel writers cannot overwrite a revision
+  ---
+  duration_ms: 244.0067
+  type: 'test'
+  ...
+# Subtest: controlled fields, bounded lists, duplicate IDs, plain text, integrity and public-only URLs validate atomically
+ok 36 - controlled fields, bounded lists, duplicate IDs, plain text, integrity and public-only URLs validate atomically
+  ---
+  duration_ms: 1197.0196
+  type: 'test'
+  ...
+# Subtest: per-file patches and optional launcher metadata round-trip without changing release endpoints
+ok 37 - per-file patches and optional launcher metadata round-trip without changing release endpoints
+  ---
+  duration_ms: 561.1579
+  type: 'test'
+  ...
+# Subtest: complete content descriptors round-trip, while nested, mixed and oversized control files are rejected
+ok 38 - complete content descriptors round-trip, while nested, mixed and oversized control files are rejected
+  ---
+  duration_ms: 311.0831
+  type: 'test'
+  ...
+# Subtest: MP4 and WebM uploads are immutable, hashed, ranged, private storage paths stay hidden and assets survive restart
+ok 39 - MP4 and WebM uploads are immutable, hashed, ranged, private storage paths stay hidden and assets survive restart
+  ---
+  duration_ms: 775.1898
+  type: 'test'
+  ...
+# Subtest: video upload rejects executable data, MIME/header mismatches, traversal, encoding and oversized declarations
+ok 40 - video upload rejects executable data, MIME/header mismatches, traversal, encoding and oversized declarations
+  ---
+  duration_ms: 374.9399
+  type: 'test'
+  ...
+# Subtest: chunked uploads enforce the streaming byte limit and remove partial files
+ok 41 - chunked uploads enforce the streaming byte limit and remove partial files
+  ---
+  duration_ms: 353.7257
+  type: 'test'
+  ...
+# Subtest: backup recovery preserves the previous committed catalog and skips orphan immutable revision numbers
+ok 42 - backup recovery preserves the previous committed catalog and skips orphan immutable revision numbers
+  ---
+  duration_ms: 495.7048
+  type: 'test'
+  ...
+# Subtest: failed durable saves and publications leave committed memory, public catalog and snapshots unchanged
+ok 43 - failed durable saves and publications leave committed memory, public catalog and snapshots unchanged
+  ---
+  duration_ms: 341.8674
+  type: 'test'
+  ...
+# Subtest: browser forms cover login, game patches, media upload/edit/delete, launcher opt-in, conflicts and responsive layout
+ok 44 - browser forms cover login, game patches, media upload/edit/delete, launcher opt-in, conflicts and responsive layout
+  ---
+  duration_ms: 1598.6285
+  type: 'test'
+  ...
+# Browser screenshots: C:\\Users\\User\\AppData\\Local\\Temp\\tikmng-content-browser-Qik11u
+# Subtest: an explicitly approved Minecraft candidate upgrades exactly two packages, without a launcher or media update
+ok 45 - an explicitly approved Minecraft candidate upgrades exactly two packages, without a launcher or media update
+  ---
+  duration_ms: 5.0111
+  type: 'test'
+  ...
+# Subtest: the approved install repair advances the two Minecraft packages without changing gameplay or media
+ok 46 - the approved install repair advances the two Minecraft packages without changing gameplay or media
+  ---
+  duration_ms: 5.6436
+  type: 'test'
+  ...
+# Subtest: 7.0.8 removes only Crowd Control and preserves every remaining game and media descriptor
+ok 47 - 7.0.8 removes only Crowd Control and preserves every remaining game and media descriptor
+  ---
+  duration_ms: 2.7754
+  type: 'test'
+  ...
+# Subtest: 7.0.10 adds only Profile Contest and preserves administrator changes
+ok 48 - 7.0.10 adds only Profile Contest and preserves administrator changes
+  ---
+  duration_ms: 3.5148
+  type: 'test'
+  ...
+# Subtest: 7.0.15 adds only Arena and never replaces customized catalog state
+ok 49 - 7.0.15 adds only Arena and never replaces customized catalog state
+  ---
+  duration_ms: 6.9492
+  type: 'test'
+  ...
+# Subtest: Arena 0.1.21 upgrades the actual untouched 7.0.15 rev11 catalog to rev12 and changes only Arena
+ok 50 - Arena 0.1.21 upgrades the actual untouched 7.0.15 rev11 catalog to rev12 and changes only Arena
+  ---
+  duration_ms: 3.4182
+  type: 'test'
+  ...
+# Subtest: Arena 0.1.22 upgrades the actual untouched rev12 catalog to rev13 and changes only its package
+ok 51 - Arena 0.1.22 upgrades the actual untouched rev12 catalog to rev13 and changes only its package
+  ---
+  duration_ms: 2.7184
+  type: 'test'
+  ...
+# Subtest: Arena 0.1.23 upgrades exactly the rev13 package while retaining launcher, media and other games
+ok 52 - Arena 0.1.23 upgrades exactly the rev13 package while retaining launcher, media and other games
+  ---
+  duration_ms: 2.3538
+  type: 'test'
+  ...
+# Subtest: Arena hotfix preserves every administrator field in rev11, rev12 and rev13 draft or published state
+ok 53 - Arena hotfix preserves every administrator field in rev11, rev12 and rev13 draft or published state
+  ---
+  duration_ms: 162.8402
+  type: 'test'
+  ...
+# Subtest: Minecraft release retains customized published state and pending administrator edits
+ok 54 - Minecraft release retains customized published state and pending administrator edits
+  ---
+  duration_ms: 3.4779
+  type: 'test'
+  ...
+# Subtest: untouched 7.0.5 receives snake 0.16.0 without changing other game packages
+ok 55 - untouched 7.0.5 receives snake 0.16.0 without changing other game packages
+  ---
+  duration_ms: 2.11
+  type: 'test'
+  ...
+# Subtest: untouched 7.0.4 catalog receives both urgent game packages; customized catalogs stay unchanged
+ok 56 - untouched 7.0.4 catalog receives both urgent game packages; customized catalogs stay unchanged
+  ---
+  duration_ms: 2.5235
+  type: 'test'
+  ...
+# Subtest: only untouched legacy bootstrap upgrades to the current game/media release
+ok 57 - only untouched legacy bootstrap upgrades to the current game/media release
+  ---
+  duration_ms: 1.3454
+  type: 'test'
+  ...
+# Subtest: the exact 7.0.1 baseline upgrades once; customized released catalogs are retained
+ok 58 - the exact 7.0.1 baseline upgrades once; customized released catalogs are retained
+  ---
+  duration_ms: 2.2576
+  type: 'test'
+  ...
+# Subtest: administrator revisions, changed fields, custom media and unpublished edits are never replaced
+ok 59 - administrator revisions, changed fields, custom media and unpublished edits are never replaced
+  ---
+  duration_ms: 0.4571
+  type: 'test'
+  ...
+# Subtest: already upgraded state is retained without a second migration
+ok 60 - already upgraded state is retained without a second migration
+  ---
+  duration_ms: 0.0839
+  type: 'test'
+  ...
+# Subtest: HTTP meter counts actual UTF-8/chunk bodies, excludes HEAD and stores only fixed categories
+ok 61 - HTTP meter counts actual UTF-8/chunk bodies, excludes HEAD and stores only fixed categories
+  ---
+  duration_ms: 35.4717
+  type: 'test'
+  ...
+# Subtest: HTTP meter has bounded hourly retention and classifies media separately from state
+ok 62 - HTTP meter has bounded hourly retention and classifies media separately from state
+  ---
+  duration_ms: 8.7857
+  type: 'test'
+  ...
+# Subtest: HTTP meter does not invent bodies for 204/304 and separates errors from completed responses
+ok 63 - HTTP meter does not invent bodies for 204/304 and separates errors from completed responses
+  ---
+  duration_ms: 15.5736
+  type: 'test'
+  ...
+# Subtest: state breakdown uses only bounded widget/transport labels and never stores scope or query contents
+ok 64 - state breakdown uses only bounded widget/transport labels and never stores scope or query contents
+  ---
+  duration_ms: 46.1557
+  type: 'test'
+  ...
+# Subtest: overlay authorization requires an existing active bound license without activating devices
+ok 65 - overlay authorization requires an existing active bound license without activating devices
+  ---
+  duration_ms: 1.3311
+  type: 'test'
+  ...
+# Subtest: agency link is available only to enrolled and unblocked devices
+ok 66 - agency link is available only to enrolled and unblocked devices
+  ---
+  duration_ms: 0.293
+  type: 'test'
+  ...
+# Subtest: state gzip reduces wire bytes without changing JSON, scopes or private cache policy
+ok 67 - state gzip reduces wire bytes without changing JSON, scopes or private cache policy
+  ---
+  duration_ms: 48.8429
+  type: 'test'
+  ...
+# Subtest: state gzip honours negotiation and excludes media, SSE, ranges, small bodies and no-body statuses
+ok 68 - state gzip honours negotiation and excludes media, SSE, ranges, small bodies and no-body statuses
+  ---
+  duration_ms: 17.6783
+  type: 'test'
+  ...
+# Subtest: compressed chunked state streams validate original length and cancel cleanly
+ok 69 - compressed chunked state streams validate original length and cancel cleanly
+  ---
+  duration_ms: 12.0005
+  type: 'test'
+  ...
+# Subtest: successful widget HTML saves wire bytes with exact gzip decoding and remains no-store
+ok 70 - successful widget HTML saves wire bytes with exact gzip decoding and remains no-store
+  ---
+  duration_ms: 23.185
+  type: 'test'
+  ...
+# Widget HTML gzip: 188041 -> 1429 wire body bytes, exact decode.
+# Subtest: widget HTML gzip excludes unaccepted encoding, HEAD, ranges, preencoded bodies, errors and media documents
+ok 71 - widget HTML gzip excludes unaccepted encoding, HEAD, ranges, preencoded bodies, errors and media documents
+  ---
+  duration_ms: 13.5531
+  type: 'test'
+  ...
+# Subtest: hashed bundled JS and viral WebP retain only a publisher-confirmed private immutable cache
+ok 72 - hashed bundled JS and viral WebP retain only a publisher-confirmed private immutable cache
+  ---
+  duration_ms: 7.7619
+  type: 'test'
+  ...
+# Subtest: release-sized bundles retain exact bytes and private caching over real WS chunk frames
+ok 73 - release-sized bundles retain exact bytes and private caching over real WS chunk frames
+  ---
+  duration_ms: 84.2937
+  type: 'test'
+  ...
+# Module-size fixture: 514708 -> 264338 wire body bytes; SHA256 6b9c589238a71be8cbd345def3b3265ed43f04a6fb9876d22376ee6a328dc4f6; exact decode.
+# WebP-size fixture: 1800000 unchanged wire body bytes, no recompression.
+# Subtest: immutable cache rejects ambiguous versions, non-hash artwork, legacy publishers and unrelated routes
+ok 74 - immutable cache rejects ambiguous versions, non-hash artwork, legacy publishers and unrelated routes
+  ---
+  duration_ms: 19.6773
+  type: 'test'
+  ...
+# Subtest: bundled JS gzip skips ranges, encodings, HEAD, errors, non-JS and non-negotiating clients
+ok 75 - bundled JS gzip skips ranges, encodings, HEAD, errors, non-JS and non-negotiating clients
+  ---
+  duration_ms: 11.9798
+  type: 'test'
+  ...
+# Subtest: new bundle routes preserve signed publisher authorization, scope and revocation
+ok 76 - new bundle routes preserve signed publisher authorization, scope and revocation
+  ---
+  duration_ms: 12.6468
+  type: 'test'
+  ...
+# Subtest: compressed bundled JS validates original lengths, supports unknown lengths and cancels on disconnect
+ok 77 - compressed bundled JS validates original lengths, supports unknown lengths and cancels on disconnect
+  ---
+  duration_ms: 7.4991
+  type: 'test'
+  ...
+# Subtest: only revision-scoped private media may cache; state, HTML, duplicates and redirects never cache
+ok 78 - only revision-scoped private media may cache; state, HTML, duplicates and redirects never cache
+  ---
+  duration_ms: 6.6522
+  type: 'test'
+  ...
+# Subtest: static gift artwork can use a private cache, but errors, HTML and live state never do
+ok 79 - static gift artwork can use a private cache, but errors, HTML and live state never do
+  ---
+  duration_ms: 8.5565
+  type: 'test'
+  ...
+# Subtest: new private media cache age and empty change responses survive the relay unchanged
+ok 80 - new private media cache age and empty change responses survive the relay unchanged
+  ---
+  duration_ms: 4.5917
+  type: 'test'
+  ...
+# Subtest: original private portrait images retain a browser-only cache without caching live state
+ok 81 - original private portrait images retain a browser-only cache without caching live state
+  ---
+  duration_ms: 6.6276
+  type: 'test'
+  ...
+# Subtest: a real browser reuses an original portrait instead of downloading it after each DOM replacement
+ok 82 - a real browser reuses an original portrait instead of downloading it after each DOM replacement
+  ---
+  duration_ms: 3298.2067
+  type: 'test'
+  ...
+# Subtest: a real browser privately reuses repeated hashed bundle loads while state stays fresh
+ok 83 - a real browser privately reuses repeated hashed bundle loads while state stays fresh
+  ---
+  duration_ms: 652.7035
+  type: 'test'
+  ...
+# Repeated subresource loads: one module/WebP transfer per sandbox document; a new browser context and a changed hash each fetch privately. Full navigation creates a new opaque sandbox and refetches assets. Five state loads remain fresh; offline state returns 503.
+# Subtest: session authorizes exact input and issues stable owner/device/install/channel tokens
+ok 84 - session authorizes exact input and issues stable owner/device/install/channel tokens
+  ---
+  duration_ms: 7.2613
+  type: 'test'
+  ...
+# Subtest: session denies unauthorized input, caller-selected tokens, bad JSON and unavailable authorization
+ok 85 - session denies unauthorized input, caller-selected tokens, bad JSON and unavailable authorization
+  ---
+  duration_ms: 6.6657
+  type: 'test'
+  ...
+# Subtest: offline browser documents retry transparently but media and state keep error responses
+ok 86 - offline browser documents retry transparently but media and state keep error responses
+  ---
+  duration_ms: 5.4134
+  type: 'test'
+  ...
+# Subtest: a real browser source opened offline recovers after publisher connects without refresh
+ok 87 - a real browser source opened offline recovers after publisher connects without refresh
+  ---
+  duration_ms: 3345.3376
+  type: 'test'
+  ...
+# Subtest: bridge requires signed unexpired bound tickets in Authorization, never in URLs
+ok 88 - bridge requires signed unexpired bound tickets in Authorization, never in URLs
+  ---
+  duration_ms: 7.4388
+  type: 'test'
+  ...
+# Subtest: public reads forward only scoped paths and safe headers, preserving exact body and CSP nonce
+ok 89 - public reads forward only scoped paths and safe headers, preserving exact body and CSP nonce
+  ---
+  duration_ms: 4.2628
+  type: 'test'
+  ...
+# Subtest: media Range, HEAD and binary bodies retain HTTP semantics
+ok 90 - media Range, HEAD and binary bodies retain HTTP semantics
+  ---
+  duration_ms: 4.2508
+  type: 'test'
+  ...
+# Subtest: allowlist includes media polling and legacy widget reads, and blocks APIs/traversal/writes
+ok 91 - allowlist includes media polling and legacy widget reads, and blocks APIs/traversal/writes
+  ---
+  duration_ms: 28.7199
+  type: 'test'
+  ...
+# Subtest: only validated HTTPS 307 media-file redirects pass through
+ok 92 - only validated HTTPS 307 media-file redirects pass through
+  ---
+  duration_ms: 5.7283
+  type: 'test'
+  ...
+# Subtest: SSE streams immediately, forwards Last-Event-ID and cancels on reader disconnect
+ok 93 - SSE streams immediately, forwards Last-Event-ID and cancels on reader disconnect
+  ---
+  duration_ms: 3.955
+  type: 'test'
+  ...
+# Subtest: publisher errors and disconnects release requests; replacement bridge owns future reads
+ok 94 - publisher errors and disconnects release requests; replacement bridge owns future reads
+  ---
+  duration_ms: 5.216
+  type: 'test'
+  ...
+# Subtest: 64 inflight requests bound each publisher and cancellation frees capacity
+ok 95 - 64 inflight requests bound each publisher and cancellation frees capacity
+  ---
+  duration_ms: 40.008
+  type: 'test'
+  ...
+# Subtest: backpressure emits flow paused/resumed without changing binary output
+ok 96 - backpressure emits flow paused/resumed without changing binary output
+  ---
+  duration_ms: 7.8257
+  type: 'test'
+  ...
+# Subtest: gzip state applies upstream flow control and keeps concurrent responses separate
+ok 97 - gzip state applies upstream flow control and keeps concurrent responses separate
+  ---
+  duration_ms: 18.265
+  type: 'test'
+  ...
+# Subtest: gzip bundled JS applies upstream flow control and keeps concurrent responses separate
+ok 98 - gzip bundled JS applies upstream flow control and keeps concurrent responses separate
+  ---
+  duration_ms: 14.609
+  type: 'test'
+  ...
+# Subtest: stalled gzip state still times out after the upstream end frame and releases its slot
+ok 99 - stalled gzip state still times out after the upstream end frame and releases its slot
+  ---
+  duration_ms: 7.6225
+  type: 'test'
+  ...
+# Subtest: stalled gzip bundled JS still times out after the upstream end frame and releases its slot
+ok 100 - stalled gzip bundled JS still times out after the upstream end frame and releases its slot
+  ---
+  duration_ms: 7.4192
+  type: 'test'
+  ...
+# Subtest: malformed frames, invalid headers and oversized WS payloads terminate only their publisher
+ok 101 - malformed frames, invalid headers and oversized WS payloads terminate only their publisher
+  ---
+  duration_ms: 11.5288
+  type: 'test'
+  ...
+# Subtest: headers have a deadline while SSE remains open beyond the normal response lifetime
+ok 102 - headers have a deadline while SSE remains open beyond the normal response lifetime
+  ---
+  duration_ms: 3.6864
+  type: 'test'
+  ...
+# Subtest: aggregate buffering is capped at 2 MiB when a publisher ignores flow control
+ok 103 - aggregate buffering is capped at 2 MiB when a publisher ignores flow control
+  ---
+  duration_ms: 21.1643
+  type: 'test'
+  ...
+# Subtest: heartbeat accepts pong and optional license revalidation disconnects revoked publishers
+ok 104 - heartbeat accepts pong and optional license revalidation disconnects revoked publishers
+  ---
+  duration_ms: 4.4473
+  type: 'test'
+  ...
+# Subtest: ticket expiration and missing heartbeat pong disconnect publishers
+ok 105 - ticket expiration and missing heartbeat pong disconnect publishers
+  ---
+  duration_ms: 4.2791
+  type: 'test'
+  ...
+# Subtest: close is idempotent, detaches upgrades and leaves the HTTP server usable
+ok 106 - close is idempotent, detaches upgrades and leaves the HTTP server usable
+  ---
+  duration_ms: 3.2928
+  type: 'test'
+  ...
+# Subtest: configuration rejects weak secrets and non-origin public URLs
+ok 107 - configuration rejects weak secrets and non-origin public URLs
+  ---
+  duration_ms: 0.3055
+  type: 'test'
+  ...
+# Subtest: sandboxed HTML polls from an opaque origin, loads nonce scripts/CSS and embeds across origins
+ok 108 - sandboxed HTML polls from an opaque origin, loads nonce scripts/CSS and embeds across origins
+  ---
+  duration_ms: 408.208
+  type: 'test'
+  ...
+# Subtest: Zombie War distribution contains exactly the requested 15 gift mappings
+ok 109 - Zombie War distribution contains exactly the requested 15 gift mappings
+  ---
+  duration_ms: 1.3023
+  type: 'test'
+  ...
+# Subtest: downloadable guide is the unmodified user image at full resolution
+ok 110 - downloadable guide is the unmodified user image at full resolution
+  ---
+  duration_ms: 3.478
+  type: 'test'
+  ...
+# Subtest: catalog keeps the independent game update while the approved launcher release advances
+ok 111 - catalog keeps the independent game update while the approved launcher release advances
+  ---
+  duration_ms: 2.4583
+  type: 'test'
+  ...
+1..111
+# tests 153
+# suites 0
+# pass 153
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 32461.7372

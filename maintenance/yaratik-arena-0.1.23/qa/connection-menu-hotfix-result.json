@@ -1,0 +1,36 @@
+{
+  "passed": true,
+  "checks": [
+    "Deterministic offline/network/transport retries use only the latest selected target; manual disconnect cancels every retry",
+    "Original saved account and AutoConnect survive startup; launcher environment does not override them",
+    "At 800x600 the username, separate Connect/Disconnect buttons and active-account/status labels have non-overlapping bounds",
+    "Editing another name does not overwrite the saved/active account; both command buttons remain available",
+    "Switching accounts sends one new connect command directly; invalid input never disconnects or changes that selected target",
+    "Manual disconnect cancels retry/queued connection, retains the last name, and leaves Connect enabled while Disconnect is disabled",
+    "The retained name reconnects directly; 1280x720 keeps both controls separate and readable",
+    "Original account, AutoConnect, all custom actions and exact settings bytes preserved"
+  ],
+  "captures": [
+    {
+      "width": 800,
+      "height": 600,
+      "file": "capture-5.png"
+    },
+    {
+      "width": 1280,
+      "height": 720,
+      "file": "capture-13.png"
+    },
+    {
+      "width": 800,
+      "height": 600,
+      "file": "capture-24.png"
+    },
+    {
+      "width": 1280,
+      "height": 720,
+      "file": "capture-30.png"
+    }
+  ],
+  "settingsHash": "7a161c8c8fc0c24243e28137f7cfb783ae61c30f2858ab3e3b39d119ad735b88"
+}

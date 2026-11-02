@@ -1,0 +1,17 @@
+{
+  "passed": true,
+  "timestamp": "2026-11-02T16:04:30.824Z",
+  "input": "Windows mouse click and R key, not QA ammo fixture",
+  "observedShot": {
+    "roundsBefore": 12,
+    "roundsAfter": 11,
+    "manualShotsBefore": 4,
+    "manualShotsAfter": 5
+  },
+  "reload": {
+    "observedActive": true,
+    "poseApplied": true,
+    "roundsAfter": 12,
+    "reloads": 3
+  }
+}
