@@ -1,0 +1,34 @@
+{
+  "passed": true,
+  "startedAt": "2026-11-02T11:54:14.920Z",
+  "checks": [
+    "Actual compressed game package passes safe extraction, SHA-256 and library activation in an empty game library.",
+    "Native first-install sliders start at master 71, music 3 and effects 80.",
+    "Fresh Steam-derived isolated copy generates its own loader state and reaches real first-frame readiness through the shipping launcher bootstrap."
+  ],
+  "live": [],
+  "syntheticGiftTests": true,
+  "lastPhase": "complete",
+  "directory": "D:\\TikMnG-Arena022-FreshQA\\library\\.game-library\\yaratik-arena\\versions\\4855c2eb-051d-4e61-92f1-bb707e7b7fec",
+  "gameProcessId": 12284,
+  "startup": {
+    "hostProcessId": 27020,
+    "startedUtc": "2026-11-02T11:54:31.9177378Z",
+    "preview": false,
+    "shownUtc": "2026-11-02T11:54:31.9267368Z",
+    "firstPaintUtc": "2026-11-02T11:54:31.9507358Z",
+    "gameProcessId": 12284,
+    "gameStartedUtc": "2026-11-02T11:54:31.9767800Z",
+    "paintedFrames": 438,
+    "ownerAttachedUtc": "2026-11-02T11:54:34.5082880Z",
+    "gameInitiallyVisible": false,
+    "revealedUnderCoverUtc": "2026-11-02T11:54:34.6891190Z",
+    "readyFrameUtc": "2026-11-02T11:54:54.7482566Z",
+    "readyObservedUtc": "2026-11-02T11:54:54.8660784Z",
+    "outcome": "ready",
+    "handoffUtc": "2026-11-02T11:54:55.0782215Z",
+    "closedUtc": "2026-11-02T11:54:55.0792210Z"
+  },
+  "mode": "boot-only",
+  "finishedAt": "2026-11-02T11:54:55.614Z"
+}

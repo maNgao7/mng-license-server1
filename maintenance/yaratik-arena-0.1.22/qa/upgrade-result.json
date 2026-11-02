@@ -1,0 +1,19 @@
+{
+  "passed": true,
+  "directory": "D:\\TikMnG-Arena715-Final2QA\\library\\.game-library\\yaratik-arena\\versions\\bf6bb883-3be3-44b7-b5c2-359c7c15e7b3",
+  "previous": "D:\\TikMnG-Arena715-Final2QA\\library\\.game-library\\yaratik-arena\\versions\\4d2ed777-2845-4be3-a101-292a544a96b0",
+  "settingsPreserved": true,
+  "steamBaseRecopiedBytes": 0,
+  "descriptor": {
+    "version": "0.1.22",
+    "file": "D:\\TikMnG-Yaratik-Arena-0.1.22-release\\yaratik-arena.zip",
+    "bytes": 151510221,
+    "sha256": "525a243d494d3e0fa4efd03009020d777d414ea3a6183c57c5c251f1754203b6",
+    "manifestSha256": "5bb117059234b41963bc328639cf6b353000dc146cccc1fc1f1cc571ad970135",
+    "files": 5193,
+    "steamBuildId": "25638418",
+    "steamBaseBytes": 949204540,
+    "originalDemoIncluded": false,
+    "url": "https://github.com/maNgao7/mng-license-server1/releases/download/yaratik-arena-0.1.22/yaratik-arena.zip"
+  }
+}

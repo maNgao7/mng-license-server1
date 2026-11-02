@@ -130,16 +130,19 @@ test('published Minecraft 7.0.3 catalog receives the first-install repair once w
     assert.deepEqual((await g.get()).published, custom);
 });
 
-test('actual 7.0.15 rev11 catalog receives only Arena 0.1.21 once, retaining its full backup and launcher latest', async t => {
-    const previous = JSON.parse(fs.readFileSync(path.join(root, 'content-bootstrap-7.0.15.json'), 'utf8'));
+for (const [filename, revision, arenaVersion] of [
+    ['content-bootstrap-7.0.15.json', 11, '0.1.20'],
+    ['content-bootstrap-arena-0.1.21.json', 12, '0.1.21']
+]) test(`actual rev${revision} catalog receives the current Arena package once, retaining its full backup and launcher latest`, async t => {
+    const previous = JSON.parse(fs.readFileSync(path.join(root, filename), 'utf8'));
     const current = JSON.parse(fs.readFileSync(path.join(root, 'content-defaults.json'), 'utf8'));
-    assert.equal(previous.revision, 11);
-    assert.equal(previous.games.find(game => game.id === 'yaratik-arena').version, '0.1.20');
-    assert.equal(current.revision, 12);
+    assert.equal(previous.revision, revision);
+    assert.equal(previous.games.find(game => game.id === 'yaratik-arena').version, arenaVersion);
+    assert.ok(current.revision > revision);
     const f = await fixture(t, {}, { initialCatalog: previous });
     const published = await f.public();
     assert.deepEqual(published, current);
-    assert.equal(published.games.find(game => game.id === 'yaratik-arena').version, '0.1.21');
+    assert.deepEqual(published.games.find(game => game.id === 'yaratik-arena'), current.games.find(game => game.id === 'yaratik-arena'));
     assert.deepEqual(published.games.filter(game => game.id !== 'yaratik-arena'), previous.games.filter(game => game.id !== 'yaratik-arena'));
     assert.deepEqual(published.media, previous.media);
     assert.deepEqual(published.launcher, previous.launcher);
@@ -159,8 +162,9 @@ test('actual 7.0.15 rev11 catalog receives only Arena 0.1.21 once, retaining its
     assert.equal(fs.readFileSync(backup, 'utf8'), retained);
 });
 
-test('Arena hotfix startup and restart retain customized rev11 catalogs and pending administrator drafts', async t => {
-    const previous = JSON.parse(fs.readFileSync(path.join(root, 'content-bootstrap-7.0.15.json'), 'utf8'));
+test('Arena hotfix startup and restart retain customized rev11 and rev12 catalogs and pending administrator drafts', async t => {
+    const baselines = ['content-bootstrap-7.0.15.json', 'content-bootstrap-arena-0.1.21.json']
+        .map(filename => JSON.parse(fs.readFileSync(path.join(root, filename), 'utf8')));
     const changes = [
         ['Arena', catalog => catalog.games[0].title = 'Administrator Arena title'],
         ['other game', catalog => catalog.games[1].description = 'Administrator other game description'],
@@ -170,8 +174,8 @@ test('Arena hotfix startup and restart retain customized rev11 catalogs and pend
         ['unpublished timestamp', catalog => catalog.publishedAt = null],
         ['removed Arena', catalog => catalog.games.shift()]
     ];
-    for (const field of ['draft', 'published']) for (const [name, change] of changes) {
-        await t.test(`${field}: ${name}`, async st => {
+    for (const previous of baselines) for (const field of ['draft', 'published']) for (const [name, change] of changes) {
+        await t.test(`rev${previous.revision} ${field}: ${name}`, async st => {
             const initialState = { draft: structuredClone(previous), published: structuredClone(previous) };
             change(initialState[field]);
             const f = await fixture(st, {}, { initialState });
@@ -198,16 +202,16 @@ test("public defaults add Arena, retain 16 existing games and exclude Crowd Cont
     assert.equal(response.data.launcher, undefined);
     const byId = Object.fromEntries(response.data.games.map(item => [item.id, item]));
     assert.equal(response.data.games.length, 17);
-    assert.equal(byId['yaratik-arena'].version, '0.1.21');
-    assert.equal(byId['yaratik-arena'].url, 'https://github.com/maNgao7/mng-license-server1/releases/download/yaratik-arena-0.1.21/yaratik-arena.zip');
-    assert.equal(byId['yaratik-arena'].bytes, 151506384);
-    assert.equal(byId['yaratik-arena'].sha256, '2c512ffb9dab578efa06de81038af207260692c5915f481cfe3b4d3bda6fb503');
+    assert.equal(byId['yaratik-arena'].version, '0.1.22');
+    assert.equal(byId['yaratik-arena'].url, 'https://github.com/maNgao7/mng-license-server1/releases/download/yaratik-arena-0.1.22/yaratik-arena.zip');
+    assert.equal(byId['yaratik-arena'].bytes, 151510221);
+    assert.equal(byId['yaratik-arena'].sha256, '525a243d494d3e0fa4efd03009020d777d414ea3a6183c57c5c251f1754203b6');
     assert.equal(byId['profile-contest'].version, '0.3.0');
     assert.equal(byId['profile-contest'].bytes, 47218844);
     assert.equal(byId['profile-contest'].sha256, 'bfea65a15399612a8cfea4a74bc6e0718b757e220544451aa4ab583d02dca7ab');
     assert.equal(byId['crowd-control'], undefined);
     assert.equal(response.data.media.length, 285);
-    assert.equal(response.data.revision, 12);
+    assert.equal(response.data.revision, 13);
     assert.equal(byId.caahr.version, '0.6.12');
     assert.equal(byId.caahr.bytes, 63233577);
     assert.equal(byId['frog-river'].version,'7.0.5');

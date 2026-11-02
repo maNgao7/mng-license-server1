@@ -10,6 +10,7 @@ const launcher706=JSON.parse(fs.readFileSync(new URL('../content-bootstrap-7.0.6
 const launcher707=JSON.parse(fs.readFileSync(new URL('../content-bootstrap-7.0.7.json',import.meta.url),'utf8'));
 const launcher709=JSON.parse(fs.readFileSync(new URL('../content-bootstrap-7.0.9.json',import.meta.url),'utf8'));
 const launcher715=JSON.parse(fs.readFileSync(new URL('../content-bootstrap-7.0.15.json',import.meta.url),'utf8'));
+const arena021=JSON.parse(fs.readFileSync(new URL('../content-bootstrap-arena-0.1.21.json',import.meta.url),'utf8'));
 const candidate=JSON.parse(fs.readFileSync(new URL('../maintenance/minecraft-rounds-7.0.3/qa/catalog-candidate.json',import.meta.url),'utf8'));
 
 test('an explicitly approved Minecraft candidate upgrades exactly two packages, without a launcher or media update',()=>{
@@ -97,6 +98,10 @@ test('7.0.15 adds only Arena and never replaces customized catalog state',()=>{
 });
 
 test('Arena 0.1.21 upgrades the actual untouched 7.0.15 rev11 catalog to rev12 and changes only Arena',()=>{
+  const current=arena021;
+  const snapshot=fs.readFileSync(new URL('../content-bootstrap-arena-0.1.21.json',import.meta.url),'utf8').replace(/\r\n/g,'\n');
+  assert.equal(Buffer.byteLength(snapshot),127329);
+  assert.equal(createHash('sha256').update(snapshot).digest('hex'),'539e81367f64e57d97f2c501000e3e6b4a7bcd1d82973ff59eb9d94f280cb6eb');
   const previousArena=launcher715.games.find(game=>game.id==='yaratik-arena');
   const arena=current.games.find(game=>game.id==='yaratik-arena');
   assert.equal(current.revision,12);
@@ -122,7 +127,34 @@ test('Arena 0.1.21 upgrades the actual untouched 7.0.15 rev11 catalog to rev12 a
   assert.equal(upgradedBootstrapState(state,launcher715,current),null);
 });
 
-test('Arena hotfix preserves every administrator field in either rev11 draft or published state',()=>{
+test('Arena 0.1.22 upgrades the actual untouched rev12 catalog to rev13 and changes only its package',()=>{
+  const previousArena=arena021.games.find(game=>game.id==='yaratik-arena');
+  const arena=current.games.find(game=>game.id==='yaratik-arena');
+  assert.equal(arena021.revision,12);
+  assert.equal(current.revision,13);
+  assert.ok(Date.parse(current.publishedAt));
+  assert.equal(arena.version,'0.1.22');
+  assert.equal(arena.url,'https://github.com/maNgao7/mng-license-server1/releases/download/yaratik-arena-0.1.22/yaratik-arena.zip');
+  assert.equal(arena.sha256,'525a243d494d3e0fa4efd03009020d777d414ea3a6183c57c5c251f1754203b6');
+  assert.notEqual(arena.sha256,previousArena.sha256);
+  assert.equal(arena.bytes,151510221);
+  assert.deepEqual(current,{
+    ...arena021,revision:13,publishedAt:current.publishedAt,
+    games:arena021.games.map(game=>game.id==='yaratik-arena'?{
+      ...game,version:arena.version,url:arena.url,sha256:arena.sha256,bytes:arena.bytes
+    }:game)
+  });
+  const state={draft:structuredClone(arena021),published:structuredClone(arena021)};
+  const upgraded=upgradedBootstrapState(state,arena021,current,{allowReleasedBaseline:true});
+  assert.deepEqual(upgraded,{draft:current,published:current});
+  assert.deepEqual(state,{draft:arena021,published:arena021});
+  assert.notEqual(upgraded.draft,upgraded.published);
+  assert.notEqual(upgraded.draft,current);
+  assert.equal(upgradedBootstrapState(upgraded,arena021,current,{allowReleasedBaseline:true}),null);
+  assert.equal(upgradedBootstrapState(state,arena021,current),null);
+});
+
+test('Arena hotfix preserves every administrator field in either rev11 or rev12 draft or published state',()=>{
   const changes=[
     catalog=>catalog.revision++,
     catalog=>catalog.publishedAt=null,
@@ -142,11 +174,11 @@ test('Arena hotfix preserves every administrator field in either rev11 draft or 
     catalog=>catalog.media.pop(),
     catalog=>catalog.launcher={version:'7.0.15',downloadUrl:'https://github.com/custom/setup.exe',sha256:'c'.repeat(64),bytes:1,changelog:'Custom'}
   ];
-  for(const field of ['draft','published'])for(const change of changes){
-    const state={draft:structuredClone(launcher715),published:structuredClone(launcher715)};
+  for(const baseline of [launcher715,arena021])for(const field of ['draft','published'])for(const change of changes){
+    const state={draft:structuredClone(baseline),published:structuredClone(baseline)};
     change(state[field]);
     const retained=structuredClone(state);
-    assert.equal(upgradedBootstrapState(state,launcher715,current,{allowReleasedBaseline:true}),null);
+    assert.equal(upgradedBootstrapState(state,baseline,current,{allowReleasedBaseline:true}),null);
     assert.deepEqual(state,retained);
   }
 });
