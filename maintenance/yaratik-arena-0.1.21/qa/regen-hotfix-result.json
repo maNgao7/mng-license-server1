@@ -1,0 +1,27 @@
+{
+  "passed": true,
+  "checks": [
+    "A real Boss hit applies 150 damage and does not regenerate before the seven-second delay",
+    "The native health meter rises gradually at the one-percent-of-maximum rate",
+    "The health HUD is eighteen percent larger, raised twenty-four pixels, and reports its actual safe bounds",
+    "More than seven wall-clock seconds in the menu cause no healing and no catch-up burst on resume",
+    "Pausing during the damage cooldown preserves its remaining active-time delay",
+    "A dead player never regenerates or loses killer attribution; only the normal clean new round restores health",
+    "All original settings restored byte-for-byte; no original Steam files or account settings replaced"
+  ],
+  "measurements": [
+    {
+      "phase": "gradual-native-healing",
+      "first": 352,
+      "after": 359,
+      "observedMilliseconds": 1315
+    }
+  ],
+  "captures": [
+    {
+      "label": "larger-higher-health-hud",
+      "file": "capture-422.png"
+    }
+  ],
+  "settingsHash": "7a161c8c8fc0c24243e28137f7cfb783ae61c30f2858ab3e3b39d119ad735b88"
+}

@@ -1,0 +1,122 @@
+{
+  "passed": true,
+  "version": "0.1.21",
+  "checks": [
+    "Native attacks damage a player above normal, Boss and Big Boss heads, including a living crowd; the old 1.35m immunity is gone",
+    "A solid world wall still blocks the melee hit",
+    "A normal creature cannot hit a distant airborne player",
+    "Fifty native arrivals use different radii across the forward area, not a tight surrounding ring",
+    "Facing the solid mission wall still spawns the whole wave safely toward open arena space, with nobody behind the board",
+    "All four roles have exactly 1.2x native movement speed; pooled reuse does not compound it",
+    "One hundred physical creatures: every displayed portrait and health badge is collision-free at 1920, 1280 and 800px; hidden labels yield to the nearest/aimed/injured creatures",
+    "Both publishing images render in the B menu at desktop and compact sizes; export is byte-identical and repeated exports never overwrite; the original transparent gift guide is unchanged"
+  ],
+  "measurements": [
+    {
+      "case": "spawn-head",
+      "damage": 5,
+      "playerY": 2.2668,
+      "minRelativeHeight": 2.20999995
+    },
+    {
+      "case": "boss-head",
+      "damage": 150,
+      "playerY": 4.3668,
+      "minRelativeHeight": 4.31000011
+    },
+    {
+      "case": "bigboss-head",
+      "damage": 400,
+      "playerY": 6.4668,
+      "minRelativeHeight": 6.409999568
+    },
+    {
+      "case": "pile-18",
+      "damage": 5,
+      "playerY": 2.2668,
+      "minRelativeHeight": 2.209999906
+    },
+    {
+      "case": "50-scattered-births",
+      "minRadius": 4.646430102359292,
+      "maxRadius": 12.450509072535107,
+      "spreadX": 21.728532
+    },
+    {
+      "case": "label-density-1920",
+      "visible": 17,
+      "hidden": 34
+    },
+    {
+      "case": "label-density-1280",
+      "visible": 5,
+      "hidden": 50
+    },
+    {
+      "case": "label-density-800",
+      "visible": 2,
+      "hidden": 45
+    },
+    {
+      "case": "100-creatures-performance",
+      "meanMs": 3.176295042037964,
+      "p95Ms": 3.128429651260376
+    }
+  ],
+  "captures": [
+    {
+      "label": "spawn-head-hit",
+      "file": "capture-1095.png"
+    },
+    {
+      "label": "boss-head-hit",
+      "file": "capture-1139.png"
+    },
+    {
+      "label": "bigboss-head-hit",
+      "file": "capture-1191.png"
+    },
+    {
+      "label": "pile-head-hit",
+      "file": "capture-1221.png"
+    },
+    {
+      "label": "scattered-front-wave",
+      "file": "capture-1265.png"
+    },
+    {
+      "label": "100-creatures-labels-1920",
+      "file": "capture-1367.png"
+    },
+    {
+      "label": "100-creatures-labels-1280",
+      "file": "capture-1369.png"
+    },
+    {
+      "label": "100-creatures-labels-800",
+      "file": "capture-1371.png"
+    },
+    {
+      "label": "publishing-files-1280",
+      "file": "capture-1384.png"
+    },
+    {
+      "label": "publishing-files-800",
+      "file": "capture-1386.png"
+    }
+  ],
+  "liveAtStart": {
+    "status": "disconnected",
+    "reason": "idle",
+    "message": "Yayin hesabi bekleniyor.",
+    "username": "",
+    "roomId": "",
+    "epoch": "",
+    "received": 0,
+    "giftEvents": 0,
+    "likeEvents": 0,
+    "followEvents": 0
+  },
+  "realPaidGiftTest": false,
+  "giftGuideSha256": "aa38a7a1ec8469824fc3fe4150ea68ad3ff246694630742bc5e4461f524a1e7f"
+}

@@ -1,0 +1,370 @@
+{
+  "passed": true,
+  "checks": [
+    "99 personal likes: zero actions; like 100: one; 199: still one; 200: two; later batches repeat with their remainder; viewers do not share counters",
+    "A new round preserves partial like progress, and the next hundredth like still triggers",
+    "First follow executes the selected action; repeated follow by the same viewer does not duplicate it; a second viewer works",
+    "Every currently assigned gift ID executes its configured action and exact amount, for one gift and three repeats, including weapon, flash and prison actions",
+    "An unfinished combo does not execute; its terminal repeat total executes once; duplicate messages and replayed combo groups do not double-count",
+    "An unassigned gift cannot accidentally spawn creatures or run another gift action",
+    "Each configured creature gift was physically spawned in the native scene at its saved amount, with zero remaining queue and correct sender attribution",
+    "Saved actual gift bindings spawn exactly two Boss, two Big Boss and three armed supports without changing any gift selections",
+    "Desktop and compact action panels, physical creature health bars and upper-left gift balloon render without HUD errors"
+  ],
+  "giftChecks": [
+    {
+      "giftId": "5655",
+      "repeats": 1,
+      "configured": [
+        {
+          "op": "spawn",
+          "count": 2
+        }
+      ],
+      "acceptedCreatures": 2
+    },
+    {
+      "giftId": "5655",
+      "repeats": 3,
+      "configured": [
+        {
+          "op": "spawn",
+          "count": 2
+        }
+      ],
+      "acceptedCreatures": 6
+    },
+    {
+      "giftId": "5319",
+      "repeats": 1,
+      "configured": [
+        {
+          "op": "spawn",
+          "count": 10
+        }
+      ],
+      "acceptedCreatures": 10
+    },
+    {
+      "giftId": "5319",
+      "repeats": 3,
+      "configured": [
+        {
+          "op": "spawn",
+          "count": 10
+        }
+      ],
+      "acceptedCreatures": 30
+    },
+    {
+      "giftId": "5658",
+      "repeats": 1,
+      "configured": [
+        {
+          "op": "spawn",
+          "count": 25
+        }
+      ],
+      "acceptedCreatures": 25
+    },
+    {
+      "giftId": "5658",
+      "repeats": 3,
+      "configured": [
+        {
+          "op": "spawn",
+          "count": 25
+        }
+      ],
+      "acceptedCreatures": 75
+    },
+    {
+      "giftId": "5282",
+      "repeats": 1,
+      "configured": [
+        {
+          "op": "down",
+          "count": 1
+        }
+      ],
+      "acceptedCreatures": 0
+    },
+    {
+      "giftId": "5282",
+      "repeats": 3,
+      "configured": [
+        {
+          "op": "down",
+          "count": 1
+        }
+      ],
+      "acceptedCreatures": 0
+    },
+    {
+      "giftId": "8913",
+      "repeats": 1,
+      "configured": [
+        {
+          "op": "up",
+          "count": 1
+        }
+      ],
+      "acceptedCreatures": 0
+    },
+    {
+      "giftId": "8913",
+      "repeats": 3,
+      "configured": [
+        {
+          "op": "up",
+          "count": 1
+        }
+      ],
+      "acceptedCreatures": 0
+    },
+    {
+      "giftId": "17473",
+      "repeats": 1,
+      "configured": [
+        {
+          "op": "flash",
+          "count": 3
+        }
+      ],
+      "acceptedCreatures": 0
+    },
+    {
+      "giftId": "17473",
+      "repeats": 3,
+      "configured": [
+        {
+          "op": "flash",
+          "count": 3
+        }
+      ],
+      "acceptedCreatures": 0
+    },
+    {
+      "giftId": "6064",
+      "repeats": 1,
+      "configured": [
+        {
+          "op": "prison",
+          "count": 1
+        }
+      ],
+      "acceptedCreatures": 0
+    },
+    {
+      "giftId": "6064",
+      "repeats": 3,
+      "configured": [
+        {
+          "op": "prison",
+          "count": 1
+        }
+      ],
+      "acceptedCreatures": 0
+    },
+    {
+      "giftId": "5827",
+      "repeats": 1,
+      "configured": [
+        {
+          "op": "release",
+          "count": 1
+        }
+      ],
+      "acceptedCreatures": 0
+    },
+    {
+      "giftId": "5827",
+      "repeats": 3,
+      "configured": [
+        {
+          "op": "release",
+          "count": 1
+        }
+      ],
+      "acceptedCreatures": 0
+    },
+    {
+      "giftId": "7168",
+      "repeats": 1,
+      "configured": [
+        {
+          "op": "bigboss",
+          "count": 1
+        }
+      ],
+      "acceptedCreatures": 1
+    },
+    {
+      "giftId": "7168",
+      "repeats": 3,
+      "configured": [
+        {
+          "op": "bigboss",
+          "count": 1
+        }
+      ],
+      "acceptedCreatures": 3
+    },
+    {
+      "giftId": "5303",
+      "repeats": 1,
+      "configured": [
+        {
+          "op": "spawn",
+          "count": 50
+        }
+      ],
+      "acceptedCreatures": 50
+    },
+    {
+      "giftId": "5303",
+      "repeats": 3,
+      "configured": [
+        {
+          "op": "spawn",
+          "count": 50
+        }
+      ],
+      "acceptedCreatures": 150
+    },
+    {
+      "giftId": "6427",
+      "repeats": 1,
+      "configured": [
+        {
+          "op": "boss",
+          "count": 1
+        }
+      ],
+      "acceptedCreatures": 1
+    },
+    {
+      "giftId": "6427",
+      "repeats": 3,
+      "configured": [
+        {
+          "op": "boss",
+          "count": 1
+        }
+      ],
+      "acceptedCreatures": 3
+    },
+    {
+      "giftId": "7934",
+      "repeats": 1,
+      "configured": [
+        {
+          "op": "helper",
+          "count": 1
+        }
+      ],
+      "acceptedCreatures": 1
+    },
+    {
+      "giftId": "7934",
+      "repeats": 3,
+      "configured": [
+        {
+          "op": "helper",
+          "count": 1
+        }
+      ],
+      "acceptedCreatures": 3
+    }
+  ],
+  "birthChecks": [
+    {
+      "giftId": "5655",
+      "expected": 2,
+      "actualAlive": 2,
+      "remainingQueue": 0
+    },
+    {
+      "giftId": "5319",
+      "expected": 10,
+      "actualAlive": 10,
+      "remainingQueue": 0
+    },
+    {
+      "giftId": "5658",
+      "expected": 25,
+      "actualAlive": 25,
+      "remainingQueue": 0
+    },
+    {
+      "giftId": "5303",
+      "expected": 50,
+      "actualAlive": 50,
+      "remainingQueue": 0
+    },
+    {
+      "kind": "boss",
+      "giftId": "6427",
+      "repeats": 2,
+      "expected": 2,
+      "physical": 2,
+      "temporaryGift": false
+    },
+    {
+      "kind": "bigboss",
+      "giftId": "7168",
+      "repeats": 2,
+      "expected": 2,
+      "physical": 2,
+      "temporaryGift": false
+    },
+    {
+      "kind": "helper",
+      "giftId": "7934",
+      "repeats": 3,
+      "expected": 3,
+      "physical": 3,
+      "temporaryGift": false
+    }
+  ],
+  "captures": [
+    {
+      "label": "configured-gift-boss",
+      "file": "capture-765.png"
+    },
+    {
+      "label": "configured-gift-bigboss",
+      "file": "capture-773.png"
+    },
+    {
+      "label": "configured-gift-helper",
+      "file": "capture-781.png"
+    },
+    {
+      "label": "final-gift-balloon",
+      "file": "capture-789.png"
+    },
+    {
+      "label": "final-actions-desktop",
+      "file": "capture-792.png"
+    },
+    {
+      "label": "final-actions-compact",
+      "file": "capture-794.png"
+    }
+  ],
+  "realPaidGiftTest": false,
+  "unassignedActions": [],
+  "liveAtStart": {
+    "status": "disconnected",
+    "reason": "idle",
+    "message": "Yayin hesabi bekleniyor.",
+    "username": "",
+    "roomId": "",
+    "epoch": "",
+    "received": 0,
+    "giftEvents": 0,
+    "likeEvents": 0,
+    "followEvents": 0
+  }
+}

@@ -1,0 +1,117 @@
+{
+  "passed": true,
+  "version": "0.1.19",
+  "checks": [
+    "Fifteen downward rays find solid floor across the full accessible board base",
+    "Player and a dead native creature remain above ground when forced against the board at centre and both edges",
+    "Manual suction physically consumes corpses across both central axes in all four directions, with exactly one intake and sound",
+    "A solid wall blocks suction; removing it restores physical collection without changing region",
+    "The second airborne Space-path input travels twenty-five metres; repeated presses cannot chain dashes",
+    "Looking upward aims the full twenty-five-metre dash into the air; vertical launch velocity ends with the dash",
+    "Capsule sweep stops the dash before the board rather than crossing its collider",
+    "Looking almost straight up stops the dash beneath the real factory ceiling",
+    "A downward aimed dash stops above the floor instead of tunnelling below the map",
+    "Menu controls cannot trigger an air dash"
+  ],
+  "dashMeasurements": [
+    {
+      "label": "horizontal",
+      "distance": 24.999996,
+      "origin": {
+        "x": 0,
+        "y": 2.2663,
+        "z": -14
+      },
+      "end": {
+        "x": 0,
+        "y": 2.2663,
+        "z": 10.999996
+      },
+      "obstacle": ""
+    },
+    {
+      "label": "upward-aimed",
+      "distance": 24.999995209629663,
+      "origin": {
+        "x": 0,
+        "y": 2.2663,
+        "z": -14
+      },
+      "end": {
+        "x": 0,
+        "y": 8.736775,
+        "z": 10.148141
+      },
+      "obstacle": ""
+    },
+    {
+      "label": "board-stop",
+      "distance": 1.1219997,
+      "origin": {
+        "x": 20.50343,
+        "y": 2.2763,
+        "z": 0
+      },
+      "end": {
+        "x": 21.62543,
+        "y": 2.2763,
+        "z": -1.3375269e-7
+      },
+      "obstacle": "TikMnG_Mission_Board"
+    },
+    {
+      "label": "ceiling-stop",
+      "distance": 16.718878,
+      "origin": {
+        "x": 0,
+        "y": 2.2663,
+        "z": 0
+      },
+      "end": {
+        "x": 0,
+        "y": 18.921556,
+        "z": 1.4571455
+      },
+      "obstacle": "Roof_LightBeam"
+    },
+    {
+      "label": "floor-stop",
+      "distance": 1.3340352,
+      "origin": {
+        "x": 0,
+        "y": 2.168411,
+        "z": 0
+      },
+      "end": {
+        "x": 0.013852976,
+        "y": 0.9425787,
+        "z": 0.52498186
+      },
+      "obstacle": "MetalFloorCol"
+    }
+  ],
+  "nativeFarVacuum": {
+    "configuredRange": 14,
+    "startDistance": 18.012163,
+    "collected": 1
+  },
+  "captures": [
+    {
+      "label": "sealed-board-base",
+      "file": "capture-1434.png"
+    },
+    {
+      "label": "dash-corridor",
+      "file": "capture-1491.png"
+    },
+    {
+      "label": "dash-upward",
+      "file": "capture-1502.png"
+    }
+  ],
+  "settingsPreserved": true,
+  "nativePhysics": true,
+  "spaceInputsInjectedThroughSharedHandler": true,
+  "physicalKeyboardTest": false,
+  "realPaidGifts": false
+}

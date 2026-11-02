@@ -1,0 +1,66 @@
+{
+  "passed": true,
+  "baseline": false,
+  "directory": "D:\\TikMnG-Arena715-Final2QA\\library\\.game-library\\yaratik-arena\\versions\\4d2ed777-2845-4be3-a101-292a544a96b0",
+  "suites": [
+    {
+      "name": "death-reset-hotfix-tests.cjs",
+      "passed": true
+    },
+    {
+      "name": "regen-hotfix-tests.cjs",
+      "passed": true
+    },
+    {
+      "name": "final-event-tests.cjs",
+      "passed": true
+    },
+    {
+      "name": "combat-polish-tests.cjs",
+      "passed": true
+    },
+    {
+      "name": "crowd-polish-tests.cjs",
+      "passed": true
+    },
+    {
+      "name": "floor-vacuum-dash-tests.cjs",
+      "passed": true
+    }
+  ],
+  "samples": [
+    {
+      "label": "after-100-native-creatures",
+      "run": 1,
+      "frames": 3150,
+      "meanMs": 3.1766669750213623,
+      "p50Ms": 3.1258008,
+      "p95Ms": 3.1286280155181885,
+      "p99Ms": 3.1293294429779053,
+      "maxMs": 31.251297,
+      "framesOver33": 0,
+      "framesOver50": 0,
+      "framesOver100": 0,
+      "managedGc": 1,
+      "live": 100,
+      "pending": 0,
+      "bodies": 0,
+      "memoryBytes": 7406043136,
+      "width": 1280,
+      "height": 720,
+      "focused": true,
+      "graphics": "AMD Radeon RX 9070 XT",
+      "cpu": "AMD Ryzen 7 9850X3D 8-Core Processor ",
+      "quality": 5,
+      "vSync": 1,
+      "targetFps": -1,
+      "realProfiles": 0
+    }
+  ],
+  "capture": "capture-226.png",
+  "labels": {
+    "visible": 12,
+    "reserved": 28
+  },
+  "finishedAt": "2026-11-02T11:15:07.216Z"
+}

@@ -1,0 +1,41 @@
+{
+  "passed": true,
+  "baseline": true,
+  "directory": "D:\\TikMnG-Arena715-Final2QA\\library\\.game-library\\yaratik-arena\\versions\\d030e4b6-e86e-4684-8d0d-a4915ddcf8f5",
+  "suites": [],
+  "samples": [
+    {
+      "label": "before-100-native-creatures",
+      "run": 1,
+      "frames": 2627,
+      "meanMs": 3.8102502822875977,
+      "p50Ms": 3.1252055,
+      "p95Ms": 6.253897190093994,
+      "p99Ms": 9.376424789428711,
+      "maxMs": 28.119324,
+      "framesOver33": 0,
+      "framesOver50": 0,
+      "framesOver100": 0,
+      "managedGc": 1,
+      "live": 100,
+      "pending": 0,
+      "bodies": 0,
+      "memoryBytes": 7406505984,
+      "width": 1280,
+      "height": 720,
+      "focused": true,
+      "graphics": "AMD Radeon RX 9070 XT",
+      "cpu": "AMD Ryzen 7 9850X3D 8-Core Processor ",
+      "quality": 5,
+      "vSync": 1,
+      "targetFps": -1,
+      "realProfiles": 0
+    }
+  ],
+  "capture": "capture-12.png",
+  "labels": {
+    "visible": 28,
+    "reserved": 9
+  },
+  "finishedAt": "2026-11-02T11:00:45.754Z"
+}

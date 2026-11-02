@@ -1,0 +1,66 @@
+{
+  "passed": true,
+  "checks": [
+    "Actual native attacks deal 5, 150 and 400 damage at 500 maximum health; large-enemy windup and recovery are progressively slower",
+    "Support bat reuses the original textured bat meshes and is parented at the visible gloved grip with no gap",
+    "Normal, support, Boss and Big Boss health bars show class health and update after real damage",
+    "Gift balloons stay upper-left under the timed panel at desktop and compact resolutions without covering the health meter"
+  ],
+  "captures": [
+    {
+      "label": "spawn-first-damage-and-vitals",
+      "file": "capture-829.png"
+    },
+    {
+      "label": "boss-first-damage-and-vitals",
+      "file": "capture-897.png"
+    },
+    {
+      "label": "bigboss-first-damage-and-vitals",
+      "file": "capture-969.png"
+    },
+    {
+      "label": "native-bat-in-gloved-hand",
+      "file": "capture-1031.png"
+    },
+    {
+      "label": "all-class-healthbars",
+      "file": "capture-1036.png"
+    },
+    {
+      "label": "damaged-boss-healthbar",
+      "file": "capture-1048.png"
+    },
+    {
+      "label": "upper-left-gift-1280",
+      "file": "capture-1051.png"
+    },
+    {
+      "label": "upper-left-gift-800",
+      "file": "capture-1054.png"
+    }
+  ],
+  "measurements": [
+    {
+      "kind": "spawn",
+      "damage": 5,
+      "period": 7.073303999999993,
+      "enemyHealth": 12,
+      "remaining": 490
+    },
+    {
+      "kind": "boss",
+      "damage": 150,
+      "period": 6.46711599999999,
+      "enemyHealth": 120,
+      "remaining": 200
+    },
+    {
+      "kind": "bigboss",
+      "damage": 400,
+      "period": 10.851534999999998,
+      "enemyHealth": 240,
+      "remaining": 0
+    }
+  ]
+}

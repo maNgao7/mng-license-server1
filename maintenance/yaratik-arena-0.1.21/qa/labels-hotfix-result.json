@@ -1,0 +1,149 @@
+{
+  "passed": true,
+  "checks": [
+    "Near dense crowd: every drawn bar and portrait stays centered directly above its native creature, with no overlap or health numbers at all three resolutions.",
+    "Moving away cannot fan labels into a detached grid; distance-scaled indicators remain attached and crowded labels hide.",
+    "Rotating/moving the camera preserves exact world-head attachment; graphical health bars and enlarged player HUD render without HUD errors."
+  ],
+  "views": [
+    {
+      "label": "dense-crowd-near",
+      "width": 1920,
+      "height": 1080,
+      "visible": 11,
+      "hidden": 67,
+      "portraitWidths": [
+        24.14088,
+        22.44372,
+        21.55894,
+        19.156574,
+        26.002514,
+        25.403843,
+        23.65524,
+        23.229677,
+        16.926788,
+        16.64695,
+        12
+      ],
+      "file": "capture-47.png"
+    },
+    {
+      "label": "dense-crowd-near",
+      "width": 1280,
+      "height": 720,
+      "visible": 11,
+      "hidden": 64,
+      "portraitWidths": [
+        22.882658,
+        22.711897,
+        22.462202,
+        31.641804,
+        27.898243,
+        26.54278,
+        24.12441,
+        23.459461,
+        19.610237,
+        16.676386,
+        12.028855
+      ],
+      "file": "capture-49.png"
+    },
+    {
+      "label": "dense-crowd-near",
+      "width": 800,
+      "height": 600,
+      "visible": 7,
+      "hidden": 76,
+      "portraitWidths": [
+        24.480963,
+        21.192572,
+        21.052025,
+        20.324678,
+        28.706291,
+        20.889544,
+        18.751625
+      ],
+      "file": "capture-51.png"
+    },
+    {
+      "label": "dense-crowd-far",
+      "width": 1920,
+      "height": 1080,
+      "visible": 12,
+      "hidden": 46,
+      "portraitWidths": [
+        20.755854,
+        18.609268,
+        21.365498,
+        20.058619,
+        18.774393,
+        18.52439,
+        16.984274,
+        16.766567,
+        14.638894,
+        14.211906,
+        13.744904,
+        13.602555
+      ],
+      "file": "capture-54.png"
+    },
+    {
+      "label": "dense-crowd-far",
+      "width": 1280,
+      "height": 720,
+      "visible": 9,
+      "hidden": 48,
+      "portraitWidths": [
+        20.906752,
+        19.817667,
+        22.912472,
+        21.528458,
+        19.327097,
+        15.800896,
+        13.779702,
+        13.775197,
+        12.851486
+      ],
+      "file": "capture-56.png"
+    },
+    {
+      "label": "dense-crowd-far",
+      "width": 800,
+      "height": 600,
+      "visible": 6,
+      "hidden": 50,
+      "portraitWidths": [
+        19.868803,
+        18.830751,
+        24.259518,
+        18.577976,
+        13.466404,
+        12.409019
+      ],
+      "file": "capture-58.png"
+    },
+    {
+      "label": "oblique-camera",
+      "width": 1280,
+      "height": 720,
+      "visible": 13,
+      "hidden": 54,
+      "portraitWidths": [
+        27.175533,
+        22.04133,
+        18.796717,
+        23.990463,
+        23.739744,
+        20.008387,
+        19.495274,
+        18.754179,
+        15.70737,
+        14.821802,
+        14.761693,
+        13.437901,
+        12
+      ],
+      "file": "capture-61.png"
+    }
+  ]
+}
