@@ -1,0 +1,39 @@
+{
+  "passed": true,
+  "directory": "D:\\TikMnG-Arena715-Final2QA\\library\\.game-library\\yaratik-arena\\versions\\ceaee809-2033-4e82-a501-ffe3e627ef70",
+  "cycles": [
+    {
+      "cycle": 1,
+      "gameProcessId": 14048,
+      "hostProcessId": 19160,
+      "exit": {
+        "code": 0,
+        "signal": null
+      },
+      "normalSessionClose": true
+    },
+    {
+      "cycle": 2,
+      "gameProcessId": 30004,
+      "hostProcessId": 35112,
+      "exit": {
+        "code": 0,
+        "signal": null
+      },
+      "normalSessionClose": true
+    },
+    {
+      "cycle": 3,
+      "gameProcessId": 24916,
+      "hostProcessId": 9336,
+      "exit": {
+        "code": 0,
+        "signal": null
+      },
+      "normalSessionClose": true
+    }
+  ],
+  "lastAccountSurvivesRestart": true,
+  "disconnectSurvivesRestart": true,
+  "finishedAt": "2026-11-02T18:04:24.078Z"
+}

@@ -1,0 +1,24 @@
+{
+  "passed": true,
+  "checks": [
+    "base normal health stays twelve",
+    "fixture is wounded",
+    "existing enemy scales without healing its ratio",
+    "downgrade cannot weaken the same round",
+    "rocket tier scales normal maximum to 137",
+    "new creatures share current tier health",
+    "native rocket leaves ten health on its first lethal hit",
+    "second rocket kills normally",
+    "fresh round resets normal scaling",
+    "boss receives ten percent extra health",
+    "Big Boss receives ten percent extra health",
+    "every hostile receives five percent movement increase",
+    "helper still has twenty health and holds its weapon",
+    "helper clock advances during play",
+    "menu pauses helper lifetime",
+    "expired helper leaves no active body or friendly reference",
+    "pooled helper gets a fresh twenty second lifetime",
+    "no native gameplay errors"
+  ],
+  "verifiedAt": "2026-11-02T17:55:37.560Z"
+}

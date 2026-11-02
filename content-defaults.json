@@ -1,16 +1,16 @@
 {
   "schemaVersion": 1,
-  "revision": 14,
-  "publishedAt": "2026-11-02T16:10:44.601Z",
+  "revision": 15,
+  "publishedAt": "2026-11-02T18:00:00.000Z",
   "games": [
     {
       "id": "yaratik-arena",
       "title": "Yaratık Arena",
       "description": "İzleyicilerin gönderdiği yaratık, Boss ve Big Boss dalgalarına karşı hayatta kal. Destek yaratıkları yanında savaşır; vakumla topladığın yaratıklar silahını yükseltir. Beğeni, takip ve hediye eylemlerini oyun içinden ayarla.",
-      "version": "0.1.23",
-      "url": "https://github.com/maNgao7/mng-license-server1/releases/download/yaratik-arena-0.1.23/yaratik-arena.zip",
-      "sha256": "f66af3d9536f5c5dfa61f16d80e500853abbb2089ab82419ec45b866af8f09b0",
-      "bytes": 151519428,
+      "version": "0.1.24",
+      "url": "https://github.com/maNgao7/mng-license-server1/releases/download/yaratik-arena-0.1.24/yaratik-arena.zip",
+      "sha256": "7468f5c8ae1f0d2de1fe506b9fe69a8f05edd45963620ea329c4dd421f199ecc",
+      "bytes": 151520304,
       "requirements": "Windows 10/11 64 bit. Steam'den ücretsiz Can 'Em All Demo kurulumu gerekir. Mod ve yerel oyun kopyası için en az 3 GB boş disk. Yüksek yaratık sayıları daha fazla RAM gerektirir.",
       "resources": []
     },
@@ -116,18 +116,18 @@
       "id": "orbit",
       "title": "MNG Orbit",
       "description": "İzleyici profilleri hareketli bir yörünge arenasında karşılaşır. Canlı yayın etkileşimleriyle büyüyen profiller rakiplerine karşı alan kazanmaya çalışır.",
-      "version": "7.0.2",
-      "url": "https://github.com/maNgao7/mng-license-server1/releases/download/game-installers-7.0.2/mng-orbit-7.0.2.zip",
-      "sha256": "7559aba673b1b55bd392770db7eb2e6a6d32705e4e045ccd0150a18b5c306636",
-      "bytes": 415341720,
+      "version": "7.0.3",
+      "url": "https://github.com/maNgao7/mng-license-server1/releases/download/orbit-7.0.3/mng-orbit-7.0.3.zip",
+      "sha256": "bc8067c6c032b747982e3bf3f3ec5890cb9638950f27160e219955d32cd48c54",
+      "bytes": 414997794,
       "requirements": "",
       "resources": [],
       "files": [
         {
           "path": ".tikmng-content.json",
-          "url": "https://github.com/maNgao7/mng-license-server1/releases/download/games-7.0.2/game-content-mng-orbit-7.0.2.json",
-          "bytes": 1015066,
-          "sha256": "605756fdf6026146b9cf26c1cd6890952f7d37b0cff0abf0d25fdb8f9f62093f"
+          "url": "https://github.com/maNgao7/mng-license-server1/releases/download/orbit-7.0.3/game-content-mng-orbit-7.0.3.json",
+          "bytes": 1016167,
+          "sha256": "331fdd1a38e4f489e5dd1da6bd760ee257b9cc83e1fc92456eb3c4964bb81e7d"
         }
       ]
     },

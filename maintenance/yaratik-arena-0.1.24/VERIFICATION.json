@@ -1,0 +1,36 @@
+{
+  "passed": true,
+  "version": "0.1.24",
+  "verifiedAt": "2026-11-02T18:06:21.232Z",
+  "rulesChecks": 456,
+  "nativeSuites": [
+    {
+      "name": "balance-native-result.json",
+      "checks": 18
+    },
+    {
+      "name": "ammo-native-result.json",
+      "checks": 28
+    },
+    {
+      "name": "pursuit-result.json",
+      "checks": 8
+    },
+    {
+      "name": "final-event-result.json",
+      "checks": 9
+    }
+  ],
+  "nativeNormalExitCycles": 3,
+  "freshInstall": true,
+  "upgrade": true,
+  "savedSettingsPreserved": true,
+  "steamBaseRecopiedBytes": 0,
+  "sourceDllSha256": "9dce068f8c5325fb604641cdab28d26fa947853153b0410d52f7588e29473f52",
+  "serverTests": 98,
+  "serverSkipped": 0,
+  "originalSteamBinariesIncluded": false,
+  "privateAccountsIncluded": false,
+  "realPaidGiftTest": false,
+  "otherCustomerHardwareTest": false
+}

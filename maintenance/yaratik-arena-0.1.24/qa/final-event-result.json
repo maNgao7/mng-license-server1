@@ -1,0 +1,15 @@
+{
+  "passed": true,
+  "checks": [
+    "99 personal likes: zero actions; like 100: one; 199: still one; 200: two; later batches repeat with their remainder; viewers do not share counters",
+    "A new round preserves partial like progress, and the next hundredth like still triggers",
+    "First follow executes the selected action; repeated follow by the same viewer does not duplicate it; a second viewer works",
+    "Every currently assigned gift ID executes its configured action and exact amount, for one gift and three repeats, including weapon, flash and prison actions",
+    "An unfinished combo does not execute; its terminal repeat total executes once; duplicate messages and replayed combo groups do not double-count",
+    "An unassigned gift cannot accidentally spawn creatures or run another gift action",
+    "Each configured creature gift was physically spawned in the native scene at its saved amount, with zero remaining queue and correct sender attribution",
+    "Saved actual gift bindings spawn exactly two Boss, two Big Boss and three armed supports without changing any gift selections",
+    "Desktop and compact action panels, physical creature health bars and upper-left gift balloon render without HUD errors"
+  ],
+  "verifiedAt": "2026-11-02T18:06:21.228Z"
+}

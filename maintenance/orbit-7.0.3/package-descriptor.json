@@ -1,0 +1,19 @@
+{
+  "id": "orbit",
+  "version": "7.0.3",
+  "url": "https://github.com/maNgao7/mng-license-server1/releases/download/orbit-7.0.3/mng-orbit-7.0.3.zip",
+  "sha256": "bc8067c6c032b747982e3bf3f3ec5890cb9638950f27160e219955d32cd48c54",
+  "bytes": 414997794,
+  "files": [
+    {
+      "path": ".tikmng-content.json",
+      "url": "https://github.com/maNgao7/mng-license-server1/releases/download/orbit-7.0.3/game-content-mng-orbit-7.0.3.json",
+      "sha256": "331fdd1a38e4f489e5dd1da6bd760ee257b9cc83e1fc92456eb3c4964bb81e7d",
+      "bytes": 1016167
+    }
+  ],
+  "changedFiles": 5,
+  "changedFileBytes": 33098,
+  "updateTransferBytes": 1049265,
+  "reusedFiles": 2990
+}

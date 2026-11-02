@@ -133,7 +133,8 @@ test('published Minecraft 7.0.3 catalog receives the first-install repair once w
 for (const [filename, revision, arenaVersion] of [
     ['content-bootstrap-7.0.15.json', 11, '0.1.20'],
     ['content-bootstrap-arena-0.1.21.json', 12, '0.1.21'],
-    ['content-bootstrap-arena-0.1.22.json', 13, '0.1.22']
+    ['content-bootstrap-arena-0.1.22.json', 13, '0.1.22'],
+    ['content-bootstrap-arena-0.1.23.json', 14, '0.1.23']
 ]) test(`actual rev${revision} catalog receives the current Arena package once, retaining its full backup and launcher latest`, async t => {
     const previous = JSON.parse(fs.readFileSync(path.join(root, filename), 'utf8'));
     const current = JSON.parse(fs.readFileSync(path.join(root, 'content-defaults.json'), 'utf8'));
@@ -144,7 +145,7 @@ for (const [filename, revision, arenaVersion] of [
     const published = await f.public();
     assert.deepEqual(published, current);
     assert.deepEqual(published.games.find(game => game.id === 'yaratik-arena'), current.games.find(game => game.id === 'yaratik-arena'));
-    assert.deepEqual(published.games.filter(game => game.id !== 'yaratik-arena'), previous.games.filter(game => game.id !== 'yaratik-arena'));
+    assert.deepEqual(published.games.filter(game => !['yaratik-arena','orbit'].includes(game.id)), previous.games.filter(game => !['yaratik-arena','orbit'].includes(game.id)));
     assert.deepEqual(published.media, previous.media);
     assert.deepEqual(published.launcher, previous.launcher);
     assert.deepEqual(await f.get(), { draft: current, published: current });
@@ -164,7 +165,7 @@ for (const [filename, revision, arenaVersion] of [
 });
 
 test('Arena hotfix startup and restart retain customized rev11, rev12 and rev13 catalogs and pending administrator drafts', async t => {
-    const baselines = ['content-bootstrap-7.0.15.json', 'content-bootstrap-arena-0.1.21.json', 'content-bootstrap-arena-0.1.22.json']
+    const baselines = ['content-bootstrap-7.0.15.json', 'content-bootstrap-arena-0.1.21.json', 'content-bootstrap-arena-0.1.22.json', 'content-bootstrap-arena-0.1.23.json']
         .map(filename => JSON.parse(fs.readFileSync(path.join(root, filename), 'utf8')));
     const changes = [
         ['Arena', catalog => catalog.games[0].title = 'Administrator Arena title'],
@@ -203,16 +204,18 @@ test("public defaults add Arena, retain 16 existing games and exclude Crowd Cont
     assert.equal(response.data.launcher, undefined);
     const byId = Object.fromEntries(response.data.games.map(item => [item.id, item]));
     assert.equal(response.data.games.length, 17);
-    assert.equal(byId['yaratik-arena'].version, '0.1.23');
-    assert.equal(byId['yaratik-arena'].url, 'https://github.com/maNgao7/mng-license-server1/releases/download/yaratik-arena-0.1.23/yaratik-arena.zip');
-    assert.equal(byId['yaratik-arena'].bytes, 151519428);
-    assert.equal(byId['yaratik-arena'].sha256, 'f66af3d9536f5c5dfa61f16d80e500853abbb2089ab82419ec45b866af8f09b0');
+    assert.equal(byId['yaratik-arena'].version, '0.1.24');
+    assert.equal(byId['yaratik-arena'].url, 'https://github.com/maNgao7/mng-license-server1/releases/download/yaratik-arena-0.1.24/yaratik-arena.zip');
+    assert.equal(byId['yaratik-arena'].bytes, 151520304);
+    assert.equal(byId['yaratik-arena'].sha256, '7468f5c8ae1f0d2de1fe506b9fe69a8f05edd45963620ea329c4dd421f199ecc');
+    assert.equal(byId.orbit.version, '7.0.3');
+    assert.equal(byId.orbit.files[0].sha256, '331fdd1a38e4f489e5dd1da6bd760ee257b9cc83e1fc92456eb3c4964bb81e7d');
     assert.equal(byId['profile-contest'].version, '0.3.0');
     assert.equal(byId['profile-contest'].bytes, 47218844);
     assert.equal(byId['profile-contest'].sha256, 'bfea65a15399612a8cfea4a74bc6e0718b757e220544451aa4ab583d02dca7ab');
     assert.equal(byId['crowd-control'], undefined);
     assert.equal(response.data.media.length, 285);
-    assert.equal(response.data.revision, 14);
+    assert.equal(response.data.revision, 15);
     assert.equal(byId.caahr.version, '0.6.12');
     assert.equal(byId.caahr.bytes, 63233577);
     assert.equal(byId['frog-river'].version,'7.0.5');
@@ -239,8 +242,8 @@ test("public defaults add Arena, retain 16 existing games and exclude Crowd Cont
     for (const id of ['vs','puanlama','orbit','battle-game','duck-hunt','pony-life','penalty-kick','tightrope-balance','battle-royale','snow-war','minecraft-snake-arena']) {
         const game = byId[id];
         const minecraftUpdate=['snow-war','battle-royale'].includes(id);
-        assert.equal(game.version, id === 'minecraft-snake-arena' ? '0.16.0' : minecraftUpdate ? '7.0.4' : '7.0.2');
-        assert.match(game.url, id === 'minecraft-snake-arena' ? /\/game-snake-0\.16\.0\/[^/]+\.zip$/ : minecraftUpdate ? /\/minecraft-install-20261027\/[^/]+\.zip$/ : /\/game-installers-7\.0\.2\/[^/]+\.zip$/);
+        assert.equal(game.version, id === 'minecraft-snake-arena' ? '0.16.0' : id === 'orbit' ? '7.0.3' : minecraftUpdate ? '7.0.4' : '7.0.2');
+        assert.match(game.url, id === 'minecraft-snake-arena' ? /\/game-snake-0\.16\.0\/[^/]+\.zip$/ : id === 'orbit' ? /\/orbit-7\.0\.3\/[^/]+\.zip$/ : minecraftUpdate ? /\/minecraft-install-20261027\/[^/]+\.zip$/ : /\/game-installers-7\.0\.2\/[^/]+\.zip$/);
         assert.match(game.sha256, /^[a-f0-9]{64}$/); assert.ok(game.bytes > 0);
         assert.equal(game.files.length, 1); assert.equal(game.files[0].path, '.tikmng-content.json');
         assert.match(game.files[0].sha256, /^[a-f0-9]{64}$/); assert.ok(game.files[0].bytes > 0);

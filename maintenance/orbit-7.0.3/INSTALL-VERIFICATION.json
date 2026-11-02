@@ -1,0 +1,12 @@
+{
+  "passed": true,
+  "verifiedAt": "2026-11-02T18:02:05.309Z",
+  "manifestFiles": 2995,
+  "changedDownloads": 5,
+  "transferredFileBytes": 33098,
+  "reusedBytes": 430000880,
+  "productionUpdateTransferBytes": 1049265,
+  "installed": "D:\\TikMnG-Orbit703QA-1793642508229\\upgrade\\.game-library\\mng-orbit\\versions\\b21150dd-df70-48a9-9293-867d0ed28cfb",
+  "freshDirectory": "D:\\TikMnG-Orbit703QA-1793642508229\\fresh\\.game-library\\mng-orbit\\versions\\407eb530-02c5-4d86-ae16-4a5d175f2bfb",
+  "renderTransferBytes": 0
+}

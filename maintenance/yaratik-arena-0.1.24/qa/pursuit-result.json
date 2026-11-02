@@ -1,0 +1,14 @@
+{
+  "passed": true,
+  "checks": [
+    "180 creatures: pursuit continues after crossing the arena; no path starvation; limited player drift",
+    "180 creatures: rear rows also redirect toward the new player position",
+    "600 creatures: pursuit continues after crossing the arena; no path starvation; limited player drift",
+    "600 creatures: rear rows also redirect toward the new player position",
+    "600-creature frame timing recorded without game or navigation errors",
+    "idle standing capsule is stable and player interpolation is enabled",
+    "disabling player/mob push does not bypass world walls or prevent real melee damage",
+    "player moves inside cage, enemies remain outside, protection and attacks after release still work"
+  ],
+  "verifiedAt": "2026-11-02T17:57:05.124Z"
+}
