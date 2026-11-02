@@ -1,0 +1,41 @@
+'use strict';
+const fs=require('node:fs'),path=require('node:path'),crypto=require('node:crypto'),assert=require('node:assert/strict');
+const {_electron}=require('C:/Users/User/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright'),Store=require('electron-store');
+const root=path.resolve(__dirname,'..'),out=path.join(root,'qa/713'),source=path.join(process.env.APPDATA,'TikMnG-Test-6.5.17/mng-config.json');let app;
+const hash=file=>crypto.createHash('sha256').update(fs.readFileSync(file)).digest('hex');
+async function main(){
+ const before=hash(source),profile=fs.mkdtempSync(path.join(out,'packaged-'));fs.copyFileSync(source,path.join(profile,'mng-config.json'));
+ const store=new Store({cwd:profile,name:'mng-config',encryptionKey:'mng-electron-secret-key-2024'});
+ for(const [key,value]of Object.entries({preview_initialized_v1:true,library_root_v1:path.join(profile,'games'),library_previous_paths_v1:{},media_root_v1:path.join(profile,'media'),entry_video_root_v1:path.join(profile,'entry'),media_studio_v1:{version:1,items:[]},entry_videos_v1:{version:2,rules:[],sessions:{}},media_background_downloads_enabled:false,tiktok_active_account:'',tiktok_accounts:[],overlay_installation_v1:crypto.randomBytes(16).toString('hex')}))store.set(key,value);
+ store.delete('widget_access_key');await require('../lib/preview-ports.cjs').assertPreviewPortsAvailable([31983]);
+ const env={...process.env,MNG_TEST_PROFILE:profile,MNG_WIDGET_PORT:'31983'};delete env.ELECTRON_RUN_AS_NODE;
+ app=await _electron.launch({executablePath:process.env.MNG_QA_EXE||'D:/TikMnG-Maintenance-713-preview/win-unpacked/TikMnG Update Preview.exe',args:process.env.MNG_QA_STABLE==='1'?[]:['--tikmng-preview'],env,timeout:60000});
+ const page=await app.firstWindow(),errors=[];page.on('pageerror',e=>errors.push(e.message));await page.waitForFunction(()=>window.mngAPI&&document.getElementById('workspaceRoot'),null,{timeout:60000});
+ await page.addLocatorHandler(page.locator('#gameAnnouncement[open]'),async()=>{await page.locator('#gameAnnouncement [data-announcement-close]').click();});
+ await page.evaluate(()=>document.querySelectorAll('dialog[open]').forEach(d=>d.close()));
+ const snapshot=await page.evaluate(()=>mngAPI.workspace('snapshot'));assert.equal(snapshot.version,process.env.MNG_QA_VERSION||'7.0.13-preview.1');assert.equal(snapshot.preview,process.env.MNG_QA_STABLE!=='1');
+ const info=await page.evaluate(()=>mngAPI.widgetBilgisi());for(const id of ['topgift','raconking','streambeauty','streamhandsome','coinjar'])assert.ok(info.widgets.find(w=>w.id===id).fields.some(f=>f.key==='title'));
+ for(const [id,settings]of [['topgift',{title:'Test başlık',frameTheme3:'flame'}],['pk',{broadcasterLeft:true,leftTop:'partner',inset:10}]])assert.equal((await page.evaluate(({id,settings})=>mngAPI.widgetStudioKaydet(id,settings),{id,settings})).basarili,true);
+ const local=new URL(info.widgets.find(w=>w.id==='topgift').url),stateURL=new URL('/api/widget/state',local.origin);stateURL.search=local.search;stateURL.searchParams.delete('type');
+ const eventURL=new URL('/api/widget/gift',local.origin);eventURL.search=local.search;
+ for(const gift of [{username:'gun',giftId:'5282',count:1,coins:500},{username:'rose',giftId:'5655',count:501,coins:501}])assert.equal((await fetch(eventURL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({...gift,giftType:0,eventId:crypto.randomUUID()})})).status,200);
+ const state=await(await fetch(stateURL)).json();assert.equal(state.topGift.username,'gun');assert.equal(state.studio.settings.topgift.title,'Test başlık');assert.equal(state.studio.settings.topgift.frameTheme3,'flame');
+ for(const limit of [1,2]){const ranking=new URL(stateURL);ranking.searchParams.set('type','topgifter');ranking.searchParams.set('items',String(limit));assert.equal((await(await fetch(ranking)).json()).topGifters.length,limit);}
+ const wire=new URL(stateURL);wire.searchParams.set('type','topgifter');wire.searchParams.set('items','2');wire.searchParams.set('transport','changes');wire.searchParams.set('patch','1');
+ const initialWire=await(await fetch(wire)).json();assert.match(initialWire.__stateToken,/^[a-f0-9]{32}$/);
+ wire.searchParams.set('after',initialWire.__stateRevision);wire.searchParams.set('base',initialWire.__stateToken);
+ const waiting=fetch(wire).then(response=>response.json());await new Promise(resolve=>setTimeout(resolve,30));
+ await fetch(eventURL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:'gun',giftId:'5282',count:1,coins:500,giftType:0,eventId:crypto.randomUUID()})});
+ const deltaWire=await waiting,rebuilt=deltaWire.__statePatch?require('../renderer/widgets/state-patch.js').apply(initialWire,deltaWire.__statePatch.operations):deltaWire;
+ assert.equal(rebuilt.topGifters[0].username,'gun');assert.equal(rebuilt.topGifters[0].totalCoins,1000);
+ const compact=new URL(stateURL);compact.searchParams.set('type','coinjar');compact.searchParams.set('history','0');assert.equal((await(await fetch(compact)).json()).jarGifts,undefined);
+ await app.evaluate(({dialog},file)=>{dialog.showOpenDialog=async()=>({canceled:false,filePaths:[file]});},path.join(out,'intro.mp4'));
+ const asset=await page.evaluate(()=>mngAPI.workspace('entry-pick'));assert.ok(asset.id,asset.error);
+ const saved=await page.evaluate(assetId=>mngAPI.workspace('entry-save',{username:'qa_viewer',title:'Test videosu',assetId,trigger:'entry'}),asset.id);assert.equal(saved.entryVideos.length,1);
+ await page.locator('[data-workspace-view="entryvideos"]').click();await page.getByRole('button',{name:'Oynat',exact:true}).waitFor();await page.getByRole('button',{name:'Oynat',exact:true}).click();
+ const played=await page.evaluate(()=>mngAPI.workspace('snapshot'));assert.equal(played.entryVideos[0].manualPending,true);assert.equal(played.entryVideos[0].playedThisLive,false);
+ const poll=new URL('/tikmng/media/poll',played.entryVideoLocalUrl);poll.search=new URL(played.entryVideoLocalUrl).search;poll.searchParams.set('client',crypto.randomUUID());const delivery=await(await fetch(poll)).json();assert.equal(delivery.events[0].trigger.type,'manual');
+ await page.screenshot({path:path.join(out,'packaged-entry.png')});assert.deepEqual(errors,[]);assert.equal(hash(source),before);
+ console.log(JSON.stringify({passed:true,realPackagedIPC:true,settingsSaved:true,unitGiftRanking:true,visibleRankingLimit:true,exactDeltaProtocol:true,jarHistoryOmitted:true,manualPlayButton:true,existingOverlayDelivery:true,automaticEntryUnaffected:true,originalProfileUnchanged:true,errors}));
+}
+main().catch(e=>{console.error(e.stack);process.exitCode=1;}).finally(async()=>{await app?.close();});

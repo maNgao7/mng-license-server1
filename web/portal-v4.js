@@ -53,12 +53,22 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!game) return;
     openDialog(`<div class="game-dialog-layout"><img class="game-dialog-art" src="/game-covers/${game.cover}-1000.webp" alt="${esc(game.title)} kapağı" width="1000" height="667"><div class="game-dialog-content"><span class="catalog-eyebrow">${esc(game.category)}</span><h2 id="portalDialogTitle">${esc(game.title)}</h2><p>${esc(game.description)}</p><ul>${game.features.map(feature => `<li>${icon('check')}${esc(feature)}</li>`).join('')}</ul><p class="game-dialog-requirement">${esc(game.requirements)}</p><a class="portal-command primary" href="/download/setup">${icon('download')} Launcher'ı indir</a></div></div>`, source);
     gameSetup(game);
+    if (game.id === 'yaratik-arena') {
+      const content = dialog.querySelector('.game-dialog-content');
+      const demo = document.createElement('a'); demo.className='portal-command'; demo.href=game.steamUrl;
+      demo.target='_blank'; demo.rel='noopener noreferrer'; demo.textContent="Steam'den ücretsiz demoyu indir";
+      const guide = document.createElement('a'); guide.className='portal-command'; guide.href=game.giftGuide;
+      guide.download='Yaratik-Arena-Hediye-Gorseli.png'; guide.textContent='Hediye görselini indir';
+      content.append(demo,guide);
+    }
   }
   function gameSetup(game) {
     const content = dialog.querySelector('.game-dialog-content');
     if (!content || content.querySelector('.game-setup-notes')) return;
     const notes = document.createElement('ol'); notes.className = 'game-setup-notes';
-    const controls = game.id === 'minecraft-snake-arena'
+    const controls = game.id === 'yaratik-arena'
+      ? 'B ile ayarları aç; P ile otomatik oynanışı aç veya kapat. E ile vakumla topla. Ctrl ile eğil, havadayken ikinci Space ile baktığın yöne atıl.'
+      : game.id === 'minecraft-snake-arena'
       ? 'Tab ile 300 kütleyle yayıncı yılan olarak katıl, WASD ile oyna. O ile savaşın 10 saniyelik geri sayımını başlat; B ile ayarları aç.'
       : 'Oyna ile aç; oyun içindeki hediye eşleşmelerini kontrol edip başla.';
     for (const text of ['Launcher üzerinden oyunu seçip yüklemeyi tamamla.', 'Hazır hediye görseli varsa oyun sayfasından indir; yoksa Hediye Tasarımı bölümünde hazırla.', 'Canlı yayını açıp launcher içinden TikTok yayın hesabını bağla.', controls]) {

@@ -1,0 +1,119 @@
+{
+  "BroadcasterUsername": "",
+  "AutoConnect": true,
+  "BloodColor": 0,
+  "BloodEnabled": true,
+  "HitMarker": false,
+  "Volume": 0.6,
+  "Sensitivity": 1,
+  "MaxCreatures": 2500,
+  "PhysicalCreatures": 2500,
+  "TimedMode": true,
+  "RoundSeconds": 180,
+  "KillTarget": 500,
+  "WinGoal": 21,
+  "FirstWeaponKills": 60,
+  "WeaponKillStep": 20,
+  "ComboEnabled": true,
+  "GiftNoticesEnabled": true,
+  "CleanupGoalEnabled": true,
+  "CleanupTarget": 100,
+  "RoundSummaryEnabled": true,
+  "EnemyAttacks": true,
+  "CreatureDamage": 1,
+  "PercentCombatAdded": true,
+  "CreatureAttackInterval": 1.2,
+  "CreatureScale": 1.5,
+  "AudienceActionsAdded": true,
+  "LikeThreshold": 100,
+  "LikeAction": {
+    "Enabled": true,
+    "Name": "",
+    "GiftId": "",
+    "Op": "spawn",
+    "Count": 5
+  },
+  "FollowAction": {
+    "Enabled": true,
+    "Name": "",
+    "GiftId": "",
+    "Op": "spawn",
+    "Count": 5
+  },
+  "PlayerHealth": 500,
+  "Actions": [
+    {
+      "Name": "Yaratik gonder",
+      "GiftId": "5655",
+      "Op": "spawn",
+      "Count": 2
+    },
+    {
+      "Name": "Kalabalik gonder",
+      "GiftId": "5319",
+      "Op": "spawn",
+      "Count": 10
+    },
+    {
+      "Name": "Buyuk dalga",
+      "GiftId": "5658",
+      "Op": "spawn",
+      "Count": 25
+    },
+    {
+      "Name": "Silah dusur",
+      "GiftId": "5282",
+      "Op": "down",
+      "Count": 1
+    },
+    {
+      "Name": "Silah yukselt",
+      "GiftId": "8913",
+      "Op": "up",
+      "Count": 1
+    },
+    {
+      "Name": "Flash",
+      "GiftId": "17473",
+      "Op": "flash",
+      "Count": 3
+    },
+    {
+      "Name": "Hapse at",
+      "GiftId": "6064",
+      "Op": "prison",
+      "Count": 1
+    },
+    {
+      "Name": "Hapisten kurtar",
+      "GiftId": "5827",
+      "Op": "release",
+      "Count": 1
+    },
+    {
+      "Name": "Big Boss / %650",
+      "GiftId": "7168",
+      "Op": "bigboss",
+      "Count": 1
+    },
+    {
+      "Name": "Yaratik gonder",
+      "GiftId": "5303",
+      "Op": "spawn",
+      "Count": 50
+    },
+    {
+      "Name": "Boss / %400",
+      "GiftId": "6427",
+      "Op": "boss",
+      "Count": 1
+    },
+    {
+      "Name": "Destek / 20 can",
+      "GiftId": "7934",
+      "Op": "helper",
+      "Count": 1
+    }
+  ],
+  "EffectsActionsAdded": true
+}

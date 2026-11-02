@@ -1,7 +1,20 @@
 {
-  "revision": "20261028-7.0.8",
-  "heading": "15 oyun. Her yayına başka bir heyecan.",
+  "revision": "20261102-7.0.15",
+  "heading": "16 oyun. Her yayına başka bir heyecan.",
   "games": [
+    {
+      "id": "yaratik-arena",
+      "title": "Yaratık Arena",
+      "category": "Hayatta Kalma",
+      "cover": "yaratik-arena-v1",
+      "isNew": true,
+      "tagline": "İzleyicilerin yaratıkları geliyor. Arenada hayatta kal.",
+      "description": "Beğeni, takip ve hediyeler yaratık, Boss ve Big Boss dalgalarını başlatır. Destek yaratıkları yanında savaşır. Yendiğin yaratıkları vakumla toplayıp silahını geliştir; serbest veya süreli modda mücadele et.",
+      "features": ["Her 100 beğenide ve ilk takipte 5 yaratık", "Hediyelerle Boss, destek ve hapis eylemleri", "Vakumla silah geliştirme ve otomatik oynanış"],
+      "requirements": "Önce Steam'den ücretsiz Can 'Em All Demo kurulmalıdır. Ardından TikMnG Launcher'dan mod paketini yükle. Windows 10/11 64 bit, yerel kopya için en az 3 GB boş disk.",
+      "steamUrl": "https://store.steampowered.com/app/5364590/",
+      "giftGuide": "/gift-guides/yaratik-arena.png"
+    },
     {
       "id": "minecraft-snake-arena",
       "title": "Minecraft Yılan Oyunu",

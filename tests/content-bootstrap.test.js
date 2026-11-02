@@ -58,14 +58,34 @@ test('7.0.8 removes only Crowd Control and preserves every remaining game and me
 });
 
 test('7.0.10 adds only Profile Contest and preserves administrator changes',()=>{
-  assert.deepEqual(current.games.filter(game=>game.id!=='profile-contest'),launcher709.games);
-  assert.deepEqual(current.media,launcher709.media);
-  assert.deepEqual(current.launcher,launcher709.launcher);
-  assert.equal(current.games.length,16);
+  const baseline=JSON.parse(fs.readFileSync(new URL('../content-bootstrap-7.0.14.json',import.meta.url),'utf8'));
+  assert.deepEqual(baseline.games.filter(game=>game.id!=='profile-contest'),launcher709.games);
+  assert.deepEqual(baseline.media,launcher709.media);
+  assert.deepEqual(baseline.launcher,launcher709.launcher);
+  assert.equal(baseline.games.length,16);
   const state={draft:structuredClone(launcher709),published:structuredClone(launcher709)};
   assert.deepEqual(upgradedBootstrapState(state,launcher709,current,{allowReleasedBaseline:true}).published,current);
   state.draft.games[0].title='Custom';
   assert.equal(upgradedBootstrapState(state,launcher709,current,{allowReleasedBaseline:true}),null);
+});
+
+test('7.0.15 adds only Arena and never replaces customized catalog state',()=>{
+  const baseline=JSON.parse(fs.readFileSync(new URL('../content-bootstrap-7.0.14.json',import.meta.url),'utf8'));
+  assert.equal(current.games.length,17);
+  assert.deepEqual(current.games.filter(game=>game.id!=='yaratik-arena'),baseline.games);
+  assert.deepEqual(current.media,baseline.media);
+  assert.deepEqual(current.launcher,baseline.launcher);
+  const arena=current.games.find(game=>game.id==='yaratik-arena');
+  assert.equal(arena.version,'0.1.20');assert.equal(arena.bytes,151499890);
+  assert.equal(arena.sha256,'3761d94d81a4c69591d3e0520d1dee101526cc0bc26e2a8be9c776728fe14434');
+  const state={draft:structuredClone(baseline),published:structuredClone(baseline)};
+  const upgraded=upgradedBootstrapState(state,baseline,current,{allowReleasedBaseline:true});
+  assert.deepEqual(upgraded.published,current);
+  assert.deepEqual(state.published,baseline);
+  for(const field of ['draft','published']){
+    const custom=structuredClone(state);custom[field].games[0].title='Custom';
+    assert.equal(upgradedBootstrapState(custom,baseline,current,{allowReleasedBaseline:true}),null);
+  }
 });
 
 test('Minecraft release retains customized published state and pending administrator edits',()=>{

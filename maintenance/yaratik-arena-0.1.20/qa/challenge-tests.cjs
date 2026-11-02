@@ -1,0 +1,86 @@
+'use strict';
+const fs=require('node:fs'),assert=require('node:assert/strict'),q=require('./commands.cjs');
+const checks=[],captures=[];
+const original=JSON.parse(fs.readFileSync('../userdata/mod-settings.json','utf8'));
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+async function snap(label){const s=await q.send('capture');captures.push({label,file:`capture-${s.seq}.png`});return s;}
+async function aim(id,x=10){
+  const control=q.state().boardControls.find(c=>c.Id===id);assert.ok(control,id);
+  const target={x:20.4,y:4.65+control.y*.012,z:-control.x*.012};
+  const dx=target.x-x,dz=target.z,dy=target.y-1.8;
+  await q.send('view',{x,z:0,yaw:Math.atan2(dx,dz)*180/Math.PI,pitch:-Math.atan2(dy,Math.hypot(dx,dz))*180/Math.PI});
+  await sleep(500);
+}
+async function restore(){
+  await q.send('menu',{open:false});await q.send('reset');
+  await q.send('crowd-settings',{total:original.MaxCreatures,physical:original.PhysicalCreatures,timed:original.TimedMode,seconds:original.RoundSeconds,target:original.KillTarget,winGoal:original.WinGoal});
+  await q.send('blood-enabled',{enabled:original.BloodEnabled});await q.send('blood-color',{index:original.BloodColor});
+  await q.send('resolution',{width:1280,height:720});
+  await q.send('lock',{enabled:false});await q.send('live-events-pause',{enabled:false});
+}
+async function main(){
+  await q.wait(s=>s.ready&&!s.failed&&s.version==='0.1.7','0.1.7 boot',45000);
+  await q.send('lock',{enabled:true});await q.send('live-events-pause',{enabled:true});
+  await q.send('native-resume');await q.send('menu',{open:false});await q.send('reset');
+  const winsBefore=q.state().Wins;
+  await q.send('crowd-settings',{total:999999,physical:1,timed:true,seconds:60,target:1000,winGoal:25});
+  await q.send('spawn',{count:5000});let s=q.state();
+  assert.equal(s.MaxCreatures,2500);assert.equal(s.logicalAlive,2500);
+  await q.send('spawn',{count:5000});assert.equal(q.state().logicalAlive,2500);
+  checks.push('Live plus pending admissions stop at 2500; repeated excess gifts do not expand the queue');
+  await q.send('reset');await q.send('crowd-settings',{physical:2500});
+  await q.send('view',{x:0,z:0,yaw:90,pitch:-6});await snap('interactive-board');
+  assert.equal(q.state().missionBoardError,'');assert.equal(q.state().boardControls.length,12);
+  await aim('minute-up');await q.send('board-click');assert.equal(q.state().RoundSeconds,120);
+  await sleep(220);await aim('second-up');await q.send('board-click');assert.equal(q.state().RoundSeconds,121);
+  await sleep(220);await aim('wins-up');await q.send('board-click');assert.equal(q.state().WinGoal,26);
+  await sleep(220);await aim('kills-up');await q.send('board-click');assert.equal(q.state().KillTarget,1100);
+  const saved=JSON.parse(fs.readFileSync('../userdata/mod-settings.json','utf8'));
+  assert.equal(saved.RoundSeconds,121);assert.equal(saved.WinGoal,26);assert.equal(saved.KillTarget,1100);
+  checks.push('Actual camera ray hits the board buttons; duration, kill goal and win goal change and save');
+  await q.send('crowd-settings',{seconds:10,target:2,winGoal:25});
+  await q.send('spawn',{count:3});await q.wait(s=>s.Alive===3,'3 native creatures');
+  await q.send('kill',{count:1});await sleep(1100);
+  assert.equal(q.state().challenge.phase,'Waiting');assert.equal(q.state().challenge.Kills,0);
+  checks.push('Spawning and firing before P or board start never auto-start the timed task');
+  await aim('start');await q.send('board-click');
+  assert.equal(q.state().challenge.phase,'Preparing');
+  await snap('preparation');await aim('minute-up');await sleep(250);await q.send('board-click');
+  assert.equal(q.state().RoundSeconds,10);assert.equal(q.state().challenge.Duration,10);
+  await q.send('challenge-start');assert.equal(q.state().challenge.Duration,10);
+  await q.wait(s=>s.challenge.phase==='Active','10 second preparation',15000);
+  await q.send('blood-sample');await q.send('kill',{count:2});
+  s=await q.wait(s=>s.Won,'kill target win');
+  assert.equal(s.Wins,winsBefore+1);assert.equal(s.bodies,3);assert.equal(s.floorBloodParticles,0);assert.equal(s.floorBloodTracked,0);
+  await snap('winner');
+  checks.push('Board start and P share the ten-second countdown; active settings are locked; target wins once and clears blood, not corpses');
+  await q.wait(s=>s.challenge.phase==='Waiting'&&!s.Won,'winner reset',8000);
+  assert.equal(q.state().bodies,3);assert.equal(q.state().Wins,winsBefore+1);
+  await q.send('crowd-settings',{seconds:1,target:1000});
+  await aim('start');await q.send('board-bullet');
+  assert.equal(q.state().challenge.phase,'Preparing');assert.ok(q.state().boardWeaponHits>=1);
+  s=await q.wait(s=>s.roundTimedOut,'bullet-started timeout',16000);
+  assert.equal(s.Wins,winsBefore);await snap('timeout');
+  await q.wait(s=>s.challenge.phase==='Waiting'&&!s.roundTimedOut,'timeout reset',8000);
+  await aim('start',18.3);await q.send('board-bat');
+  s=await q.wait(s=>s.challenge.phase==='Preparing','native bat hit',3000);
+  assert.ok(s.boardWeaponHits>=2);
+  s=await q.wait(s=>s.roundTimedOut,'bat-started timeout',16000);assert.equal(s.Wins,winsBefore-1);
+  checks.push('Native bullet impact and native bat damage coroutine start the same task; two failures take the signed score from +1 to -1');
+  await q.wait(s=>s.challenge.phase==='Waiting'&&!s.roundTimedOut,'new manual task',8000);
+  assert.equal(q.state().Wins,winsBefore-1);assert.equal(q.state().bodies,3);
+  await q.send('challenge-start');assert.equal(q.state().challenge.phase,'Preparing');
+  checks.push('Every new round waits for another manual start and preserves wins and vacuum-only corpses');
+  await q.send('reset');await q.send('crowd-settings',{seconds:60,target:1000});
+  await q.send('resolution',{width:800,height:600});await sleep(500);
+  await q.send('menu',{open:true,tab:3,optionPage:2});await snap('timed-settings-800');
+  assert.equal(q.state().hudError,'');await q.send('menu',{open:false});await snap('timed-hud-800');
+  await q.send('resolution',{width:1280,height:720});await sleep(500);
+  await q.send('view',{x:0,z:0,yaw:90,pitch:-6});await snap('final-board');
+  checks.push('Conditional timed settings and HUD render at 800x600 and 1280x720 without runtime/HUD errors');
+  assert.equal(q.state().failed,false);assert.equal(q.state().missionBoardError,'');
+  await restore();
+  fs.writeFileSync('challenge-result.json',JSON.stringify({passed:true,checks,captures,nativeTests:true,realTikTok:false},null,2));
+  console.log(JSON.stringify({passed:true,checks,captures}));
+}
+main().catch(async e=>{fs.writeFileSync('challenge-result.json',JSON.stringify({passed:false,error:e.stack,checks,captures,state:q.state()},null,2));try{await restore();}catch{}console.error(e);process.exitCode=1;});

@@ -537,10 +537,10 @@ function logEkle(lisansKod, cihazKimlik, islem, ip) {
 // =====================================================================
 // SÜRÜM BİLGİLERİ & İNDİRME LİNKLERİ
 // =====================================================================
-const EN_GUNCEL_SURUM = "7.0.14";
+const EN_GUNCEL_SURUM = "7.0.15";
 const EN_DUSUK_SURUM = "1.0.0";
-const SETUP_INDIRME_LINKI = "https://github.com/maNgao7/mng-license-server1/releases/download/v7.0.14/TikMnG-Setup-7.0.14.exe";
-const PORTABLE_INDIRME_LINKI = "https://github.com/maNgao7/mng-license-server1/releases/download/v7.0.14/TikMnG-7.0.14-Portable.exe";
+const SETUP_INDIRME_LINKI = "https://github.com/maNgao7/mng-license-server1/releases/download/v7.0.15/TikMnG-Setup-7.0.15.exe";
+const PORTABLE_INDIRME_LINKI = "https://github.com/maNgao7/mng-license-server1/releases/download/v7.0.15/TikMnG-7.0.15-Portable.exe";
 const SETUP_WEB_LINKI = SETUP_INDIRME_LINKI;
 const VARSAYILAN_PAKET_LINKLERI = Object.freeze({
     BACKGROUNDS: "https://drive.usercontent.google.com/download?id=1VHwmK2Lt-DN6jVYB1Gp2sbeW6hU_rgB6&export=download&confirm=t",
@@ -554,6 +554,8 @@ const VARSAYILAN_PAKET_LINKLERI = Object.freeze({
 
 // Her güncellemede eklenen/değişen özellikler listesi
 const SURUM_NOTLARI = [
+    "v7.0.15: Yeni oyun Yaratık Arena eklendi. Önce Steam'den ücretsiz Can 'Em All Demo kurulmalıdır; oyun sayfasında demo bağlantısı ve Kurulumu kontrol et düğmesi bulunur. İlk açılışta gereken oyun dosyaları yerel Steam kurulumundan hazırlanır; orijinal oyun mod paketinde dağıtılmaz.",
+    "v7.0.15: Yeni kurulumda kişi başına her 100 beğeni ve ilk takip 5 yaratık gönderir. Parfüm 25, Blue Bead 10 yaratık gönderir. Pencereli tam ekran, TikMnG açılışı ve indirilebilir güncel hediye görseli eklendi. Önceden kaydedilmiş özel ayarlar, lisanslar ve yayın bağlantıları korunur.",
     "v7.0.14: Viral Benim için Altın Hazine, Kristal Yörünge ve Alev Mührü animasyonlu çerçeveleri eklendi. Çerçeve tek ayardan seçilir; profil büyük ve tam daire kalır. Mevcut kanatlar ve kayıtlı eşikler korunur. Giriş sesi seçilebilir.",
     "v7.0.14: Hediye havai fişeğinde patlamadan sonra yalnızca kullanıcı adı görünür ve kaybolur. Coin/beğeni listeleri yakınlaştırıldı, birim yazıları kaldırıldı. Racon Kralı profili büyütüldü, Yayın Güzeli profil hizası düzeltildi. Kavanoz varsayılan sınırı 200; boyut tek hediyenin coin değerine göre kontrollü büyür.",
     "v7.0.14: Yeni çerçevelerde yalnızca seçilen tasarım yüklenir; puan ve hediye değişimi görselleri yeniden indirmez veya 3D sahneyi yeniden kurmaz. Canlı veri kayıpsız değişiklik protokolünü kullanır. Widget HTML ve animasyon dosyaları sıkıştırılır; yetkili sürümlü tasarım dosyaları özel önbelleğe uygundur. Güvenlik yalıtımı, lisanslar, profil kalitesi ve kullanıcı ayarları korunur. Fatura tasarrufu kullanıma bağlıdır.",

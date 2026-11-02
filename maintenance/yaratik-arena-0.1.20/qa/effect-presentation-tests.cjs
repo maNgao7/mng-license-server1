@@ -1,0 +1,52 @@
+'use strict';
+const fs = require('node:fs'), assert = require('node:assert/strict');
+const sharp = require('../bridge/node_modules/sharp');
+const q = require('./commands.cjs');
+const captures = [], checks = [];
+async function main() {
+  await q.wait(s => s.ready && !s.failed && s.version === '0.1.7', 'Native 0.1.7 startup', 45000);
+  await q.send('live-events-pause', { enabled: true }); await q.send('lock', { enabled: true });
+  await q.send('native-resume'); await q.send('menu', { open: false }); await q.send('reset');
+  await q.send('effect-test', { effect: 'prison', count: 1, repeatCount: 100 });
+  assert.ok(q.state().PrisonSeconds <= 100 && q.state().PrisonSeconds > 99);
+  captures.push({ kind: 'prison-100', seq: (await q.send('capture')).seq });
+  await q.send('effect-test', { effect: 'release', count: 1, repeatCount: 50 });
+  assert.ok(q.state().PrisonSeconds <= 50 && q.state().PrisonSeconds > 48);
+  captures.push({ kind: 'prison-minus-50', seq: (await q.send('capture')).seq });
+  checks.push('100 one-second prison gifts minus 50 one-second release gifts leaves 50 seconds, with only real elapsed playtime deducted');
+  await q.send('effect-test', { effect: 'flash', count: 3 });
+  const intro = await q.send('capture');
+  assert.ok(intro.flashOpacity > 0 && intro.flashOpacity < 1, 'Flash is still expanding on its first captured frame');
+  assert.ok(intro.flashBlasts > 0); assert.equal(intro.flashSound, 'TikMnG_Flash_Impact_Ring');
+  assert.equal(intro.flashSoundLength, 2); assert.equal(intro.effectAudioPlaying, true);
+  captures.push({ kind: 'flash-intro', seq: intro.seq });
+  await q.wait(s => s.flashOpacity === 1, 'White flash after impact');
+  const full = (await q.send('capture')).seq;
+  captures.push({ kind: 'flash-and-prison-centered', seq: full });
+  const frame = await sharp('capture-' + full + '.png').raw().toBuffer({ resolveWithObject: true });
+  const point = (x, y) => { const p = (y * frame.info.width + x) * frame.info.channels; return [...frame.data.subarray(p, p + 3)]; };
+  assert.ok(point(15, 15).every(v => v > 250));
+  const center = await sharp('capture-' + full + '.png').extract({ left: 480, top: 300, width: 320, height: 210 }).png().toBuffer();
+  assert.ok((await sharp(center).stats()).channels[0].min < 100, 'Dark countdown remains visible over white');
+  checks.push('Flash expands before white, plays the two-second impact/ringing clip once, and shows readable centered flash/prison timers');
+  const blasts = q.state().flashBlasts;
+  await q.wait(s => s.FlashSeconds === 0, 'Flash fades out', 6000);
+  assert.equal(q.state().flashBlasts, blasts);
+  checks.push('Flash expires without replaying its sound or leaving a permanent white screen');
+  await q.send('effect-test', { effect: 'release', count: 3600 });
+  const collected = q.state().vacuumCollected;
+  for (let level = 1; level < 8; level++) {
+    await q.send('up');
+    if (level < 2) continue;
+    const refills = q.state().automaticAmmoRefills;
+    await q.send('ammo-empty');
+    const state = await q.wait(s => s.ammo > 1 && s.automaticAmmoRefills > refills, 'Native ammo recovery for weapon ' + level, 2000);
+    assert.equal(state.vacuum, false); assert.equal(state.vacuumCollected, collected); assert.equal(state.weaponActive, true);
+  }
+  checks.push('All six native ranged weapons recover empty ammo/fuel without E or vacuum collection');
+  await q.send('reset'); await q.send('lock', { enabled: false }); await q.send('live-events-pause', { enabled: false });
+  assert.equal(q.state().hudError, ''); assert.equal(q.state().failed, false);
+  fs.writeFileSync('effect-presentation-result.json', JSON.stringify({ passed: true, checks, captures }, null, 2));
+  console.log(JSON.stringify({ passed: true, checks, captures }));
+}
+main().catch(async error => { fs.writeFileSync('effect-presentation-result.json', JSON.stringify({ passed: false, checks, captures, error: error.stack }, null, 2)); try { await q.send('reset'); await q.send('lock', { enabled: false }); await q.send('live-events-pause', { enabled: false }); } catch {} console.error(error); process.exitCode = 1; });

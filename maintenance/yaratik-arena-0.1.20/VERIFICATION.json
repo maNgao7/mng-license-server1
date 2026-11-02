@@ -1,0 +1,18 @@
+{
+  "passed": true,
+  "version": "0.1.20",
+  "createdAt": "2026-11-02T10:02:41.761Z",
+  "launcherTests": 1182,
+  "serverTests": 103,
+  "rulesChecks": 191,
+  "actualNativeSuite": true,
+  "liveEventsObserved": true,
+  "followObservedLive": false,
+  "followFixtureTested": true,
+  "realPaidGiftTest": false,
+  "otherCustomerHardwareTest": false,
+  "signedPublisher": false,
+  "originalSteamBinariesIncluded": false,
+  "sourceDllSha256": "3f6e75db75be82ac766ffe536ace2f9d384d1935919e5ede3d3b09bc8a109e9d",
+  "packagedDllSha256": "3f6e75db75be82ac766ffe536ace2f9d384d1935919e5ede3d3b09bc8a109e9d"
+}
