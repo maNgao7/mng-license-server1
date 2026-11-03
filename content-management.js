@@ -26,6 +26,7 @@ const launcher715Baseline = JSON.parse(fs.readFileSync(new URL("./content-bootst
 const arena021Baseline = JSON.parse(fs.readFileSync(new URL("./content-bootstrap-arena-0.1.21.json", import.meta.url), "utf8"));
 const arena022Baseline = JSON.parse(fs.readFileSync(new URL("./content-bootstrap-arena-0.1.22.json", import.meta.url), "utf8"));
 const arena023Baseline = JSON.parse(fs.readFileSync(new URL("./content-bootstrap-arena-0.1.23.json", import.meta.url), "utf8"));
+const arena024Baseline = JSON.parse(fs.readFileSync(new URL("./content-bootstrap-arena-0.1.24.json", import.meta.url), "utf8"));
 const clone = value => structuredClone(value);
 const fail = (message, status = 400) => { throw Object.assign(new Error(message), { status }); };
 
@@ -244,7 +245,8 @@ export function registerContentRoutes(app, { dataDir, adminKontrol }) {
         atomicWrite(stateFile, JSON.stringify(state));
     }
     const currentDefaults = catalogShape(defaults, assetsDir).catalog;
-    const upgraded = upgradedBootstrapState(state, catalogShape(arena023Baseline, assetsDir).catalog, currentDefaults, { allowReleasedBaseline: true })
+    const upgraded = upgradedBootstrapState(state, catalogShape(arena024Baseline, assetsDir).catalog, currentDefaults, { allowReleasedBaseline: true })
+        || upgradedBootstrapState(state, catalogShape(arena023Baseline, assetsDir).catalog, currentDefaults, { allowReleasedBaseline: true })
         || upgradedBootstrapState(state, catalogShape(arena022Baseline, assetsDir).catalog, currentDefaults, { allowReleasedBaseline: true })
         || upgradedBootstrapState(state, catalogShape(arena021Baseline, assetsDir).catalog, currentDefaults, { allowReleasedBaseline: true })
         || upgradedBootstrapState(state, catalogShape(launcher715Baseline, assetsDir).catalog, currentDefaults, { allowReleasedBaseline: true })

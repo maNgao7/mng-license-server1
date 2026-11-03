@@ -1,0 +1,45 @@
+{
+  "passed": true,
+  "version": "0.1.25",
+  "verifiedAt": "2026-11-03T10:21:40.302Z",
+  "rulesChecks": 483,
+  "nativeSuites": [
+    {
+      "name": "combat025-native-result.json",
+      "checks": 24
+    },
+    {
+      "name": "balance-native-result.json",
+      "checks": 18
+    },
+    {
+      "name": "ammo-native-result.json",
+      "checks": 28
+    },
+    {
+      "name": "pursuit-result.json",
+      "checks": 8
+    },
+    {
+      "name": "final-event-result.json",
+      "checks": 9
+    },
+    {
+      "name": "death-reset-hotfix-result.json",
+      "checks": 3
+    }
+  ],
+  "nativeNormalExitCycles": 3,
+  "freshInstall": true,
+  "upgrade": true,
+  "savedSettingsPreserved": true,
+  "steamBaseRecopiedBytes": 0,
+  "defaultMigrationVerified": true,
+  "sourceDllSha256": "50ecaa5494cf42e11e0609e3772f805de8b1e7be3a839c9e0442ebbead0ec33b",
+  "serverTests": 164,
+  "serverSkipped": 6,
+  "originalSteamBinariesIncluded": false,
+  "privateAccountsIncluded": false,
+  "realPaidGiftTest": false,
+  "otherCustomerHardwareTest": false
+}

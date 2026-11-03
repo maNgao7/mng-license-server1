@@ -13,6 +13,7 @@ const launcher715=JSON.parse(fs.readFileSync(new URL('../content-bootstrap-7.0.1
 const arena021=JSON.parse(fs.readFileSync(new URL('../content-bootstrap-arena-0.1.21.json',import.meta.url),'utf8'));
 const arena022=JSON.parse(fs.readFileSync(new URL('../content-bootstrap-arena-0.1.22.json',import.meta.url),'utf8'));
 const arena023=JSON.parse(fs.readFileSync(new URL('../content-bootstrap-arena-0.1.23.json',import.meta.url),'utf8'));
+const arena024=JSON.parse(fs.readFileSync(new URL('../content-bootstrap-arena-0.1.24.json',import.meta.url),'utf8'));
 const candidate=JSON.parse(fs.readFileSync(new URL('../maintenance/minecraft-rounds-7.0.3/qa/catalog-candidate.json',import.meta.url),'utf8'));
 
 test('an explicitly approved Minecraft candidate upgrades exactly two packages, without a launcher or media update',()=>{
@@ -174,6 +175,7 @@ test('Arena 0.1.23 upgrades exactly the rev13 package while retaining launcher, 
 });
 
 test('Arena and Orbit update changes only the two packages and migrates rev14 exactly once',()=>{
+  const current=arena024;
   assert.equal(current.revision,15);
   assert.equal(current.games.find(g=>g.id==='yaratik-arena').version,'0.1.24');
   assert.equal(current.games.find(g=>g.id==='orbit').version,'7.0.3');
@@ -186,7 +188,19 @@ test('Arena and Orbit update changes only the two packages and migrates rev14 ex
   assert.equal(upgradedBootstrapState({draft:current,published:current},arena023,current,{allowReleasedBaseline:true}),null);
 });
 
-test('Arena hotfix preserves every administrator field in rev11 through rev14 draft or published state',()=>{
+test('Arena injury hotfix changes only its package and migrates rev15 exactly once',()=>{
+  assert.equal(current.revision,16);
+  assert.equal(current.games.find(g=>g.id==='yaratik-arena').version,'0.1.25');
+  assert.deepEqual(current.launcher,arena024.launcher);
+  assert.deepEqual(current.media,arena024.media);
+  assert.deepEqual(current.games.filter(g=>g.id!=='yaratik-arena'),arena024.games.filter(g=>g.id!=='yaratik-arena'));
+  const state={draft:structuredClone(arena024),published:structuredClone(arena024)};
+  assert.deepEqual(upgradedBootstrapState(state,arena024,current,{allowReleasedBaseline:true}),{draft:current,published:current});
+  assert.deepEqual(state,{draft:arena024,published:arena024});
+  assert.equal(upgradedBootstrapState({draft:current,published:current},arena024,current,{allowReleasedBaseline:true}),null);
+});
+
+test('Arena hotfix preserves every administrator field in rev11 through rev15 draft or published state',()=>{
   const changes=[
     catalog=>catalog.revision++,
     catalog=>catalog.publishedAt=null,
@@ -206,7 +220,7 @@ test('Arena hotfix preserves every administrator field in rev11 through rev14 dr
     catalog=>catalog.media.pop(),
     catalog=>catalog.launcher={version:'7.0.15',downloadUrl:'https://github.com/custom/setup.exe',sha256:'c'.repeat(64),bytes:1,changelog:'Custom'}
   ];
-  for(const baseline of [launcher715,arena021,arena022,arena023])for(const field of ['draft','published'])for(const change of changes){
+  for(const baseline of [launcher715,arena021,arena022,arena023,arena024])for(const field of ['draft','published'])for(const change of changes){
     const state={draft:structuredClone(baseline),published:structuredClone(baseline)};
     change(state[field]);
     const retained=structuredClone(state);

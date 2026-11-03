@@ -1,0 +1,44 @@
+{
+  "passed": true,
+  "checks": [
+    "spawn: native lethal hit, killer overlay, complete automatic cleanup, saved settings and live room identity retained",
+    "boss: native lethal hit, killer overlay, complete automatic cleanup, saved settings and live room identity retained, result-screen gifts/likes/follows kept exactly once",
+    "Ordinary round reset still preserves collectable bodies; defeat cleanup is targeted"
+  ],
+  "measurements": [
+    {
+      "kind": "spawn",
+      "newEvents": false,
+      "clearedCreatures": 15,
+      "clearedBodies": 3,
+      "incoming": 0,
+      "liveConnected": false
+    },
+    {
+      "kind": "boss",
+      "newEvents": true,
+      "clearedCreatures": 15,
+      "clearedBodies": 3,
+      "incoming": 12,
+      "liveConnected": false
+    }
+  ],
+  "captures": [
+    {
+      "label": "spawn-killer-profile-before-reset",
+      "file": "D:\\TikMnG-Arena024-FreshQA\\library\\.game-library\\yaratik-arena\\versions\\eeb40be5-c790-4d06-82c3-39671e3e45e0\\qa\\capture-1113.png"
+    },
+    {
+      "label": "spawn-fresh-arena-after-reset",
+      "file": "D:\\TikMnG-Arena024-FreshQA\\library\\.game-library\\yaratik-arena\\versions\\eeb40be5-c790-4d06-82c3-39671e3e45e0\\qa\\capture-1142.png"
+    },
+    {
+      "label": "boss-killer-profile-before-reset",
+      "file": "D:\\TikMnG-Arena024-FreshQA\\library\\.game-library\\yaratik-arena\\versions\\eeb40be5-c790-4d06-82c3-39671e3e45e0\\qa\\capture-1182.png"
+    },
+    {
+      "label": "boss-fresh-arena-after-reset",
+      "file": "D:\\TikMnG-Arena024-FreshQA\\library\\.game-library\\yaratik-arena\\versions\\eeb40be5-c790-4d06-82c3-39671e3e45e0\\qa\\capture-1213.png"
+    }
+  ]
+}

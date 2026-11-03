@@ -1,0 +1,9 @@
+{
+  "passed": true,
+  "timestamp": "2026-11-03T10:20:06.170Z",
+  "checks": [
+    "Old damage 1, migrated false -> 3; every other saved field preserved",
+    "Old damage 7, migrated false -> 7; every other saved field preserved",
+    "Old damage 1, migrated true -> 1; every other saved field preserved"
+  ]
+}

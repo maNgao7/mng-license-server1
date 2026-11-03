@@ -1,0 +1,203 @@
+{
+  "passed": true,
+  "timestamp": "2026-11-03T10:20:57.452Z",
+  "checks": [
+    "real attack at tier 0 removes 15 of 500",
+    "real attack at tier 2 removes 30 of 500",
+    "real attack at tier 4 removes 45 of 500",
+    "real attack at tier 7 removes 95 of 500",
+    "spawn dies during its swing without a standing animation",
+    "spawn corpse rests instead of walking",
+    "boss dies during its swing without a standing animation",
+    "boss corpse rests instead of walking",
+    "bigboss dies during its swing without a standing animation",
+    "bigboss corpse rests instead of walking",
+    "raycast firearm hit creates a visible native wound",
+    "repeat impacts deepen the existing wound rather than being discarded",
+    "repeat injury stays bounded instead of erasing the whole living creature",
+    "native movement preserves visible wounds",
+    "turning blood off clears native wounds",
+    "blood-off impacts retain damage but never carve blood wounds",
+    "turning blood on restores native wounds immediately",
+    "corpse fix preserves vacuum collection",
+    "full magazine makes no false reload cue",
+    "reload cue starts once even after repeat key",
+    "reload completion cue plays once",
+    "reload SFX reaches the native output without interop errors",
+    "cancelled reload never plays a stale completion cue",
+    "all gameplay diagnostics remain healthy"
+  ],
+  "measurements": [
+    {
+      "tier": 0,
+      "damage": 15
+    },
+    {
+      "tier": 2,
+      "damage": 30
+    },
+    {
+      "tier": 4,
+      "damage": 45
+    },
+    {
+      "tier": 7,
+      "damage": 95
+    },
+    {
+      "corpse": "spawn",
+      "before": {
+        "Username": "qa_dead_spawn",
+        "Kind": "spawn",
+        "IsDead": true,
+        "damageCount": 1,
+        "CurrentGlobalDamage": 0,
+        "woundRadii": [
+          0.3
+        ],
+        "moving": 0,
+        "path": 0,
+        "swing": false,
+        "ragdoll": true,
+        "canGrab": true,
+        "held": false,
+        "health": 0,
+        "maximum": 79,
+        "x": -0.12919992,
+        "y": 0.3852227,
+        "z": -8.65039,
+        "pitch": 287.06128,
+        "roll": 267.15253
+      },
+      "after": {
+        "Username": "qa_dead_spawn",
+        "Kind": "spawn",
+        "IsDead": true,
+        "damageCount": 1,
+        "CurrentGlobalDamage": 0,
+        "woundRadii": [
+          0.3
+        ],
+        "moving": 0,
+        "path": 0,
+        "swing": false,
+        "ragdoll": true,
+        "canGrab": true,
+        "held": false,
+        "health": 0,
+        "maximum": 79,
+        "x": -0.12919992,
+        "y": 0.3852227,
+        "z": -8.65039,
+        "pitch": 287.06128,
+        "roll": 267.15253
+      }
+    },
+    {
+      "corpse": "boss",
+      "before": {
+        "Username": "qa_dead_boss",
+        "Kind": "boss",
+        "IsDead": true,
+        "damageCount": 1,
+        "CurrentGlobalDamage": 0,
+        "woundRadii": [
+          0.3
+        ],
+        "moving": 0,
+        "path": 0,
+        "swing": false,
+        "ragdoll": true,
+        "canGrab": true,
+        "held": false,
+        "health": 0,
+        "maximum": 264,
+        "x": -0.72980344,
+        "y": 1.0141664,
+        "z": -9.801583,
+        "pitch": 300.24286,
+        "roll": 95.294464
+      },
+      "after": {
+        "Username": "qa_dead_boss",
+        "Kind": "boss",
+        "IsDead": true,
+        "damageCount": 1,
+        "CurrentGlobalDamage": 0,
+        "woundRadii": [
+          0.3
+        ],
+        "moving": 0,
+        "path": 0,
+        "swing": false,
+        "ragdoll": true,
+        "canGrab": true,
+        "held": false,
+        "health": 0,
+        "maximum": 264,
+        "x": -0.72980344,
+        "y": 1.0141664,
+        "z": -9.801583,
+        "pitch": 300.24286,
+        "roll": 95.294464
+      }
+    },
+    {
+      "corpse": "bigboss",
+      "before": {
+        "Username": "qa_dead_bigboss",
+        "Kind": "bigboss",
+        "IsDead": true,
+        "damageCount": 1,
+        "CurrentGlobalDamage": 0,
+        "woundRadii": [
+          0.3
+        ],
+        "moving": 0,
+        "path": 0,
+        "swing": false,
+        "ragdoll": true,
+        "canGrab": true,
+        "held": false,
+        "health": 0,
+        "maximum": 528,
+        "x": -5.916416,
+        "y": 1.2830517,
+        "z": -9.046003,
+        "pitch": 309.90613,
+        "roll": 80.12627
+      },
+      "after": {
+        "Username": "qa_dead_bigboss",
+        "Kind": "bigboss",
+        "IsDead": true,
+        "damageCount": 1,
+        "CurrentGlobalDamage": 0,
+        "woundRadii": [
+          0.3
+        ],
+        "moving": 0,
+        "path": 0,
+        "swing": false,
+        "ragdoll": true,
+        "canGrab": true,
+        "held": false,
+        "health": 0,
+        "maximum": 528,
+        "x": -5.916416,
+        "y": 1.2830517,
+        "z": -9.046003,
+        "pitch": 309.90613,
+        "roll": 80.12627
+      }
+    }
+  ],
+  "captures": [
+    "combat025-corpse-spawn.png",
+    "combat025-corpse-boss.png",
+    "combat025-corpse-bigboss.png",
+    "combat025-wound-on.png",
+    "combat025-wound-deepened.png",
+    "combat025-wound-off.png"
+  ]
+}

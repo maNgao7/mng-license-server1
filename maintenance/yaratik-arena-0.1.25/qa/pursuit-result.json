@@ -1,0 +1,896 @@
+{
+  "passed": true,
+  "timestamp": "2026-11-03T10:15:05.890Z",
+  "checks": [
+    "180 creatures: pursuit continues after crossing the arena; no path starvation; limited player drift",
+    "180 creatures: rear rows also redirect toward the new player position",
+    "600 creatures: pursuit continues after crossing the arena; no path starvation; limited player drift",
+    "600 creatures: rear rows also redirect toward the new player position",
+    "600-creature frame timing recorded without game or navigation errors",
+    "idle standing capsule is stable and player interpolation is enabled",
+    "disabling player/mob push does not bypass world walls or prevent real melee damage",
+    "player moves inside cage, enemies remain outside, protection and attacks after release still work"
+  ],
+  "measurements": [
+    {
+      "count": 180,
+      "drift": 0,
+      "samples": [
+        {
+          "seconds": 0.75,
+          "player": {
+            "x": -13,
+            "y": 0.9068,
+            "z": 12
+          },
+          "health": 500,
+          "pursuit": {
+            "alive": 180,
+            "approaching": 180,
+            "moving": 179,
+            "holding": 0,
+            "stalled": 0,
+            "noPath": 0,
+            "queuedPaths": 0,
+            "crowdSteeringUpdates": 319,
+            "crowdFlankRoutes": 0,
+            "crowdMoveHolds": 124,
+            "playerInterpolation": "Interpolate"
+          },
+          "firstDistances": [
+            19.440952,
+            22.08778,
+            24.292671,
+            25.037874,
+            22.226175,
+            16.821743,
+            19.067034,
+            24.114729,
+            24.71405,
+            20.985615,
+            25.084381,
+            19.023438
+          ]
+        },
+        {
+          "seconds": 1.5,
+          "player": {
+            "x": -13,
+            "y": 0.9068,
+            "z": 12
+          },
+          "health": 500,
+          "pursuit": {
+            "alive": 180,
+            "approaching": 180,
+            "moving": 180,
+            "holding": 0,
+            "stalled": 0,
+            "noPath": 1,
+            "queuedPaths": 0,
+            "crowdSteeringUpdates": 326,
+            "crowdFlankRoutes": 0,
+            "crowdMoveHolds": 124,
+            "playerInterpolation": "Interpolate"
+          },
+          "firstDistances": [
+            17.719759,
+            20.32895,
+            22.526844,
+            23.591724,
+            20.68729,
+            15.271418,
+            17.305832,
+            22.653877,
+            23.484846,
+            19.252377,
+            23.309423,
+            17.259655
+          ]
+        },
+        {
+          "seconds": 2.25,
+          "player": {
+            "x": -13,
+            "y": 0.9068,
+            "z": 12
+          },
+          "health": 500,
+          "pursuit": {
+            "alive": 180,
+            "approaching": 180,
+            "moving": 180,
+            "holding": 0,
+            "stalled": 0,
+            "noPath": 0,
+            "queuedPaths": 0,
+            "crowdSteeringUpdates": 333,
+            "crowdFlankRoutes": 0,
+            "crowdMoveHolds": 124,
+            "playerInterpolation": "Interpolate"
+          },
+          "firstDistances": [
+            15.715822,
+            18.40873,
+            20.233849,
+            21.405745,
+            18.648132,
+            13.199686,
+            15.189255,
+            20.441158,
+            21.631527,
+            17.205477,
+            21.215437,
+            15.168162
+          ]
+        },
+        {
+          "seconds": 3,
+          "player": {
+            "x": -13,
+            "y": 0.9068,
+            "z": 12
+          },
+          "health": 500,
+          "pursuit": {
+            "alive": 180,
+            "approaching": 180,
+            "moving": 180,
+            "holding": 0,
+            "stalled": 0,
+            "noPath": 2,
+            "queuedPaths": 0,
+            "crowdSteeringUpdates": 340,
+            "crowdFlankRoutes": 0,
+            "crowdMoveHolds": 124,
+            "playerInterpolation": "Interpolate"
+          },
+          "firstDistances": [
+            13.988504,
+            16.668665,
+            18.422773,
+            19.427174,
+            16.77367,
+            11.354601,
+            13.294485,
+            18.572437,
+            19.868155,
+            15.507853,
+            19.387842,
+            13.318224
+          ]
+        },
+        {
+          "seconds": 3.75,
+          "player": {
+            "x": -13,
+            "y": 0.9068,
+            "z": 12
+          },
+          "health": 500,
+          "pursuit": {
+            "alive": 180,
+            "approaching": 180,
+            "moving": 180,
+            "holding": 0,
+            "stalled": 0,
+            "noPath": 2,
+            "queuedPaths": 0,
+            "crowdSteeringUpdates": 348,
+            "crowdFlankRoutes": 0,
+            "crowdMoveHolds": 124,
+            "playerInterpolation": "Interpolate"
+          },
+          "firstDistances": [
+            11.961876,
+            14.459556,
+            16.40204,
+            17.144506,
+            14.581538,
+            9.164925,
+            11.125749,
+            16.41117,
+            17.76914,
+            13.457828,
+            17.353647,
+            11.168167
+          ]
+        },
+        {
+          "seconds": 4.5,
+          "player": {
+            "x": -13,
+            "y": 0.9068,
+            "z": 12
+          },
+          "health": 500,
+          "pursuit": {
+            "alive": 180,
+            "approaching": 180,
+            "moving": 180,
+            "holding": 0,
+            "stalled": 0,
+            "noPath": 0,
+            "queuedPaths": 0,
+            "crowdSteeringUpdates": 355,
+            "crowdFlankRoutes": 0,
+            "crowdMoveHolds": 124,
+            "playerInterpolation": "Interpolate"
+          },
+          "firstDistances": [
+            9.93119,
+            12.676294,
+            14.265554,
+            14.929767,
+            12.481227,
+            7.0873966,
+            9.164636,
+            14.212278,
+            15.758856,
+            11.557092,
+            15.487269,
+            9.205449
+          ]
+        },
+        {
+          "seconds": 5.25,
+          "player": {
+            "x": -13,
+            "y": 0.9068,
+            "z": 12
+          },
+          "health": 500,
+          "pursuit": {
+            "alive": 180,
+            "approaching": 180,
+            "moving": 180,
+            "holding": 0,
+            "stalled": 0,
+            "noPath": 0,
+            "queuedPaths": 0,
+            "crowdSteeringUpdates": 362,
+            "crowdFlankRoutes": 0,
+            "crowdMoveHolds": 124,
+            "playerInterpolation": "Interpolate"
+          },
+          "firstDistances": [
+            7.808973,
+            11.019884,
+            12.239281,
+            12.679408,
+            10.324076,
+            5.0663285,
+            7.1653504,
+            11.918221,
+            13.613932,
+            9.596523,
+            13.361969,
+            7.3489614
+          ]
+        },
+        {
+          "seconds": 6,
+          "player": {
+            "x": -13,
+            "y": 0.9068,
+            "z": 12
+          },
+          "health": 500,
+          "pursuit": {
+            "alive": 180,
+            "approaching": 178,
+            "moving": 178,
+            "holding": 2,
+            "stalled": 0,
+            "noPath": 1,
+            "queuedPaths": 0,
+            "crowdSteeringUpdates": 369,
+            "crowdFlankRoutes": 0,
+            "crowdMoveHolds": 124,
+            "playerInterpolation": "Interpolate"
+          },
+          "firstDistances": [
+            5.8850427,
+            9.191213,
+            10.395274,
+            10.627031,
+            8.357123,
+            3.438147,
+            5.3721824,
+            9.853804,
+            11.581547,
+            7.8482723,
+            11.444651,
+            5.6579094
+          ]
+        },
+        {
+          "seconds": 6.75,
+          "player": {
+            "x": -13,
+            "y": 0.9068,
+            "z": 12
+          },
+          "health": 495,
+          "pursuit": {
+            "alive": 180,
+            "approaching": 164,
+            "moving": 164,
+            "holding": 16,
+            "stalled": 0,
+            "noPath": 0,
+            "queuedPaths": 0,
+            "crowdSteeringUpdates": 376,
+            "crowdFlankRoutes": 0,
+            "crowdMoveHolds": 141,
+            "playerInterpolation": "Interpolate"
+          },
+          "firstDistances": [
+            3.971627,
+            7.471202,
+            8.714139,
+            8.528097,
+            6.3675523,
+            2.2528026,
+            3.4286964,
+            7.962629,
+            9.45816,
+            6.254487,
+            9.378661,
+            3.8230927
+          ]
+        },
+        {
+          "seconds": 7.5,
+          "player": {
+            "x": -13,
+            "y": 0.9068,
+            "z": 12
+          },
+          "health": 490,
+          "pursuit": {
+            "alive": 180,
+            "approaching": 152,
+            "moving": 152,
+            "holding": 28,
+            "stalled": 0,
+            "noPath": 0,
+            "queuedPaths": 0,
+            "crowdSteeringUpdates": 383,
+            "crowdFlankRoutes": 0,
+            "crowdMoveHolds": 304,
+            "playerInterpolation": "Interpolate"
+          },
+          "firstDistances": [
+            2.697383,
+            6.1044,
+            7.3317356,
+            6.6817846,
+            4.870588,
+            1.8553214,
+            2.3282373,
+            6.226453,
+            7.6266623,
+            5.0194407,
+            7.7183003,
+            2.5542164
+          ]
+        },
+        {
+          "seconds": 8.25,
+          "player": {
+            "x": -13,
+            "y": 0.9068,
+            "z": 12
+          },
+          "health": 480,
+          "pursuit": {
+            "alive": 180,
+            "approaching": 144,
+            "moving": 144,
+            "holding": 36,
+            "stalled": 0,
+            "noPath": 1,
+            "queuedPaths": 0,
+            "crowdSteeringUpdates": 391,
+            "crowdFlankRoutes": 0,
+            "crowdMoveHolds": 615,
+            "playerInterpolation": "Interpolate"
+          },
+          "firstDistances": [
+            1.5880231,
+            4.4743433,
+            5.875914,
+            4.992132,
+            3.8379135,
+            1.8139341,
+            1.7918872,
+            4.7474146,
+            5.686291,
+            3.917154,
+            6.060139,
+            1.7530833
+          ]
+        },
+        {
+          "seconds": 9,
+          "player": {
+            "x": -13,
+            "y": 0.9068,
+            "z": 12
+          },
+          "health": 475,
+          "pursuit": {
+            "alive": 180,
+            "approaching": 143,
+            "moving": 142,
+            "holding": 37,
+            "stalled": 1,
+            "noPath": 2,
+            "queuedPaths": 0,
+            "crowdSteeringUpdates": 397,
+            "crowdFlankRoutes": 2,
+            "crowdMoveHolds": 936,
+            "playerInterpolation": "Interpolate"
+          },
+          "firstDistances": [
+            1.0924689,
+            3.6062188,
+            4.579046,
+            4.100621,
+            3.2275457,
+            2.1486454,
+            1.8827196,
+            3.828073,
+            4.4166994,
+            3.3098538,
+            5.112486,
+            1.5351216
+          ]
+        }
+      ]
+    },
+    {
+      "count": 600,
+      "drift": 0,
+      "samples": [
+        {
+          "seconds": 0.75,
+          "player": {
+            "x": -13,
+            "y": 0.9068,
+            "z": 12
+          },
+          "health": 460,
+          "pursuit": {
+            "alive": 600,
+            "approaching": 600,
+            "moving": 597,
+            "holding": 0,
+            "stalled": 20,
+            "noPath": 7,
+            "queuedPaths": 0,
+            "crowdSteeringUpdates": 498,
+            "crowdFlankRoutes": 114,
+            "crowdMoveHolds": 3542,
+            "playerInterpolation": "Interpolate"
+          },
+          "firstDistances": [
+            26.491087,
+            29.90606,
+            29.788342,
+            25.360847,
+            30.082256,
+            27.741093,
+            25.688826,
+            30.140676,
+            26.371592,
+            30.723597,
+            31.064875,
+            27.807194
+          ]
+        },
+        {
+          "seconds": 1.5,
+          "player": {
+            "x": -13,
+            "y": 0.9068,
+            "z": 12
+          },
+          "health": 460,
+          "pursuit": {
+            "alive": 600,
+            "approaching": 600,
+            "moving": 600,
+            "holding": 0,
+            "stalled": 0,
+            "noPath": 3,
+            "queuedPaths": 0,
+            "crowdSteeringUpdates": 505,
+            "crowdFlankRoutes": 114,
+            "crowdMoveHolds": 3542,
+            "playerInterpolation": "Interpolate"
+          },
+          "firstDistances": [
+            25.3805,
+            28.946003,
+            28.565763,
+            23.909098,
+            29.174873,
+            26.75621,
+            24.71251,
+            29.315477,
+            25.13358,
+            29.087433,
+            29.941616,
+            27.251766
+          ]
+        },
+        {
+          "seconds": 2.25,
+          "player": {
+            "x": -13,
+            "y": 0.9068,
+            "z": 12
+          },
+          "health": 460,
+          "pursuit": {
+            "alive": 600,
+            "approaching": 600,
+            "moving": 600,
+            "holding": 0,
+            "stalled": 0,
+            "noPath": 1,
+            "queuedPaths": 0,
+            "crowdSteeringUpdates": 512,
+            "crowdFlankRoutes": 114,
+            "crowdMoveHolds": 3542,
+            "playerInterpolation": "Interpolate"
+          },
+          "firstDistances": [
+            23.887999,
+            27.569792,
+            26.863903,
+            22.312366,
+            27.715925,
+            25.36276,
+            23.122513,
+            28.014149,
+            23.594505,
+            27.239906,
+            28.868757,
+            25.946543
+          ]
+        },
+        {
+          "seconds": 3,
+          "player": {
+            "x": -13,
+            "y": 0.9068,
+            "z": 12
+          },
+          "health": 460,
+          "pursuit": {
+            "alive": 600,
+            "approaching": 600,
+            "moving": 600,
+            "holding": 0,
+            "stalled": 0,
+            "noPath": 4,
+            "queuedPaths": 0,
+            "crowdSteeringUpdates": 520,
+            "crowdFlankRoutes": 114,
+            "crowdMoveHolds": 3542,
+            "playerInterpolation": "Interpolate"
+          },
+          "firstDistances": [
+            22.055304,
+            25.931925,
+            24.96353,
+            20.63591,
+            26.099836,
+            23.748806,
+            21.337807,
+            26.550713,
+            21.878876,
+            25.298111,
+            27.16112,
+            24.298054
+          ]
+        },
+        {
+          "seconds": 3.75,
+          "player": {
+            "x": -13,
+            "y": 0.9068,
+            "z": 12
+          },
+          "health": 460,
+          "pursuit": {
+            "alive": 600,
+            "approaching": 600,
+            "moving": 600,
+            "holding": 0,
+            "stalled": 0,
+            "noPath": 1,
+            "queuedPaths": 0,
+            "crowdSteeringUpdates": 526,
+            "crowdFlankRoutes": 114,
+            "crowdMoveHolds": 3542,
+            "playerInterpolation": "Interpolate"
+          },
+          "firstDistances": [
+            20.351717,
+            24.339165,
+            23.086605,
+            18.95249,
+            24.427065,
+            22.050783,
+            19.579039,
+            25.497978,
+            20.33311,
+            23.511059,
+            25.848606,
+            22.610826
+          ]
+        },
+        {
+          "seconds": 4.5,
+          "player": {
+            "x": -13,
+            "y": 0.9068,
+            "z": 12
+          },
+          "health": 460,
+          "pursuit": {
+            "alive": 600,
+            "approaching": 600,
+            "moving": 600,
+            "holding": 0,
+            "stalled": 0,
+            "noPath": 24,
+            "queuedPaths": 21,
+            "crowdSteeringUpdates": 534,
+            "crowdFlankRoutes": 114,
+            "crowdMoveHolds": 3542,
+            "playerInterpolation": "Interpolate"
+          },
+          "firstDistances": [
+            18.451454,
+            22.58734,
+            21.053614,
+            17.131067,
+            22.661873,
+            20.279718,
+            17.538982,
+            23.84783,
+            18.551983,
+            21.551458,
+            24.080618,
+            20.83372
+          ]
+        },
+        {
+          "seconds": 5.25,
+          "player": {
+            "x": -13,
+            "y": 0.9068,
+            "z": 12
+          },
+          "health": 460,
+          "pursuit": {
+            "alive": 600,
+            "approaching": 599,
+            "moving": 599,
+            "holding": 1,
+            "stalled": 0,
+            "noPath": 0,
+            "queuedPaths": 0,
+            "crowdSteeringUpdates": 541,
+            "crowdFlankRoutes": 114,
+            "crowdMoveHolds": 3542,
+            "playerInterpolation": "Interpolate"
+          },
+          "firstDistances": [
+            16.712538,
+            21.107332,
+            19.276968,
+            15.503083,
+            21.204668,
+            18.879354,
+            15.919015,
+            22.338186,
+            16.87537,
+            19.768715,
+            22.984938,
+            19.296618
+          ]
+        },
+        {
+          "seconds": 6,
+          "player": {
+            "x": -13,
+            "y": 0.9068,
+            "z": 12
+          },
+          "health": 455,
+          "pursuit": {
+            "alive": 600,
+            "approaching": 599,
+            "moving": 599,
+            "holding": 1,
+            "stalled": 0,
+            "noPath": 0,
+            "queuedPaths": 0,
+            "crowdSteeringUpdates": 548,
+            "crowdFlankRoutes": 114,
+            "crowdMoveHolds": 3545,
+            "playerInterpolation": "Interpolate"
+          },
+          "firstDistances": [
+            14.948561,
+            19.546673,
+            17.253344,
+            13.641345,
+            19.332853,
+            16.950361,
+            14.039474,
+            20.642523,
+            14.911302,
+            17.664179,
+            21.260155,
+            17.413662
+          ]
+        },
+        {
+          "seconds": 6.75,
+          "player": {
+            "x": -13,
+            "y": 0.9068,
+            "z": 12
+          },
+          "health": 450,
+          "pursuit": {
+            "alive": 600,
+            "approaching": 575,
+            "moving": 575,
+            "holding": 25,
+            "stalled": 0,
+            "noPath": 5,
+            "queuedPaths": 0,
+            "crowdSteeringUpdates": 556,
+            "crowdFlankRoutes": 114,
+            "crowdMoveHolds": 3583,
+            "playerInterpolation": "Interpolate"
+          },
+          "firstDistances": [
+            13.151772,
+            17.880745,
+            15.282956,
+            12.015414,
+            17.608805,
+            15.396592,
+            12.453967,
+            18.750353,
+            13.163953,
+            15.778667,
+            19.387758,
+            15.830965
+          ]
+        },
+        {
+          "seconds": 7.5,
+          "player": {
+            "x": -13,
+            "y": 0.9068,
+            "z": 12
+          },
+          "health": 440,
+          "pursuit": {
+            "alive": 600,
+            "approaching": 559,
+            "moving": 559,
+            "holding": 41,
+            "stalled": 0,
+            "noPath": 2,
+            "queuedPaths": 1,
+            "crowdSteeringUpdates": 564,
+            "crowdFlankRoutes": 114,
+            "crowdMoveHolds": 3875,
+            "playerInterpolation": "Interpolate"
+          },
+          "firstDistances": [
+            11.77034,
+            15.864153,
+            13.156549,
+            10.104958,
+            15.37004,
+            13.590802,
+            10.498089,
+            16.624395,
+            11.233514,
+            13.70202,
+            17.298405,
+            14.056103
+          ]
+        },
+        {
+          "seconds": 8.25,
+          "player": {
+            "x": -13,
+            "y": 0.9068,
+            "z": 12
+          },
+          "health": 435,
+          "pursuit": {
+            "alive": 600,
+            "approaching": 549,
+            "moving": 548,
+            "holding": 51,
+            "stalled": 7,
+            "noPath": 4,
+            "queuedPaths": 7,
+            "crowdSteeringUpdates": 571,
+            "crowdFlankRoutes": 117,
+            "crowdMoveHolds": 4313,
+            "playerInterpolation": "Interpolate"
+          },
+          "firstDistances": [
+            10.528749,
+            14.225159,
+            11.621885,
+            8.736258,
+            13.78964,
+            12.1513,
+            9.068145,
+            14.981213,
+            9.836314,
+            12.159488,
+            15.422888,
+            12.639973
+          ]
+        },
+        {
+          "seconds": 9,
+          "player": {
+            "x": -13,
+            "y": 0.9068,
+            "z": 12
+          },
+          "health": 430,
+          "pursuit": {
+            "alive": 600,
+            "approaching": 549,
+            "moving": 546,
+            "holding": 51,
+            "stalled": 30,
+            "noPath": 5,
+            "queuedPaths": 0,
+            "crowdSteeringUpdates": 578,
+            "crowdFlankRoutes": 144,
+            "crowdMoveHolds": 4774,
+            "playerInterpolation": "Interpolate"
+          },
+          "firstDistances": [
+            9.236495,
+            12.770527,
+            10.083862,
+            7.4002485,
+            12.239325,
+            10.744992,
+            7.5439396,
+            13.36714,
+            8.391536,
+            10.44597,
+            13.420851,
+            11.241551
+          ]
+        }
+      ]
+    }
+  ],
+  "captures": [
+    "pursuit-crowd-180.png",
+    "pursuit-crowd-600.png"
+  ]
+}

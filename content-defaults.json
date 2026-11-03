@@ -1,16 +1,16 @@
 {
   "schemaVersion": 1,
-  "revision": 15,
-  "publishedAt": "2026-11-02T18:00:00.000Z",
+  "revision": 16,
+  "publishedAt": "2026-11-03T10:15:00.000Z",
   "games": [
     {
       "id": "yaratik-arena",
       "title": "Yaratık Arena",
       "description": "İzleyicilerin gönderdiği yaratık, Boss ve Big Boss dalgalarına karşı hayatta kal. Destek yaratıkları yanında savaşır; vakumla topladığın yaratıklar silahını yükseltir. Beğeni, takip ve hediye eylemlerini oyun içinden ayarla.",
-      "version": "0.1.24",
-      "url": "https://github.com/maNgao7/mng-license-server1/releases/download/yaratik-arena-0.1.24/yaratik-arena.zip",
-      "sha256": "7468f5c8ae1f0d2de1fe506b9fe69a8f05edd45963620ea329c4dd421f199ecc",
-      "bytes": 151520304,
+      "version": "0.1.25",
+      "url": "https://github.com/maNgao7/mng-license-server1/releases/download/yaratik-arena-0.1.25/yaratik-arena.zip",
+      "sha256": "c30e9fc89c8816771e441eb78fe43e2df166c797a2a91f5e572cc99deaa4e1bf",
+      "bytes": 151526432,
       "requirements": "Windows 10/11 64 bit. Steam'den ücretsiz Can 'Em All Demo kurulumu gerekir. Mod ve yerel oyun kopyası için en az 3 GB boş disk. Yüksek yaratık sayıları daha fazla RAM gerektirir.",
       "resources": []
     },

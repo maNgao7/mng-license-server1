@@ -1,0 +1,20 @@
+{
+  "name": "tikmng-canemall-live-bridge",
+  "version": "1.0.0",
+  "private": true,
+  "description": "File IPC TikTok sidecar for the separate CanEmAll prototype",
+  "main": "index.cjs",
+  "scripts": {
+    "start": "node index.cjs",
+    "test": "node --test ../qa/bridge-tests.cjs",
+    "probe": "node probe.cjs"
+  },
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "dependencies": {
+    "parse5": "7.3.0",
+    "sharp": "0.34.5",
+    "tiktok-live-connector": "2.4.4"
+  }
+}

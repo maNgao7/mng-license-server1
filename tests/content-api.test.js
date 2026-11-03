@@ -204,10 +204,10 @@ test("public defaults add Arena, retain 16 existing games and exclude Crowd Cont
     assert.equal(response.data.launcher, undefined);
     const byId = Object.fromEntries(response.data.games.map(item => [item.id, item]));
     assert.equal(response.data.games.length, 17);
-    assert.equal(byId['yaratik-arena'].version, '0.1.24');
-    assert.equal(byId['yaratik-arena'].url, 'https://github.com/maNgao7/mng-license-server1/releases/download/yaratik-arena-0.1.24/yaratik-arena.zip');
-    assert.equal(byId['yaratik-arena'].bytes, 151520304);
-    assert.equal(byId['yaratik-arena'].sha256, '7468f5c8ae1f0d2de1fe506b9fe69a8f05edd45963620ea329c4dd421f199ecc');
+    assert.equal(byId['yaratik-arena'].version, '0.1.25');
+    assert.equal(byId['yaratik-arena'].url, 'https://github.com/maNgao7/mng-license-server1/releases/download/yaratik-arena-0.1.25/yaratik-arena.zip');
+    assert.equal(byId['yaratik-arena'].bytes, 151526432);
+    assert.equal(byId['yaratik-arena'].sha256, 'c30e9fc89c8816771e441eb78fe43e2df166c797a2a91f5e572cc99deaa4e1bf');
     assert.equal(byId.orbit.version, '7.0.3');
     assert.equal(byId.orbit.files[0].sha256, '331fdd1a38e4f489e5dd1da6bd760ee257b9cc83e1fc92456eb3c4964bb81e7d');
     assert.equal(byId['profile-contest'].version, '0.3.0');
@@ -215,7 +215,7 @@ test("public defaults add Arena, retain 16 existing games and exclude Crowd Cont
     assert.equal(byId['profile-contest'].sha256, 'bfea65a15399612a8cfea4a74bc6e0718b757e220544451aa4ab583d02dca7ab');
     assert.equal(byId['crowd-control'], undefined);
     assert.equal(response.data.media.length, 285);
-    assert.equal(response.data.revision, 15);
+    assert.equal(response.data.revision, 16);
     assert.equal(byId.caahr.version, '0.6.12');
     assert.equal(byId.caahr.bytes, 63233577);
     assert.equal(byId['frog-river'].version,'7.0.5');
