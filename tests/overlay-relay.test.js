@@ -116,6 +116,33 @@ function respond(publisher, request, body = "ok", headers = {}, status = 200) {
     publisher.send({ type: "end", id: request.id });
 }
 
+test('signed cinematic paths forward exact modules and artwork but reject unknown or unsafe files', async t => {
+    const f = await fixture(t), session = await f.session(), publisher = await f.connect(session.ticket);
+    const revision = 'a'.repeat(64);
+    const modules = ['three.module.js','three.core.js','FontLoader.js','TextGeometry.js','RoomEnvironment.js','font.json',
+        'pk-impact.js','premium-scenes.js','legacy-scenes.js','pk-character-rig.js','jar-silhouettes.js','loot-opening.js','loot-model.js',
+        'assets/pk-expressions-v2.png','assets/pk-companions-v1.png','assets/pk-dragon-wings-v1.png','assets/pk-gloves-atlas.png',
+        'assets/jar-mascots-animated-v3.png','posters/notification-sultan.webp'];
+    for (const file of modules) for (const version of ['', revision + '/']) {
+        const route = '/widget/cinematic/' + version + file;
+        const pending = f.read(session.path + route);
+        const request = await publisher.next('request');
+        assert.equal(new URL(request.path, f.base).pathname, route);
+        assert.equal(new URL(request.path, f.base).searchParams.get('channel'), INPUT.channel);
+        const body = Buffer.from('fixture-' + file);
+        respond(publisher, request, body, {'content-type':file.endsWith('.js')?'text/javascript; charset=utf-8':'application/octet-stream'});
+        const response = await pending;
+        assert.equal(response.status, 200);assert.deepEqual(response.body, body);
+        assert.equal(response.headers['access-control-allow-origin'], '*');
+    }
+    for (const file of ['secret.js','assets/unknown.png','posters/bad_name.webp','../server.js','assets/%2e%2e/server.js','pk-impact.js/extra']) {
+        assert.equal((await f.read(session.path + '/widget/cinematic/' + file)).status,404,file);
+    }
+    const other = await f.session({channel:'other'});
+    assert.equal((await f.read(other.path + '/widget/cinematic/pk-impact.js')).status,503);
+    assert.equal(publisher.ws.readyState, WebSocket.OPEN);
+});
+
 test('state gzip reduces wire bytes without changing JSON, scopes or private cache policy', async t => {
     const f = await fixture(t), session = await f.session(), publisher = await f.connect(session.ticket);
     const body = JSON.stringify({ channel: INPUT.channel, topLikes: Array.from({ length: 100 }, (_, i) =>

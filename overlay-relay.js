@@ -27,6 +27,19 @@ for (const name of ["top-gift", "top-likes", "leaderboard", "gift-feed", "activi
 const GIFT = /^\/widget\/gift-assets\/[A-Za-z0-9_-][A-Za-z0-9_.-]{0,199}\.(?:png|webp|gif|jpe?g)$/i;
 const IMMUTABLE_GIFT = /^\/widget\/gift-assets\/viral-[A-Za-z0-9_-]+-[a-f0-9]{64}\.webp$/;
 const IMMUTABLE_CACHE = "private, max-age=31536000, immutable";
+const CINEMATIC = new Set([
+    "three.module.js", "three.core.js", "FontLoader.js", "TextGeometry.js", "RoomEnvironment.js",
+    "font.json", "THREE-LICENSE.txt", "FONT-LICENSE.txt", "pk-impact.js", "premium-scenes.js", "legacy-scenes.js",
+    "pk-character-rig.js", "jar-silhouettes.js", "loot-opening.js", "loot-model.js",
+    "assets/botanical-crown.png", "assets/inferno-crown.png", "assets/platinum-crown.png",
+    "assets/pk-creatures-atlas.png", "assets/pk-gloves-atlas.png", "assets/jars-atlas.png", "assets/jars-atlas-v2.png",
+    "assets/pk-expressions-v2.png", "assets/pk-companions-v1.png", "assets/pk-dragon-wings-v1.png",
+    "assets/jar-mascots-v1.png", "assets/jar-mascots-animated-v2.png", "assets/jar-mascots-animated-v3.png"
+]);
+function cinematicPath(pathname) {
+    const match = pathname.match(/^\/widget\/cinematic\/(?:[a-f0-9]{64}\/)?(.+)$/);
+    return !!match && (CINEMATIC.has(match[1]) || /^posters\/[a-z0-9-]{1,100}\.webp$/.test(match[1]));
+}
 const MAX_BUFFER = 2 * 1024 * 1024;
 const MAX_BODY = 512 * 1024 * 1024;
 const HOUR = 60 * 60 * 1000;
@@ -384,7 +397,7 @@ export function registerOverlayRelay(app, { secret, authorize, publicOrigin, rev
         if (raw.length > 4096 || /[\x00-\x20\x7f\\#]/.test(raw)) return reply(res, 400, "Invalid overlay path");
         const [pathname] = raw.split("?");
         const match = pathname.match(/^\/overlays\/([A-Za-z0-9_-]{43})(\/.*)$/);
-        if (!match || (!MEDIA.test(match[2]) && !WIDGET.has(match[2]) && (!GIFT.test(match[2]) || match[2].includes("..")))) return reply(res, 404, "Unknown overlay route");
+        if (!match || (!MEDIA.test(match[2]) && !WIDGET.has(match[2]) && !cinematicPath(match[2]) && (!GIFT.test(match[2]) || match[2].includes("..")))) return reply(res, 404, "Unknown overlay route");
         const bridge = publishers.get(match[1]);
         if (closed || !bridge || bridge.ws.readyState !== WebSocket.OPEN || bridge.claims.expiresAt <= Date.now()) return publisherOffline(req, res, match[2]);
         const query = new URLSearchParams(raw.includes("?") ? raw.slice(raw.indexOf("?") + 1) : "");
