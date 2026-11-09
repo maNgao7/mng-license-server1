@@ -2,4 +2,4 @@ User-agent: *
 Allow: /
 Disallow: /admin
 Disallow: /api/
-Sitemap: https://mng-license-server1.onrender.com/sitemap.xml
+Sitemap: https://tikmng.com/sitemap.xml

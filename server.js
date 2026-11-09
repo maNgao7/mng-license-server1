@@ -371,12 +371,12 @@ app.get("/widgetlar", (req, res) => {
 });
 
 app.get("/robots.txt", (req, res) => {
-    const publicBaseUrl = String(process.env.PUBLIC_BASE_URL || "https://mng-license-server1.onrender.com").replace(/\/$/, "");
+    const publicBaseUrl = String(process.env.PUBLIC_BASE_URL || "https://tikmng.com").replace(/\/$/, "");
     res.type("text/plain").send(`User-agent: *\nAllow: /\nDisallow: /admin\nDisallow: /api/\nSitemap: ${publicBaseUrl}/sitemap.xml\n`);
 });
 
 app.get("/sitemap.xml", (req, res) => {
-    const publicBaseUrl = String(process.env.PUBLIC_BASE_URL || "https://mng-license-server1.onrender.com").replace(/\/$/, "");
+    const publicBaseUrl = String(process.env.PUBLIC_BASE_URL || "https://tikmng.com").replace(/\/$/, "");
     res.type("application/xml").send(`<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url><loc>${publicBaseUrl}/</loc><lastmod>2026-10-13</lastmod><changefreq>weekly</changefreq><priority>1.0</priority></url>
