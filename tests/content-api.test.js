@@ -134,8 +134,10 @@ for (const [filename, revision, arenaVersion] of [
     ['content-bootstrap-7.0.15.json', 11, '0.1.20'],
     ['content-bootstrap-arena-0.1.21.json', 12, '0.1.21'],
     ['content-bootstrap-arena-0.1.22.json', 13, '0.1.22'],
-    ['content-bootstrap-arena-0.1.23.json', 14, '0.1.23']
-]) test(`actual rev${revision} catalog receives the current Arena package once, retaining its full backup and launcher latest`, async t => {
+    ['content-bootstrap-arena-0.1.23.json', 14, '0.1.23'],
+    ['content-bootstrap-arena-0.1.24.json', 15, '0.1.24'],
+    ['content-bootstrap-arena-0.1.25.json', 16, '0.1.25']
+]) test(`actual rev${revision} catalog receives the 7.0.16 games once and retains its full backup`, async t => {
     const previous = JSON.parse(fs.readFileSync(path.join(root, filename), 'utf8'));
     const current = JSON.parse(fs.readFileSync(path.join(root, 'content-defaults.json'), 'utf8'));
     assert.equal(previous.revision, revision);
@@ -145,7 +147,8 @@ for (const [filename, revision, arenaVersion] of [
     const published = await f.public();
     assert.deepEqual(published, current);
     assert.deepEqual(published.games.find(game => game.id === 'yaratik-arena'), current.games.find(game => game.id === 'yaratik-arena'));
-    assert.deepEqual(published.games.filter(game => !['yaratik-arena','orbit'].includes(game.id)), previous.games.filter(game => !['yaratik-arena','orbit'].includes(game.id)));
+    const changed = new Set(['yaratik-arena', 'orbit', 'turkish-forza-05', 'profile-duel']);
+    assert.deepEqual(published.games.filter(game => !changed.has(game.id)), previous.games.filter(game => !changed.has(game.id)));
     assert.deepEqual(published.media, previous.media);
     assert.deepEqual(published.launcher, previous.launcher);
     assert.deepEqual(await f.get(), { draft: current, published: current });
@@ -155,8 +158,8 @@ for (const [filename, revision, arenaVersion] of [
     assert.deepEqual(JSON.parse(fs.readFileSync(path.join(f.dir, 'content-state.json'), 'utf8')), { draft: current, published: current });
     assert.deepEqual(fs.readdirSync(path.join(f.dir, 'content-revisions')), []);
     const version = (await f.request('/api/version', 'GET', undefined, false)).data;
-    assert.equal(version.latestVersion, '7.0.15');
-    assert.equal(version.downloadUrl, 'https://github.com/maNgao7/mng-license-server1/releases/download/v7.0.15/TikMnG-Setup-7.0.15.exe');
+    assert.equal(version.latestVersion, '7.0.16');
+    assert.equal(version.downloadUrl, 'https://github.com/maNgao7/mng-license-server1/releases/download/v7.0.16/TikMnG-Setup-7.0.16.exe');
     for (const name of licenseFiles) assert.deepEqual(JSON.parse(fs.readFileSync(path.join(f.dir, `${name}.json`))), []);
     await f.stop(); await f.start();
     assert.deepEqual(await f.public(), current);
@@ -195,7 +198,7 @@ test('Arena hotfix startup and restart retain customized rev11, rev12 and rev13 
     }
 });
 
-test("public defaults add Arena, retain 16 existing games and exclude Crowd Control", async t => {
+test("public defaults add Forza and Teke Tek Profil, update Arena and exclude Crowd Control", async t => {
     const f = await fixture(t, {}, {seed:false});
     const response = await f.request("/api/content/catalog", "GET", undefined, false);
     assert.equal(response.status, 200); assert.equal(response.data.schemaVersion, 1);
@@ -203,11 +206,13 @@ test("public defaults add Arena, retain 16 existing games and exclude Crowd Cont
     assert.match(response.headers.get("etag"), /^"[a-f0-9]{64}"$/);
     assert.equal(response.data.launcher, undefined);
     const byId = Object.fromEntries(response.data.games.map(item => [item.id, item]));
-    assert.equal(response.data.games.length, 17);
-    assert.equal(byId['yaratik-arena'].version, '0.1.25');
-    assert.equal(byId['yaratik-arena'].url, 'https://github.com/maNgao7/mng-license-server1/releases/download/yaratik-arena-0.1.25/yaratik-arena.zip');
-    assert.equal(byId['yaratik-arena'].bytes, 151526432);
-    assert.equal(byId['yaratik-arena'].sha256, 'c30e9fc89c8816771e441eb78fe43e2df166c797a2a91f5e572cc99deaa4e1bf');
+    assert.equal(response.data.games.length, 19);
+    assert.equal(byId['yaratik-arena'].version, '0.1.28');
+    assert.equal(byId['yaratik-arena'].url, 'https://github.com/maNgao7/mng-license-server1/releases/download/v7.0.16/yaratik-arena.zip');
+    assert.equal(byId['yaratik-arena'].bytes, 151525330);
+    assert.equal(byId['yaratik-arena'].sha256, 'ce9022629f7702522e1984c47934854ed781cdc454f6aefbc3f927c0db364516');
+    assert.equal(byId['turkish-forza-05'].version, '0.5.0');
+    assert.equal(byId['profile-duel'].version, '0.5.6');
     assert.equal(byId.orbit.version, '7.0.3');
     assert.equal(byId.orbit.files[0].sha256, '331fdd1a38e4f489e5dd1da6bd760ee257b9cc83e1fc92456eb3c4964bb81e7d');
     assert.equal(byId['profile-contest'].version, '0.3.0');
@@ -215,7 +220,7 @@ test("public defaults add Arena, retain 16 existing games and exclude Crowd Cont
     assert.equal(byId['profile-contest'].sha256, 'bfea65a15399612a8cfea4a74bc6e0718b757e220544451aa4ab583d02dca7ab');
     assert.equal(byId['crowd-control'], undefined);
     assert.equal(response.data.media.length, 285);
-    assert.equal(response.data.revision, 16);
+    assert.equal(response.data.revision, 17);
     assert.equal(byId.caahr.version, '0.6.12');
     assert.equal(byId.caahr.bytes, 63233577);
     assert.equal(byId['frog-river'].version,'7.0.5');

@@ -1,16 +1,38 @@
 {
   "schemaVersion": 1,
-  "revision": 16,
-  "publishedAt": "2026-11-03T10:15:00.000Z",
+  "revision": 17,
+  "publishedAt": "2026-11-09T16:11:30.829Z",
   "games": [
+    {
+      "id": "profile-duel",
+      "title": "Teke Tek Profil",
+      "description": "Gül soldaki, TikTok hediyesi sağdaki profile puan kazandırır. Süre sonunda kazanan kalır, yeni rakip gelir.",
+      "version": "0.5.6",
+      "url": "https://github.com/maNgao7/mng-license-server1/releases/download/v7.0.16/profile-duel.zip",
+      "sha256": "1ef8893d5ca37f83a2c3e62280c7f86ac946ba25b875677f8580238537d3c87a",
+      "bytes": 116280,
+      "requirements": "Windows 10/11. Oyun, ortak TikTok yayın bağlantısını kullanır. HTTPS widget adresi oyun ve yayın bağlantısı açıkken çalışır.",
+      "resources": []
+    },
+    {
+      "id": "turkish-forza-05",
+      "title": "Turkish Forza 0.5",
+      "description": "Tsukuba pistinde Murat 131, Tofaş Şahin ve daha hızlı yarış araçlarıyla canlı yayın katılımcılarını yarıştır.",
+      "version": "0.5.0",
+      "url": "https://github.com/maNgao7/mng-license-server1/releases/download/v7.0.16/turkish-forza-05.zip",
+      "sha256": "8f9d0045ef79261bc467c4a3fa8b9f72ee1b9d90fc0a2d274e995a7f7a2b611f",
+      "bytes": 104705990,
+      "requirements": "Windows 10/11 64 bit, Steam'de kurulu iRacing Arcade Demo, Node.js ve en az 2 GB boş alan gerekir.",
+      "resources": []
+    },
     {
       "id": "yaratik-arena",
       "title": "Yaratık Arena",
-      "description": "İzleyicilerin gönderdiği yaratık, Boss ve Big Boss dalgalarına karşı hayatta kal. Destek yaratıkları yanında savaşır; vakumla topladığın yaratıklar silahını yükseltir. Beğeni, takip ve hediye eylemlerini oyun içinden ayarla.",
-      "version": "0.1.25",
-      "url": "https://github.com/maNgao7/mng-license-server1/releases/download/yaratik-arena-0.1.25/yaratik-arena.zip",
-      "sha256": "c30e9fc89c8816771e441eb78fe43e2df166c797a2a91f5e572cc99deaa4e1bf",
-      "bytes": 151526432,
+      "description": "Duvardaki skor tablosunda yaratık gönderenler ve yayıncıyı öldürenler, görünür can ve enerji barları, 20 saniyelik kan izi temizliği.",
+      "version": "0.1.28",
+      "url": "https://github.com/maNgao7/mng-license-server1/releases/download/v7.0.16/yaratik-arena.zip",
+      "sha256": "ce9022629f7702522e1984c47934854ed781cdc454f6aefbc3f927c0db364516",
+      "bytes": 151525330,
       "requirements": "Windows 10/11 64 bit. Steam'den ücretsiz Can 'Em All Demo kurulumu gerekir. Mod ve yerel oyun kopyası için en az 3 GB boş disk. Yüksek yaratık sayıları daha fazla RAM gerektirir.",
       "resources": []
     },

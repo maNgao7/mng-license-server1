@@ -1,7 +1,38 @@
 {
-  "revision": "20261102-7.0.15",
-  "heading": "16 oyun. Her yayına başka bir heyecan.",
+  "revision": "20261109-7.0.16",
+  "heading": "18 oyun. Her yayına başka bir heyecan.",
   "games": [
+    {
+      "id": "turkish-forza-05",
+      "title": "Turkish Forza 0.5",
+      "category": "Yarış & Beceri",
+      "cover": "turkish-forza-05-v1",
+      "isNew": true,
+      "tagline": "İzleyicilerini Tsukuba pistinde yarıştır.",
+      "description": "Canlı yayın katılımcıları kendi araçlarıyla piste çıkar. İzleyiciler hediyelerle araçlarını geliştirir. Yarış sonunda kazananı pistte izle ve dereceleri gör.",
+      "features": [
+        "Canlı yayın katılımcıları için 30 araçlık grid",
+        "Araç geliştirme ve hediye etkileşimleri",
+        "Serbest kamera ve kazanan araca özel kutlama"
+      ],
+      "requirements": "Windows 10/11 64 bit, Steam'deki ücretsiz iRacing Arcade Demo ve Node.js gerekir. İlk çalıştırma için en az 2 GB boş disk alanı ayır.",
+      "steamUrl": "https://store.steampowered.com/app/4041470/"
+    },
+    {
+      "id": "profile-duel",
+      "title": "Teke Tek Profil",
+      "category": "İzleyici Oyunları",
+      "cover": "profile-duel-v1",
+      "isNew": true,
+      "tagline": "İki profil, iki hediye, bir kazanan.",
+      "description": "Yayından iki profil seç, her tarafa bir hediye ve puan değeri ata. Süre bittiğinde kazanan sonraki turda kalır.",
+      "features": [
+        "Fotoğraflı oyuncu seçimi",
+        "Hediye başına ayarlanabilir puan",
+        "Yayın için HTTPS widget bağlantısı"
+      ],
+      "requirements": "Windows 10/11, TikMnG Launcher ve TikTok LIVE bağlantısı gerekir."
+    },
     {
       "id": "yaratik-arena",
       "title": "Yaratık Arena",
@@ -9,8 +40,12 @@
       "cover": "yaratik-arena-v1",
       "isNew": true,
       "tagline": "İzleyicilerin yaratıkları geliyor. Arenada hayatta kal.",
-      "description": "Beğeni, takip ve hediyeler yaratık, Boss ve Big Boss dalgalarını başlatır. Destek yaratıkları yanında savaşır. Yendiğin yaratıkları vakumla toplayıp silahını geliştir; serbest veya süreli modda mücadele et.",
-      "features": ["Her 100 beğenide ve ilk takipte 5 yaratık", "Hediyelerle Boss, destek ve hapis eylemleri", "Vakumla silah geliştirme ve otomatik oynanış"],
+      "description": "Beğeni, takip ve hediyeler yaratık, Boss ve Big Boss dalgalarını başlatır. Destek yaratıkları yanında savaşır. Yendiğin yaratıkları vakumla toplayıp silahını geliştir. Arenadaki skor tablosundan yaratık gönderenleri ve seni yenen izleyicileri takip et.",
+      "features": [
+        "Her 100 beğenide ve ilk takipte 5 yaratık",
+        "Hediyelerle Boss, destek ve hapis eylemleri",
+        "Vakumla silah geliştirme ve otomatik oynanış"
+      ],
       "requirements": "Önce Steam'den ücretsiz Can 'Em All Demo kurulmalıdır. Ardından TikMnG Launcher'dan mod paketini yükle. Windows 10/11 64 bit, yerel kopya için en az 3 GB boş disk.",
       "steamUrl": "https://store.steampowered.com/app/5364590/",
       "giftGuide": "/gift-guides/yaratik-arena.png"
