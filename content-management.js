@@ -23,6 +23,7 @@ const launcher707Baseline = JSON.parse(fs.readFileSync(new URL("./content-bootst
 const launcher709Baseline = JSON.parse(fs.readFileSync(new URL("./content-bootstrap-7.0.9.json", import.meta.url), "utf8"));
 const launcher714Baseline = JSON.parse(fs.readFileSync(new URL("./content-bootstrap-7.0.14.json", import.meta.url), "utf8"));
 const launcher715Baseline = JSON.parse(fs.readFileSync(new URL("./content-bootstrap-7.0.15.json", import.meta.url), "utf8"));
+const launcher716Baseline = JSON.parse(fs.readFileSync(new URL("./content-bootstrap-7.0.16.json", import.meta.url), "utf8"));
 const arena021Baseline = JSON.parse(fs.readFileSync(new URL("./content-bootstrap-arena-0.1.21.json", import.meta.url), "utf8"));
 const arena022Baseline = JSON.parse(fs.readFileSync(new URL("./content-bootstrap-arena-0.1.22.json", import.meta.url), "utf8"));
 const arena023Baseline = JSON.parse(fs.readFileSync(new URL("./content-bootstrap-arena-0.1.23.json", import.meta.url), "utf8"));
@@ -246,7 +247,8 @@ export function registerContentRoutes(app, { dataDir, adminKontrol }) {
         atomicWrite(stateFile, JSON.stringify(state));
     }
     const currentDefaults = catalogShape(defaults, assetsDir).catalog;
-    const upgraded = upgradedBootstrapState(state, catalogShape(arena025Baseline, assetsDir).catalog, currentDefaults, { allowReleasedBaseline: true })
+    const upgraded = upgradedBootstrapState(state, catalogShape(launcher716Baseline, assetsDir).catalog, currentDefaults, { allowReleasedBaseline: true })
+        || upgradedBootstrapState(state, catalogShape(arena025Baseline, assetsDir).catalog, currentDefaults, { allowReleasedBaseline: true })
         || upgradedBootstrapState(state, catalogShape(arena024Baseline, assetsDir).catalog, currentDefaults, { allowReleasedBaseline: true })
         || upgradedBootstrapState(state, catalogShape(arena023Baseline, assetsDir).catalog, currentDefaults, { allowReleasedBaseline: true })
         || upgradedBootstrapState(state, catalogShape(arena022Baseline, assetsDir).catalog, currentDefaults, { allowReleasedBaseline: true })

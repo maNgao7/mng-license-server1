@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
-  "revision": 17,
-  "publishedAt": "2026-11-09T16:11:30.829Z",
+  "revision": 2026111001,
+  "publishedAt": "2026-11-09T21:44:32.761Z",
   "games": [
     {
       "id": "profile-duel",
@@ -18,21 +18,21 @@
       "id": "turkish-forza-05",
       "title": "Turkish Forza 0.5",
       "description": "Tsukuba pistinde Murat 131, Tofaş Şahin ve daha hızlı yarış araçlarıyla canlı yayın katılımcılarını yarıştır.",
-      "version": "0.5.0",
-      "url": "https://github.com/maNgao7/mng-license-server1/releases/download/v7.0.16/turkish-forza-05.zip",
-      "sha256": "8f9d0045ef79261bc467c4a3fa8b9f72ee1b9d90fc0a2d274e995a7f7a2b611f",
-      "bytes": 104705990,
-      "requirements": "Windows 10/11 64 bit, Steam'de kurulu iRacing Arcade Demo, Node.js ve en az 2 GB boş alan gerekir.",
+      "version": "0.5.1",
+      "url": "https://github.com/maNgao7/mng-license-server1/releases/download/v7.0.17/turkish-forza-05.zip",
+      "sha256": "9c8b69c1d0e8f5da91fcf871e15cf7ccfa11c42e062ea2212099d12c3508a9e1",
+      "bytes": 103844356,
+      "requirements": "Windows 10/11 64 bit, Steam'de kurulu iRacing Arcade Demo ve en az 2 GB boş alan gerekir.",
       "resources": []
     },
     {
       "id": "yaratik-arena",
       "title": "Yaratık Arena",
       "description": "Duvardaki skor tablosunda yaratık gönderenler ve yayıncıyı öldürenler, görünür can ve enerji barları, 20 saniyelik kan izi temizliği.",
-      "version": "0.1.28",
-      "url": "https://github.com/maNgao7/mng-license-server1/releases/download/v7.0.16/yaratik-arena.zip",
-      "sha256": "ce9022629f7702522e1984c47934854ed781cdc454f6aefbc3f927c0db364516",
-      "bytes": 151525330,
+      "version": "0.1.29",
+      "url": "https://github.com/maNgao7/mng-license-server1/releases/download/v7.0.17/yaratik-arena.zip",
+      "sha256": "add9052a170145f4f2677d71ec9a67a15cb73de2e3a3d3b7220ac70ccbe3748c",
+      "bytes": 151525898,
       "requirements": "Windows 10/11 64 bit. Steam'den ücretsiz Can 'Em All Demo kurulumu gerekir. Mod ve yerel oyun kopyası için en az 3 GB boş disk. Yüksek yaratık sayıları daha fazla RAM gerektirir.",
       "resources": []
     },

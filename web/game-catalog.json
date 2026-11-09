@@ -1,5 +1,5 @@
 {
-  "revision": "20261109-7.0.16",
+  "revision": "20261110-7.0.17",
   "heading": "18 oyun. Her yayına başka bir heyecan.",
   "games": [
     {
@@ -15,7 +15,7 @@
         "Araç geliştirme ve hediye etkileşimleri",
         "Serbest kamera ve kazanan araca özel kutlama"
       ],
-      "requirements": "Windows 10/11 64 bit, Steam'deki ücretsiz iRacing Arcade Demo ve Node.js gerekir. İlk çalıştırma için en az 2 GB boş disk alanı ayır.",
+      "requirements": "Windows 10/11 64 bit, güncel TikMnG ve Steam'deki ücretsiz iRacing Arcade Demo gerekir. İlk çalıştırma için en az 2 GB boş disk alanı ayır.",
       "steamUrl": "https://store.steampowered.com/app/4041470/"
     },
     {

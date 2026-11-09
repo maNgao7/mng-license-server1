@@ -203,6 +203,7 @@ test('Arena injury hotfix changes only its package and migrates rev15 exactly on
 });
 
 test('7.0.16 adds both games and the Arena update without changing existing media or customized catalogs',()=>{
+  const current=JSON.parse(fs.readFileSync(new URL('../content-bootstrap-7.0.16.json',import.meta.url),'utf8'));
   const releases={'yaratik-arena':'0.1.28','turkish-forza-05':'0.5.0','profile-duel':'0.5.6'};
   assert.equal(current.revision,arena025.revision+1);
   assert.deepEqual(current.media,arena025.media);
