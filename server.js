@@ -18,6 +18,7 @@ import { createHttpTraffic } from "./http-traffic.js";
 import { createShopierCheckout, shopierProductIds } from "./shopier-checkout.js";
 import { checkShopierOffer } from "./shopier-payment.js";
 import { createLicenseLedger } from "./license-ledger.js";
+import { salesPlans } from "./web/sales-catalog.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -470,6 +471,34 @@ const shopierCheckout = process.env.SHOPIER_SALES_ENABLED === "true" && shopierS
     }) : null;
 
 const shopierRateLimit = rateLimit({ windowMs: 60_000, limit: 15, legacyHeaders: false });
+const shopierReadinessLimit = rateLimit({ windowMs: 60_000, limit: 3, legacyHeaders: false });
+app.get("/api/admin/shopier/hazirlik", adminKontrol, shopierReadinessLimit, async (_req, res) => {
+    res.set("Cache-Control", "no-store");
+    const paketler = await Promise.all(salesPlans.map(async ({ id, kind, period, seats, priceMinor }) => {
+        const paket = kind === "agency" ? `Ajans / ${seats} yayıncı`
+            : period === "weekly" ? "Bireysel / haftalık" : "Bireysel / aylık";
+        let durum = "Shopier anahtarı veya ürün eşlemesi eksik";
+        if (shopierToken && shopierProducts) {
+            try {
+                const available = await checkShopierOffer({ apiToken: shopierToken, productId: shopierProducts[id], priceMinor });
+                durum = available ? "Uygun" : "Ürün, fiyat veya stok kontrol edilmeli";
+            } catch (error) {
+                durum = error?.shopierStatus === 401 || error?.shopierStatus === 403
+                    ? "Shopier anahtarı reddedildi" : "Shopier yanıtı alınamadı";
+            }
+        }
+        return { paket, fiyatTL: priceMinor / 100, durum };
+    }));
+    res.json({
+        canliSatisAcik: Boolean(shopierCheckout && shopierStorageAvailable()),
+        shopierAnahtariGirildi: Boolean(shopierToken),
+        urunEslemesiGecerli: Boolean(shopierProducts),
+        kodGuvenlikAyariGecerli: shopierClaimSecret.length >= 32,
+        kaliciLisansKaydiHazir: shopierStorageAvailable(),
+        paketler,
+    });
+});
+
 app.get("/shopier-checkout.html", (_req, res) => res.redirect(302, "/satin-al"));
 app.get("/satin-al", (_req, res) => {
     res.set("Cache-Control", "no-store");

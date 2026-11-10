@@ -15,7 +15,11 @@ export async function checkShopierOffer({ apiToken, productId, priceMinor, fetch
         signal: AbortSignal.timeout(5000),
     });
     if (response.status === 404) return false;
-    if (!response.ok) throw new Error(`Shopier ürünü doğrulanamadı (${response.status}).`);
+    if (!response.ok) {
+        const error = new Error(`Shopier ürünü doğrulanamadı (${response.status}).`);
+        error.shopierStatus = response.status;
+        throw error;
+    }
     const product = await response.json();
     return product?.id === productId && product.type === "digital" && product.stockStatus === "inStock"
         && product.priceData?.currency === "TRY" && product.priceData.discount === false

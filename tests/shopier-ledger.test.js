@@ -47,6 +47,12 @@ globalThis.fetch = async (input, options = {}) => {
         return Response.json({ id: url.pathname.split('/').pop(), type: 'digital', stockStatus: 'inStock',
             priceData: { currency: 'TRY', discount: false, price: prices[url.pathname] } });
     }
+    if (url.hostname === 'api.shopier.com' && url.pathname === '/v1/products/5001') {
+        return new Response(null, { status: 403 });
+    }
+    if (url.hostname === 'api.shopier.com' && url.pathname.startsWith('/v1/products/')) {
+        return new Response(null, { status: 404 });
+    }
     if (url.hostname === 'api.shopier.com' && url.pathname === '/v1/orders/7001') {
         return Response.json(read('order'));
     }
@@ -88,13 +94,13 @@ async function createLedgerFixture(t) {
         }
         await rmdir(root);
     });
-    async function start() {
+    async function start({ salesEnabled = true } = {}) {
         const module = `data:text/javascript;base64,${Buffer.from(mock).toString("base64")}`;
         server = spawn(process.execPath, ["--import", module, "server.js"], {
             cwd: new URL("../", import.meta.url), stdio: "ignore",
             env: { SystemRoot: process.env.SystemRoot, HOST: "127.0.0.1", PORT: String(port),
                 MNG_DATA_DIR: root, MOCK_PROVIDER_DIR: root, ADMIN_SIFRE: password,
-                BACKUP_REPO: "test/backup", GITHUB_TOKEN: "test-only", SHOPIER_SALES_ENABLED: "true",
+                BACKUP_REPO: "test/backup", GITHUB_TOKEN: "test-only", SHOPIER_SALES_ENABLED: String(salesEnabled),
                 SHOPIER_LICENSE_STORAGE: "github", SHOPIER_API_TOKEN: "test-only",
                 SHOPIER_CLAIM_SECRET: "test-claim-signing-key-no-production", SHOPIER_PRODUCT_IDS: JSON.stringify(products) },
         });
@@ -113,6 +119,36 @@ async function createLedgerFixture(t) {
     }
     return { root, file, resetLedger, base, start, stop, post };
 }
+
+test("Shopier readiness requires admin login and checks all plans with live sales closed", async t => {
+    const { root, base, start } = await createLedgerFixture(t);
+    await start({ salesEnabled: false });
+    const ledgerPath = path.join(root, "github.json");
+    const ledgerBefore = await readFile(ledgerPath, "utf8");
+    const url = `${base}/api/admin/shopier/hazirlik`;
+    assert.equal((await fetch(url)).status, 401);
+    const login = await fetch(`${base}/api/admin/giris`, {
+        method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ sifre: password }),
+    });
+    assert.equal(login.status, 200);
+    const cookie = login.headers.get("set-cookie").split(";")[0];
+    const response = await fetch(url, { headers: { cookie } });
+    assert.equal(response.status, 200);
+    assert.equal(response.headers.get("cache-control"), "no-store");
+    const report = await response.json();
+    assert.equal(report.canliSatisAcik, false);
+    assert.equal(report.shopierAnahtariGirildi, true);
+    assert.equal(report.urunEslemesiGecerli, true);
+    assert.equal(report.kodGuvenlikAyariGecerli, true);
+    assert.equal(report.kaliciLisansKaydiHazir, true);
+    assert.equal(report.paketler.length, salesPlans.length);
+    assert.deepEqual(report.paketler.slice(0, 3).map(plan => plan.durum),
+        ["Uygun", "Shopier anahtarı reddedildi", "Uygun"]);
+    assert.equal(report.paketler.at(-1).durum, "Ürün, fiyat veya stok kontrol edilmeli");
+    assert.doesNotMatch(JSON.stringify(report), /test-only|test-claim-signing-key/);
+    assert.equal((await fetch(`${base}/satin-al`)).status, 503);
+    assert.equal(await readFile(ledgerPath, "utf8"), ledgerBefore);
+});
 
 test("Shopier code and agency membership survive restarts with no persistent Render disk", { timeout: 15_000 }, async t => {
     const { root, file, base, start, stop, post } = await createLedgerFixture(t);
