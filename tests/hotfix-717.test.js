@@ -5,7 +5,7 @@ import { upgradedBootstrapState } from '../content-bootstrap.js';
 
 const read = name => JSON.parse(fs.readFileSync(new URL('../' + name, import.meta.url), 'utf8'));
 const previous = read('content-bootstrap-7.0.16.json');
-const current = read('content-defaults.json');
+const current = read('content-bootstrap-7.0.17.json');
 const updated = new Map([['yaratik-arena', '0.1.29'], ['turkish-forza-05', '0.5.1']]);
 
 test('7.0.17 advances only the two game downloads from the unmodified 7.0.16 catalog', () => {

@@ -1,0 +1,21 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import { upgradedBootstrapState } from '../content-bootstrap.js';
+const read=name=>JSON.parse(fs.readFileSync(new URL('../'+name,import.meta.url),'utf8'));
+test('Forza 0.5.2 migrates the exact released catalog once, preserving all other games, pricing and launcher',()=>{
+ const previous=read('content-bootstrap-7.0.17.json'),current=read('content-defaults.json');
+ const oldGame=previous.games.find(g=>g.id==='turkish-forza-05');
+ const game=current.games.find(g=>g.id==='turkish-forza-05');
+ assert.equal(oldGame.version,'0.5.1');assert.equal(game.version,'0.5.2');
+ assert.match(game.url,/\/forza-v0\.5\.2\/turkish-forza-05\.zip$/);
+ assert.equal(game.sha256,'2875064d6ce470e2f1659d5155cb97378c7d766b50dabb6a91171fd7dd775f38');
+ const normalize=c=>({...c,revision:0,publishedAt:null,games:c.games.filter(g=>g.id!=='turkish-forza-05')});
+ assert.deepEqual(normalize(current),normalize(previous));
+ const state={draft:structuredClone(previous),published:structuredClone(previous)};
+ const next=upgradedBootstrapState(state,previous,current,{allowReleasedBaseline:true});
+ assert.deepEqual(next,{draft:current,published:current});
+ assert.equal(upgradedBootstrapState(next,previous,current,{allowReleasedBaseline:true}),null);
+ state.draft.games[0].description='Owner customization';
+ assert.equal(upgradedBootstrapState(state,previous,current,{allowReleasedBaseline:true}),null);
+});
