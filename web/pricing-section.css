@@ -1,4 +1,7 @@
-.plan-section{padding:clamp(52px,8vw,100px) 0;background:#101618}
+.plan-section{padding:clamp(52px,8vw,100px) 0;background:#101618;scroll-margin-top:80px}
+.hero-cta-group .hero-license-cta{display:inline-flex;align-items:center;justify-content:center;gap:8px;background:#edf9f7;color:#102322;border:1px solid #b8f0e6;white-space:nowrap}
+.hero-cta-group .hero-license-cta:hover{background:#b8f0e6}
+.hero-cta-group .hero-license-cta:focus-visible{outline:2px solid #b8f0e6;outline-offset:3px}
 .plan-section h2{margin:.3em 0;font-size:clamp(2rem,5vw,3.8rem);line-height:1.08}
 .plan-lead{max-width:650px;color:#becace;margin:0 0 10px}
 .plan-order-note{color:#a3e9df;margin:0 0 28px}
