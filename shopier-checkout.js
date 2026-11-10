@@ -1,5 +1,6 @@
 import { createHmac, randomBytes, timingSafeEqual } from "node:crypto";
 import { agencySlug } from "./agency-licenses.js";
+import { agencyEntryAccess, hashAgencyEntryCode } from "./agency-portal.js";
 import { verifyShopierPayment } from "./shopier-payment.js";
 import { salesPlans } from "./web/sales-catalog.js";
 
@@ -64,13 +65,27 @@ export function createShopierCheckout({
         return result;
     }
 
+    function panelCode(license) {
+        const { orderId, reference } = license.shopier;
+        const digest = createHmac("sha256", secret)
+            .update(`shopier-agency-panel-v1:${JSON.stringify([license.id, orderId, reference])}`)
+            .digest("hex");
+        return `MNGA-${digest.toUpperCase()}`;
+    }
+
     async function deliver(quote, plan, orderId) {
         const existing = licenses().find(license =>
             license.shopier?.orderId === orderId || license.shopier?.reference === quote.reference);
         if (existing) {
             if (existing.shopier.orderId !== orderId || existing.shopier.reference !== quote.reference
                 || ["iptal", "arsivlendi"].includes(existing.durum)) return null;
-            return { code: existing.kod, planId: quote.planId };
+            const result = { code: existing.kod, planId: quote.planId };
+            if (plan.kind === "agency" && existing.tip === "ajans" && existing.agency_portal_access?.version === 1) {
+                const code = panelCode(existing);
+                // Rotation or revocation takes precedence over replaying the original delivery.
+                if (hashAgencyEntryCode(code) === existing.agency_portal_access.hash) result.panelCode = code;
+            }
+            return result;
         }
 
         const days = plan.period === "weekly" ? 7 : 30;
@@ -83,14 +98,17 @@ export function createShopierCheckout({
             cihaz_kimlik: null, notlar: "",
             shopier: { orderId, reference: quote.reference, planId: plan.id, amountMinor: quote.amountMinor },
         };
+        const result = { code, planId: plan.id };
         if (agency) {
             Object.assign(license, { tip: "ajans", ajans_adi: quote.owner, max_cihaz: plan.seats,
                 cihazlar: [], yayinci_kayitlari: [], engelli_cihazlar: [] });
+            result.panelCode = panelCode(license);
+            license.agency_portal_access = agencyEntryAccess(result.panelCode, license.olusturma_zamani);
         } else {
             license.musteri_adi = quote.owner;
         }
         await saveLicense(license);
-        return { code, planId: plan.id };
+        return result;
     }
 
     return { open, redeem };

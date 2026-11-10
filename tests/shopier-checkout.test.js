@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
 import { createShopierCheckout, shopierProductIds } from "../shopier-checkout.js";
+import { agencyEntryAccess } from "../agency-portal.js";
 import { verifyShopierPayment } from "../shopier-payment.js";
 import { salesPlans } from "../web/sales-catalog.js";
 
@@ -51,7 +52,45 @@ test("all seven offers save the configured duration, agency capacity and price",
         assert.equal(license.sure_miktar, plan.period === "weekly" ? 7 : 30);
         assert.equal(license.max_cihaz ?? 1, plan.seats);
         assert.equal(license.shopier.amountMinor, plan.priceMinor);
+        if (plan.kind === "agency") {
+            assert.match(result.panelCode, /^MNGA-[A-F0-9]{64}$/);
+            assert.deepEqual(license.agency_portal_access, agencyEntryAccess(result.panelCode, license.olusturma_zamani));
+            assert.equal(JSON.stringify(license).includes(result.panelCode), false);
+        } else {
+            assert.equal(result.panelCode, undefined);
+            assert.equal(license.agency_portal_access, undefined);
+        }
     }
+});
+
+test("replaying a paid order respects rotated and revoked panel access", async () => {
+    const { rows, checkout } = fixture();
+    const { token } = checkout.open("agency-10-monthly", "Örnek ajans");
+    const { code, planId } = await checkout.redeem(token, "817");
+    const rotated = agencyEntryAccess(`MNGA-${"A".repeat(64)}`, Date.now());
+    rows[0].agency_portal_access = rotated;
+    assert.deepEqual(await checkout.redeem(token, "817"), { code, planId });
+    assert.deepEqual(rows[0].agency_portal_access, rotated);
+    delete rows[0].agency_portal_access;
+    assert.deepEqual(await checkout.redeem(token, "817"), { code, planId });
+    assert.equal(rows[0].agency_portal_access, undefined);
+});
+
+test("a failed agency write can be retried without delivering an uncommitted credential", async () => {
+    const rows = [];
+    let attempts = 0;
+    const { checkout } = fixture({ rows, async saveLicense(license) {
+        if (++attempts === 1) throw Error("disk error");
+        rows.push(license);
+    } });
+    const { token } = checkout.open("agency-10-monthly", "ornek");
+    await assert.rejects(checkout.redeem(token, "818"), /disk error/);
+    assert.equal(rows.length, 0);
+    const result = await checkout.redeem(token, "818");
+    assert.match(result.panelCode, /^MNGA-[A-F0-9]{64}$/);
+    assert.deepEqual(await checkout.redeem(token, "818"), result);
+    assert.equal(attempts, 2);
+    assert.equal(rows.length, 1);
 });
 
 test("overlapping redemptions, reload and competing claims cannot issue a second code", async () => {
@@ -71,7 +110,7 @@ test("missing payment, a tampered or expired claim and a write failure never rev
     const { rows, checkout } = fixture({ verifyPayment: async () => null, now: () => clock });
     assert.equal(checkout.open("invalid", "ornek"), null);
     assert.equal(checkout.open("individual-weekly", "invalid name"), null);
-    const { token } = checkout.open("individual-weekly", "ornek");
+    const { token } = checkout.open("agency-10-monthly", "ornek");
     assert.equal(await checkout.redeem(token, "810"), null);
     const canVerify = fixture({ rows, now: () => clock }).checkout;
     const [data, signature] = token.split(".");
@@ -117,7 +156,7 @@ test("a remote write must finish before the code is delivered or a second claim 
         await remoteAcknowledgement;
         rows.push(license);
     } });
-    const { token } = checkout.open("individual-weekly", "ornek");
+    const { token } = checkout.open("agency-10-monthly", "ornek");
     let delivered = false;
     const first = checkout.redeem(token, "826").then(result => { delivered = true; return result; });
     const second = checkout.redeem(token, "826");
@@ -129,4 +168,5 @@ test("a remote write must finish before the code is delivered or a second claim 
     assert.equal(writeCount, 1);
     assert.equal(rows.length, 1);
     assert.deepEqual(results[0], results[1]);
+    assert.match(results[0].panelCode, /^MNGA-[A-F0-9]{64}$/);
 });

@@ -8,17 +8,18 @@
   <link rel="stylesheet" href="/admin/dashboard.css?v=20261021c">
   <link rel="stylesheet" href="/admin/agency-access.css?v=20261110-2">
   <script src="/admin/lucide.js" defer></script>
-  <script src="/admin/dashboard.js?v=20261110-2" defer></script>
+  <script src="/admin/dashboard.js?v=20261110-3" defer></script>
 </head>
 <body>
   <main id="loginPage" class="login-page">
     <form id="loginForm" class="login-form">
       <a class="brand" href="/">TikMnG<span>YÖNETİM</span></a>
-      <h1>Yönetici girişi</h1>
+      <h1 id="loginTitle">Yönetici girişi</h1>
       <label for="adminPassword">Yönetici şifresi</label>
       <input type="password" id="adminPassword" required autocomplete="current-password">
       <p id="loginError" class="error" role="alert" hidden></p>
       <button class="primary" type="submit"><i data-lucide="log-in"></i> Giriş yap</button>
+      <a id="adminEntryLink" href="/admin/ajans" class="back-link">Ajans yönetici girişi</a>
       <a href="/" class="back-link">Web sitesine dön</a>
     </form>
   </main>
@@ -27,10 +28,11 @@
     <aside class="sidebar">
       <a class="brand" href="/admin">TikMnG<span>YÖNETİM PANELİ</span></a>
       <nav aria-label="Yönetim">
+        <a id="adminPanelLink" class="nav-item" href="/admin/ajans"><i data-lucide="building-2"></i> Ajans yönetim paneli</a>
         <button class="nav-item active" data-view="licenses"><i data-lucide="key-round"></i> Lisanslar <span id="licenseCount">0</span></button>
         <button class="nav-item" data-view="agencies"><i data-lucide="building-2"></i> Ajanslar <span id="agencyCount">0</span></button>
         <button class="nav-item" data-view="requests"><i data-lucide="inbox"></i> Gelen talepler <span id="requestCount">0</span></button>
-        <a class="nav-item" href="/admin/content.html"><i data-lucide="library"></i> İçerik kataloğu</a>
+        <a id="contentLink" class="nav-item" href="/admin/content.html"><i data-lucide="library"></i> İçerik kataloğu</a>
       </nav>
       <div class="sidebar-bottom">
         <a href="/" target="_blank" rel="noopener"><i data-lucide="external-link"></i> Web sitesini aç</a>
@@ -50,14 +52,14 @@
       <div id="pageError" class="error-banner" role="alert" hidden></div>
 
       <section class="overview" aria-label="Lisans özeti">
-        <div><span>Toplam lisans</span><strong id="statTotal">0</strong></div>
-        <div><span>Aktif lisans</span><strong id="statActive">0</strong></div>
+        <div><span id="statTotalLabel">Toplam lisans</span><strong id="statTotal">0</strong></div>
+        <div><span id="statActiveLabel">Aktif lisans</span><strong id="statActive">0</strong></div>
         <div><span>Ajans kontenjanı</span><strong id="statSeats">0 / 0</strong></div>
         <div><span>Boş kontenjan</span><strong id="statAvailable">0</strong></div>
       </section>
 
       <section id="createSection" class="create-section">
-        <div class="section-heading"><h2>Yeni lisans oluştur</h2>
+        <div class="section-heading"><h2 id="createTitle">Yeni lisans oluştur</h2>
           <div class="segmented" role="group" aria-label="Lisans türü">
             <button type="button" class="active" data-mode="agency" aria-pressed="true">Ajans / çoklu yayıncı</button>
             <button type="button" data-mode="standard" aria-pressed="false">Bireysel</button>

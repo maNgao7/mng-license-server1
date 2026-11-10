@@ -9,6 +9,10 @@ export function hashAgencyEntryCode(code) {
     return crypto.createHash("sha256").update(`TikMnG-agency-entry:v1:${code}`).digest("hex");
 }
 
+export function agencyEntryAccess(code, issuedAt) {
+    return { version: 1, hash: hashAgencyEntryCode(code), issued_at: issuedAt };
+}
+
 export function registerAgencyPortal(app, { licenses, blacklist, save, durableRoute, storageReady, configured,
     adminKontrol, findAgency, now = Date.now }) {
     const sessions = new Map();
@@ -90,7 +94,7 @@ export function registerAgencyPortal(app, { licenses, blacklist, save, durableRo
                 return res.status(409).json({ error: "Kapalı veya süresi dolmuş ajansa giriş kodu verilemez." });
             }
             const code = action === "olustur" ? `MNGA-${crypto.randomBytes(32).toString("hex").toUpperCase()}` : null;
-            if (code) agency.agency_portal_access = { version: 1, hash: hashAgencyEntryCode(code), issued_at: now() };
+            if (code) agency.agency_portal_access = agencyEntryAccess(code, now());
             else delete agency.agency_portal_access;
             // Both rotation and revocation invalidate every existing agency session.
             agency.agency_session_version = (Number(agency.agency_session_version) || 0) + 1;

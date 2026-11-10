@@ -80,16 +80,20 @@ bindForm("confirm-checkout", "confirm-status", async () => {
     saveCheckout();
     const result = await post("/api/shopier/redeem", { token: checkout.token, orderId: checkout.orderId });
     el("license-code").value = result.code;
+    el("panel-code").value = result.panelCode || "";
+    el("issued-panel").hidden = !result.panelCode;
     el("issued-license").hidden = false;
     return "Ödeme doğrulandı.";
 });
 
-el("copy-license").addEventListener("click", async () => {
-    const input = el("license-code");
+async function copyCode(inputId, message) {
+    const input = el(inputId);
     try {
         await navigator.clipboard.writeText(input.value);
-        el("confirm-status").textContent = "Lisans kodu kopyalandı.";
+        el("confirm-status").textContent = message;
     } catch {
         input.select();
     }
-});
+}
+el("copy-license").addEventListener("click", () => copyCode("license-code", "Lisans kodu kopyalandı."));
+el("copy-panel").addEventListener("click", () => copyCode("panel-code", "Panel giriş kodu kopyalandı."));

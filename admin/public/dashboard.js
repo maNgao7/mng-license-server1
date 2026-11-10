@@ -1,6 +1,7 @@
 "use strict";
 
 const $ = id => document.getElementById(id);
+const agencyAdmin = /^\/admin\/ajans\/?$/i.test(location.pathname);
 const state = { licenses: [], requests: [], view: "licenses", mode: "agency", expanded: new Set(), details: new Map(), editing: null, editDuration: false, loading: false, authenticated: false };
 const escapeHtml = value => String(value ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
 const icon = name => `<i data-lucide="${name}" aria-hidden="true"></i>`;
@@ -179,14 +180,14 @@ async function refresh() {
     $("pageError").hidden = true;
     try {
         const licenses = await api("/api/admin/lisanslar");
-        const requests = await api("/api/admin/talepler");
+        const requests = agencyAdmin ? [] : await api("/api/admin/talepler");
         if (!Array.isArray(licenses) || !Array.isArray(requests)) throw new Error("Sunucunun yanıtı okunamadı.");
-        state.licenses = licenses;
+        state.licenses = agencyAdmin ? licenses.filter(license => license.tip === "ajans") : licenses;
         state.requests = requests;
         for (const code of state.expanded) await loadDetail(code);
         $("syncStatus").textContent = `Güncel · ${new Date().toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" })}`;
         $("syncStatus").classList.remove("failed");
-        checkBrowserBackup();
+        if (!agencyAdmin) checkBrowserBackup();
         refreshStats();
         renderLicenses();
         renderRequests();
@@ -512,6 +513,24 @@ function checkBrowserBackup() {
 
 async function init() {
     localStorage.removeItem("mng_admin_token");
+    if (agencyAdmin) {
+        document.title = "TikMnG · Ajans Yönetimi";
+        $("loginTitle").textContent = "Ajans yönetici girişi";
+        $("adminEntryLink").href = "/admin";
+        $("adminEntryLink").textContent = "Genel yönetici girişi";
+        $("adminPanelLink").href = "/admin";
+        $("adminPanelLink").textContent = "Genel yönetim paneli";
+        $("statTotalLabel").textContent = "Toplam ajans lisansı";
+        $("statActiveLabel").textContent = "Aktif ajans lisansı";
+        $("createTitle").textContent = "Yeni ajans lisansı oluştur";
+        $("toggleCreate").innerHTML = icon("plus") + " Yeni ajans lisansı";
+        for (const element of document.querySelectorAll(
+            '[data-view="licenses"], [data-view="requests"], #contentLink, .segmented, .table-tools'
+        )) {
+            element.hidden = true;
+        }
+        switchView("agencies");
+    }
     icons();
     try { await api("/api/admin/oturum"); showPanel(); await refresh(); }
     catch { showLogin(); }
