@@ -2,6 +2,7 @@ import { salesPlans } from "./sales-catalog.js";
 
 const contact = document.querySelector('.hero-cta-group a.btn-whatsapp[href^="https://wa.me/"]');
 const priceFormat = new Intl.NumberFormat("tr-TR");
+const shopierOpen = document.querySelector('meta[name="tikmng-checkout"]')?.content === "shopier";
 
 function linkToContact(link, message) {
     const url = new URL(contact.href);
@@ -16,8 +17,10 @@ for (const plan of salesPlans) {
     const period = plan.period === "weekly" ? "Haftalık" : "Aylık";
     const label = plan.kind === "agency" ? `${plan.seats} yayıncı · ${period}` : period;
     const amount = `${priceFormat.format(plan.priceMinor / 100)} TL`;
-    const card = document.createElement(contact ? "a" : "span");
-    if (contact) {
+    const card = document.createElement(shopierOpen || contact ? "a" : "span");
+    if (shopierOpen) {
+        card.href = `/satin-al?plan=${encodeURIComponent(plan.id)}`;
+    } else if (contact) {
         const name = plan.kind === "agency" ? `ajans lisansı (${label})` : `bireysel lisans (${label})`;
         linkToContact(card, `Merhaba, TikMnG ${name} için sipariş vermek istiyorum. Paket fiyatı ${amount}.`);
     }
@@ -29,7 +32,18 @@ for (const plan of salesPlans) {
     list.append(card);
 }
 
-if (contact) {
+if (shopierOpen) {
+    for (const button of document.querySelectorAll("[data-license-order]")) {
+        const plan = salesPlans.find(item => item.kind === button.dataset.licenseOrder);
+        if (plan) {
+            button.href = `/satin-al?plan=${encodeURIComponent(plan.id)}`;
+            button.removeAttribute("target");
+            button.textContent = "Kartla lisans satın al";
+        }
+    }
+    const note = document.querySelector(".plan-order-note");
+    if (note) note.textContent = "Paketini seç, Shopier’de kartla öde ve lisans kodunu al.";
+} else if (contact) {
     for (const button of document.querySelectorAll("[data-license-order]")) {
         const type = button.dataset.licenseOrder === "agency" ? "ajans" : "bireysel";
         linkToContact(button, `Merhaba, TikMnG ${type} lisans paketleri hakkında bilgi almak istiyorum.`);

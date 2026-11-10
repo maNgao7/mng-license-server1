@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="tr">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="robots" content="noindex">
+    <title>TikMnG · Lisans Satın Al</title>
+    <link rel="stylesheet" href="/purchase-preview.css">
+    <script type="module" src="/shopier-checkout.js"></script>
+</head>
+<body class="checkout-page">
+<header><a class="brand" href="/">Tik<span>MnG</span></a></header>
+<main id="purchase">
+    <h1>TikMnG lisansı</h1>
+    <div class="checkout">
+        <form id="start-checkout">
+            <h2>Paket seç</h2>
+            <label for="plan">Lisans paketi</label>
+            <select id="plan" required></select>
+            <label for="username" id="username-label">TikTok kullanıcı adı</label>
+            <input id="username" autocomplete="off" maxlength="80" required>
+            <button type="submit">Shopier ödeme adımını hazırla</button>
+            <p id="start-status" role="status"></p>
+        </form>
+        <form id="confirm-checkout" hidden>
+            <h2>Shopier ödemesi</h2>
+            <p>Shopier’de ödeme yaparken satıcıya not alanına aşağıdaki referansı aynen yaz.</p>
+            <label for="reference">Sipariş referansı</label>
+            <input id="reference" readonly>
+            <p><a id="shopier-link" target="_blank" rel="noopener noreferrer">Shopier’de ödemeyi aç</a></p>
+            <label for="order-id">Ödeme sonrası Shopier sipariş numarası</label>
+            <input id="order-id" inputmode="numeric" pattern="[0-9]{1,30}" required>
+            <button type="submit">Ödemeyi doğrula ve lisansı al</button>
+            <p id="confirm-status" role="status"></p>
+            <div id="issued-license" hidden>
+                <label for="license-code">Lisans kodu</label>
+                <input id="license-code" readonly>
+                <button id="copy-license" type="button">Kodu kopyala</button>
+            </div>
+        </form>
+    </div>
+</main>
+</body>
+</html>

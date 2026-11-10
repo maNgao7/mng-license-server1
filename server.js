@@ -13,6 +13,9 @@ import { registerContentRoutes } from "./content-management.js";
 import { registerOverlayRelay } from "./overlay-relay.js";
 import { createOverlayAuthorization } from "./overlay-authorization.js";
 import { createHttpTraffic } from "./http-traffic.js";
+import { createShopierCheckout, shopierProductIds } from "./shopier-checkout.js";
+import { checkShopierOffer } from "./shopier-payment.js";
+import { createLicenseLedger } from "./license-ledger.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -44,6 +47,20 @@ const LOG_DOSYASI = path.join(DATA_DIR, "aktivasyon_log.json");
 const TALEPLER_DOSYASI = path.join(DATA_DIR, "talepler.json");
 const KARA_LISTE_DOSYASI = path.join(DATA_DIR, "kara_liste.json");
 const DOWNLOADS_DIR = path.join(DATA_DIR, "downloads");
+
+function renderPersistentDataMounted() {
+    if (process.env.RENDER !== "true" || DATA_DIR !== "/var/data") return false;
+    try {
+        return fs.statSync(DATA_DIR).dev !== fs.statSync(path.dirname(DATA_DIR)).dev;
+    } catch {
+        return false;
+    }
+}
+
+const durableRenderData = renderPersistentDataMounted();
+// Capture this before initialization can create an empty local file.
+const useExistingDiskLedger = durableRenderData && fs.existsSync(DB_DOSYASI);
+let diskLedgerReadable = !useExistingDiskLedger;
 
 function kaliciVeriyiHazirla() {
     try {
@@ -77,6 +94,7 @@ const GITHUB_BACKUP_REPO = String(process.env.GITHUB_LICENSE_REPO || process.env
 const GITHUB_BACKUP_PATH = String(process.env.GITHUB_LICENSE_PATH || "mng-license-backup.enc").trim();
 const GITHUB_BACKUP_SECRET = String(process.env.GITHUB_LICENSE_KEY || process.env.BACKUP_KEY || ADMIN_SIFRE).trim();
 const githubBackupEnabled = Boolean(GITHUB_BACKUP_TOKEN && GITHUB_BACKUP_REPO);
+const useGithubLicenseLedger = process.env.SHOPIER_LICENSE_STORAGE === "github";
 let githubBackupSha = null;
 let githubBackupReady = false;
 let githubBackupTimer = null;
@@ -119,6 +137,8 @@ async function githubBackupRequest(method, body) {
             "X-GitHub-Api-Version": "2022-11-28",
             "User-Agent": "mng-tiktok-game-license-server"
         },
+        redirect: "error",
+        signal: AbortSignal.timeout(8000),
         body: body ? JSON.stringify(body) : undefined
     });
     if (response.status === 404 && method === "GET") return null;
@@ -151,38 +171,93 @@ async function githubBackupLoad() {
     return true;
 }
 
-async function githubBackupSave() {
-    if (!githubBackupEnabled || !githubBackupReady) return;
-    const content = Buffer.from(githubBackupEncrypt(githubBackupSnapshot()), "utf8").toString("base64");
+async function githubBackupSave(snapshot = githubBackupSnapshot()) {
+    if (!githubBackupEnabled || !githubBackupReady) throw storageUnavailable();
+    const encrypted = githubBackupEncrypt(snapshot);
+    // The Contents API only returns inline file content for files up to 1 MB.
+    if (useGithubLicenseLedger && Buffer.byteLength(encrypted) > 1_000_000) throw storageUnavailable();
+    const content = Buffer.from(encrypted, "utf8").toString("base64");
     const body = { message: "MNG lisans verisi yedegi", content };
     if (githubBackupSha) body.sha = githubBackupSha;
     try {
         const result = await githubBackupRequest("PUT", body);
-        githubBackupSha = result?.content?.sha || githubBackupSha;
-        console.log("GitHub lisans yedeği güncellendi.");
-    } catch (error) {
-        // Eşzamanlı nadir bir kayıt varsa son SHA ile bir kez daha dene.
-        if (String(error.message).includes("409")) {
-            const current = await githubBackupRequest("GET");
-            githubBackupSha = current?.sha || null;
-            return githubBackupSave();
+        if (!result?.content?.sha) throw storageUnavailable();
+        githubBackupSha = result.content.sha;
+    } catch {
+        // A lost response may still mean our write was committed. Never retry
+        // with a different revision or adopt an unverified ledger.
+        const current = await githubBackupRequest("GET").catch(() => null);
+        if (current?.sha && String(current.content).replace(/\s/g, "") === content) {
+            githubBackupSha = current.sha;
+        } else {
+            if (!current || current.sha !== githubBackupSha) githubBackupReady = false;
+            throw storageUnavailable();
         }
-        console.warn("GitHub lisans yedeği güncellenemedi:", error.message);
     }
+    console.log("GitHub lisans yedeği güncellendi.");
+}
+
+function storageUnavailable() {
+    const error = new Error("Lisans kaydı doğrulanamadı.");
+    error.status = 503;
+    return error;
+}
+
+function enqueueGithubWrite(write) {
+    const result = githubBackupQueue.then(write);
+    githubBackupQueue = result.catch(() => {});
+    return result;
 }
 
 function githubBackupSchedule() {
     if (!githubBackupEnabled || !githubBackupReady) return;
+    if (useGithubLicenseLedger && githubBackupTimer) return;
     clearTimeout(githubBackupTimer);
     githubBackupTimer = setTimeout(() => {
-        githubBackupQueue = githubBackupQueue.then(githubBackupSave).catch(error => console.warn("GitHub yedek kuyruğu hatası:", error.message));
-    }, 900);
+        githubBackupTimer = null;
+        enqueueGithubWrite(() => githubBackupSave()).catch(error => console.warn("GitHub yedek kuyruğu hatası:", error.message));
+    }, useGithubLicenseLedger ? 30_000 : 900);
+}
+
+const licenseLedger = createLicenseLedger({
+    read: () => ({ licenses: lisanslarVeritabani, blacklist: karaListeVeritabani, activationLogs: aktivasyonLogVeritabani }),
+    write({ licenses, blacklist, activationLogs }) {
+        lisanslarVeritabani = licenses;
+        karaListeVeritabani = blacklist;
+        aktivasyonLogVeritabani = activationLogs;
+    },
+    checkpoint(state, publish) {
+        return enqueueGithubWrite(async () => {
+            if (!githubBackupSha) throw storageUnavailable();
+            await githubBackupSave({ ...githubBackupSnapshot(), ...state, activationLogs: state.activationLogs.slice(-1000) });
+            publish();
+        });
+    },
+    scheduleBackup: githubBackupSchedule,
+});
+
+function durableLicenseRoute(handler) {
+    if (!useGithubLicenseLedger) return handler;
+    return (req, res, next) => {
+        licenseLedger.transact(() => {
+            if (!githubBackupSha) throw storageUnavailable();
+            const sendJson = res.json;
+            let body;
+            res.json = value => { body = value; return res; };
+            try { handler(req, res); }
+            finally { res.json = sendJson; }
+            return body;
+        }).then(body => {
+            if (body !== undefined) res.json(body);
+        }).catch(next);
+    };
 }
 
 async function dbYukle() {
     try {
         if (fs.existsSync(DB_DOSYASI)) {
             lisanslarVeritabani = JSON.parse(fs.readFileSync(DB_DOSYASI, "utf-8"));
+            diskLedgerReadable = Array.isArray(lisanslarVeritabani);
             if ((!Array.isArray(lisanslarVeritabani) || lisanslarVeritabani.length === 0) && fs.existsSync(path.join(DATA_DIR, "lisanslar_backup.json"))) {
                 try { lisanslarVeritabani = JSON.parse(fs.readFileSync(path.join(DATA_DIR, "lisanslar_backup.json"), "utf-8")); } catch {}
             }
@@ -226,8 +301,10 @@ async function dbYukle() {
     } catch (e) {
         karaListeVeritabani = [];
     }
+    let backupReadSucceeded = false;
     try {
-        const restored = await githubBackupLoad();
+        const restored = (useGithubLicenseLedger || !useExistingDiskLedger || !diskLedgerReadable) && await githubBackupLoad();
+        backupReadSucceeded = true;
         if (restored) {
             dbKaydet();
             logKaydet();
@@ -240,11 +317,12 @@ async function dbYukle() {
     } catch (error) {
         console.warn("GitHub lisans yedeği yüklenemedi, yerel veriler kullanılacak:", error.message);
     }
-    githubBackupReady = true;
+    githubBackupReady = backupReadSucceeded && (!useGithubLicenseLedger || Boolean(githubBackupSha));
     if (githubBackupEnabled) githubBackupSchedule();
 }
 
 function dbKaydet() {
+    if (licenseLedger.isStaging()) return;
     try {
         const tmp = DB_DOSYASI + ".tmp";
         fs.writeFileSync(tmp, JSON.stringify(lisanslarVeritabani, null, 2), "utf-8");
@@ -264,6 +342,7 @@ function dbKaydet() {
 }
 
 function logKaydet() {
+    if (licenseLedger.isStaging()) return;
     try {
         const tmp = LOG_DOSYASI + ".tmp";
         fs.writeFileSync(tmp, JSON.stringify(aktivasyonLogVeritabani.slice(-1000), null, 2), "utf-8");
@@ -282,6 +361,7 @@ function talepKaydet() {
 }
 
 function karaListeKaydet() {
+    if (licenseLedger.isStaging()) return;
     try {
         const tmp = KARA_LISTE_DOSYASI + ".tmp";
         fs.writeFileSync(tmp, JSON.stringify(karaListeVeritabani, null, 2), "utf-8");
@@ -300,6 +380,7 @@ app.disable("x-powered-by");
 
 const izinliKaynaklar = new Set([
     "https://mng-license-server1.onrender.com",
+    "https://tikmng.com",
     "http://localhost:4000",
     "http://127.0.0.1:4000",
     `http://localhost:${PORT}`,
@@ -340,6 +421,69 @@ app.use("/api/admin/lisanslar-senkronize", adminKontrol, express.json({ limit: "
 app.use("/api/admin/content", adminKontrol, express.json({ limit: "2mb" }));
 app.use(express.json({ limit: "64kb" }));
 registerContentRoutes(app, { dataDir: DATA_DIR, adminKontrol });
+
+const shopierToken = String(process.env.SHOPIER_API_TOKEN || "").trim();
+const shopierProducts = shopierProductIds(process.env.SHOPIER_PRODUCT_IDS);
+const shopierClaimSecret = String(process.env.SHOPIER_CLAIM_SECRET || "").trim();
+function shopierStorageAvailable() {
+    return useGithubLicenseLedger ? githubBackupReady && Boolean(githubBackupSha) : durableRenderData && diskLedgerReadable;
+}
+const shopierCheckout = process.env.SHOPIER_SALES_ENABLED === "true" && shopierStorageAvailable()
+    && ADMIN_SIFRE.length >= 16 && shopierClaimSecret.length >= 32 && shopierToken && shopierProducts
+    ? createShopierCheckout({
+        secret: shopierClaimSecret, apiToken: shopierToken, products: shopierProducts,
+        licenses: () => lisanslarVeritabani,
+        issueCode({ agency, owner, days }) {
+            for (let attempt = 0; attempt < 30; attempt++) {
+                const code = agency ? createAgencyKey(owner, ADMIN_SIFRE)
+                    : lisansKoduUret({ birim: "gun", miktar: days });
+                if (!lisanslarVeritabani.some(license => license.kod === code)) return code;
+            }
+            throw new Error("Yeni lisans kodu oluşturulamadı.");
+        },
+        saveLicense(license) {
+            if (useGithubLicenseLedger) {
+                return licenseLedger.transact(() => {
+                    if (!shopierStorageAvailable() || lisanslarVeritabani.some(existing => existing.kod === license.kod
+                        || existing.shopier?.orderId === license.shopier.orderId || existing.shopier?.reference === license.shopier.reference)) {
+                        throw storageUnavailable();
+                    }
+                    lisanslarVeritabani.unshift(license);
+                });
+            }
+            const previous = lisanslarVeritabani;
+            lisanslarVeritabani = [license, ...previous];
+            try { dbKaydet(); }
+            catch (error) { lisanslarVeritabani = previous; throw error; }
+        }
+    }) : null;
+
+const shopierRateLimit = rateLimit({ windowMs: 60_000, limit: 15, legacyHeaders: false });
+app.get("/shopier-checkout.html", (_req, res) => res.redirect(302, "/satin-al"));
+app.get("/satin-al", (_req, res) => {
+    res.set("Cache-Control", "no-store");
+    if (!shopierCheckout || !shopierStorageAvailable()) return res.status(503).send("Çevrimiçi satış şu anda kullanılamıyor.");
+    return res.sendFile(path.join(__dirname, "web", "shopier-checkout.html"));
+});
+app.use("/api/shopier", shopierRateLimit, (_req, res, next) => {
+    res.set("Cache-Control", "no-store");
+    if (!shopierCheckout || !shopierStorageAvailable()) return res.status(503).json({ error: "Çevrimiçi satış şu anda kullanılamıyor." });
+    next();
+});
+app.post("/api/shopier/checkout", (req, res, next) => {
+    const checkout = shopierCheckout.open(req.body?.planId, req.body?.username);
+    if (!checkout) return res.status(400).json({ error: "Paket ve kullanıcı adını kontrol et." });
+    checkShopierOffer({ apiToken: shopierToken, productId: shopierProducts[req.body.planId], priceMinor: checkout.amountMinor })
+        .then(available => available ? res.status(201).json(checkout)
+            : res.status(409).json({ error: "Paket şu anda satın alınamıyor." }))
+        .catch(next);
+});
+app.post("/api/shopier/redeem", (req, res, next) => {
+    shopierCheckout.redeem(req.body?.token, req.body?.orderId).then(result => {
+        if (result) return res.json(result);
+        return res.status(409).json({ error: "Sipariş henüz doğrulanamadı. Sipariş numarasını ve Shopier’e yazdığın referansı kontrol et." });
+    }).catch(next);
+});
 app.get("/admin/lucide.js", (req, res) => {
     res.sendFile(path.join(__dirname, "node_modules/lucide/dist/umd/lucide.min.js"));
 });
@@ -357,6 +501,13 @@ app.use((req, res, next) => {
 app.get("/", (req, res) => {
     const webPath = path.join(__dirname, "web", "index.html");
     const rootPath = path.join(__dirname, "index.html");
+    if (shopierCheckout && shopierStorageAvailable() && fs.existsSync(webPath)) {
+        return fs.readFile(webPath, "utf-8", (error, html) => {
+            if (error) return res.sendFile(webPath);
+            res.type("html").send(html.replace('<meta name="tikmng-checkout" content="closed">',
+                '<meta name="tikmng-checkout" content="shopier">'));
+        });
+    }
     if (fs.existsSync(webPath)) return res.sendFile(webPath);
     if (fs.existsSync(rootPath)) return res.sendFile(rootPath);
     res.send("TikMnG Web Portal");
@@ -736,7 +887,7 @@ app.get("/api/version", (req, res) => {
 // MÜÅTERİ LİSANS DOÄRULAMA APİSİ (Launcher Bağlantısı)
 // =====================================================================
 
-app.post("/api/license/verify", (req, res) => {
+app.post("/api/license/verify", durableLicenseRoute((req, res) => {
     let { code, deviceId, clientVersion } = req.body;
     const ip = req.headers["x-forwarded-for"] || req.socket.remoteAddress;
 
@@ -946,9 +1097,9 @@ app.post("/api/license/verify", (req, res) => {
     }
 
     return res.json({ valid: false, reason: "invalid_license", message: "Geçersiz lisans kodu." });
-});
+}));
 
-app.post("/api/license/check", (req, res) => {
+app.post("/api/license/check", durableLicenseRoute((req, res) => {
     let { code, deviceId, activationToken, expiresAt, clientVersion } = req.body;
 
     // Sürüm kontrolü (Çok eski sürümleri engelle)
@@ -1068,7 +1219,7 @@ app.post("/api/license/check", (req, res) => {
     }
 
     return res.json({ valid: false, reason: "invalid_license", message: "Lisans aktif değil." });
-});
+}));
 
 // =====================================================================
 // WEB SİTESİ LİSANS TALEP APİSİ
@@ -1197,7 +1348,7 @@ app.post("/api/admin/cikis", (req, res) => {
 });
 
 // Yeni Lisans Oluştur (1 dk, 10 dk, 20 dk, 1 gün, 3 gün, 7 gün, 30 gün, sınırsız)
-app.post("/api/admin/lisans-olustur", adminKontrol, (req, res) => {
+app.post("/api/admin/lisans-olustur", adminKontrol, durableLicenseRoute((req, res) => {
     const { sure_birim, sure_miktar, notlar, ad } = req.body;
     // sure_birim: "dakika" | "gun" | "sinirsiz"
     // sure_miktar: number (örn 1, 10, 20, 1, 3, 7, 30, -1)
@@ -1258,10 +1409,10 @@ app.post("/api/admin/lisans-olustur", adminKontrol, (req, res) => {
         sure_etiketi: sureEtiketi,
         mesaj: `${sureEtiketi} lisans oluşturuldu: ${kod}`
     });
-});
+}));
 
 // Ajans Lisansı Oluştur (Çoklu Yayıncı)
-app.post("/api/admin/ajans-lisansi-olustur", adminKontrol, (req, res) => {
+app.post("/api/admin/ajans-lisansi-olustur", adminKontrol, durableLicenseRoute((req, res) => {
     const { ajans_adi, max_yayinci, sure_birim, sure_miktar, notlar } = req.body;
     const birim = sure_birim || "gun";
     const miktar = Number(sure_miktar);
@@ -1322,10 +1473,10 @@ app.post("/api/admin/ajans-lisansi-olustur", adminKontrol, (req, res) => {
         ajans_adi: yeniLisans.ajans_adi,
         mesaj: (ajans_adi || "Ajans") + " için " + maxYayinci + " kişilik " + sureEtiketi + " ajans lisansı oluşturuldu: " + kod
     });
-});
+}));
 
 // Lisansları Senkronize Et / Yedekten Geri Yükle
-app.post("/api/admin/lisanslar-senkronize", adminKontrol, (req, res) => {
+app.post("/api/admin/lisanslar-senkronize", adminKontrol, durableLicenseRoute((req, res) => {
     const { lisanslar } = req.body;
     if (!Array.isArray(lisanslar)) return res.status(400).json({ error: "Geçersiz lisans verisi!" });
     if (lisanslar.length > 10000 || lisanslar.some(l => !l || typeof l.kod !== "string" || l.kod.length > 160
@@ -1347,13 +1498,13 @@ app.post("/api/admin/lisanslar-senkronize", adminKontrol, (req, res) => {
     }
     dbKaydet();
     res.json({ basarili: true, eklenen, toplam: lisanslarVeritabani.length });
-});
+}));
 
-app.get("/api/admin/lisanslar", adminKontrol, (req, res) => {
+app.get("/api/admin/lisanslar", adminKontrol, durableLicenseRoute((req, res) => {
     lisanslarVeritabani.forEach(l => sureliDurumGuncelle(l));
     res.setHeader("Cache-Control", "no-store");
     res.json(lisanslarVeritabani.map(l => l.tip === "ajans" ? { ...l, kullanim: agencySummary(l) } : l));
-});
+}));
 
 function ajansBul(req, res) {
     const license = lisanslarVeritabani.find(l => l.kod === req.params.kod.toUpperCase());
@@ -1386,7 +1537,7 @@ app.get("/api/admin/ajans/:kod", adminKontrol, (req, res) => {
     res.json(ajansDetayi(license));
 });
 
-app.post("/api/admin/ajans/:kod/kapasite", adminKontrol, (req, res) => {
+app.post("/api/admin/ajans/:kod/kapasite", adminKontrol, durableLicenseRoute((req, res) => {
     const license = ajansBul(req, res);
     if (!license) return;
     const capacity = Number(req.body.max_yayinci);
@@ -1399,9 +1550,9 @@ app.post("/api/admin/ajans/:kod/kapasite", adminKontrol, (req, res) => {
     dbKaydet();
     logEkle(license.kod, null, "ajans_kapasite_" + capacity, req.ip);
     res.json(ajansDetayi(license));
-});
+}));
 
-app.post("/api/admin/ajans/:kod/yayinci", adminKontrol, (req, res) => {
+app.post("/api/admin/ajans/:kod/yayinci", adminKontrol, durableLicenseRoute((req, res) => {
     const license = ajansBul(req, res);
     if (!license) return;
     const { deviceId, ad } = req.body;
@@ -1413,9 +1564,9 @@ app.post("/api/admin/ajans/:kod/yayinci", adminKontrol, (req, res) => {
     license.yayinci_kayitlari = members;
     dbKaydet();
     res.json(ajansDetayi(license));
-});
+}));
 
-app.post("/api/admin/ajans/:kod/erisim", adminKontrol, (req, res) => {
+app.post("/api/admin/ajans/:kod/erisim", adminKontrol, durableLicenseRoute((req, res) => {
     const license = ajansBul(req, res);
     if (!license) return;
     const { deviceId, engelli } = req.body;
@@ -1437,9 +1588,9 @@ app.post("/api/admin/ajans/:kod/erisim", adminKontrol, (req, res) => {
     dbKaydet();
     logEkle(license.kod, deviceId, engelli ? "ajans_erisim_kaldirildi" : "ajans_engel_kaldirildi", req.ip);
     res.json(ajansDetayi(license));
-});
+}));
 
-app.post(["/api/admin/lisans/:kod/iptal", "/api/admin/lisans-iptal/:kod"], adminKontrol, (req, res) => {
+app.post(["/api/admin/lisans/:kod/iptal", "/api/admin/lisans-iptal/:kod"], adminKontrol, durableLicenseRoute((req, res) => {
     const kod = req.params.kod.toUpperCase();
     const lisans = lisanslarVeritabani.find(l => l.kod === kod);
     if (!lisans) return res.status(404).json({ error: "Lisans bulunamadı." });
@@ -1452,9 +1603,9 @@ app.post(["/api/admin/lisans/:kod/iptal", "/api/admin/lisans-iptal/:kod"], admin
     }
     dbKaydet();
     res.json({ mesaj: "Lisans iptal edildi." });
-});
+}));
 
-app.post(["/api/admin/lisans/:kod/aktif-et", "/api/admin/lisans-aktif/:kod"], adminKontrol, (req, res) => {
+app.post(["/api/admin/lisans/:kod/aktif-et", "/api/admin/lisans-aktif/:kod"], adminKontrol, durableLicenseRoute((req, res) => {
     const kod = req.params.kod.toUpperCase();
     const lisans = lisanslarVeritabani.find(l => l.kod === kod);
     if (!lisans) return res.status(404).json({ error: "Lisans bulunamadı." });
@@ -1475,9 +1626,9 @@ app.post(["/api/admin/lisans/:kod/aktif-et", "/api/admin/lisans-aktif/:kod"], ad
 
     dbKaydet();
     res.json({ mesaj: "Lisans tekrar aktif edildi.", durum: lisans.durum });
-});
+}));
 
-app.post("/api/admin/lisans/:kod/duzenle", adminKontrol, (req, res) => {
+app.post("/api/admin/lisans/:kod/duzenle", adminKontrol, durableLicenseRoute((req, res) => {
     const index = lisanslarVeritabani.findIndex(l => l.kod === req.params.kod.toUpperCase());
     if (index === -1) return res.status(404).json({ error: "Lisans bulunamadı." });
     const updated = editLicense(lisanslarVeritabani[index], req.body);
@@ -1485,9 +1636,9 @@ app.post("/api/admin/lisans/:kod/duzenle", adminKontrol, (req, res) => {
     dbKaydet();
     logEkle(updated.kod, null, req.body.sure ? "lisans_sure_" + req.body.sure.islem : "lisans_bilgi_duzenlendi", req.ip);
     res.json({ basarili: true, lisans: updated });
-});
+}));
 
-app.post("/api/admin/lisans/:kod/yenile", adminKontrol, (req, res) => {
+app.post("/api/admin/lisans/:kod/yenile", adminKontrol, durableLicenseRoute((req, res) => {
     const index = lisanslarVeritabani.findIndex(l => l.kod === req.params.kod.toUpperCase());
     if (index === -1) return res.status(404).json({ error: "Lisans bulunamadı." });
     const updated = renewLicense(lisanslarVeritabani[index]);
@@ -1495,9 +1646,9 @@ app.post("/api/admin/lisans/:kod/yenile", adminKontrol, (req, res) => {
     dbKaydet();
     logEkle(updated.kod, null, "lisans_yenilendi", req.ip);
     res.json({ basarili: true, lisans: updated });
-});
+}));
 
-app.delete("/api/admin/lisans/:kod", adminKontrol, (req, res) => {
+app.delete("/api/admin/lisans/:kod", adminKontrol, durableLicenseRoute((req, res) => {
     const kod = req.params.kod.toUpperCase();
     const lisans = lisanslarVeritabani.find(l => l.kod === kod);
     if (!lisans) return res.status(404).json({ error: "Lisans bulunamadı." });
@@ -1511,7 +1662,7 @@ app.delete("/api/admin/lisans/:kod", adminKontrol, (req, res) => {
     dbKaydet();
     logEkle(kod, null, "lisans_kalici_silindi", req.ip);
     res.json({ mesaj: "Lisans listeden kaldırıldı ve erişimi kalıcı olarak kapatıldı.", durum: lisans.durum });
-});
+}));
 
 // Gelen Talepleri Listele
 app.get("/api/admin/talepler", adminKontrol, (req, res) => {
@@ -1525,7 +1676,7 @@ app.delete("/api/admin/talep/:id", adminKontrol, (req, res) => {
     res.json({ mesaj: "Talep silindi." });
 });
 
-app.get("/api/admin/istatistikler", adminKontrol, (req, res) => {
+app.get("/api/admin/istatistikler", adminKontrol, durableLicenseRoute((req, res) => {
     lisanslarVeritabani.forEach(l => sureliDurumGuncelle(l));
     const toplam = lisanslarVeritabani.filter(l => l.durum !== "arsivlendi").length;
     const aktif = lisanslarVeritabani.filter(l => l.durum === "aktif").length;
@@ -1534,7 +1685,7 @@ app.get("/api/admin/istatistikler", adminKontrol, (req, res) => {
     const doldu = lisanslarVeritabani.filter(l => l.durum === "suresi_doldu").length;
     const bekleyenTalep = taleplerVeritabani.length;
     res.json({ toplam, aktif, beklemede, iptal, doldu, bekleyenTalep });
-});
+}));
 
 app.get("/api/health", (req, res) => {
     res.json({ status: "ok", time: Date.now() });
