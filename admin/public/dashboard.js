@@ -263,6 +263,27 @@ async function run(button, operation) {
     finally { button.disabled = false; }
 }
 
+async function changeAgencyPanelCode(code, revoke = false) {
+    const panelAlreadyOpen = state.details.get(code)?.panel_erisim_var;
+    if ((revoke || panelAlreadyOpen) && !confirm(revoke
+        ? "Panel girişi kapatılsın mı? Mevcut ajans oturumları kapanır; oyun lisansları korunur."
+        : "Yeni panel giriş kodu oluşturulsun mu? Eski giriş kodu ve mevcut ajans oturumları kapanır.")) return;
+    const result = await api(`/api/admin/ajans/${encodeURIComponent(code)}/panel-kodu`, { islem: revoke ? "iptal" : "olustur" });
+    if (code === $("newCode").textContent && !$("newLicense").hidden) {
+        $("issueNewAgencyAccess").hidden = Boolean(result.code);
+        $("newAgencyHint").textContent = result.code
+            ? "Panel giriş kodu oluşturuldu. Giriş erişimini ajans satırından yönetebilirsiniz."
+            : "Ajans yöneticisi için ayrı bir panel giriş kodu oluşturun.";
+    }
+    if (result.code) {
+        $("agencyAccessCode").textContent = result.code;
+        $("agencyAccessDialog").showModal();
+        $("copyAgencyAccess").focus();
+    } else toast("Ajans paneli girişi kapatıldı.");
+    await loadDetail(code);
+    renderLicenses();
+}
+
 $("loginForm").addEventListener("submit", async event => {
     event.preventDefault();
     const button = event.submitter;
@@ -304,6 +325,8 @@ $("statusFilter").addEventListener("change", renderLicenses);
 $("agencyName").addEventListener("input", updateKeyPreview);
 $("durationUnit").addEventListener("change", updateKeyPreview);
 $("copyNew").addEventListener("click", event => run(event.currentTarget, () => copy($("newCode").textContent)));
+$("issueNewAgencyAccess").addEventListener("click", event => run(event.currentTarget,
+    () => changeAgencyPanelCode($("newCode").textContent)));
 $("copyAgencyAccess").addEventListener("click", event => run(event.currentTarget,
     () => copy($("agencyAccessCode").textContent, "Panel giriş kodu kopyalandı.")));
 $("closeAgencyAccess").addEventListener("click", () => $("agencyAccessDialog").close());
@@ -326,6 +349,10 @@ $("createForm").addEventListener("submit", async event => {
             else payload.ad = $("individualName").value.trim();
             const result = await api(agency ? "/api/admin/ajans-lisansi-olustur" : "/api/admin/lisans-olustur", payload);
             $("newCode").textContent = result.kod;
+            $("newCodeLabel").textContent = agency ? "Çoklu yayıncı oyun lisansı" : "Bireysel oyun lisansı";
+            $("newAgencyHint").textContent = "Ajans yöneticisi için ayrı bir panel giriş kodu oluşturun.";
+            $("newAgencyHint").hidden = !agency;
+            $("issueNewAgencyAccess").hidden = !agency;
             $("newLicense").hidden = false;
             toast("Lisans oluşturuldu.");
             await refresh();
@@ -343,20 +370,7 @@ $("licensesBody").addEventListener("click", async event => {
     await run(button, async () => {
         if (action === "copy") return copy(code);
         if (action === "issue-panel-code" || action === "revoke-panel-code") {
-            const revoke = action === "revoke-panel-code";
-            if ((revoke || state.details.get(code)?.panel_erisim_var) && !confirm(revoke
-                ? "Panel girişi kapatılsın mı? Mevcut ajans oturumları kapanır; oyun lisansları korunur."
-                : "Yeni panel giriş kodu oluşturulsun mu? Eski giriş kodu ve mevcut ajans oturumları kapanır.")) return;
-            $("agencyAccessDialog").close();
-            $("agencyAccessCode").textContent = "";
-            const result = await api(`/api/admin/ajans/${encodeURIComponent(code)}/panel-kodu`, { islem: revoke ? "iptal" : "olustur" });
-            await loadDetail(code); renderLicenses();
-            if (result.code) {
-                $("agencyAccessCode").textContent = result.code;
-                $("agencyAccessDialog").showModal();
-                $("copyAgencyAccess").focus();
-            } else toast("Ajans paneli girişi kapatıldı.");
-            return;
+            return changeAgencyPanelCode(code, action === "revoke-panel-code");
         }
         if (action === "cancel-edit") { state.editing = null; renderLicenses(); return; }
         if (action === "edit" || action === "edit-time") {

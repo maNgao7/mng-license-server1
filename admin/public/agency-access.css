@@ -3,3 +3,5 @@
 .agency-access-dialog p{font-size:13px;color:var(--muted);line-height:1.65;margin:14px 0}
 .agency-access-dialog code{display:block;overflow-wrap:anywhere;user-select:all;background:var(--bg);border:1px solid var(--line);border-radius:5px;padding:14px;font-size:13px;line-height:1.7}
 .agency-access-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:20px}
+.new-license-actions{display:flex;gap:8px;flex-wrap:wrap}
+.new-license #newAgencyHint{margin:6px 0 0;font-size:11px;color:var(--muted)}

@@ -6,9 +6,9 @@
   <meta name="robots" content="noindex,nofollow">
   <title>TikMnG · Yönetim</title>
   <link rel="stylesheet" href="/admin/dashboard.css?v=20261021c">
-  <link rel="stylesheet" href="/admin/agency-access.css?v=20261110">
+  <link rel="stylesheet" href="/admin/agency-access.css?v=20261110-2">
   <script src="/admin/lucide.js" defer></script>
-  <script src="/admin/dashboard.js?v=20261110" defer></script>
+  <script src="/admin/dashboard.js?v=20261110-2" defer></script>
 </head>
 <body>
   <main id="loginPage" class="login-page">
@@ -74,7 +74,15 @@
           <div class="form-footer"><div><code id="keyPreview">AJANSAD-XXXXXXXX-XXXXXXXX</code><p id="durationHint">Ortak süre, ilk yayıncının girişinde başlar.</p></div><button class="primary" type="submit" id="createButton"><i data-lucide="plus"></i> Ajans lisansı oluştur</button></div>
           <p class="error" id="createError" role="alert" hidden></p>
         </form>
-        <div id="newLicense" class="new-license" hidden><div><span>Lisans oluşturuldu</span><code id="newCode"></code></div><button id="copyNew" class="secondary"><i data-lucide="copy"></i> Kopyala</button></div>
+        <div id="newLicense" class="new-license" hidden>
+          <div><span id="newCodeLabel">Oyun lisansı oluşturuldu</span><code id="newCode"></code>
+            <p id="newAgencyHint" hidden>Ajans yöneticisi için ayrı bir panel giriş kodu oluşturun.</p>
+          </div>
+          <div class="new-license-actions">
+            <button id="copyNew" class="secondary" type="button"><i data-lucide="copy"></i> Oyun lisansını kopyala</button>
+            <button id="issueNewAgencyAccess" class="primary" type="button" hidden>Panel giriş kodu oluştur</button>
+          </div>
+        </div>
       </section>
 
       <section id="licensesSection" class="licenses-section">

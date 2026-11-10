@@ -71,7 +71,11 @@
   byId("loginForm").addEventListener("submit", event => {
     event.preventDefault();
     busy(event.currentTarget, async () => {
-      await api("login", { code: byId("agencyCode").value });
+      const code = byId("agencyCode").value.trim();
+      if (!/^MNGA-[A-F0-9]{64}$/i.test(code)) {
+        throw new Error("Panel için MNGA- ile başlayan giriş kodunu kullanın. Yönetici bu kodu “Panel giriş kodu oluştur” düğmesinden alabilir.");
+      }
+      await api("login", { code });
       byId("agencyCode").value = "";
       render(await api("session")); byId("logout").focus();
     });
