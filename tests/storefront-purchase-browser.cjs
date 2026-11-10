@@ -67,10 +67,9 @@ for (const width of [1280, 360]) {
                 assert.equal(await purchase.getAttribute('href'), '#fiyatlandirma');
                 assert.match(await whatsapp.textContent(), /WHATSAPP SİPARİŞ/);
                 assert.equal(await whatsapp.evaluate(link => getComputedStyle(link).backgroundColor), 'rgb(37, 211, 102)');
-                assert.equal(await page.locator('a[href^="/satin-al"]').count(), 0);
-                for (const href of await page.locator('.plan-periods a, [data-license-order]').evaluateAll(links => links.map(link => link.href))) {
-                    assertWhatsApp(href);
-                }
+                const purchaseLinks = await page.locator('.plan-periods a, [data-license-order]').evaluateAll(links => links.map(link => link.href));
+                assert.equal(purchaseLinks.length, 9);
+                for (const href of purchaseLinks) assert.match(href, /^http:\/\/storefront\.test\/satin-al\?plan=/);
             }
         });
     }
