@@ -1,0 +1,6 @@
+/* Keep both account entries visible beside the existing brand on small screens. */
+@media(max-width:600px){
+  .nav-header .nav-wrapper{padding-inline:12px!important;gap:10px!important;flex-wrap:wrap;height:auto!important;min-height:80px;padding-block:10px!important}
+  .nav-header .nav-actions{width:100%;justify-content:flex-end}
+  .nav-header .nav-actions .btn-admin{display:inline-flex!important;min-height:40px;font-size:12px!important}
+}

@@ -6,8 +6,9 @@
   <meta name="robots" content="noindex,nofollow">
   <title>TikMnG · Yönetim</title>
   <link rel="stylesheet" href="/admin/dashboard.css?v=20261021c">
+  <link rel="stylesheet" href="/admin/agency-access.css?v=20261110">
   <script src="/admin/lucide.js" defer></script>
-  <script src="/admin/dashboard.js?v=20261021c" defer></script>
+  <script src="/admin/dashboard.js?v=20261110" defer></script>
 </head>
 <body>
   <main id="loginPage" class="login-page">
@@ -91,6 +92,12 @@
       </section>
     </main>
   </div>
+  <dialog id="agencyAccessDialog" class="agency-access-dialog" aria-labelledby="agencyAccessTitle" aria-describedby="agencyAccessHint">
+    <h2 id="agencyAccessTitle">Ajans paneli giriş kodu</h2>
+    <p id="agencyAccessHint">Bu kod yalnızca şimdi gösterilir. Ajans yöneticisine güvenli şekilde iletin. Kod, oyun lisansından ayrıdır.</p>
+    <code id="agencyAccessCode"></code>
+    <div class="agency-access-actions"><button id="copyAgencyAccess" type="button" class="primary">Giriş kodunu kopyala</button><button id="closeAgencyAccess" type="button">Kapat</button></div>
+  </dialog>
   <div class="toast" id="toast" role="status" hidden></div>
 </body>
 </html>

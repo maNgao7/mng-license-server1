@@ -102,8 +102,28 @@ export function touchAgencyMember(license, deviceId, isLogin = false) {
     return member;
 }
 
-export function agencySummary(license) {
-    const used = agencyMembers(license).length;
+export function agencySummary(license, licenses = []) {
+    // Unused individual codes reserve a seat too. Legacy direct devices share this quota.
+    const reserved = licenses.filter(item => item.agency_parent_id === license.id
+        && !["iptal", "arsivlendi"].includes(item.durum)).length;
+    const used = agencyMembers(license).length + reserved;
     const capacity = Number(license.max_cihaz) || 1;
     return { kullanilan: used, kapasite: capacity, bos: Math.max(0, capacity - used) };
+}
+
+export function agencyAccessAllowed(license, blacklist, now = Date.now()) {
+    return Boolean(license?.tip === "ajans" && license.id && validCapacity(license.max_cihaz)
+        && validAgencyDuration(license.sure_birim, license.sure_miktar)
+        && ["beklemede", "aktif"].includes(license.durum) && !blacklist.includes(license.kod)
+        && (license.bitis_zamani == null || (Number.isFinite(Number(license.bitis_zamani))
+            && Number(license.bitis_zamani) > now)));
+}
+
+export function agencyPublisherParent(license, licenses, blacklist, now = Date.now()) {
+    const parent = licenses.find(item => item.id === license.agency_parent_id);
+    return agencyAccessAllowed(parent, blacklist, now) ? parent : null;
+}
+
+export function isAgencyPublisherCode(code) {
+    return /^MNGP-[A-F0-9]{20}$/.test(code);
 }

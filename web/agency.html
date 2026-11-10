@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <title>Ajans Paneli | TikMnG</title>
+  <link rel="stylesheet" href="/agency.css?v=20261110">
+  <script src="/agency.js?v=20261110" defer></script>
+</head>
+<body>
+  <header><a class="brand" href="/" aria-label="TikMnG ana sayfa"><span class="badge">T</span> TIKMNG</a><a href="/">Ana sayfaya dön</a></header>
+  <main>
+    <section id="loginPanel" class="login-panel" aria-labelledby="loginTitle">
+      <p class="eyebrow">TIKMNG · AJANS</p>
+      <h1 id="loginTitle">Ajans Paneli</h1>
+      <p>Ajansınıza özel yayıncı lisanslarını buradan yönetin.</p>
+      <form id="loginForm">
+        <label for="agencyCode">Ajans paneli giriş kodunuz</label>
+        <input id="agencyCode" name="agencyCode" type="password" autocomplete="current-password" maxlength="160" required aria-describedby="codeHint" spellcheck="false">
+        <p id="codeHint" class="hint">TikMnG sahibinin size verdiği ayrı panel giriş kodunu girin. Oyun lisans kodlarıyla bu panele giriş yapılamaz.</p>
+        <button type="submit">Ajans paneline giriş yap</button>
+      </form>
+      <p class="hint">Bu giriş yalnızca ajansınıza ait yayıncı lisanslarını açar.</p>
+    </section>
+    <section id="dashboard" hidden aria-labelledby="agencyName">
+      <div class="panel-heading"><div><p class="eyebrow">AJANS PANELİ</p><h1 id="agencyName"></h1></div><button id="logout" class="secondary" type="button">Çıkış yap</button></div>
+      <p id="period"></p>
+      <div class="quota" aria-label="Yayıncı kapasitesi"><div><span>Kullanılan</span><strong id="used"></strong></div><div><span>Kapasite</span><strong id="capacity"></strong></div><div><span>Kalan</span><strong id="remaining"></strong></div></div>
+      <div class="panel">
+        <h2>Yayıncı lisansı oluştur</h2>
+        <form id="publisherForm" class="publisher-form">
+          <div><label for="publisherName">Yayıncı adı</label><input id="publisherName" name="publisherName" maxlength="80" required autocomplete="off"></div>
+          <button id="createPublisher" type="submit">Lisans oluştur</button>
+        </form>
+        <p class="hint">Her kod bir yayıncı ve bir bilgisayar içindir; oluşturulduğunda bir yer ayırır. Süre, ajansınızın ilk yayıncı aktivasyonunda başlar. Tüm kodlar ana ajans lisansıyla aynı tarihte sona erer.</p>
+      </div>
+      <div class="panel"><h2>Yayıncı lisansları</h2><p id="empty" class="hint">Henüz yayıncı lisansı oluşturulmadı.</p><ul id="publishers" class="publishers"></ul></div>
+      <div id="legacyPanel" class="panel" hidden><h2>Mevcut cihaz kayıtları</h2><p class="hint">Ortak ajans koduyla daha önce bağlanan cihazlar da kapasiteye dahildir. Bu kayıtların yönetimi için TikMnG sahibine başvurun.</p><ul id="legacy"></ul></div>
+    </section>
+    <p id="status" role="status" aria-live="polite"></p>
+    <noscript>Ajans panelini kullanmak için tarayıcınızda JavaScript'i etkinleştirin.</noscript>
+  </main>
+  <footer><a href="/">TikMnG</a><a href="/privacy.html">Gizlilik Politikası</a></footer>
+</body>
+</html>

@@ -7,7 +7,9 @@ import helmet from "helmet";
 import { rateLimit } from "express-rate-limit";
 import { fileURLToPath } from "url";
 import { agencySlug, validCapacity, validAgencyDuration, createAgencyKey, parseAgencyKey,
-    createAgencyReceipt, readAgencyReceipt, agencyMembers, touchAgencyMember, agencySummary } from "./agency-licenses.js";
+    createAgencyReceipt, readAgencyReceipt, agencyMembers, touchAgencyMember, agencySummary,
+    agencyPublisherParent, isAgencyPublisherCode } from "./agency-licenses.js";
+import { registerAgencyPortal } from "./agency-portal.js";
 import { assertLicenseEditable, editLicense, renewLicense } from "./license-management.js";
 import { registerContentRoutes } from "./content-management.js";
 import { registerOverlayRelay } from "./overlay-relay.js";
@@ -420,6 +422,14 @@ app.use(cors({
 app.use("/api/admin/lisanslar-senkronize", adminKontrol, express.json({ limit: "8mb" }));
 app.use("/api/admin/content", adminKontrol, express.json({ limit: "2mb" }));
 app.use(express.json({ limit: "64kb" }));
+registerAgencyPortal(app, {
+    licenses: () => lisanslarVeritabani, blacklist: () => karaListeVeritabani,
+    save: dbKaydet, durableRoute: durableLicenseRoute,
+    adminKontrol, findAgency: ajansBul,
+    configured: () => ADMIN_SIFRE.length >= 16,
+    storageReady: () => useGithubLicenseLedger ? githubBackupReady && Boolean(githubBackupSha)
+        : process.env.RENDER !== "true" || (durableRenderData && diskLedgerReadable),
+});
 registerContentRoutes(app, { dataDir: DATA_DIR, adminKontrol });
 
 const shopierToken = String(process.env.SHOPIER_API_TOKEN || "").trim();
@@ -521,6 +531,11 @@ app.get("/widgetlar", (req, res) => {
     res.sendFile(path.join(__dirname, "web", "widgets.html"));
 });
 
+app.get(["/agency", "/agency/", "/agency.html"], (_req, res) => {
+    res.set({ "Cache-Control": "no-store", "X-Robots-Tag": "noindex, nofollow" });
+    res.sendFile(path.join(__dirname, "web", "agency.html"));
+});
+
 app.get("/robots.txt", (req, res) => {
     const publicBaseUrl = String(process.env.PUBLIC_BASE_URL || "https://tikmng.com").replace(/\/$/, "");
     res.type("text/plain").send(`User-agent: *\nAllow: /\nDisallow: /admin\nDisallow: /api/\nSitemap: ${publicBaseUrl}/sitemap.xml\n`);
@@ -610,6 +625,7 @@ function lisansKoduUret(sureObj) {
 
 function kodKriptoKontrol(kod) {
     if (!kod || typeof kod !== "string") return null;
+    if (isAgencyPublisherCode(kod)) return { recordRequired: true };
     const namedAgency = parseAgencyKey(kod.trim().toUpperCase(), ADMIN_SIFRE);
     if (namedAgency) return namedAgency;
     const parcalar = kod.trim().toUpperCase().split("-");
@@ -669,6 +685,34 @@ function sureliDurumGuncelle(lisans) {
         dbKaydet();
     }
     return lisans;
+}
+
+function prepareAgencyPublisher(license, deviceId, start) {
+    if (!license.agency_parent_id && !isAgencyPublisherCode(license.kod)) return null;
+    const parent = agencyPublisherParent(license, lisanslarVeritabani, karaListeVeritabani);
+    if (!parent || license.tip !== "tekil") return { valid: false, reason: "revoked", message: "Ajans erişimi kapalı." };
+    if (parent.engelli_cihazlar?.includes(deviceId) || (license.cihaz_kimlik && license.cihaz_kimlik !== deviceId)) {
+        return { valid: false, reason: "device_mismatch", message: "Bu yayıncı lisansı bu bilgisayarda kullanılamaz." };
+    }
+    if (!start && parent.durum !== "aktif") return { valid: false, reason: "invalid_license", message: "Lisans henüz başlamadı." };
+    const previous = JSON.stringify([parent, license]);
+    // The first publisher starts the shared agency period without adding a direct device seat.
+    if (start && parent.durum === "beklemede") {
+        const time = Date.now();
+        const duration = sureMsHesapla({ birim: parent.sure_birim, miktar: parent.sure_miktar });
+        parent.durum = "aktif";
+        parent.aktivasyon_zamani = time;
+        parent.bitis_zamani = duration === -1 ? null : time + duration;
+    }
+    license.sure_birim = parent.sure_birim;
+    license.sure_miktar = parent.sure_miktar;
+    if (license.bitis_zamani !== parent.bitis_zamani) {
+        license.bitis_zamani = parent.bitis_zamani;
+        delete license.activation_token;
+    }
+    if (license.durum === "suresi_doldu" && license.aktivasyon_zamani) license.durum = "aktif";
+    if (!start && previous !== JSON.stringify([parent, license])) dbKaydet();
+    return null;
 }
 
 function logEkle(lisansKod, cihazKimlik, islem, ip) {
@@ -915,6 +959,9 @@ app.post("/api/license/verify", durableLicenseRoute((req, res) => {
     deviceId = deviceId.trim();
     const temizKod = String(code).trim().toUpperCase();
 
+    // Entry credentials must never reach launcher recovery or activation logs.
+    if (temizKod.startsWith("MNGA-")) return res.json({ valid: false, reason: "invalid_license", message: "Panel giriş kodu oyun lisansı değildir." });
+
     // Kara liste kontrolü
     if (karaListeVeritabani.includes(temizKod)) {
         logEkle(temizKod, deviceId, "red_kara_liste", ip);
@@ -977,6 +1024,9 @@ app.post("/api/license/verify", durableLicenseRoute((req, res) => {
         });
     }
 
+    const publisherError = prepareAgencyPublisher(lisans, deviceId, true);
+    if (publisherError) return res.json(publisherError);
+
     if (lisans.durum === "suresi_doldu") {
         logEkle(temizKod, deviceId, "red_sure_doldu", ip);
         return res.json({
@@ -987,7 +1037,7 @@ app.post("/api/license/verify", durableLicenseRoute((req, res) => {
     }
 
     if (lisans.tip === "ajans" && !agencyMembers(lisans).some(item => item.cihaz_kimlik === deviceId)
-        && agencyMembers(lisans).length >= Number(lisans.max_cihaz || 1)) {
+        && agencySummary(lisans, lisanslarVeritabani).bos < 1) {
         logEkle(temizKod, deviceId, "red_ajans_kapasite_dolu", ip);
         return res.json({ valid: false, reason: "agency_limit_reached", message: "Bu ajans lisansının yayıncı kapasitesi dolmuştur." });
     }
@@ -1001,6 +1051,7 @@ app.post("/api/license/verify", durableLicenseRoute((req, res) => {
         if (sureMs !== -1) {
             bitisZamani = simdi + sureMs;
         }
+        if (lisans.agency_parent_id) bitisZamani = lisans.bitis_zamani;
 
         lisans.durum = "aktif";
         lisans.aktivasyon_zamani = simdi;
@@ -1023,7 +1074,7 @@ app.post("/api/license/verify", durableLicenseRoute((req, res) => {
             valid: true,
             expiresAt: bitisZamani,
             activationToken: token,
-            remainingDays: lisans.sure_birim === "gun" ? lisans.sure_miktar : (isUnlimited ? -1 : Math.ceil(remainingSeconds / 86400)),
+            remainingDays: isUnlimited ? -1 : Math.ceil(remainingSeconds / 86400),
             remainingSeconds: remainingSeconds,
             isUnlimited: isUnlimited,
             message: "Lisans başarıyla aktifleştirildi."
@@ -1035,7 +1086,7 @@ app.post("/api/license/verify", durableLicenseRoute((req, res) => {
         if (lisans.tip === "ajans") {
             const members = agencyMembers(lisans);
             if (!members.some(item => item.cihaz_kimlik === deviceId)) {
-                if (members.length >= (lisans.max_cihaz || 1)) {
+                if (agencySummary(lisans, lisanslarVeritabani).bos < 1) {
                     logEkle(temizKod, deviceId, "red_ajans_kapasite_dolu", ip);
                     return res.json({
                         valid: false,
@@ -1122,6 +1173,9 @@ app.post("/api/license/check", durableLicenseRoute((req, res) => {
     deviceId = deviceId.trim();
     const temizKod = String(code).trim().toUpperCase();
 
+    // Entry credentials must never reach launcher recovery or activation logs.
+    if (temizKod.startsWith("MNGA-")) return res.json({ valid: false, reason: "invalid_license", message: "Panel giriş kodu oyun lisansı değildir." });
+
     // Kara liste kontrolü
     if (karaListeVeritabani.includes(temizKod)) {
         return res.json({ valid: false, reason: "revoked", message: "Bu lisans kalıcı olarak iptal edilmiştir." });
@@ -1174,7 +1228,7 @@ app.post("/api/license/check", durableLicenseRoute((req, res) => {
         // A recovered agency can restore other previously signed members, within its seat limit.
         if (!registered && lisans.ajans_kurtarma
             && aktivasyonTokenDogrula(temizKod, deviceId, lisans.bitis_zamani, activationToken)
-            && agencyMembers(lisans).length < Number(lisans.max_cihaz || 1)) {
+            && agencySummary(lisans, lisanslarVeritabani).bos > 0) {
             touchAgencyMember(lisans, deviceId);
             dbKaydet();
         } else if (!registered) {
@@ -1183,6 +1237,9 @@ app.post("/api/license/check", durableLicenseRoute((req, res) => {
     } else if (lisans.cihaz_kimlik && lisans.cihaz_kimlik !== deviceId) {
         return res.json({ valid: false, reason: "device_mismatch", message: "Bu lisans başka bir bilgisayara kayıtlı." });
     }
+
+    const publisherError = prepareAgencyPublisher(lisans, deviceId, false);
+    if (publisherError) return res.json(publisherError);
 
     if (lisans.durum === "suresi_doldu") return res.json({ valid: false, reason: "expired", message: "Lisansınızın süresi dolmuş." });
 
@@ -1503,7 +1560,7 @@ app.post("/api/admin/lisanslar-senkronize", adminKontrol, durableLicenseRoute((r
 app.get("/api/admin/lisanslar", adminKontrol, durableLicenseRoute((req, res) => {
     lisanslarVeritabani.forEach(l => sureliDurumGuncelle(l));
     res.setHeader("Cache-Control", "no-store");
-    res.json(lisanslarVeritabani.map(l => l.tip === "ajans" ? { ...l, kullanim: agencySummary(l) } : l));
+    res.json(lisanslarVeritabani.map(l => l.tip === "ajans" ? { ...l, kullanim: agencySummary(l, lisanslarVeritabani) } : l));
 }));
 
 function ajansBul(req, res) {
@@ -1526,7 +1583,8 @@ function ajansDetayi(license) {
             son_kontrol: Math.max(member.son_kontrol || 0, ...history.map(log => log.zaman)) || null
         };
     });
-    return { kod: license.kod, ajans_adi: license.ajans_adi, ...agencySummary(license),
+    return { kod: license.kod, ajans_adi: license.ajans_adi, ...agencySummary(license, lisanslarVeritabani),
+        panel_erisim_var: license.agency_portal_access?.version === 1 && Boolean(license.agency_portal_access.hash),
         yayincilar: members, engelli_cihazlar: license.engelli_cihazlar || [] };
 }
 
@@ -1542,7 +1600,7 @@ app.post("/api/admin/ajans/:kod/kapasite", adminKontrol, durableLicenseRoute((re
     if (!license) return;
     const capacity = Number(req.body.max_yayinci);
     if (!validCapacity(req.body.max_yayinci)) return res.status(400).json({ error: "Kapasite 1–1000 arasında tam sayı olmalı." });
-    if (capacity < agencyMembers(license).length) {
+    if (capacity < agencySummary(license, lisanslarVeritabani).kullanilan) {
         return res.status(409).json({ error: "Kapasite kayıtlı yayıncı sayısından az olamaz. Önce ilgili cihazların erişimini kaldırın." });
     }
     license.max_cihaz = capacity;
@@ -1597,6 +1655,7 @@ app.post(["/api/admin/lisans/:kod/iptal", "/api/admin/lisans-iptal/:kod"], admin
     assertLicenseEditable(lisans);
 
     lisans.durum = "iptal";
+    if (lisans.tip === "ajans") lisans.agency_session_version = (Number(lisans.agency_session_version) || 0) + 1;
     if (!karaListeVeritabani.includes(kod)) {
         karaListeVeritabani.push(kod);
         karaListeKaydet();
@@ -1654,6 +1713,7 @@ app.delete("/api/admin/lisans/:kod", adminKontrol, durableLicenseRoute((req, res
     if (!lisans) return res.status(404).json({ error: "Lisans bulunamadı." });
 
     lisans.durum = "arsivlendi";
+    if (lisans.tip === "ajans") lisans.agency_session_version = (Number(lisans.agency_session_version) || 0) + 1;
     lisans.arsivlenme_zamani = Date.now();
     if (!karaListeVeritabani.includes(kod)) {
         karaListeVeritabani.push(kod);

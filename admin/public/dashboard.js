@@ -19,7 +19,7 @@ function toast(message) {
 async function api(url, body, method = body === undefined ? "GET" : "POST") {
     const response = await fetch(url, {
         method, cache: "no-store", credentials: "same-origin",
-        headers: body === undefined ? {} : { "Content-Type": "application/json" },
+        headers: body === undefined ? {} : { "Content-Type": "application/json", ...(url.endsWith("/panel-kodu") ? { "X-TikMnG-Agency": "1" } : {}) },
         body: body === undefined ? undefined : JSON.stringify(body)
     });
     const result = await response.json().catch(() => ({}));
@@ -29,6 +29,8 @@ async function api(url, body, method = body === undefined ? "GET" : "POST") {
 }
 
 function showLogin() {
+    $("agencyAccessDialog").close();
+    $("agencyAccessCode").textContent = "";
     state.authenticated = false;
     $("loginPage").hidden = false;
     $("adminPanel").hidden = true;
@@ -47,7 +49,7 @@ function currentStatus(license) {
 }
 
 function usage(license) {
-    const used = new Set(Array.isArray(license.cihazlar) ? license.cihazlar : []).size;
+    const used = license.kullanim?.kullanilan ?? new Set(Array.isArray(license.cihazlar) ? license.cihazlar : []).size;
     return { used, capacity: Number(license.max_cihaz) || 1 };
 }
 
@@ -155,7 +157,8 @@ function detailMarkup(license) {
     if (!detail) return '<p class="muted" role="status">Yayıncı kayıtları yükleniyor…</p>';
     if (detail.error) return `<p class="error">${escapeHtml(detail.error)}</p>${actionButton("retry", license.kod, "refresh-cw", "Yeniden dene")}`;
     const code = escapeHtml(license.kod);
-    return `<div class="detail-header"><div><h3>Kayıtlı yayıncılar <span class="muted">${detail.kullanilan} / ${detail.kapasite}</span></h3><p>${detail.bos} boş kontenjan · Son kontrol, lisans doğrulama zamanıdır.</p></div>
+    return `<div class="detail-header"><div><h3>Ajans paneline giriş</h3><p>${detail.panel_erisim_var ? "Ayrı panel giriş kodu tanımlı." : "Henüz panel giriş kodu verilmedi."} Oyun lisansı panel girişi vermez.</p></div><div class="row-actions"><button type="button" data-action="issue-panel-code" data-code="${code}">${detail.panel_erisim_var ? "Giriş kodunu yenile" : "Panel giriş kodu oluştur"}</button>${detail.panel_erisim_var ? `<button type="button" class="danger" data-action="revoke-panel-code" data-code="${code}">Panel girişini kapat</button>` : ""}</div></div>
+      <div class="detail-header"><div><h3>Kayıtlı yayıncılar <span class="muted">${detail.kullanilan} / ${detail.kapasite}</span></h3><p>${detail.bos} boş kontenjan · Son kontrol, lisans doğrulama zamanıdır.</p></div>
       <form class="capacity-form" data-code="${code}"><label for="capacity-${code}">Kapasite</label><input id="capacity-${code}" type="number" min="${Math.max(1, detail.kullanilan)}" max="1000" step="1" value="${detail.kapasite}" required><button type="submit">Kaydet</button></form></div>
       <table class="member-table"><thead><tr><th>Yayıncı adı</th><th>Cihaz kimliği</th><th>İlk giriş</th><th>Son kontrol</th><th>Giriş</th><th class="align-right">Erişim</th></tr></thead><tbody>${detail.yayincilar.length ? detail.yayincilar.map((member, index) => `<tr>
       <td><form class="member-name" data-code="${code}" data-device="${escapeHtml(member.cihaz_kimlik)}"><input maxlength="80" value="${escapeHtml(member.ad)}" placeholder="Yayıncı ${index + 1}" aria-label="Yayıncı ${index + 1} adı"><button type="submit" class="icon-button" title="Yayıncı adını kaydet" aria-label="Yayıncı adını kaydet">${icon("check")}</button></form></td>
@@ -236,7 +239,7 @@ function updateKeyPreview() {
     $("durationAmount").disabled = $("durationUnit").value === "sinirsiz";
 }
 
-async function copy(text) {
+async function copy(text, message = "Lisans kodu kopyalandı.") {
     try { await navigator.clipboard.writeText(text); }
     catch {
         const input = document.createElement("textarea");
@@ -249,7 +252,7 @@ async function copy(text) {
         input.remove();
         if (!copied) throw new Error("Kopyalanamadı. Lisans kodunu seçerek kopyalayın.");
     }
-    toast("Lisans kodu kopyalandı.");
+    toast(message);
 }
 
 async function run(button, operation) {
@@ -301,6 +304,10 @@ $("statusFilter").addEventListener("change", renderLicenses);
 $("agencyName").addEventListener("input", updateKeyPreview);
 $("durationUnit").addEventListener("change", updateKeyPreview);
 $("copyNew").addEventListener("click", event => run(event.currentTarget, () => copy($("newCode").textContent)));
+$("copyAgencyAccess").addEventListener("click", event => run(event.currentTarget,
+    () => copy($("agencyAccessCode").textContent, "Panel giriş kodu kopyalandı.")));
+$("closeAgencyAccess").addEventListener("click", () => $("agencyAccessDialog").close());
+$("agencyAccessDialog").addEventListener("close", () => { $("agencyAccessCode").textContent = ""; });
 $("toggleCreate").addEventListener("click", () => {
     if (state.view === "requests") switchView("licenses");
     else $("createSection").hidden = !$("createSection").hidden;
@@ -335,6 +342,22 @@ $("licensesBody").addEventListener("click", async event => {
     const { action, code, device } = button.dataset;
     await run(button, async () => {
         if (action === "copy") return copy(code);
+        if (action === "issue-panel-code" || action === "revoke-panel-code") {
+            const revoke = action === "revoke-panel-code";
+            if ((revoke || state.details.get(code)?.panel_erisim_var) && !confirm(revoke
+                ? "Panel girişi kapatılsın mı? Mevcut ajans oturumları kapanır; oyun lisansları korunur."
+                : "Yeni panel giriş kodu oluşturulsun mu? Eski giriş kodu ve mevcut ajans oturumları kapanır.")) return;
+            $("agencyAccessDialog").close();
+            $("agencyAccessCode").textContent = "";
+            const result = await api(`/api/admin/ajans/${encodeURIComponent(code)}/panel-kodu`, { islem: revoke ? "iptal" : "olustur" });
+            await loadDetail(code); renderLicenses();
+            if (result.code) {
+                $("agencyAccessCode").textContent = result.code;
+                $("agencyAccessDialog").showModal();
+                $("copyAgencyAccess").focus();
+            } else toast("Ajans paneli girişi kapatıldı.");
+            return;
+        }
         if (action === "cancel-edit") { state.editing = null; renderLicenses(); return; }
         if (action === "edit" || action === "edit-time") {
             state.editing = code;
