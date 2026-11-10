@@ -173,6 +173,47 @@ test("first child starts the shared period; parent revoke/expiry invalidate sess
     assert.equal((await f.check(publisher.kod, "deniz-device", token)).valid, false);
 });
 
+test("admin creates a ready-to-share panel code and renewal preserves it and enabled publisher codes", async t => {
+    const f = await fixture(t);
+    const create = await f.request("/api/admin/ajans-lisansi-olustur", {
+        ajans_adi: "Yeni Ajans", max_yayinci: 1, sure_birim: "gun", sure_miktar: 30, panel_lisansi: true,
+    }, f.admin);
+    const { kod, panel_kodu } = create.data;
+    assert.match(panel_kodu, /^MNGA-[A-F0-9]{64}$/);
+    assert.match(create.headers.get("cache-control"), /no-store/);
+    assert.equal(create.data.durum, "aktif");
+    const [row] = await f.rows();
+    assert.equal(row.agency_portal_access.hash, hashAgencyEntryCode(panel_kodu));
+    assert.ok(!JSON.stringify(row).includes(panel_kodu));
+    assert.equal(row.bitis_zamani - row.aktivasyon_zamani, 30 * 86400000);
+    const login = () => f.request("/api/agency/login", { code: panel_kodu });
+    const { cookie } = await login();
+    const add = async ad => (await f.request("/api/agency/publishers", { ad }, cookie, 201)).data.yayincilar[0];
+    const publisher = await add("@yayinci");
+    const route = `/api/agency/publishers/${publisher.id}`;
+    const initial = await f.verify(publisher.kod, "device");
+    assert.equal(initial.valid, true);
+    assert.equal(initial.expiresAt, row.bitis_zamani);
+    await f.request(route + "/pause", {}, cookie);
+    assert.equal((await f.check(publisher.kod, "device", initial)).valid, false);
+    const other = await add("@diger");
+    await f.request(route + "/resume", {}, cookie, 409);
+    await f.request(`/api/agency/publishers/${other.id}/pause`, {}, cookie);
+    await f.request(route + "/resume", {}, cookie);
+    assert.equal((await f.verify(publisher.kod, "device")).valid, true);
+    const adminDetail = (await f.request(`/api/admin/ajans/${kod}`, undefined, f.admin)).data;
+    assert.equal(adminDetail.panel_yayincilari.find(item => item.ad === "@yayinci").durum, "aktif");
+    await f.request(`/api/admin/lisans/${kod}/duzenle`, { sure: { islem: "azalt", birim: "gun", miktar: 31 } }, f.admin);
+    await f.request("/api/agency/session", undefined, cookie, 401);
+    await f.request("/api/agency/login", { code: panel_kodu }, "", 403);
+    assert.equal((await f.verify(publisher.kod, "device")).valid, false);
+    await f.request(`/api/admin/lisans/${kod}/yenile`, {}, f.admin);
+    const fresh = await login();
+    assert.equal((await f.request("/api/agency/session", undefined, fresh.cookie)).data.yayincilar.length, 2);
+    assert.equal((await f.verify(publisher.kod, "device")).valid, true);
+    assert.equal((await f.verify(other.kod, "other-device")).valid, false);
+});
+
 test("session lifetime and login rate limit are enforced by the server", async t => {
     let clock = Date.now();
     const entryCode = `MNGA-${randomBytes(32).toString("hex").toUpperCase()}`;

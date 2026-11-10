@@ -147,7 +147,12 @@ test("Shopier readiness requires admin login and checks all plans with live sale
     assert.equal(report.paketler.at(-1).durum, "Ürün, fiyat veya stok kontrol edilmeli");
     assert.deepEqual(report.paketler[1].shopierHata, { kod: 403, yanit: "other" });
     assert.doesNotMatch(JSON.stringify(report), /test-only|test-claim-signing-key/);
-    assert.equal((await fetch(`${base}/satin-al`)).status, 503);
+    const purchase = await fetch(`${base}/satin-al?plan=agency-20-monthly`, { redirect: "manual" });
+    assert.equal(purchase.status, 302);
+    assert.equal(purchase.headers.get("location"), "https://www.shopier.com/tikmng/52768059");
+    const noPlan = await fetch(`${base}/satin-al`, { redirect: "manual" });
+    assert.equal(noPlan.headers.get("location"), "/#fiyatlandirma");
+    assert.equal((await fetch(`${base}/api/shopier/checkout`, { method: "POST" })).status, 503);
     assert.equal(await readFile(ledgerPath, "utf8"), ledgerBefore);
 });
 

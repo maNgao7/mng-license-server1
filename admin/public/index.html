@@ -8,7 +8,7 @@
   <link rel="stylesheet" href="/admin/dashboard.css?v=20261021c">
   <link rel="stylesheet" href="/admin/agency-access.css?v=20261110-2">
   <script src="/admin/lucide.js" defer></script>
-  <script src="/admin/dashboard.js?v=20261110-3" defer></script>
+  <script src="/admin/dashboard.js?v=20261110-4" defer></script>
 </head>
 <body>
   <main id="loginPage" class="login-page">
@@ -73,7 +73,7 @@
             <div><label for="durationAmount">Lisans süresi</label><div class="input-pair"><input type="number" id="durationAmount" min="1" max="36500" step="1" value="30" required><select id="durationUnit" aria-label="Süre birimi"><option value="gun">Gün</option><option value="dakika">Dakika</option><option value="saat">Saat</option><option value="ay">Ay</option><option value="yil">Yıl</option><option value="sinirsiz">Sınırsız</option></select></div></div>
             <div><label for="licenseNote">Not <span class="optional">(isteğe bağlı)</span></label><input id="licenseNote" maxlength="1000" placeholder="Yetkili veya müşteri bilgisi"></div>
           </div>
-          <div class="form-footer"><div><code id="keyPreview">AJANSAD-XXXXXXXX-XXXXXXXX</code><p id="durationHint">Ortak süre, ilk yayıncının girişinde başlar.</p></div><button class="primary" type="submit" id="createButton"><i data-lucide="plus"></i> Ajans lisansı oluştur</button></div>
+          <div class="form-footer"><div><code id="keyPreview">MNGA-…</code><p id="durationHint">Süre oluşturduğunuz anda başlar. Ajansla MNGA- panel kodunu paylaşın.</p></div><button class="primary" type="submit" id="createButton"><i data-lucide="plus"></i> Ajans lisansı oluştur</button></div>
           <p class="error" id="createError" role="alert" hidden></p>
         </form>
         <div id="newLicense" class="new-license" hidden>

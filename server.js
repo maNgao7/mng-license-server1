@@ -9,7 +9,7 @@ import { fileURLToPath } from "url";
 import { agencySlug, validCapacity, validAgencyDuration, createAgencyKey, parseAgencyKey,
     createAgencyReceipt, readAgencyReceipt, agencyMembers, touchAgencyMember, agencySummary,
     agencyPublisherParent, isAgencyPublisherCode } from "./agency-licenses.js";
-import { registerAgencyPortal } from "./agency-portal.js";
+import { agencyEntryAccess, createAgencyEntryCode, registerAgencyPortal } from "./agency-portal.js";
 import { assertLicenseEditable, editLicense, renewLicense } from "./license-management.js";
 import { registerContentRoutes } from "./content-management.js";
 import { registerOverlayRelay } from "./overlay-relay.js";
@@ -18,7 +18,7 @@ import { createHttpTraffic } from "./http-traffic.js";
 import { createShopierCheckout, shopierProductIds } from "./shopier-checkout.js";
 import { checkShopierOffer } from "./shopier-payment.js";
 import { createLicenseLedger } from "./license-ledger.js";
-import { salesPlans } from "./web/sales-catalog.js";
+import { manualShopierUrl, salesPlans } from "./web/sales-catalog.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -504,9 +504,11 @@ app.get("/api/admin/shopier/hazirlik", adminKontrol, shopierReadinessLimit, asyn
 });
 
 app.get("/shopier-checkout.html", (_req, res) => res.redirect(302, "/satin-al"));
-app.get("/satin-al", (_req, res) => {
+app.get("/satin-al", (req, res) => {
     res.set("Cache-Control", "no-store");
-    if (!shopierCheckout || !shopierStorageAvailable()) return res.status(503).send("Çevrimiçi satış şu anda kullanılamıyor.");
+    if (!shopierCheckout || !shopierStorageAvailable()) {
+        return res.redirect(302, manualShopierUrl(req.query.plan) || "/#fiyatlandirma");
+    }
     return res.sendFile(path.join(__dirname, "web", "shopier-checkout.html"));
 });
 app.use("/api/shopier", shopierRateLimit, (_req, res, next) => {
@@ -1504,7 +1506,8 @@ app.post("/api/admin/lisans-olustur", adminKontrol, durableLicenseRoute((req, re
 
 // Ajans Lisansı Oluştur (Çoklu Yayıncı)
 app.post("/api/admin/ajans-lisansi-olustur", adminKontrol, durableLicenseRoute((req, res) => {
-    const { ajans_adi, max_yayinci, sure_birim, sure_miktar, notlar } = req.body;
+    res.set("Cache-Control", "no-store");
+    const { ajans_adi, max_yayinci, sure_birim, sure_miktar, notlar, panel_lisansi } = req.body;
     const birim = sure_birim || "gun";
     const miktar = Number(sure_miktar);
     const maxYayinci = Number(max_yayinci);
@@ -1528,6 +1531,7 @@ app.post("/api/admin/ajans-lisansi-olustur", adminKontrol, durableLicenseRoute((
     do { kod = createAgencyKey(ajansAdi, ADMIN_SIFRE); }
     while (lisanslarVeritabani.some(license => license.kod === kod));
     const simdi = Date.now();
+    const panelKodu = panel_lisansi === true ? createAgencyEntryCode() : null;
 
     const yeniLisans = {
         id: Date.now() + "_" + Math.random().toString(36).substr(2, 6),
@@ -1540,12 +1544,13 @@ app.post("/api/admin/ajans-lisansi-olustur", adminKontrol, durableLicenseRoute((
         engelli_cihazlar: [],
         sure_birim: birim,
         sure_miktar: sureObj.miktar,
-        durum: "beklemede",
+        durum: panelKodu ? "aktif" : "beklemede",
         olusturma_zamani: simdi,
-        aktivasyon_zamani: null,
-        bitis_zamani: null,
+        aktivasyon_zamani: panelKodu ? simdi : null,
+        bitis_zamani: panelKodu && birim !== "sinirsiz" ? simdi + sureMsHesapla(sureObj) : null,
         cihaz_kimlik: null,
-        notlar: (notlar || "").trim()
+        notlar: (notlar || "").trim(),
+        ...(panelKodu ? { agency_portal_access: agencyEntryAccess(panelKodu, simdi) } : {})
     };
 
     lisanslarVeritabani.unshift(yeniLisans);
@@ -1558,7 +1563,8 @@ app.post("/api/admin/ajans-lisansi-olustur", adminKontrol, durableLicenseRoute((
 
     res.json({
         kod,
-        durum: "beklemede",
+        ...(panelKodu ? { panel_kodu: panelKodu } : {}),
+        durum: yeniLisans.durum,
         sure_etiketi: sureEtiketi,
         max_yayinci: maxYayinci,
         ajans_adi: yeniLisans.ajans_adi,
@@ -1619,7 +1625,11 @@ function ajansDetayi(license) {
     });
     return { kod: license.kod, ajans_adi: license.ajans_adi, ...agencySummary(license, lisanslarVeritabani),
         panel_erisim_var: license.agency_portal_access?.version === 1 && Boolean(license.agency_portal_access.hash),
-        yayincilar: members, engelli_cihazlar: license.engelli_cihazlar || [] };
+        yayincilar: members, engelli_cihazlar: license.engelli_cihazlar || [],
+        panel_yayincilari: lisanslarVeritabani.filter(item => item.agency_parent_id === license.id).map(item => ({
+            ad: item.musteri_adi, durum: item.durum, ilk_giris: item.aktivasyon_zamani,
+            erisim_duraklatildi: item.agency_paused === true
+        })) };
 }
 
 app.get("/api/admin/ajans/:kod", adminKontrol, (req, res) => {
@@ -1689,6 +1699,7 @@ app.post(["/api/admin/lisans/:kod/iptal", "/api/admin/lisans-iptal/:kod"], admin
     assertLicenseEditable(lisans);
 
     lisans.durum = "iptal";
+    delete lisans.agency_paused;
     if (lisans.tip === "ajans") lisans.agency_session_version = (Number(lisans.agency_session_version) || 0) + 1;
     if (!karaListeVeritabani.includes(kod)) {
         karaListeVeritabani.push(kod);

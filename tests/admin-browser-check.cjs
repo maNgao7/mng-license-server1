@@ -52,7 +52,6 @@ async function main() {
         assert.ok(code.length <= 25);
         assert.ok(!code.includes('HYPE'));
         assert.equal(await page.locator('#newCodeLabel').textContent(), 'Çoklu yayıncı oyun lisansı');
-        await page.getByRole('button', { name: 'Panel giriş kodu oluştur', exact: true }).click();
         await page.locator('#agencyAccessDialog').waitFor({ state: 'visible' });
         const panelCode = await page.locator('#agencyAccessCode').textContent();
         assert.match(panelCode, /^MNGA-[A-F0-9]{64}$/);
@@ -70,6 +69,15 @@ async function main() {
         await agencyPage.locator('#agencyCode').fill(panelCode);
         await agencyPage.getByRole('button', { name: 'Ajans paneline giriş yap' }).click();
         await agencyPage.getByRole('heading', { name: 'Trend Ajans', exact: true }).waitFor();
+        await agencyPage.getByRole('textbox', { name: 'Yayıncı adı' }).fill('@ornek');
+        await agencyPage.getByRole('button', { name: 'Lisans oluştur', exact: true }).click();
+        const publisherRow = agencyPage.locator('#publishers li').filter({ hasText: '@ornek' });
+        const publisherCode = await publisherRow.locator('code').textContent();
+        agencyPage.once('dialog', dialog => dialog.accept());
+        await publisherRow.getByRole('button', { name: 'Erişimi kapat' }).click();
+        await publisherRow.getByRole('button', { name: 'Erişimi aç' }).click();
+        await publisherRow.getByRole('button', { name: 'Erişimi kapat' }).waitFor();
+        assert.equal(await publisherRow.locator('code').textContent(), publisherCode);
         assert.equal((await agencyContext.request.get(base + '/api/admin/lisanslar')).status(), 401);
         await agencyContext.close();
         assert.deepEqual(errors, []);
@@ -89,7 +97,7 @@ async function main() {
         await page.waitForFunction(() => document.querySelector('.member-name input')?.value === 'Deniz' && !document.querySelector('#refresh').disabled);
         await page.locator('.capacity-form input').fill('25');
         await page.locator('.capacity-form button').click();
-        await page.waitForFunction(() => document.querySelector('.capacity-form').closest('.detail-header').querySelector('h3').textContent.includes('3 / 25'));
+        await page.waitForFunction(() => document.querySelector('.capacity-form').closest('.detail-header').querySelector('h3').textContent.includes('4 / 25'));
         console.log('Agency creation, expansion, member label and capacity passed');
         const out = path.join(root, 'qa', 'admin-2026-10-21');
         fs.mkdirSync(out, { recursive: true });

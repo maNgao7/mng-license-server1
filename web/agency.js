@@ -42,23 +42,29 @@
     for (const publisher of data.yayincilar) {
       const row = document.createElement("li");
       const info = document.createElement("div"); info.className = "publisher-info";
-      for (const [tag, text] of [["strong", publisher.ad], ["code", publisher.kod], ["small", `${states[publisher.durum] || "Kapalı"}${publisher.bitis_zamani ? ` · ${date(publisher.bitis_zamani)}` : ""}`]]) {
+      const paused = publisher.erisim_duraklatildi;
+      const label = paused ? "Erişim kapalı" : states[publisher.durum] || "Kapalı";
+      for (const [tag, text] of [["strong", publisher.ad], ["code", publisher.kod], ["small", `${label}${publisher.bitis_zamani ? ` · ${date(publisher.bitis_zamani)}` : ""}`]]) {
         const element = document.createElement(tag); element.textContent = text; info.append(element);
       }
       row.append(info);
-      if (!["iptal", "arsivlendi"].includes(publisher.durum)) {
+      if (paused || !["iptal", "arsivlendi"].includes(publisher.durum)) {
         const actions = document.createElement("div"); actions.className = "row-actions";
         const copy = document.createElement("button"); copy.type = "button"; copy.className = "secondary"; copy.textContent = "Kodu kopyala";
         copy.addEventListener("click", async () => {
           try { await navigator.clipboard.writeText(publisher.kod); status("Yayıncı kodu kopyalandı."); }
           catch { status("Kopyalanamadı. Görünen kodu seçip elle kopyalayabilirsiniz.", true); }
         });
-        const revoke = document.createElement("button"); revoke.type = "button"; revoke.className = "danger"; revoke.textContent = "İptal et";
-        revoke.addEventListener("click", () => {
-          if (!window.confirm(`${publisher.ad} için yayıncı lisansı iptal edilsin mi? Bu kod tekrar kullanılamaz.`)) return;
-          busy(actions, async () => { render(await api(`publishers/${encodeURIComponent(publisher.id)}/revoke`, {})); status("Yayıncı lisansı iptal edildi."); });
+        const access = document.createElement("button"); access.type = "button"; access.className = paused ? "secondary" : "danger";
+        access.textContent = paused ? "Erişimi aç" : "Erişimi kapat";
+        access.addEventListener("click", () => {
+          if (!paused && !window.confirm(`${publisher.ad} için erişim kapatılsın mı? Aynı kodu daha sonra yeniden açabilirsiniz.`)) return;
+          busy(actions, async () => {
+            render(await api(`publishers/${encodeURIComponent(publisher.id)}/${paused ? "resume" : "pause"}`, {}));
+            status(paused ? "Yayıncı erişimi açıldı." : "Yayıncı erişimi kapatıldı.");
+          });
         });
-        actions.append(copy, revoke); row.append(actions);
+        actions.append(copy, access); row.append(actions);
       }
       byId("publishers").append(row);
     }
@@ -73,7 +79,7 @@
     busy(event.currentTarget, async () => {
       const code = byId("agencyCode").value.trim();
       if (!/^MNGA-[A-F0-9]{64}$/i.test(code)) {
-        throw new Error("Panel için MNGA- ile başlayan giriş kodunu kullanın. Yönetici bu kodu “Panel giriş kodu oluştur” düğmesinden alabilir.");
+        throw new Error("Panel için TikMnG yöneticisinin paylaştığı MNGA- ile başlayan kodu kullanın.");
       }
       await api("login", { code });
       byId("agencyCode").value = "";

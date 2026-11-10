@@ -165,6 +165,8 @@ function detailMarkup(license) {
       <td><form class="member-name" data-code="${code}" data-device="${escapeHtml(member.cihaz_kimlik)}"><input maxlength="80" value="${escapeHtml(member.ad)}" placeholder="Yayıncı ${index + 1}" aria-label="Yayıncı ${index + 1} adı"><button type="submit" class="icon-button" title="Yayıncı adını kaydet" aria-label="Yayıncı adını kaydet">${icon("check")}</button></form></td>
       <td><code class="device-id">${escapeHtml(member.cihaz_kimlik)}</code></td><td>${date(member.ilk_giris)}</td><td>${date(member.son_kontrol)}</td><td>${member.giris_sayisi || "—"}</td><td class="align-right"><button type="button" class="icon-button danger" data-action="block" data-code="${code}" data-device="${escapeHtml(member.cihaz_kimlik)}" title="Cihaz erişimini kaldır" aria-label="Cihaz erişimini kaldır">${icon("user-minus")}</button></td></tr>`).join("") : '<tr><td colspan="6" class="empty">Bu ajans anahtarıyla henüz giriş yapılmadı.</td></tr>'}</tbody></table>
       ${detail.engelli_cihazlar.length ? `<details class="blocked-members"><summary>Erişimi kaldırılan cihazlar (${detail.engelli_cihazlar.length})</summary>${detail.engelli_cihazlar.map(id => `<div class="blocked-member"><code>${escapeHtml(id)}</code><button type="button" data-action="unblock" data-code="${code}" data-device="${escapeHtml(id)}">Yeniden izin ver</button></div>`).join("")}</details>` : ""}
+      <h3>Panelden oluşturulan yayıncı lisansları</h3>
+      <table class="member-table"><thead><tr><th>Yayıncı adı</th><th>Durum</th><th>İlk giriş</th></tr></thead><tbody>${(detail.panel_yayincilari || []).map(member => `<tr><td>${escapeHtml(member.ad)}</td><td>${escapeHtml(member.erisim_duraklatildi ? "Erişim duraklatıldı" : statusLabels[member.durum] || member.durum)}</td><td>${date(member.ilk_giris)}</td></tr>`).join("") || '<tr><td colspan="3" class="empty">Henüz panelden yayıncı lisansı oluşturulmadı.</td></tr>'}</tbody></table>
       <p class="member-note">Yayıncı adı yönetici etiketidir. Eski kayıtlarda tarih ve giriş sayısı bulunmayabilir.</p>`;
 }
 
@@ -228,15 +230,14 @@ function setMode(mode) {
         button.setAttribute("aria-pressed", String(button.dataset.mode === mode));
     });
     $("createButton").innerHTML = icon("plus") + (agency ? " Ajans lisansı oluştur" : " Bireysel lisans oluştur");
-    $("durationHint").textContent = agency ? "Ortak süre, ilk yayıncının girişinde başlar." : "Süre, ilk cihazın girişinde başlar. Tek cihazla kullanılır.";
+    $("durationHint").textContent = agency ? "Süre oluşturduğunuz anda başlar. Ajansla MNGA- panel kodunu paylaşın." : "Süre, ilk cihazın girişinde başlar. Tek cihazla kullanılır.";
     $("newLicense").hidden = true;
     updateKeyPreview();
     icons();
 }
 
 function updateKeyPreview() {
-    const slug = $("agencyName").value.replace(/ı/g, "i").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 24);
-    $("keyPreview").textContent = state.mode === "agency" ? `${slug.slice(0, 7) || "AJANSAD"}-XXXXXXXX-XXXXXXXX` : "MNG · Bireysel lisans";
+    $("keyPreview").textContent = state.mode === "agency" ? "MNGA-…" : "MNG · Bireysel lisans";
     $("durationAmount").disabled = $("durationUnit").value === "sinirsiz";
 }
 
@@ -277,12 +278,16 @@ async function changeAgencyPanelCode(code, revoke = false) {
             : "Ajans yöneticisi için ayrı bir panel giriş kodu oluşturun.";
     }
     if (result.code) {
-        $("agencyAccessCode").textContent = result.code;
-        $("agencyAccessDialog").showModal();
-        $("copyAgencyAccess").focus();
+        showAgencyAccess(result.code);
     } else toast("Ajans paneli girişi kapatıldı.");
     await loadDetail(code);
     renderLicenses();
+}
+
+function showAgencyAccess(code) {
+    $("agencyAccessCode").textContent = code;
+    $("agencyAccessDialog").showModal();
+    $("copyAgencyAccess").focus();
 }
 
 $("loginForm").addEventListener("submit", async event => {
@@ -346,16 +351,18 @@ $("createForm").addEventListener("submit", async event => {
             const duration = readDuration($("durationAmount").value, $("durationUnit").value);
             const payload = { sure_birim: duration.birim, sure_miktar: duration.miktar, notlar: $("licenseNote").value.trim() };
             const agency = state.mode === "agency";
-            if (agency) Object.assign(payload, { ajans_adi: $("agencyName").value.trim(), max_yayinci: Number($("agencyCapacity").value) });
+            if (agency) Object.assign(payload, { ajans_adi: $("agencyName").value.trim(), max_yayinci: Number($("agencyCapacity").value), panel_lisansi: true });
             else payload.ad = $("individualName").value.trim();
             const result = await api(agency ? "/api/admin/ajans-lisansi-olustur" : "/api/admin/lisans-olustur", payload);
             $("newCode").textContent = result.kod;
             $("newCodeLabel").textContent = agency ? "Çoklu yayıncı oyun lisansı" : "Bireysel oyun lisansı";
-            $("newAgencyHint").textContent = "Ajans yöneticisi için ayrı bir panel giriş kodu oluşturun.";
+            $("newAgencyHint").textContent = result.panel_kodu ? "Ajansa göndereceğiniz kod MNGA- ile başlar. Erişim süresini lisans satırındaki Yenile düğmesiyle uzatabilirsiniz."
+                : "Ajans yöneticisi için ayrı bir panel giriş kodu oluşturun.";
             $("newAgencyHint").hidden = !agency;
-            $("issueNewAgencyAccess").hidden = !agency;
+            $("issueNewAgencyAccess").hidden = !agency || Boolean(result.panel_kodu);
             $("newLicense").hidden = false;
-            toast("Lisans oluşturuldu.");
+            if (result.panel_kodu) showAgencyAccess(result.panel_kodu);
+            else toast("Lisans oluşturuldu.");
             await refresh();
         } catch (error) {
             $("createError").textContent = error.message;

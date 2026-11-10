@@ -13,6 +13,10 @@ export function agencyEntryAccess(code, issuedAt) {
     return { version: 1, hash: hashAgencyEntryCode(code), issued_at: issuedAt };
 }
 
+export function createAgencyEntryCode() {
+    return `MNGA-${crypto.randomBytes(32).toString("hex").toUpperCase()}`;
+}
+
 export function registerAgencyPortal(app, { licenses, blacklist, save, durableRoute, storageReady, configured,
     adminKontrol, findAgency, now = Date.now }) {
     const sessions = new Map();
@@ -56,7 +60,7 @@ export function registerAgencyPortal(app, { licenses, blacklist, save, durableRo
             yayincilar: licenses().filter(item => item.agency_parent_id === agency.id).map(item => ({
                 id: item.id, ad: item.musteri_adi, kod: item.kod, durum: item.durum,
                 olusturma_zamani: item.olusturma_zamani, aktivasyon_zamani: item.aktivasyon_zamani,
-                bitis_zamani: item.bitis_zamani,
+                bitis_zamani: agency.bitis_zamani, erisim_duraklatildi: item.agency_paused === true,
             })) };
     }
     function writable(req, res, next) {
@@ -93,7 +97,7 @@ export function registerAgencyPortal(app, { licenses, blacklist, save, durableRo
             if (action === "olustur" && !agencyAccessAllowed(agency, blacklist(), now())) {
                 return res.status(409).json({ error: "Kapalı veya süresi dolmuş ajansa giriş kodu verilemez." });
             }
-            const code = action === "olustur" ? `MNGA-${crypto.randomBytes(32).toString("hex").toUpperCase()}` : null;
+            const code = action === "olustur" ? createAgencyEntryCode() : null;
             if (code) agency.agency_portal_access = agencyEntryAccess(code, now());
             else delete agency.agency_portal_access;
             // Both rotation and revocation invalidate every existing agency session.
@@ -152,15 +156,29 @@ export function registerAgencyPortal(app, { licenses, blacklist, save, durableRo
         save();
         res.status(201).json(details(agency));
     }));
-    app.post("/api/agency/publishers/:id/revoke", authenticate, writeLimit, writable, durableRoute((req, res) => {
+    app.post("/api/agency/publishers/:id/:action", authenticate, writeLimit, writable, durableRoute((req, res) => {
         const agency = current(req);
         if (!agencyAccessAllowed(agency, blacklist(), now()) || req.agencyVersion !== (Number(agency.agency_session_version) || 0)) return res.status(401).json({ error: "Ajans erişimi kapalı." });
+        const { action } = req.params;
+        if (!["pause", "resume", "revoke"].includes(action)) return res.sendStatus(404);
         const publisher = licenses().find(item => item.id === req.params.id && item.agency_parent_id === agency.id);
         if (!publisher) return res.status(404).json({ error: "Yayıncı lisansı bulunamadı." });
-        if (!["iptal", "arsivlendi"].includes(publisher.durum)) {
+        if (action === "resume") {
+            if (publisher.durum !== "iptal" || publisher.agency_paused !== true || blacklist().includes(publisher.kod)) {
+                return res.status(409).json({ error: "Yalnızca erişimi duraklatılmış yayıncı kodları yeniden açılabilir." });
+            }
+            if (agencySummary(agency, licenses()).bos < 1) return res.status(409).json({ error: "Ajans yayıncı kapasitesi dolu." });
+            publisher.durum = publisher.aktivasyon_zamani ? "aktif" : "beklemede";
+            publisher.bitis_zamani = agency.bitis_zamani;
+            delete publisher.agency_paused;
+            delete publisher.iptal_zamani;
+            save();
+        } else if (!["iptal", "arsivlendi"].includes(publisher.durum) || (action === "revoke" && publisher.agency_paused)) {
             publisher.durum = "iptal";
             publisher.iptal_zamani = now();
             delete publisher.activation_token;
+            if (action === "pause") publisher.agency_paused = true;
+            else delete publisher.agency_paused;
             save();
         }
         res.json(details(agency));

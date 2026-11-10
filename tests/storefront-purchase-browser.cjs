@@ -69,7 +69,12 @@ for (const width of [1280, 360]) {
                 assert.equal(await whatsapp.evaluate(link => getComputedStyle(link).backgroundColor), 'rgb(37, 211, 102)');
                 const purchaseLinks = await page.locator('.plan-periods a, [data-license-order]').evaluateAll(links => links.map(link => link.href));
                 assert.equal(purchaseLinks.length, 9);
-                for (const href of purchaseLinks) assert.match(href, /^http:\/\/storefront\.test\/satin-al\?plan=/);
+                assert.deepEqual(purchaseLinks.map(href => new URL(href).pathname), [
+                    '/tikmng/52768054', '/tikmng/52768056', '/tikmng/52768054', '/tikmng/52768058',
+                    '/tikmng/52768059', '/tikmng/52768060', '/tikmng/52768061', '/tikmng/52768062', '/tikmng/52768058',
+                ]);
+                assert.ok(purchaseLinks.every(href => new URL(href).origin === 'https://www.shopier.com'));
+                assertWhatsApp(await page.locator('#shopier-order-support a').getAttribute('href'));
             }
         });
     }

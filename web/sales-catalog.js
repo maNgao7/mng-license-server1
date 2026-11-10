@@ -1,5 +1,16 @@
 export const pricingVersion = "20261110-approved-v1";
 
+const manualProducts = {
+  "individual-weekly": "52768054", "individual-monthly": "52768056",
+  "agency-10-monthly": "52768058", "agency-20-monthly": "52768059",
+  "agency-35-monthly": "52768060", "agency-120-monthly": "52768061", "agency-200-monthly": "52768062",
+};
+
+export function manualShopierUrl(planId) {
+  return typeof planId === "string" && Object.hasOwn(manualProducts, planId)
+    ? `https://www.shopier.com/tikmng/${manualProducts[planId]}` : null;
+}
+
 export const salesPlans = [
   { id: "individual-weekly", kind: "individual", period: "weekly", seats: 1, priceMinor: 50000 },
   { id: "individual-monthly", kind: "individual", period: "monthly", seats: 1, priceMinor: 150000 },
