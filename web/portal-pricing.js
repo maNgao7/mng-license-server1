@@ -25,9 +25,9 @@ for (const plan of salesPlans) {
         linkToContact(card, `Merhaba, TikMnG ${name} için sipariş vermek istiyorum. Paket fiyatı ${amount}.`);
     }
     const title = document.createElement("strong");
-    title.textContent = label;
+    title.textContent = plan.kind === "agency" ? `${plan.seats} yayıncı` : period;
     const price = document.createElement("small");
-    price.textContent = amount;
+    price.textContent = plan.kind === "agency" ? `${amount} / ay` : amount;
     card.append(title, price);
     list.append(card);
 }

@@ -1,4 +1,4 @@
-.plan-section{padding:clamp(52px,8vw,100px) 0;background:#101618;scroll-margin-top:80px}
+.plan-section{padding:clamp(52px,8vw,100px) 0;background:radial-gradient(ellipse at 10% 0%,#183333,transparent 58%),radial-gradient(ellipse at 95% 25%,#2a233a,transparent 55%),#101618;scroll-margin-top:80px}
 .hero-cta-group .hero-license-cta{display:inline-flex;align-items:center;justify-content:center;gap:8px;background:#edf9f7;color:#102322;border:1px solid #b8f0e6;white-space:nowrap}
 .hero-cta-group .hero-license-cta:hover{background:#b8f0e6}
 .hero-cta-group .hero-license-cta:focus-visible{outline:2px solid #b8f0e6;outline-offset:3px}
@@ -31,3 +31,34 @@
 .plan-periods a,.plan-periods span{display:grid;gap:4px;padding:9px 11px;border:1px solid #52646b;border-radius:8px;color:#e9f5f6;text-decoration:none}
 .plan-periods small{color:var(--plan);font-size:.88rem}
 .plan-periods a:hover,.plan-periods a:focus-visible{border-color:var(--plan);background:#ffffff0b}
+
+/* The home page gives the larger agency catalog more room. */
+.plan-section .plan-grid {
+    grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
+    gap: clamp(14px, 2vw, 24px);
+}
+.plan-section .plan-card {
+    border-top-width: 1px;
+    background: linear-gradient(160deg, #213438, #172125 65%);
+    box-shadow: inset 0 2px 0 var(--plan), 0 16px 36px #07111540;
+}
+.plan-section .plan-card-agency {
+    background: linear-gradient(155deg, #312941, #1b2029 68%);
+}
+.plan-section .plan-periods > :is(a, span) {
+    align-content: center;
+    min-height: 72px;
+    border-color: #ffffff2d;
+    background: #0e14195c;
+}
+.plan-section .plan-periods small {
+    font-weight: 750;
+    font-variant-numeric: tabular-nums;
+}
+.plan-section .plan-periods a:is(:hover, :focus-visible) {
+    border-color: var(--plan);
+    background: #ffffff12;
+}
+@media (max-width: 760px) {
+    .plan-section .plan-grid { grid-template-columns: 1fr; }
+}
