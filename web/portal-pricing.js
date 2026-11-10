@@ -1,6 +1,7 @@
 import { salesPlans } from "./sales-catalog.js";
 
-const contact = document.querySelector('.hero-cta-group a.btn-whatsapp[href^="https://wa.me/"]');
+const heroActions = document.querySelector(".hero-cta-group");
+const contact = heroActions.querySelector('a.btn-whatsapp[href^="https://wa.me/"]');
 const priceFormat = new Intl.NumberFormat("tr-TR");
 const shopierOpen = document.querySelector('meta[name="tikmng-checkout"]')?.content === "shopier";
 
@@ -33,6 +34,12 @@ for (const plan of salesPlans) {
 }
 
 if (shopierOpen) {
+    const purchase = heroActions.querySelector(".hero-license-cta");
+    purchase.href = "/satin-al";
+    purchase.textContent = "Shopier’de kartla satın al";
+    if (contact) contact.querySelector("span").textContent = "WhatsApp @TikMnG";
+    heroActions.classList.add("shopier-open");
+
     for (const button of document.querySelectorAll("[data-license-order]")) {
         const plan = salesPlans.find(item => item.kind === button.dataset.licenseOrder);
         if (plan) {

@@ -375,6 +375,23 @@
             margin-bottom: 32px;
         }
 
+        .hero-cta-group.shopier-open > :is(.btn-whatsapp, .btn-tiktok) {
+            background: #101719 !important;
+            color: #e9f5f6 !important;
+            border: 1px solid #668586 !important;
+        }
+
+        .hero-cta-group.shopier-open > :is(.btn-whatsapp, .btn-tiktok):focus-visible {
+            outline: 2px solid #b8f0e6;
+            outline-offset: 3px;
+        }
+
+        @media (max-width: 720px) {
+            .hero-cta-group.shopier-open > .hero-license-cta {
+                flex-basis: 100%;
+            }
+        }
+
         .hero-version-tag {
             display: flex;
             align-items: center;
@@ -979,7 +996,7 @@
     <link rel="stylesheet" href="/agency-entry.css?v=20261110">
     <link rel="stylesheet" href="./pricing-section.css?v=20261110e">
     <meta name="tikmng-checkout" content="closed">
-    <script type="module" src="./portal-pricing.js?v=20261110e"></script>
+    <script type="module" src="./portal-pricing.js?v=20261110f"></script>
     <script src="/vendor/lucide.js" defer></script>
     <script src="/portal-v4.js?v=20261102a" defer></script>
 
@@ -1039,7 +1056,7 @@
 
                 <div class="hero-cta-group">
                     <a href="#fiyatlandirma" class="btn hero-license-cta">
-                        Lisans Satın Al <span aria-hidden="true">↓</span>
+                        Lisans Paketleri <span aria-hidden="true">↓</span>
                     </a>
                     <button onclick="hemenIndir()" class="btn btn-tiktok" style="font-size: 16px; padding: 16px 28px;">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
@@ -1048,7 +1065,7 @@
 
                     <a href="https://wa.me/tikmng?text=Merhaba,%20TikMnG%20hakk%C4%B1nda%20bilgi%20ve%20sipari%C5%9F%20vermek%20istiyorum." target="_blank" rel="noopener" class="btn btn-whatsapp" style="font-size: 16px; padding: 16px 26px; background: #25D366; color: #fff; font-weight: 800; border-radius: 12px; display: inline-flex; align-items: center; gap: 8px; text-decoration: none; box-shadow: 0 6px 24px rgba(37, 211,102,0.4); border: none; transition: transform 0.2s;">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.816 9.816 0 0 0 12.04 2zm.01 1.67c2.2 0 4.26.86 5.82 2.42a8.225 8.225 0 0 1 2.41 5.83c0 4.54-3.7 8.24-8.24 8.24-1.48 0-2.93-.4-4.2-1.15l-.3-.18-3.12.82.83-3.04-.2-.31a8.196 8.196 0 0 1-1.26-4.38c0-4.54 3.7-8.24 8.24-8.24zm4.52 11.66c-.19-.09-1.12-.55-1.3-.61-.17-.07-.3-.1-.43.1-.12.19-.49.61-.6.73-.11.12-.22.14-.41.05-.19-.09-.8-.29-1.53-.94-.56-.5-.94-1.12-1.05-1.31-.11-.19-.01-.29.08-.38.08-.09.19-.22.28-.33.09-.11.12-.19.19-.31.06-.12.03-.23-.01-.33-.05-.09-.43-1.04-.6-1.42-.16-.37-.32-.32-.44-.33l-.37-.01c-.13 0-.34.05-.51.24-.18.19-.68.66-.68 1.62s.7 1.88.79 2.01c.1.13 1.37 2.09 3.32 2.93.46.2.83.32 1.11.41.47.15.89.13 1.23.08.38-.06 1.12-.46 1.28-.9.16-.44.16-.82.11-.9-.05-.07-.17-.12-.36-.21z"/></svg>
-                        💬 WHATSAPP SİPARİŞ
+                        <span>💬 WHATSAPP SİPARİŞ</span>
                     </a>
 
                     <a href="https://www.tiktok.com/@maNgao7tv" target="_blank" rel="noopener" class="btn btn-order" style="font-size: 16px; padding: 16px 26px; background: linear-gradient(135deg, #00f2ea, #ff0050); color: #fff; font-weight: 800; border-radius: 12px; display: inline-flex; align-items: center; gap: 8px; text-decoration: none; box-shadow: 0 6px 24px rgba(0, 242, 234, 0.45); border: none; transition: transform 0.2s;">

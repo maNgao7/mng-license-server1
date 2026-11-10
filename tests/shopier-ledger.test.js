@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
-import { createCipheriv, createHash, randomBytes } from "node:crypto";
-import { mkdtemp, writeFile, rm, rmdir } from "node:fs/promises";
+import { createCipheriv, createHash, createHmac, randomBytes } from "node:crypto";
+import { mkdtemp, readFile, writeFile, rm, rmdir } from "node:fs/promises";
 import { createServer } from "node:net";
 import { tmpdir } from "node:os";
 import path from "node:path";
@@ -29,6 +29,7 @@ import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 const root = process.env.MOCK_PROVIDER_DIR;
 const read = (name) => JSON.parse(readFileSync(root + '/' + name + '.json', 'utf8'));
+const prices = { '/v1/products/5000': '500.00', '/v1/products/5002': '2500.00' };
 globalThis.fetch = async (input, options = {}) => {
     const url = new URL(input);
     if (url.hostname === 'api.github.com') {
@@ -42,9 +43,9 @@ globalThis.fetch = async (input, options = {}) => {
         if (existsSync(root + '/lost-ack.json')) throw new Error('simulated lost acknowledgement');
         return Response.json({ content: { sha } });
     }
-    if (url.hostname === 'api.shopier.com' && url.pathname === '/v1/products/5002') {
-        return Response.json({ id: '5002', type: 'digital', stockStatus: 'inStock',
-            priceData: { currency: 'TRY', discount: false, price: '2500.00' } });
+    if (url.hostname === 'api.shopier.com' && prices[url.pathname]) {
+        return Response.json({ id: url.pathname.split('/').pop(), type: 'digital', stockStatus: 'inStock',
+            priceData: { currency: 'TRY', discount: false, price: prices[url.pathname] } });
     }
     if (url.hostname === 'api.shopier.com' && url.pathname === '/v1/orders/7001') {
         return Response.json(read('order'));
@@ -61,16 +62,17 @@ async function freePort() {
     return port;
 }
 
-test("Shopier code and agency membership survive restarts with no persistent Render disk", { timeout: 15_000 }, async t => {
+async function createLedgerFixture(t) {
     const root = await mkdtemp(path.join(tmpdir(), "tikmng-ledger-test-"));
     const file = (name, data) => writeFile(path.join(root, `${name}.json`), JSON.stringify(data));
     const seed = { version: 1, licenses: [], blacklist: [], activationLogs: [], requests: [] };
-    await file("github", { sha: "initial", content: encryptedBackup(seed) });
+    const resetLedger = () => file("github", { sha: "initial", content: encryptedBackup(seed) });
+    await resetLedger();
     const port = await freePort();
     const base = `http://127.0.0.1:${port}`;
     let server;
     async function stop() {
-        if (!server || server.exitCode !== null) return;
+        if (!server || server.exitCode !== null || server.signalCode !== null) return;
         const exited = once(server, "exit");
         server.kill();
         await exited;
@@ -109,6 +111,11 @@ test("Shopier code and agency membership survive restarts with no persistent Ren
         assert.equal(response.status, status, route);
         return response.json();
     }
+    return { root, file, resetLedger, base, start, stop, post };
+}
+
+test("Shopier code and agency membership survive restarts with no persistent Render disk", { timeout: 15_000 }, async t => {
+    const { root, file, base, start, stop, post } = await createLedgerFixture(t);
     await start();
     assert.match(await (await fetch(base)).text(), /<meta name="tikmng-checkout" content="shopier">/);
     assert.equal((await fetch(`${base}/satin-al?plan=agency-10-monthly`)).status, 200);
@@ -131,4 +138,57 @@ test("Shopier code and agency membership survive restarts with no persistent Ren
     await start();
     assert.equal((await post("/api/shopier/redeem", claim)).code, code);
     assert.equal((await post("/api/license/verify", { code, deviceId: "device-over-capacity" })).reason, "agency_limit_reached");
+});
+
+test("Paid individual licenses require their persisted row for verify and check", { timeout: 15_000 }, async t => {
+    const { root, file, resetLedger, start, stop, post } = await createLedgerFixture(t);
+    await start();
+    const planId = "individual-weekly";
+    const orderId = "7001";
+    const productId = products[planId];
+    const offer = await post("/api/shopier/checkout", { planId, username: "test.creator" }, 201);
+    await file("order", { id: orderId, note: offer.reference, paymentStatus: "paid", currency: "TRY",
+        lineItems: [{ productId, type: "digital", quantity: 1 }], refunds: [],
+        totals: { subtotal: "500.00", total: "500.00", discount: "0.00", shipping: "0.00" } });
+    const claim = { token: offer.token, orderId };
+    const { code } = await post("/api/shopier/redeem", claim);
+    assert.match(code, /^MNGS-[A-F0-9]{20}$/);
+
+    const paidDevice = { code, deviceId: "paid-device", clientVersion: "7.0.17" };
+    const { valid, activationToken, expiresAt, remainingDays } = await post("/api/license/verify", paidDevice);
+    assert.equal(valid, true);
+    assert.equal(remainingDays, 7);
+    assert.match(activationToken, /^[a-f0-9]{64}$/);
+    const paidCheck = { ...paidDevice, activationToken, expiresAt };
+    assert.equal((await post("/api/license/check", paidCheck)).valid, true);
+
+    // A pre-existing signed code must still activate and restore from its activation token.
+    const legacyPayload = "MNG7D-ABCDEF";
+    const signature = createHmac("sha256", password).update(legacyPayload).digest("hex").slice(0, 6).toUpperCase();
+    const legacyDevice = { code: `${legacyPayload}-${signature}`, deviceId: "legacy-device", clientVersion: "7.0.17" };
+    const legacy = await post("/api/license/verify", legacyDevice);
+    assert.equal(legacy.valid, true);
+
+    await stop();
+    await start();
+    const licenses = JSON.parse(await readFile(path.join(root, "lisanslar.json"), "utf8"));
+    const paid = licenses.find(license => license.kod === code);
+    assert.deepEqual(paid.shopier, { orderId, reference: offer.reference, planId, amountMinor: 50000 });
+    assert.equal(paid.activation_token, activationToken);
+    assert.equal((await post("/api/shopier/redeem", claim)).code, code);
+    assert.equal((await post("/api/license/verify", paidDevice)).expiresAt, expiresAt);
+    assert.equal((await post("/api/license/check", paidCheck)).valid, true);
+
+    await stop();
+    await resetLedger();
+    await start();
+    for (const [route, payload] of [["check", paidCheck], ["verify", paidDevice]]) {
+        const result = await post(`/api/license/${route}`, payload);
+        assert.equal(result.valid, false);
+        assert.equal(result.reason, "invalid_license");
+    }
+    const restored = await post("/api/license/check", { ...legacyDevice,
+        activationToken: legacy.activationToken, expiresAt: legacy.expiresAt });
+    assert.equal(restored.valid, true);
+    assert.equal(restored.expiresAt, legacy.expiresAt);
 });

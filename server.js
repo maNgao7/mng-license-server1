@@ -435,6 +435,7 @@ registerContentRoutes(app, { dataDir: DATA_DIR, adminKontrol });
 const shopierToken = String(process.env.SHOPIER_API_TOKEN || "").trim();
 const shopierProducts = shopierProductIds(process.env.SHOPIER_PRODUCT_IDS);
 const shopierClaimSecret = String(process.env.SHOPIER_CLAIM_SECRET || "").trim();
+const shopierIndividualCodePattern = /^MNGS-[A-F0-9]{20}$/;
 function shopierStorageAvailable() {
     return useGithubLicenseLedger ? githubBackupReady && Boolean(githubBackupSha) : durableRenderData && diskLedgerReadable;
 }
@@ -443,10 +444,10 @@ const shopierCheckout = process.env.SHOPIER_SALES_ENABLED === "true" && shopierS
     ? createShopierCheckout({
         secret: shopierClaimSecret, apiToken: shopierToken, products: shopierProducts,
         licenses: () => lisanslarVeritabani,
-        issueCode({ agency, owner, days }) {
+        issueCode({ agency, owner }) {
             for (let attempt = 0; attempt < 30; attempt++) {
                 const code = agency ? createAgencyKey(owner, ADMIN_SIFRE)
-                    : lisansKoduUret({ birim: "gun", miktar: days });
+                    : `MNGS-${crypto.randomBytes(10).toString("hex").toUpperCase()}`;
                 if (!lisanslarVeritabani.some(license => license.kod === code)) return code;
             }
             throw new Error("Yeni lisans kodu oluşturulamadı.");
@@ -976,7 +977,7 @@ app.post("/api/license/verify", durableLicenseRoute((req, res) => {
 
     // Kendi Kendini Kurtaran Lisans: Eğer sunucu yeniden başladığında lisanslar.json sıfırlandıysa
     // kriptografik olarak imzalanmış geçerli kodları anında otomatik kurtarır!
-    if (!lisans) {
+    if (!lisans && !shopierIndividualCodePattern.test(temizKod)) {
         const kriptoBilgi = kodKriptoKontrol(temizKod);
         if (kriptoBilgi && !kriptoBilgi.recordRequired) {
             lisans = {
@@ -1186,7 +1187,7 @@ app.post("/api/license/check", durableLicenseRoute((req, res) => {
     // Kendi Kendini Onaran / Kurtaran Senkronizasyon:
     // Eğer Render yeniden başladıysa ve lisanslar.json sıfırlandıysa,
     // istemcinin sunduğu aktivasyon tokeni ile bitiş zamanı matematiksel olarak doğrulanır.
-    if (!lisans && activationToken) {
+    if (!lisans && activationToken && !shopierIndividualCodePattern.test(temizKod)) {
         const tokenGecerli = aktivasyonTokenDogrula(temizKod, deviceId, expiresAt, activationToken);
         if (tokenGecerli) {
             const keyInfo = readAgencyReceipt(activationToken, temizKod, deviceId, expiresAt, ADMIN_SIFRE) || kodKriptoKontrol(temizKod);
