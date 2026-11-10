@@ -145,6 +145,7 @@ test("Shopier readiness requires admin login and checks all plans with live sale
     assert.deepEqual(report.paketler.slice(0, 3).map(plan => plan.durum),
         ["Uygun", "Shopier anahtarı reddedildi", "Uygun"]);
     assert.equal(report.paketler.at(-1).durum, "Ürün, fiyat veya stok kontrol edilmeli");
+    assert.deepEqual(report.paketler[1].shopierHata, { kod: 403, yanit: "other" });
     assert.doesNotMatch(JSON.stringify(report), /test-only|test-claim-signing-key/);
     assert.equal((await fetch(`${base}/satin-al`)).status, 503);
     assert.equal(await readFile(ledgerPath, "utf8"), ledgerBefore);

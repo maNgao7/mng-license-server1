@@ -478,16 +478,20 @@ app.get("/api/admin/shopier/hazirlik", adminKontrol, shopierReadinessLimit, asyn
         const paket = kind === "agency" ? `Ajans / ${seats} yayıncı`
             : period === "weekly" ? "Bireysel / haftalık" : "Bireysel / aylık";
         let durum = "Shopier anahtarı veya ürün eşlemesi eksik";
+        let shopierHata;
         if (shopierToken && shopierProducts) {
             try {
                 const available = await checkShopierOffer({ apiToken: shopierToken, productId: shopierProducts[id], priceMinor });
                 durum = available ? "Uygun" : "Ürün, fiyat veya stok kontrol edilmeli";
             } catch (error) {
+                if (Number.isInteger(error?.shopierStatus)) {
+                    shopierHata = { kod: error.shopierStatus, yanit: error.shopierResponseType };
+                }
                 durum = error?.shopierStatus === 401 || error?.shopierStatus === 403
                     ? "Shopier anahtarı reddedildi" : "Shopier yanıtı alınamadı";
             }
         }
-        return { paket, fiyatTL: priceMinor / 100, durum };
+        return { paket, fiyatTL: priceMinor / 100, durum, shopierHata };
     }));
     res.json({
         canliSatisAcik: Boolean(shopierCheckout && shopierStorageAvailable()),

@@ -18,6 +18,7 @@ export async function checkShopierOffer({ apiToken, productId, priceMinor, fetch
     if (!response.ok) {
         const error = new Error(`Shopier ürünü doğrulanamadı (${response.status}).`);
         error.shopierStatus = response.status;
+        error.shopierResponseType = response.headers.get("content-type")?.includes("application/json") ? "json" : "other";
         throw error;
     }
     const product = await response.json();
