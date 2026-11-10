@@ -1,10 +1,21 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import { test } from "node:test";
 import { createShopierCheckout, shopierProductIds } from "../shopier-checkout.js";
 import { verifyShopierPayment } from "../shopier-payment.js";
 import { salesPlans } from "../web/sales-catalog.js";
 
 const products = Object.fromEntries(salesPlans.map((plan, i) => [plan.id, String(5000 + i)]));
+
+test("public WhatsApp contact links use the TikMnG username", () => {
+    const homepage = readFileSync(new URL("../web/index.html", import.meta.url), "utf8");
+    const links = [...homepage.matchAll(/href="(https:\/\/wa\.me\/[^"]+)"/g)].map(([, href]) => new URL(href));
+    assert.equal(links.length, 2);
+    for (const link of links) {
+        assert.equal(link.pathname, "/tikmng");
+        assert.ok(link.searchParams.get("text")?.includes("TikMnG"));
+    }
+});
 
 function fixture({ rows = [], saveLicense, verifyPayment, now } = {}) {
     return {
