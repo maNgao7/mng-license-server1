@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import { upgradedBootstrapState } from '../content-bootstrap.js';
 const read=name=>JSON.parse(fs.readFileSync(new URL('../'+name,import.meta.url),'utf8'));
 test('Forza 0.5.2 migrates the exact released catalog once, preserving all other games, pricing and launcher',()=>{
- const previous=read('content-bootstrap-7.0.17.json'),current=read('content-defaults.json');
+ const previous=read('content-bootstrap-7.0.17.json'),current=read('content-bootstrap-forza-0.5.2.json');
  const oldGame=previous.games.find(g=>g.id==='turkish-forza-05');
  const game=current.games.find(g=>g.id==='turkish-forza-05');
  assert.equal(oldGame.version,'0.5.1');assert.equal(game.version,'0.5.2');

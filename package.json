@@ -1,6 +1,6 @@
 {
   "name": "mng-license-server",
-  "version": "7.0.17",
+  "version": "7.0.18",
   "description": "TikMnG Lisans ve Web Sunucusu",
   "type": "module",
   "main": "server.js",

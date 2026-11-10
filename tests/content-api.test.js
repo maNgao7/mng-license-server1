@@ -138,8 +138,9 @@ for (const [filename, revision, arenaVersion] of [
     ['content-bootstrap-arena-0.1.24.json', 15, '0.1.24'],
     ['content-bootstrap-arena-0.1.25.json', 16, '0.1.25'],
     ['content-bootstrap-7.0.16.json', 17, '0.1.28'],
-    ['content-bootstrap-7.0.17.json', 2026111001, '0.1.29']
-]) test(`actual rev${revision} catalog receives the 7.0.17 games once and retains its full backup`, async t => {
+    ['content-bootstrap-7.0.17.json', 2026111001, '0.1.29'],
+    ['content-bootstrap-forza-0.5.2.json', 2026111002, '0.1.29']
+]) test(`actual rev${revision} catalog receives the current games once and retains its full backup`, async t => {
     const previous = JSON.parse(fs.readFileSync(path.join(root, filename), 'utf8'));
     const current = JSON.parse(fs.readFileSync(path.join(root, 'content-defaults.json'), 'utf8'));
     assert.equal(previous.revision, revision);
@@ -160,8 +161,8 @@ for (const [filename, revision, arenaVersion] of [
     assert.deepEqual(JSON.parse(fs.readFileSync(path.join(f.dir, 'content-state.json'), 'utf8')), { draft: current, published: current });
     assert.deepEqual(fs.readdirSync(path.join(f.dir, 'content-revisions')), []);
     const version = (await f.request('/api/version', 'GET', undefined, false)).data;
-    assert.equal(version.latestVersion, '7.0.17');
-    assert.equal(version.downloadUrl, 'https://github.com/maNgao7/mng-license-server1/releases/download/v7.0.17/TikMnG-Setup-7.0.17.exe');
+    assert.equal(version.latestVersion, '7.0.18');
+    assert.equal(version.downloadUrl, 'https://github.com/maNgao7/mng-license-server1/releases/download/v7.0.18/TikMnG-Setup-7.0.18.exe');
     for (const name of licenseFiles) assert.deepEqual(JSON.parse(fs.readFileSync(path.join(f.dir, `${name}.json`))), []);
     await f.stop(); await f.start();
     assert.deepEqual(await f.public(), current);
@@ -213,7 +214,7 @@ test("public defaults add Forza and Teke Tek Profil, update Arena and exclude Cr
     assert.equal(byId['yaratik-arena'].url, 'https://github.com/maNgao7/mng-license-server1/releases/download/v7.0.17/yaratik-arena.zip');
     assert.equal(byId['yaratik-arena'].bytes, 151525898);
     assert.equal(byId['yaratik-arena'].sha256, 'add9052a170145f4f2677d71ec9a67a15cb73de2e3a3d3b7220ac70ccbe3748c');
-    assert.equal(byId['turkish-forza-05'].version, '0.5.2');
+    assert.equal(byId['turkish-forza-05'].version, '0.5.3');
     assert.equal(byId['profile-duel'].version, '0.5.6');
     assert.equal(byId.orbit.version, '7.0.3');
     assert.equal(byId.orbit.files[0].sha256, '331fdd1a38e4f489e5dd1da6bd760ee257b9cc83e1fc92456eb3c4964bb81e7d');
@@ -222,7 +223,7 @@ test("public defaults add Forza and Teke Tek Profil, update Arena and exclude Cr
     assert.equal(byId['profile-contest'].sha256, 'bfea65a15399612a8cfea4a74bc6e0718b757e220544451aa4ab583d02dca7ab');
     assert.equal(byId['crowd-control'], undefined);
     assert.equal(response.data.media.length, 285);
-    assert.equal(response.data.revision, 2026111002);
+    assert.equal(response.data.revision, 2026111003);
     assert.equal(byId.caahr.version, '0.6.12');
     assert.equal(byId.caahr.bytes, 63233577);
     assert.equal(byId['frog-river'].version,'7.0.5');

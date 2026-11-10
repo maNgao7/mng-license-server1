@@ -1,0 +1,18 @@
+diff --git a/main.js b/main.js
+index 295b114..7350753 100644
+--- a/main.js
++++ b/main.js
+@@ -2652,12 +2652,7 @@ async function uygulamayiAc({ uygulama, tiktokUser, orbitSettings, orbitTest, or
+                     username: session.tiktokUser,
+                     portrait: async (username, payload) => {
+                         if (!widgetPortraits) return null;
+-                        widgetPortraits.observe({ ...payload, username });
+-                        await widgetPortraits.idle(username);
+-                        const avatar = widgetPortraits.snapshot({ audience: [{ username }] }).audience[0]?.avatar;
+-                        const name = String(avatar || '').split('/').pop();
+-                        if (!/^portrait-[a-f0-9-]{36}\.png$/.test(name)) return null;
+-                        const file = widgetPortraits.file(name);
++                        const file = await widgetPortraits.racePortrait(username,payload);
+                         if (!file) return null;
+                         const image = require('electron').nativeImage.createFromPath(file);
+                         if (image.isEmpty()) return null;

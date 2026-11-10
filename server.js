@@ -768,10 +768,10 @@ function logEkle(lisansKod, cihazKimlik, islem, ip) {
 // =====================================================================
 // SÜRÜM BİLGİLERİ & İNDİRME LİNKLERİ
 // =====================================================================
-const EN_GUNCEL_SURUM = "7.0.17";
+const EN_GUNCEL_SURUM = "7.0.18";
 const EN_DUSUK_SURUM = "1.0.0";
-const SETUP_INDIRME_LINKI = "https://github.com/maNgao7/mng-license-server1/releases/download/v7.0.17/TikMnG-Setup-7.0.17.exe";
-const PORTABLE_INDIRME_LINKI = "https://github.com/maNgao7/mng-license-server1/releases/download/v7.0.17/TikMnG-7.0.17-Portable.exe";
+const SETUP_INDIRME_LINKI = "https://github.com/maNgao7/mng-license-server1/releases/download/v7.0.18/TikMnG-Setup-7.0.18.exe";
+const PORTABLE_INDIRME_LINKI = "https://github.com/maNgao7/mng-license-server1/releases/download/v7.0.18/TikMnG-7.0.18-Portable.exe";
 const SETUP_WEB_LINKI = SETUP_INDIRME_LINKI;
 const VARSAYILAN_PAKET_LINKLERI = Object.freeze({
     BACKGROUNDS: "https://drive.usercontent.google.com/download?id=1VHwmK2Lt-DN6jVYB1Gp2sbeW6hU_rgB6&export=download&confirm=t",
@@ -785,6 +785,7 @@ const VARSAYILAN_PAKET_LINKLERI = Object.freeze({
 
 // Her güncellemede eklenen/değişen özellikler listesi
 const SURUM_NOTLARI = [
+    "v7.0.18: Turkish Forza geri sayım sesi, BAŞLA ekranı, canlı profil fotoğrafları ve serbest kamera motor sesi düzeltildi.",
     "v7.0.17: Turkish Forza ayrı Node.js kurulumu gerektirmez. Yaratık Arena güncelleme akışı iyileştirildi ve turu bitiren oyuncunun portresi geri getirildi.",
     "v7.0.16: Turkish Forza ve Teke Tek Profil eklendi. Yaratık Arena 0.1.28, canlı PK efektleri ve katılımcı başına izleyici sayısı güncellendi.",
     "v7.0.15: Yeni oyun Yaratık Arena eklendi. Önce Steam'den ücretsiz Can 'Em All Demo kurulmalıdır; oyun sayfasında demo bağlantısı ve Kurulumu kontrol et düğmesi bulunur. İlk açılışta gereken oyun dosyaları yerel Steam kurulumundan hazırlanır; orijinal oyun mod paketinde dağıtılmaz.",
