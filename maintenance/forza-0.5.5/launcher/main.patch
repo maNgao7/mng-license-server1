@@ -1,0 +1,28 @@
+diff --git a/main.js b/main.js
+index 7b32e85..3d13063 100644
+--- a/main.js
++++ b/main.js
+@@ -606,7 +606,10 @@ function widgetTikTokOturumuOlustur() {
+             if (type === 'gift') widgetStudio.ingestPKEffects(widgetChannel, type, data);
+             const profile = widgetTikTokProfiliniOku(data), eventId = data.eventId || data.msgId || data.common?.msgId || data.logId || '';
+             if (type === 'gift') widgetGenelOlayEkle(type, { ...profile, ...widgetTikTokHediyesiniOku(data) }, { source: 'live' });
+-            else if (type === 'like') widgetGenelOlayEkle(type, { ...profile, likeCount: Math.max(1, Number(data.likeCount || data.like_count || data.count || 1)), eventId }, { source: 'live' });
++            else if (type === 'like') {
++                sharedGameEvents.publish('forza-like', data, { channel: widgetChannel, source: 'live' });
++                widgetGenelOlayEkle(type, { ...profile, likeCount: Math.max(1, Number(data.likeCount || data.like_count || data.count || 1)), eventId, forzaRawLike: true }, { source: 'live' });
++            }
+             else if (type === 'chat') widgetGenelOlayEkle(type, { ...profile, message: data.content ?? data.comment ?? data.message ?? '', eventId }, { source: 'live' });
+             else if (type === 'viewer') {
+                 widgetStudio.ingestPKViewer(widgetChannel, data);
+@@ -2656,9 +2659,9 @@ async function uygulamayiAc({ uygulama, tiktokUser, orbitSettings, orbitTest, or
+                     dataDirectory: forzaPackage.defaultDataDirectory(forzaSteam, app.getPath('userData')), session, BrowserWindow,
+                     events: sharedGameEvents, getChannel: () => widgetChannel, getStatus: () => widgetLiveStatus,
+                     username: session.tiktokUser,
+-                    portrait: async (username, payload) => {
++                    portrait: async (username, payload, priority) => {
+                         if (!widgetPortraits) return null;
+-                        const file = await widgetPortraits.racePortrait(username,payload);
++                        const file = await widgetPortraits.racePortrait(username,payload,{priority});
+                         if (!file) return null;
+                         const image = require('electron').nativeImage.createFromPath(file);
+                         if (image.isEmpty()) return null;
