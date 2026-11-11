@@ -1,0 +1,109 @@
+diff --git a/main.js b/main.js
+index 2e7aaaf..7b32e85 100644
+--- a/main.js
++++ b/main.js
+@@ -536,6 +536,7 @@ function widgetTikTokProfiliniOku(data = {}) {
+ 
+ function widgetTikTokHediyesiniOku(data = {}) {
+     const gift = data.gift || data.extendedGiftInfo || data.giftDetails || {};
++    const groupId = data.groupId ?? data.group_id ?? gift.groupId ?? gift.group_id;
+     const repeatCount = Math.max(1, Number(data.repeatCount || data.count || 1));
+     const diamondCount = Math.max(0, Number(data.diamondCount ?? data.diamond_count ?? gift.diamondCount ?? gift.diamond_count) || 0);
+     const imageLists = [gift.image?.urlList, gift.icon?.urlList, gift.image?.url_list, data.giftPictureUrl ? [data.giftPictureUrl] : []];
+@@ -543,7 +544,7 @@ function widgetTikTokHediyesiniOku(data = {}) {
+         giftId: String(data.giftId || data.gift_id || gift.id || gift.giftId || ""),
+         ...((data.giftType??gift.giftType??gift.type)!==undefined?{giftType:data.giftType??gift.giftType??gift.type}:{}),
+         ...(data.repeatEnd!==undefined?{repeatEnd:[true,1,'1','true'].includes(data.repeatEnd)}:{}),
+-        ...(data.groupId?{groupId:String(data.groupId)}:{}),
++        ...(groupId?{groupId:String(groupId)}:{}),
+         giftName: String(data.giftName || gift.name || "Hediye"),
+         giftImage: imageLists.flatMap(value => Array.isArray(value) ? value : []).find(Boolean) || "",
+         repeatCount,
+@@ -595,12 +596,17 @@ function widgetTikTokOturumuOlustur() {
+             widgetStreamHealth.update(status);
+             mainWindow?.webContents.send('workspace-live', status);
+         },
++        onGiftProgress: data => {
++            const gift = widgetTikTokHediyesiniOku(data);
++            if (gift.groupId) sharedGameEvents.publish('forza-gift-progress',
++                { ...widgetTikTokProfiliniOku(data), ...gift }, { channel: widgetChannel, source: 'live' });
++        },
+         onEvent: (type, data, context) => {
+             if (type === 'pk') { widgetStudio.ingestPK(widgetChannel, data, context); return; }
+             if (type === 'gift') widgetStudio.ingestPKEffects(widgetChannel, type, data);
+             const profile = widgetTikTokProfiliniOku(data), eventId = data.eventId || data.msgId || data.common?.msgId || data.logId || '';
+             if (type === 'gift') widgetGenelOlayEkle(type, { ...profile, ...widgetTikTokHediyesiniOku(data) }, { source: 'live' });
+-            else if (type === 'like') widgetGenelOlayEkle(type, { ...profile, likeCount: Math.max(1, Number(data.likeCount || data.count || 1)), eventId }, { source: 'live' });
++            else if (type === 'like') widgetGenelOlayEkle(type, { ...profile, likeCount: Math.max(1, Number(data.likeCount || data.like_count || data.count || 1)), eventId }, { source: 'live' });
+             else if (type === 'chat') widgetGenelOlayEkle(type, { ...profile, message: data.content ?? data.comment ?? data.message ?? '', eventId }, { source: 'live' });
+             else if (type === 'viewer') {
+                 widgetStudio.ingestPKViewer(widgetChannel, data);
+@@ -1566,37 +1572,37 @@ function orbitSunucuyuDurdur() {
+     sunuculariDurdur().catch(() => {});
+ }
+ 
+-function crowdControlSunucuyuDurdur() {
+-    sunuculariDurdur().catch(() => {});
+-}
+-
+-function crowdControlSunucuyuBaslat() {
+-    return new Promise((resolve, reject) => {
+-        if (crowdControlServerProcess) return resolve();
+-        const appDir = crowdControlKlasoruBul();
+-        const serverDosya = path.join(appDir, "server.js");
+-        if (!fs.existsSync(serverDosya)) return reject(new Error(`MNG Crowd Control dosyası bulunamadı: ${serverDosya}`));
+-        const nodeBilgi = nodeBilgisiBul();
+-        crowdControlServerProcess = spawn(nodeBilgi.komut, [serverDosya], {
+-            cwd: appDir,
+-            env: { ...nodeBilgi.env, PORT: CROWD_CONTROL_PORT },
+-            windowsHide: true,
+-            stdio: ["ignore", "pipe", "pipe"]
+-        });
+-        crowdControlServerProcess.on("error", (err) => { crowdControlServerProcess = null; reject(err); });
+-        crowdControlServerProcess.on("exit", () => { crowdControlServerProcess = null; });
+-        const started = Date.now();
+-        const check = setInterval(() => {
+-            const client = new http.ClientRequest({ hostname: "127.0.0.1", port: CROWD_CONTROL_PORT, path: "/api/health", method: "GET" });
+-            client.on("response", () => { clearInterval(check); resolve(); });
+-            client.on("error", () => {
+-                if (Date.now() - started > 30000) { clearInterval(check); crowdControlSunucuyuDurdur(); reject(new Error("MNG Crowd Control 30 saniyede başlamadı.")); }
+-            });
+-            client.end();
+-        }, 500);
+-    });
+-}
+-
++function crowdControlSunucuyuDurdur() {
++    sunuculariDurdur().catch(() => {});
++}
++
++function crowdControlSunucuyuBaslat() {
++    return new Promise((resolve, reject) => {
++        if (crowdControlServerProcess) return resolve();
++        const appDir = crowdControlKlasoruBul();
++        const serverDosya = path.join(appDir, "server.js");
++        if (!fs.existsSync(serverDosya)) return reject(new Error(`MNG Crowd Control dosyası bulunamadı: ${serverDosya}`));
++        const nodeBilgi = nodeBilgisiBul();
++        crowdControlServerProcess = spawn(nodeBilgi.komut, [serverDosya], {
++            cwd: appDir,
++            env: { ...nodeBilgi.env, PORT: CROWD_CONTROL_PORT },
++            windowsHide: true,
++            stdio: ["ignore", "pipe", "pipe"]
++        });
++        crowdControlServerProcess.on("error", (err) => { crowdControlServerProcess = null; reject(err); });
++        crowdControlServerProcess.on("exit", () => { crowdControlServerProcess = null; });
++        const started = Date.now();
++        const check = setInterval(() => {
++            const client = new http.ClientRequest({ hostname: "127.0.0.1", port: CROWD_CONTROL_PORT, path: "/api/health", method: "GET" });
++            client.on("response", () => { clearInterval(check); resolve(); });
++            client.on("error", () => {
++                if (Date.now() - started > 30000) { clearInterval(check); crowdControlSunucuyuDurdur(); reject(new Error("MNG Crowd Control 30 saniyede başlamadı.")); }
++            });
++            client.end();
++        }, 500);
++    });
++}
++
+ function battleGameSunucuyuDurdur() {
+     if (battleGameServerProcess) {
+         try { require("child_process").execSync(`taskkill /pid ${battleGameServerProcess.pid} /f /t`, { stdio: "ignore" }); } catch {}
