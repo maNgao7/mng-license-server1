@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
-  "revision": 2026111202,
-  "publishedAt": "2026-11-12T09:15:44.498Z",
+  "revision": 2026111203,
+  "publishedAt": "2026-11-12T13:56:36.275Z",
   "games": [
     {
       "id": "rezervuar-01",
@@ -29,10 +29,10 @@
       "id": "turkish-forza-05",
       "title": "Turkish Forza 0.5",
       "description": "Tsukuba pistinde Murat 131, Tofaş Şahin ve daha hızlı yarış araçlarıyla canlı yayın katılımcılarını yarıştır.",
-      "version": "0.5.5",
-      "url": "https://github.com/maNgao7/mng-license-server1/releases/download/v7.0.20/turkish-forza-05.zip",
-      "sha256": "b78b85ad6fa7b334fe3ec9d87f6071ec1def0a5fed8d7d28e3af8736e108c640",
-      "bytes": 104711448,
+      "version": "0.5.6",
+      "url": "https://github.com/maNgao7/mng-license-server1/releases/download/v7.0.22/turkish-forza-05.zip",
+      "sha256": "94ebcb27d0516f0a35151be64fb5a678d2fb48043d454f87b21b4f730e2ad833",
+      "bytes": 105733291,
       "requirements": "Windows 10/11 64 bit, Steam'de kurulu iRacing Arcade Demo ve en az 2 GB boş alan gerekir.",
       "resources": []
     },

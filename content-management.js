@@ -23,6 +23,7 @@ const launcher707Baseline = JSON.parse(fs.readFileSync(new URL("./content-bootst
 const launcher709Baseline = JSON.parse(fs.readFileSync(new URL("./content-bootstrap-7.0.9.json", import.meta.url), "utf8"));
 const launcher714Baseline = JSON.parse(fs.readFileSync(new URL("./content-bootstrap-7.0.14.json", import.meta.url), "utf8"));
 const launcher715Baseline = JSON.parse(fs.readFileSync(new URL("./content-bootstrap-7.0.15.json", import.meta.url), "utf8"));
+const launcher721Baseline = JSON.parse(fs.readFileSync(new URL("./content-bootstrap-7.0.21.json", import.meta.url), "utf8"));
 const launcher720Baseline = JSON.parse(fs.readFileSync(new URL("./content-bootstrap-7.0.20.json", import.meta.url), "utf8"));
 const forza054Baseline = JSON.parse(fs.readFileSync(new URL("./content-bootstrap-forza-0.5.4.json", import.meta.url), "utf8"));
 const forza053Baseline = JSON.parse(fs.readFileSync(new URL("./content-bootstrap-forza-0.5.3.json", import.meta.url), "utf8"));
@@ -252,7 +253,8 @@ export function registerContentRoutes(app, { dataDir, adminKontrol }) {
         atomicWrite(stateFile, JSON.stringify(state));
     }
     const currentDefaults = catalogShape(defaults, assetsDir).catalog;
-    const upgraded = upgradedBootstrapState(state, catalogShape(launcher720Baseline, assetsDir).catalog, currentDefaults, { allowReleasedBaseline: true })
+    const upgraded = upgradedBootstrapState(state, catalogShape(launcher721Baseline, assetsDir).catalog, currentDefaults, { allowReleasedBaseline: true })
+        || upgradedBootstrapState(state, catalogShape(launcher720Baseline, assetsDir).catalog, currentDefaults, { allowReleasedBaseline: true })
         || upgradedBootstrapState(state, catalogShape(forza054Baseline, assetsDir).catalog, currentDefaults, { allowReleasedBaseline: true })
         || upgradedBootstrapState(state, catalogShape(forza053Baseline, assetsDir).catalog, currentDefaults, { allowReleasedBaseline: true })
         || upgradedBootstrapState(state, catalogShape(forza052Baseline, assetsDir).catalog, currentDefaults, { allowReleasedBaseline: true })
