@@ -1,7 +1,23 @@
 {
-  "revision": "20261110-7.0.17",
-  "heading": "18 oyun. Her yayına başka bir heyecan.",
+  "revision": "20261112-7.0.21",
+  "heading": "19 oyun. Her yayına başka bir heyecan.",
   "games": [
+    {
+      "id": "rezervuar-01",
+      "title": "Uslu Yaratık",
+      "category": "Hayatta Kalma",
+      "cover": "uslu-yaratik",
+      "isNew": true,
+      "tagline": "Suya düşmeden çıkışa ulaş.",
+      "description": "Sığ suya ses çıkarmadan platformlardan ilerle. Yayındaki hediyeler, takipler ve beğeniler parkurun akışını değiştirebilir.",
+      "features": [
+        "Platformlardan çıkışa ilerle",
+        "Hediyeler, beğeniler ve takiple parkuru değiştir",
+        "TikMnG’den indir ve oyna"
+      ],
+      "requirements": "Windows 10/11 64 bit ve en az 1 GB boş alan. TikMnG üzerinden yüklenir. Canlı yayın etkileşimleri için internet bağlantısı gerekir.",
+      "giftGuide": "/gift-guides/TikMnG-Uslu-Yaratik-Hediyeler.png"
+    },
     {
       "id": "turkish-forza-05",
       "title": "Turkish Forza 0.5",

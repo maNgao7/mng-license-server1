@@ -53,13 +53,17 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!game) return;
     openDialog(`<div class="game-dialog-layout"><img class="game-dialog-art" src="/game-covers/${game.cover}-1000.webp" alt="${esc(game.title)} kapağı" width="1000" height="667"><div class="game-dialog-content"><span class="catalog-eyebrow">${esc(game.category)}</span><h2 id="portalDialogTitle">${esc(game.title)}</h2><p>${esc(game.description)}</p><ul>${game.features.map(feature => `<li>${icon('check')}${esc(feature)}</li>`).join('')}</ul><p class="game-dialog-requirement">${esc(game.requirements)}</p><a class="portal-command primary" href="/download/setup">${icon('download')} Launcher'ı indir</a></div></div>`, source);
     gameSetup(game);
+    const content = dialog.querySelector('.game-dialog-content');
     if (game.id === 'yaratik-arena') {
-      const content = dialog.querySelector('.game-dialog-content');
       const demo = document.createElement('a'); demo.className='portal-command'; demo.href=game.steamUrl;
       demo.target='_blank'; demo.rel='noopener noreferrer'; demo.textContent="Steam'den ücretsiz demoyu indir";
+      content.append(demo);
+    }
+    if (game.giftGuide) {
       const guide = document.createElement('a'); guide.className='portal-command'; guide.href=game.giftGuide;
-      guide.download='Yaratik-Arena-Hediye-Gorseli.png'; guide.textContent='Hediye görselini indir';
-      content.append(demo,guide);
+      guide.download=game.id === 'yaratik-arena' ? 'Yaratik-Arena-Hediye-Gorseli.png' : game.giftGuide.split('/').pop();
+      guide.textContent='Hediye görselini indir';
+      content.append(guide);
     }
   }
   function gameSetup(game) {

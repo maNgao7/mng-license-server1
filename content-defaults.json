@@ -1,8 +1,19 @@
 {
   "schemaVersion": 1,
-  "revision": 2026111201,
-  "publishedAt": "2026-11-11T21:26:53.947Z",
+  "revision": 2026111202,
+  "publishedAt": "2026-11-12T09:15:44.498Z",
   "games": [
+    {
+      "id": "rezervuar-01",
+      "title": "Uslu Yaratık",
+      "description": "Sığ suya ses çıkarmadan platformlardan ilerle. Yayındaki hediyeler, takipler ve beğeniler parkurun akışını değiştirebilir.",
+      "version": "0.2.9",
+      "url": "https://github.com/maNgao7/mng-license-server1/releases/download/v7.0.21/uslu-yaratik.zip",
+      "sha256": "a5d3b0590f714b1cb67c5c849ac2ef5ac9db9bd5fe7109bf2da65c70995a56cf",
+      "bytes": 133789993,
+      "requirements": "Windows 10/11 64 bit ve en az 1 GB boş alan. TikMnG üzerinden yüklenir. Canlı yayın etkileşimleri için internet bağlantısı gerekir.",
+      "resources": []
+    },
     {
       "id": "profile-duel",
       "title": "Teke Tek Profil",
