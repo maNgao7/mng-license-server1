@@ -17,7 +17,7 @@
   const id = () => typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).slice(2);
   const color = (value, fallback) => /^#[0-9a-f]{6}$/i.test(value || '') ? value.toLowerCase() : fallback;
   const number = (value, fallback, min, max) => Number.isFinite(Number(value)) ? Math.min(max, Math.max(min, Number(value))) : fallback;
-  const defaults = () => ({ giftSize: 75, giftGap: 40, textGap: -10, lineGap: -5, fontSize: 24, fontFamily: 'Luckiest Guy', textColor: '#ffffff', strokeColor: '#000000', strokeWidth: 5, autoBlur: 0, grayscale: false });
+  const defaults = () => ({ giftSize: 75, giftGap: 24, textGap: -10, lineGap: -5, fontSize: 24, fontFamily: 'Luckiest Guy', textColor: '#ffffff', strokeColor: '#000000', strokeWidth: 5, autoBlur: 0, grayscale: false });
   function normalizeDesign(raw = {}) {
     const settings = defaults(), input = raw.settings || {};
     for (const [key, [min, max]] of Object.entries(ranges)) settings[key] = number(input[key], settings[key], min, max);
