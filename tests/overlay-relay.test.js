@@ -203,10 +203,32 @@ test('compressed chunked state streams validate original length and cancel clean
     await publisher.next('cancel', frame => frame.id === next.id);
 });
 
+test('named widget documents keep separate paths through the relay', async t => {
+    const f = await fixture(t), session = await f.session();
+    assert.equal(session.namedWidgetPaths, true);
+    const paths = ['coinjar', 'raconking', 'topliker'].map(id => '/widget/view/' + id);
+    for (const path of paths) {
+        const offline = await f.read(session.path + path);
+        assert.equal(offline.status, 503);
+        assert.match(offline.text, /location\.reload/);
+    }
+    const publisher = await f.connect(session.ticket);
+    for (const path of paths) {
+        const response = f.read(session.path + path);
+        const request = await publisher.next('request');
+        assert.equal(request.path, path + '?channel=' + INPUT.channel);
+        publisher.send({ type: 'headers', id: request.id, status: 200, headers: { 'content-type': 'text/html' } });
+        publisher.send({ type: 'chunk', id: request.id, data: Buffer.from(path).toString('base64') });
+        publisher.send({ type: 'end', id: request.id });
+        assert.equal((await response).text, path);
+    }
+    assert.equal((await f.read(session.path + '/widget/view/coinjar/extra')).status, 404);
+});
+
 test('successful widget HTML saves wire bytes with exact gzip decoding and remains no-store', async t => {
     const f = await fixture(t), session = await f.session(), publisher = await f.connect(session.ticket);
     const html = Buffer.from('<!doctype html><html><body>' + '<section class="gallery">Gift artwork</section>'.repeat(4000) + '</body></html>');
-    for (const route of ['/widget-overlay.html', '/widget/overlay', '/widget/top-gift.html', '/widget-leaderboard.html']) {
+    for (const route of ['/widget-overlay.html', '/widget/overlay', '/widget/top-gift.html', '/widget-leaderboard.html', '/widget/view/coinjar']) {
         const pending = f.read(session.path + route, { headers: { 'Accept-Encoding': 'gzip' } });
         const request = await publisher.next('request');
         publisher.send({ type: 'headers', id: request.id, status: 200, headers: { 'content-type': 'text/html; charset=utf-8',

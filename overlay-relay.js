@@ -10,6 +10,7 @@ const MEDIA = new RegExp(`^/tikmng/media(?:/(?:${UUID}|client\\.js|client\\.css|
 const MEDIA_DOCUMENT = new RegExp(`^/tikmng/media(?:/${UUID})?$`, "i");
 const MOTION_SCRIPT = "/widget/champion-motion.js";
 const WIDGET_DOCUMENT = /^\/(?:widget-(?:overlay|top-gift|top-likes|leaderboard|gift-feed|activity)\.html|widget\/(?:overlay|top-gift|top-likes|leaderboard|gift-feed|activity)(?:\.html)?)$/;
+const NAMED_WIDGET_DOCUMENT = /^\/widget\/view\/[a-z0-9-]{1,100}$/;
 const WIDGET = new Set([
     "/widget-overlay.html", "/widget/overlay", "/widget/overlay.html",
     "/widget/state", "/api/widget/state", "/widget/vendor/matter.js",
@@ -142,7 +143,7 @@ export function registerOverlayRelay(app, { secret, authorize, publicOrigin, rev
     }
 
     function publisherOffline(req, res, route) {
-        const document = MEDIA_DOCUMENT.test(route) || route === '/widget-overlay.html' ||
+        const document = MEDIA_DOCUMENT.test(route) || NAMED_WIDGET_DOCUMENT.test(route) || route === '/widget-overlay.html' ||
             /^\/widget\/(?:overlay|top-gift|top-likes|leaderboard|gift-feed|activity)(?:\.html)?$/.test(route) ||
             /^\/widget-(?:top-gift|top-likes|leaderboard|gift-feed|activity)\.html$/.test(route);
         if (!document) return reply(res, 503, 'Overlay publisher offline');
@@ -193,7 +194,7 @@ export function registerOverlayRelay(app, { secret, authorize, publicOrigin, rev
             const ticket = payload + "." + sign("overlay-ticket-v1:" + payload);
             if (ticket.length >= 4096) return reply(res, 400, "Session input too large");
             safeHeaders(res);
-            res.json({ token, ticket, expiresAt: claims.expiresAt, path: "/overlays/" + token, protocolVersion: 1 });
+            res.json({ token, ticket, expiresAt: claims.expiresAt, path: "/overlays/" + token, protocolVersion: 1, namedWidgetPaths: true });
         } catch {
             reply(res, 503, "Overlay authorization unavailable");
         }
@@ -319,7 +320,7 @@ export function registerOverlayRelay(app, { secret, authorize, publicOrigin, rev
                 }
                 const script = context.pathname === MOTION_SCRIPT &&
                     /^(?:application|text)\/javascript(?:;|$)/i.test(headers['content-type'] || '');
-                const html = WIDGET_DOCUMENT.test(context.pathname) && /^text\/html(?:;|$)/i.test(headers['content-type'] || '');
+                const html = (WIDGET_DOCUMENT.test(context.pathname) || NAMED_WIDGET_DOCUMENT.test(context.pathname)) && /^text\/html(?:;|$)/i.test(headers['content-type'] || '');
                 const cachePolicy = Object.entries(frame.headers).filter(([name]) => name.toLowerCase() === 'cache-control');
                 // The publisher confirms the current module hash; never infer freshness from the URL alone.
                 if (context.cacheableBundle && frame.status === 200 && !context.rangeRequest && !headers['content-range'] &&
@@ -397,7 +398,7 @@ export function registerOverlayRelay(app, { secret, authorize, publicOrigin, rev
         if (raw.length > 4096 || /[\x00-\x20\x7f\\#]/.test(raw)) return reply(res, 400, "Invalid overlay path");
         const [pathname] = raw.split("?");
         const match = pathname.match(/^\/overlays\/([A-Za-z0-9_-]{43})(\/.*)$/);
-        if (!match || (!MEDIA.test(match[2]) && !WIDGET.has(match[2]) && !cinematicPath(match[2]) && (!GIFT.test(match[2]) || match[2].includes("..")))) return reply(res, 404, "Unknown overlay route");
+        if (!match || (!MEDIA.test(match[2]) && !NAMED_WIDGET_DOCUMENT.test(match[2]) && !WIDGET.has(match[2]) && !cinematicPath(match[2]) && (!GIFT.test(match[2]) || match[2].includes("..")))) return reply(res, 404, "Unknown overlay route");
         const bridge = publishers.get(match[1]);
         if (closed || !bridge || bridge.ws.readyState !== WebSocket.OPEN || bridge.claims.expiresAt <= Date.now()) return publisherOffline(req, res, match[2]);
         const query = new URLSearchParams(raw.includes("?") ? raw.slice(raw.indexOf("?") + 1) : "");

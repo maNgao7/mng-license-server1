@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
-  "revision": 2026111204,
-  "publishedAt": "2026-11-12T19:43:41.031Z",
+  "revision": 2026111301,
+  "publishedAt": "2026-11-13T13:34:12.497Z",
   "games": [
     {
       "id": "rezervuar-01",
@@ -40,10 +40,10 @@
       "id": "yaratik-arena",
       "title": "Yaratık Arena",
       "description": "Duvardaki skor tablosunda yaratık gönderenler ve yayıncıyı öldürenler, görünür can ve enerji barları, 20 saniyelik kan izi temizliği.",
-      "version": "0.1.30",
-      "url": "https://github.com/maNgao7/mng-license-server1/releases/download/v7.0.23/yaratik-arena.zip",
-      "sha256": "9cf77937df69950059474f14af3223a783e2108992d474c0a0328e71661d07c2",
-      "bytes": 151525232,
+      "version": "0.1.31",
+      "url": "https://github.com/maNgao7/mng-license-server1/releases/download/v7.0.24/yaratik-arena.zip",
+      "sha256": "0e6d1c5a42e348866339d87a45ee7d3b5943b07cdec0dc0fef139b963004b01c",
+      "bytes": 151527788,
       "requirements": "Windows 10/11 64 bit. Steam'den ücretsiz Can 'Em All Demo kurulumu gerekir. Mod ve yerel oyun kopyası için en az 3 GB boş disk. Yüksek yaratık sayıları daha fazla RAM gerektirir.",
       "resources": []
     },

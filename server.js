@@ -768,10 +768,10 @@ function logEkle(lisansKod, cihazKimlik, islem, ip) {
 // =====================================================================
 // SÜRÜM BİLGİLERİ & İNDİRME LİNKLERİ
 // =====================================================================
-const EN_GUNCEL_SURUM = "7.0.23";
+const EN_GUNCEL_SURUM = "7.0.24";
 const EN_DUSUK_SURUM = "1.0.0";
-const SETUP_INDIRME_LINKI = "https://github.com/maNgao7/mng-license-server1/releases/download/v7.0.23/TikMnG-Setup-7.0.23.exe";
-const PORTABLE_INDIRME_LINKI = "https://github.com/maNgao7/mng-license-server1/releases/download/v7.0.23/TikMnG-7.0.23-Portable.exe";
+const SETUP_INDIRME_LINKI = "https://github.com/maNgao7/mng-license-server1/releases/download/v7.0.24/TikMnG-Setup-7.0.24.exe";
+const PORTABLE_INDIRME_LINKI = "https://github.com/maNgao7/mng-license-server1/releases/download/v7.0.24/TikMnG-7.0.24-Portable.exe";
 const SETUP_WEB_LINKI = SETUP_INDIRME_LINKI;
 const VARSAYILAN_PAKET_LINKLERI = Object.freeze({
     BACKGROUNDS: "https://drive.usercontent.google.com/download?id=1VHwmK2Lt-DN6jVYB1Gp2sbeW6hU_rgB6&export=download&confirm=t",
@@ -785,6 +785,7 @@ const VARSAYILAN_PAKET_LINKLERI = Object.freeze({
 
 // Her güncellemede eklenen/değişen özellikler listesi
 const SURUM_NOTLARI = [
+    "v7.0.24: Ayrı TikMnG widget bağlantıları ve Yaratık Arena 0.1.31.",
     "v7.0.23: Oyun kurulum videoları, hediye tasarımı ve Yaratık Arena 0.1.30.",
     "v7.0.22: Turkish Forza 0.5.6, sesli yorum ve kalıcı Racon widget güncellemeleri.",
     "v7.0.21: Uslu Yaratık ve indirilebilir hazır hediye görseli eklendi.",

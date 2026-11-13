@@ -30,7 +30,8 @@ test('Arena public catalog keeps existing layout, free demo and original downloa
   for(const size of [{width:1440,height:1000},{width:390,height:844}]){
     await page.setViewportSize(size);await page.goto(base+'/',{waitUntil:'networkidle'});
     const card=page.locator('[data-game="yaratik-arena"]');await card.scrollIntoViewIfNeeded();
-    assert.equal(await card.count(),1);assert.ok(await card.locator('img').evaluate(image=>image.complete&&image.naturalWidth>0));
+    assert.equal(await card.count(),1);
+    await card.locator('img').evaluate(image=>image.decode());
     assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),true);
     await page.screenshot({path:path.join(output,`catalog-${size.width}.png`)});
     await card.getByRole('button').click();
@@ -43,5 +44,6 @@ test('Arena public catalog keeps existing layout, free demo and original downloa
   }
   assert.deepEqual(errors,[]);
   const guide=Buffer.from(await(await fetch(base+'/gift-guides/yaratik-arena.png')).arrayBuffer());
-  assert.deepEqual(guide,fs.readFileSync('D:/TikMnG-CanEmAll-Prototype/assets/publishing/yaratik-arena-gifts.png'));
+  assert.equal(crypto.createHash('sha256').update(guide).digest('hex'),
+    '049b2a1c6d18d4f2d69f98e344030350ca0300770f52e6b1812fb7d30d79c812');
 });
