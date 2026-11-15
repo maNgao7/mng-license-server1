@@ -1,8 +1,39 @@
 {
   "schemaVersion": 1,
-  "revision": 1,
-  "publishedAt": "2026-10-23T14:30:00Z",
+  "revision": 2026111501,
+  "publishedAt": "2026-11-15T00:00:00Z",
   "games": [
+    {
+      "id": "hapisten-kac",
+      "title": "Hapisten Kaç",
+      "description": "Hapisten çıkışa ilerle. Canlı yayın hediyeleri kaçış mücadelesine destek ve engeller ekler.",
+      "version": "0.2.0",
+      "url": "https://github.com/maNgao7/mng-license-server1/releases/download/v7.0.25/hapisten-kac.zip",
+      "sha256": "053b4e16eba615f9b49aeec3c0f1b83687585d8e905a84ab4b314c7b75e92e08",
+      "bytes": 123633159,
+      "requirements": "Önce Steam'den ücretsiz Punch Your Way Out Demo (App ID: 5466880) kurulmalıdır. Ardından TikMnG üzerinden mod paketini yükle. Windows 10/11 64 bit ve canlı yayın etkileşimleri için internet bağlantısı gerekir.",
+      "resources": [
+        {
+          "title": "Steam: Punch Your Way Out Demo",
+          "url": "https://store.steampowered.com/app/5466880/"
+        },
+        {
+          "title": "Hapisten Kaç hediye görseli",
+          "url": "https://tikmng.com/gift-guides/TikMnG-Hapisten-Kac-Hediyeler.png"
+        }
+      ]
+    },
+    {
+      "id": "profile-duel",
+      "title": "Teke Tek Profil",
+      "description": "Gül soldaki, TikTok hediyesi sağdaki profile puan kazandırır. Süre sonunda kazanan kalır, yeni rakip gelir.",
+      "version": "0.5.7",
+      "url": "https://github.com/maNgao7/mng-license-server1/releases/download/v7.0.25/profile-duel.zip",
+      "sha256": "1f32788cd6f6905659d35cf3b9c850d3b9462461e90a0ed43b6b66c46b609e0a",
+      "bytes": 123171,
+      "requirements": "Windows 10/11. Oyun, ortak TikTok yayın bağlantısını kullanır. HTTPS widget adresi oyun ve yayın bağlantısı açıkken çalışır.",
+      "resources": []
+    },
     {
       "id": "caahr",
       "title": "Sesli Sürüş",
@@ -70,28 +101,6 @@
       "resources": []
     },
     {
-      "id": "crowd-control",
-      "title": "MNG Crowd Control",
-      "description": "İzleyicilerin hediyeleri bir anda engel ya da desteğe dönüşür. Etrafını saran tehditlerden kaç, güçlen ve boss karşılaşmalarını aş.",
-      "version": "6.5.5",
-      "url": "https://mng-license-server1.onrender.com/download/game/crowd-control.zip",
-      "sha256": null,
-      "bytes": null,
-      "requirements": "",
-      "resources": []
-    },
-    {
-      "id": "battle-game",
-      "title": "Şövalye Savaşı",
-      "description": "Canlı yayındaki hediyeler savaş alanına asker taşır. İki ordunun mücadelesinde izleyiciler kendi tarafını güçlendirerek savaşın gidişatını değiştirir.",
-      "version": "6.5.5",
-      "url": "https://mng-license-server1.onrender.com/download/game/battle-game.zip",
-      "sha256": null,
-      "bytes": null,
-      "requirements": "",
-      "resources": []
-    },
-    {
       "id": "gelene-gecene",
       "title": "Gelene Geçene",
       "description": "Unturned dünyasında yayın hediyeleri canavarlara dönüşür. Kurtuluş görevini tamamlamaya çalışırken izleyicilerin kalkan, bomba ve yeni düşman hamlelerine uyum sağla.",
@@ -132,28 +141,6 @@
       "url": "https://mng-license-server1.onrender.com/download/game/frog-river.zip",
       "sha256": null,
       "bytes": null,
-      "requirements": "",
-      "resources": []
-    },
-    {
-      "id": "penalty-kick",
-      "title": "Süper Lig (Penaltı)",
-      "description": "Nişan al, penaltı ve frikik şutlarını çek. Yayın hediyeleri takımları, kaleciyi ve saha olaylarını değiştirirken canlı skoru belirle.",
-      "version": "6.5.10",
-      "url": "https://github.com/maNgao7/mng-license-server1/releases/download/v6.5.10/penalty-kick.zip",
-      "sha256": "81e0f23fd0ddb290d20c884043dc0eefccf33e15780e80266ebc8a7aeec99039",
-      "bytes": 93293252,
-      "requirements": "",
-      "resources": []
-    },
-    {
-      "id": "tightrope-balance",
-      "title": "Dengesiz Yayıncı",
-      "description": "İki dağ arasındaki ipte hedefe yürürken hediyeler sağ ve sol kavanozları doldurur. Ağırlığı dengele, izleyicilerin hamlelerine karşı ayakta kal ve uçurumu aş.",
-      "version": "6.5.10",
-      "url": "https://github.com/maNgao7/mng-license-server1/releases/download/v6.5.10/tightrope-balance.zip",
-      "sha256": "4cfb2f5374944da6cc8906085bb3d977a5a04f3e02e92e68e4e917b5cee026a0",
-      "bytes": 58639241,
       "requirements": "",
       "resources": []
     },

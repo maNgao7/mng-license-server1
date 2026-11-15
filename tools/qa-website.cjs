@@ -35,7 +35,7 @@ async function main() {
     if (!external) await page.route('**/api/version',route => route.fulfill({json:{latestVersion:version}}));
     await page.goto(origin, {waitUntil:'networkidle'});
     await page.waitForSelector('.portal-news-button');
-    assert.equal(await page.locator('.catalog-card').count(), 16);
+    assert.equal(await page.locator('.catalog-card').count(), catalog.games.length);
     assert.equal(await page.locator('#games').count(), 1);
     assert.deepEqual(await page.locator('[data-game]').evaluateAll(nodes => nodes.map(node => node.dataset.game)),catalog.games.map(game => game.id));
     assert.equal(await page.locator('#adminEntry').getAttribute('href'),'/admin/');
@@ -51,6 +51,11 @@ async function main() {
       assert.equal(await page.locator('#portalDialogTitle').innerText(),game.title);
       assert.equal(await page.locator('#portalDetail .game-dialog-content>ul li').count(),game.features.length);
       assert.equal(await page.locator('#portalDetail .game-setup-notes li').count(),4);
+      if (game.id === 'hapisten-kac') {
+        assert.match(await page.locator('#portalDetail .game-dialog-requirement').innerText(), /Punch Your Way Out Demo.*5466880/);
+        assert.equal(await page.locator('#portalDetail a[href="https://store.steampowered.com/app/5466880/"]').count(), 1);
+        assert.equal(await page.locator('#portalDetail a[download="TikMnG-Hapisten-Kac-Hediyeler.png"]').count(), 1);
+      }
       if (game.id === 'minecraft-snake-arena') {
         const controls = await page.locator('#portalDetail .game-setup-notes li').last().innerText();
         assert.match(controls,/Tab ile 300/); assert.match(controls,/O ile savaşın 10 saniyelik/); assert.match(controls,/WASD/);
@@ -71,12 +76,12 @@ async function main() {
     await page.locator('#gameSearch').fill('bulunmayan-oyun-123');
     assert.equal(await page.locator('#catalogEmpty').isVisible(),true);
     await page.locator('#clearGameFilters').click();
-    assert.equal(await page.locator('.catalog-card:visible').count(),16);
+    assert.equal(await page.locator('.catalog-card:visible').count(),catalog.games.length);
     await page.locator('#gameSearch').fill('surus');
     assert.equal(await page.locator('.catalog-card:visible').count(),1);
     await page.locator('#gameSearch').fill('');
     await page.locator('.portal-news-button').click();
-    assert.equal(await page.locator('[data-news-game]').count(),16);
+    assert.equal(await page.locator('[data-news-game]').count(),catalog.games.length);
     await page.keyboard.press('Tab');
     assert.equal(await page.locator('#portalDetail').evaluate(node => node.contains(document.activeElement)),true);
     await page.locator('[data-news-game="caahr"]').click();
@@ -121,7 +126,7 @@ async function main() {
     await page.waitForSelector('html[data-ready="true"]');
     assert.equal(await page.locator('#layoutType option').count(),6);
     assert.deepEqual(errors,[]);
-    fs.writeFileSync(path.join(out,'result.json'),JSON.stringify({passed:true,games:16,coverDecodes:covers.length,gameDetailDialogs:16*(1+sizes.length),setupNotesPerGame:4,initialViewport:{width:1440,height:960},filterSearch:true,notifications:16,designerReachable:true,adminVisible:true,sizes,errors},null,2));
+    fs.writeFileSync(path.join(out,'result.json'),JSON.stringify({passed:true,games:catalog.games.length,coverDecodes:covers.length,gameDetailDialogs:catalog.games.length*(1+sizes.length),setupNotesPerGame:4,initialViewport:{width:1440,height:960},filterSearch:true,notifications:catalog.games.length,designerReachable:true,adminVisible:true,sizes,errors},null,2));
     console.log(`Website QA passed: ${out}`);
   } finally { await browser?.close(); if(server.listening)await new Promise(resolve => server.close(resolve)); }
 }

@@ -1,7 +1,24 @@
 {
-  "revision": "20261112-7.0.21",
-  "heading": "19 oyun. Her yayına başka bir heyecan.",
+  "revision": "20261115-7.0.25",
+  "heading": "17 oyun. Her yayına başka bir heyecan.",
   "games": [
+    {
+      "id": "hapisten-kac",
+      "title": "Hapisten Kaç",
+      "category": "Hayatta Kalma",
+      "cover": "hapisten-kac-v1",
+      "isNew": true,
+      "tagline": "Hapisten çık. Yayınınla özgürlüğe ilerle.",
+      "description": "Hapisten çıkışa ilerle. Canlı yayın hediyeleri kaçış mücadelesine destek ve engeller ekler.",
+      "features": [
+        "Hapisten kaçış mücadelesi",
+        "Canlı yayın hediyeleriyle destek ve engeller",
+        "TikMnG üzerinden mod kurulumu"
+      ],
+      "requirements": "Önce Steam'den ücretsiz Punch Your Way Out Demo (App ID: 5466880) kurulmalıdır. Ardından TikMnG üzerinden mod paketini yükle. Windows 10/11 64 bit ve canlı yayın etkileşimleri için internet bağlantısı gerekir.",
+      "steamUrl": "https://store.steampowered.com/app/5466880/",
+      "giftGuide": "/gift-guides/TikMnG-Hapisten-Kac-Hediyeler.png"
+    },
     {
       "id": "rezervuar-01",
       "title": "Uslu Yaratık",
@@ -112,21 +129,6 @@
       "requirements": "Oyun paketi launcher üzerinden ayrı indirilir."
     },
     {
-      "id": "tightrope-balance",
-      "title": "Dengesiz Yayıncı",
-      "category": "Yarış & Beceri",
-      "cover": "tightrope-balance-v4",
-      "isNew": false,
-      "tagline": "İki kavanoz. Bir ip. İncecik bir denge.",
-      "description": "İki dağ arasındaki ipte hedefe yürürken hediyeler sağ ve sol kavanozları doldurur. Ağırlığı dengele, izleyicilerin hamlelerine karşı ayakta kal ve uçurumu aş.",
-      "features": [
-        "Hediye ağırlık fiziği",
-        "Sesli denge desteği",
-        "Profil fotoğraflı izleyiciler"
-      ],
-      "requirements": "Windows 10 / 11, 64 bit."
-    },
-    {
       "id": "battle-royale",
       "title": "Minecraft, PUBG",
       "category": "Minecraft",
@@ -202,21 +204,6 @@
       "requirements": "Windows 10 / 11, 64 bit."
     },
     {
-      "id": "battle-game",
-      "title": "Şövalye Savaşı",
-      "category": "Aksiyon & Strateji",
-      "cover": "battle-game-v3",
-      "isNew": false,
-      "tagline": "Ordular izleyicilerden güç alır.",
-      "description": "Canlı yayındaki hediyeler savaş alanına asker taşır. İki ordunun mücadelesinde izleyiciler kendi tarafını güçlendirerek savaşın gidişatını değiştirir.",
-      "features": [
-        "Hediye ile asker üretimi",
-        "İki ordu arasında rekabet",
-        "Canlı savaş sahnesi"
-      ],
-      "requirements": "Windows 10 / 11, 64 bit."
-    },
-    {
       "id": "gelene-gecene",
       "title": "Gelene Geçene",
       "category": "Aksiyon & Strateji",
@@ -273,21 +260,6 @@
         "Nehir yarışı",
         "Kurbağa seçimi",
         "Canlı destek ve cezalar"
-      ],
-      "requirements": "Windows 10 / 11, 64 bit."
-    },
-    {
-      "id": "penalty-kick",
-      "title": "Süper Lig",
-      "category": "Yarış & Beceri",
-      "cover": "penalty-kick-v3",
-      "isNew": false,
-      "tagline": "Bir şut, bütün yayının nefesini tutar.",
-      "description": "Nişan al, penaltı ve frikik şutlarını çek. Yayın hediyeleri takımları, kaleciyi ve saha olaylarını değiştirirken canlı skoru belirle.",
-      "features": [
-        "Penaltı ve frikik",
-        "Hediye ile saha olayları",
-        "Canlı skor rekabeti"
       ],
       "requirements": "Windows 10 / 11, 64 bit."
     }

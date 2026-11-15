@@ -16,6 +16,8 @@ const remote = "https://93.184.216.34/download/game.zip";
 const mp4 = Buffer.concat([Buffer.from("000000186674797069736f6d0000020069736f6d6d703432", "hex"), Buffer.from("000000086d646174", "hex")]);
 const webm = Buffer.from("1a45dfa3874282847765626d1853806700", "hex");
 const digest = value => crypto.createHash("sha256").update(value).digest("hex");
+const withdrawn = new Set(['crowd-control', 'battle-game', 'penalty-kick', 'tightrope-balance']);
+const publicView = catalog => ({ ...catalog, games: catalog.games.filter(game => !withdrawn.has(game.id)) });
 const legacyPackages = [
     ["vs", "6.5.7", "tiktok-vs"], ["puanlama", "6.5.7", "tiktok-vs"],
     ["crowd-control", "6.5.5", "crowd-control"], ["battle-game", "6.5.5", "battle-game"],
@@ -108,7 +110,7 @@ test('server retains customized catalog data and hides only the withdrawn Crowd 
     const previous = JSON.parse(fs.readFileSync(path.join(root, 'content-bootstrap-7.0.6.json'), 'utf8'));
     previous.games[0].description = 'Administrator custom description';
     const f = await fixture(t, {}, { initialCatalog: previous });
-    assert.deepEqual(await f.public(), { ...previous, games: previous.games.filter(game => game.id !== 'crowd-control') });
+    assert.deepEqual(await f.public(), { ...previous, games: previous.games.filter(game => !withdrawn.has(game.id)) });
     assert.deepEqual((await f.get()).published, previous);
     assert.deepEqual((await f.get()).draft, previous);
     assert.equal(fs.existsSync(path.join(f.dir, 'content-state.backup.json')), false);
@@ -126,7 +128,7 @@ test('published Minecraft 7.0.3 catalog receives the first-install repair once w
     assert.deepEqual(await f.public(), current);
     const custom = structuredClone(previous); custom.games[0].description = 'Custom live administrator setting';
     const g = await fixture(t, {}, { initialCatalog: custom });
-    assert.deepEqual(await g.public(), { ...custom, games: custom.games.filter(game => game.id !== 'crowd-control') });
+    assert.deepEqual(await g.public(), { ...custom, games: custom.games.filter(game => !withdrawn.has(game.id)) });
     assert.deepEqual((await g.get()).published, custom);
 });
 
@@ -145,7 +147,8 @@ for (const [filename, revision, arenaVersion] of [
     ['content-bootstrap-7.0.20.json', 2026111201, '0.1.29'],
     ['content-bootstrap-7.0.21.json', 2026111202, '0.1.29'],
     ['content-bootstrap-7.0.22.json', 2026111203, '0.1.29'],
-    ['content-bootstrap-7.0.23.json', 2026111204, '0.1.30']
+    ['content-bootstrap-7.0.23.json', 2026111204, '0.1.30'],
+    ['content-bootstrap-7.0.24.json', 2026111301, '0.1.31']
 ]) test(`actual rev${revision} catalog receives the current games once and retains its full backup`, async t => {
     const previous = JSON.parse(fs.readFileSync(path.join(root, filename), 'utf8'));
     const current = JSON.parse(fs.readFileSync(path.join(root, 'content-defaults.json'), 'utf8'));
@@ -156,7 +159,7 @@ for (const [filename, revision, arenaVersion] of [
     const published = await f.public();
     assert.deepEqual(published, current);
     assert.deepEqual(published.games.find(game => game.id === 'yaratik-arena'), current.games.find(game => game.id === 'yaratik-arena'));
-    const changed = new Set(['yaratik-arena', 'orbit', 'turkish-forza-05', 'profile-duel', 'rezervuar-01']);
+    const changed = new Set(['yaratik-arena', 'orbit', 'turkish-forza-05', 'profile-duel', 'rezervuar-01', 'hapisten-kac', ...withdrawn]);
     assert.deepEqual(published.games.filter(game => !changed.has(game.id)), previous.games.filter(game => !changed.has(game.id)));
     assert.deepEqual(published.media, previous.media);
     assert.deepEqual(published.launcher, previous.launcher);
@@ -167,8 +170,9 @@ for (const [filename, revision, arenaVersion] of [
     assert.deepEqual(JSON.parse(fs.readFileSync(path.join(f.dir, 'content-state.json'), 'utf8')), { draft: current, published: current });
     assert.deepEqual(fs.readdirSync(path.join(f.dir, 'content-revisions')), []);
     const version = (await f.request('/api/version', 'GET', undefined, false)).data;
-    assert.equal(version.latestVersion, '7.0.24');
-    assert.equal(version.downloadUrl, 'https://github.com/maNgao7/mng-license-server1/releases/download/v7.0.24/TikMnG-Setup-7.0.24.exe');
+    assert.equal(version.latestVersion, '7.0.25');
+    assert.equal(version.downloadUrl, 'https://github.com/maNgao7/mng-license-server1/releases/download/v7.0.25/TikMnG-Setup-7.0.25.exe');
+    assert.equal(version.webUrl, 'https://tikmng.com/download/setup');
     for (const name of licenseFiles) assert.deepEqual(JSON.parse(fs.readFileSync(path.join(f.dir, `${name}.json`))), []);
     await f.stop(); await f.start();
     assert.deepEqual(await f.public(), current);
@@ -177,7 +181,7 @@ for (const [filename, revision, arenaVersion] of [
 });
 
 test('Arena hotfix startup and restart retain customized rev11, rev12 and rev13 catalogs and pending administrator drafts', async t => {
-    const baselines = ['content-bootstrap-7.0.15.json', 'content-bootstrap-arena-0.1.21.json', 'content-bootstrap-arena-0.1.22.json', 'content-bootstrap-arena-0.1.23.json']
+    const baselines = ['content-bootstrap-7.0.15.json', 'content-bootstrap-arena-0.1.21.json', 'content-bootstrap-arena-0.1.22.json', 'content-bootstrap-arena-0.1.23.json', 'content-bootstrap-7.0.24.json']
         .map(filename => JSON.parse(fs.readFileSync(path.join(root, filename), 'utf8')));
     const changes = [
         ['Arena', catalog => catalog.games[0].title = 'Administrator Arena title'],
@@ -197,7 +201,7 @@ test('Arena hotfix startup and restart retain customized rev11, rev12 and rev13 
             const retained = fs.readFileSync(stateFile, 'utf8');
             for (let attempt = 0; attempt < 2; attempt++) {
                 assert.deepEqual(await f.get(), initialState);
-                assert.deepEqual(await f.public(), initialState.published);
+                assert.deepEqual(await f.public(), publicView(initialState.published));
                 assert.equal(fs.readFileSync(stateFile, 'utf8'), retained);
                 assert.equal(fs.existsSync(path.join(f.dir, 'content-state.backup.json')), false);
                 assert.deepEqual(fs.readdirSync(path.join(f.dir, 'content-revisions')), []);
@@ -215,7 +219,7 @@ test("public defaults include Uslu Yaratık, Forza and Teke Tek Profil and exclu
     assert.match(response.headers.get("etag"), /^"[a-f0-9]{64}"$/);
     assert.equal(response.data.launcher, undefined);
     const byId = Object.fromEntries(response.data.games.map(item => [item.id, item]));
-    assert.equal(response.data.games.length, 20);
+    assert.equal(response.data.games.length, 18);
     assert.equal(byId['yaratik-arena'].version, '0.1.31');
     assert.equal(byId['yaratik-arena'].url, 'https://github.com/maNgao7/mng-license-server1/releases/download/v7.0.24/yaratik-arena.zip');
     assert.equal(byId['yaratik-arena'].bytes, 151527788);
@@ -225,7 +229,11 @@ test("public defaults include Uslu Yaratık, Forza and Teke Tek Profil and exclu
     assert.equal(byId['rezervuar-01'].sha256, 'a5d3b0590f714b1cb67c5c849ac2ef5ac9db9bd5fe7109bf2da65c70995a56cf');
     assert.match(byId['rezervuar-01'].url, /\/v7\.0\.21\/uslu-yaratik\.zip$/);
     assert.equal(byId['turkish-forza-05'].version, '0.5.6');
-    assert.equal(byId['profile-duel'].version, '0.5.6');
+    assert.equal(byId['profile-duel'].version, '0.5.7');
+    assert.equal(byId['hapisten-kac'].version, '0.2.0');
+    assert.match(byId['hapisten-kac'].requirements, /Punch Your Way Out Demo.*5466880/);
+    for (const id of withdrawn) assert.equal(byId[id], undefined);
+    for (const id of ['profile-duel', 'hapisten-kac']) assert.equal(byId[id].url, `https://github.com/maNgao7/mng-license-server1/releases/download/v7.0.25/${id}.zip`);
     assert.equal(byId.orbit.version, '7.0.3');
     assert.equal(byId.orbit.files[0].sha256, '331fdd1a38e4f489e5dd1da6bd760ee257b9cc83e1fc92456eb3c4964bb81e7d');
     assert.equal(byId['profile-contest'].version, '0.3.0');
@@ -233,7 +241,7 @@ test("public defaults include Uslu Yaratık, Forza and Teke Tek Profil and exclu
     assert.equal(byId['profile-contest'].sha256, 'bfea65a15399612a8cfea4a74bc6e0718b757e220544451aa4ab583d02dca7ab');
     assert.equal(byId['crowd-control'], undefined);
     assert.equal(response.data.media.length, 285);
-    assert.equal(response.data.revision, 2026111301);
+    assert.equal(response.data.revision, 2026111501);
     assert.equal(byId.caahr.version, '0.6.12');
     assert.equal(byId.caahr.bytes, 63233577);
     assert.equal(byId['frog-river'].version,'7.0.5');
@@ -257,7 +265,7 @@ test("public defaults include Uslu Yaratık, Forza and Teke Tek Profil and exclu
         assert.equal(byId[id].bytes, bytes);
         assert.equal(byId[id].sha256, sha256);
     }
-    for (const id of ['vs','puanlama','orbit','battle-game','duck-hunt','pony-life','penalty-kick','tightrope-balance','battle-royale','snow-war','minecraft-snake-arena']) {
+    for (const id of ['vs','puanlama','orbit','duck-hunt','pony-life','battle-royale','snow-war','minecraft-snake-arena']) {
         const game = byId[id];
         const minecraftUpdate=['snow-war','battle-royale'].includes(id);
         assert.equal(game.version, id === 'minecraft-snake-arena' ? '0.16.0' : id === 'orbit' ? '7.0.3' : minecraftUpdate ? '7.0.4' : '7.0.2');
@@ -308,11 +316,10 @@ test("legacy Minecraft links redirect to the corrected published archives", asyn
     }
 });
 
-test("legacy overrides cannot replace the immutable published package or its hash", async t => {
+test("a retired legacy override remains usable without repopulating the public catalog", async t => {
     const f = await fixture(t, { GAME_DOWNLOAD_BATTLE_GAME_URL: remote });
     const game = (await f.public()).games.find(item => item.id === "battle-game");
-    assert.match(game.url, /\/game-installers-7\.0\.2\/battle-game-7\.0\.2\.zip$/);
-    assert.match(game.sha256, /^[a-f0-9]{64}$/); assert.ok(game.bytes > 0);
+    assert.equal(game, undefined);
     const response = await fetch(f.base + '/download/game/battle-game.zip', { redirect: "manual" });
     assert.equal(response.status, 302);
     assert.equal(response.headers.get("location"), remote);

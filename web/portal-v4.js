@@ -54,7 +54,7 @@ document.addEventListener('DOMContentLoaded', () => {
     openDialog(`<div class="game-dialog-layout"><img class="game-dialog-art" src="/game-covers/${game.cover}-1000.webp" alt="${esc(game.title)} kapağı" width="1000" height="667"><div class="game-dialog-content"><span class="catalog-eyebrow">${esc(game.category)}</span><h2 id="portalDialogTitle">${esc(game.title)}</h2><p>${esc(game.description)}</p><ul>${game.features.map(feature => `<li>${icon('check')}${esc(feature)}</li>`).join('')}</ul><p class="game-dialog-requirement">${esc(game.requirements)}</p><a class="portal-command primary" href="/download/setup">${icon('download')} Launcher'ı indir</a></div></div>`, source);
     gameSetup(game);
     const content = dialog.querySelector('.game-dialog-content');
-    if (game.id === 'yaratik-arena') {
+    if (game.steamUrl) {
       const demo = document.createElement('a'); demo.className='portal-command'; demo.href=game.steamUrl;
       demo.target='_blank'; demo.rel='noopener noreferrer'; demo.textContent="Steam'den ücretsiz demoyu indir";
       content.append(demo);
@@ -90,7 +90,7 @@ document.addEventListener('DOMContentLoaded', () => {
   document.querySelector('.nav-actions').prepend(newsButton);
   try { newsButton.classList.toggle('is-read',localStorage.getItem('tikmng-website-news') === catalog.revision); } catch {}
   function openNews(source) {
-    openDialog(`<div class="portal-news-content"><span class="catalog-eyebrow">TIKMNG'DE YENİLİKLER</span><h2 id="portalDialogTitle">${games.length} oyun, yepyeni bir keşif alanı.</h2><p>Minecraft Yılan Oyunu artık kütüphanede. Oyunları kapakları, mekanikleri ve kurulum gereksinimleriyle keşfet. Launcher'daki hediye tasarım aracını webde de kullan.</p><div class="portal-news-list">${games.map(game => `<a href="#games" data-news-game="${game.id}"><img src="/game-covers/${game.cover}-500.webp" alt="" width="72" height="48" loading="lazy"><span>${esc(game.title)}<small>${esc(game.category)}${game.isNew ? ' · Yeni' : ''}</small></span></a>`).join('')}</div><a class="portal-command primary" href="/hediye-tasarimi">${icon('gift')} Hediye tasarımını aç</a></div>`,source);
+    openDialog(`<div class="portal-news-content"><span class="catalog-eyebrow">TIKMNG'DE YENİLİKLER</span><h2 id="portalDialogTitle">${games.length} oyun, yepyeni bir keşif alanı.</h2><p>Hapisten Kaç artık kütüphanede. Önce Steam'den Punch Your Way Out Demo'yu kur. Oyunları kapakları, mekanikleri ve kurulum gereksinimleriyle keşfet. Launcher'daki hediye tasarım aracını webde de kullan.</p><div class="portal-news-list">${games.map(game => `<a href="#games" data-news-game="${game.id}"><img src="/game-covers/${game.cover}-${game.id === 'hapisten-kac' ? 480 : 500}.webp" alt="" width="72" height="48" loading="lazy"><span>${esc(game.title)}<small>${esc(game.category)}${game.isNew ? ' · Yeni' : ''}</small></span></a>`).join('')}</div><a class="portal-command primary" href="/hediye-tasarimi">${icon('gift')} Hediye tasarımını aç</a></div>`,source);
     try { localStorage.setItem('tikmng-website-news',catalog.revision); newsButton.classList.add('is-read'); } catch {}
     dialog.querySelectorAll('[data-news-game]').forEach(link => link.addEventListener('click', event => {
       event.preventDefault(); const id = link.dataset.newsGame; dialog.close(); openGame(id,source);

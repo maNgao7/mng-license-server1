@@ -24,6 +24,7 @@ const launcher709Baseline = JSON.parse(fs.readFileSync(new URL("./content-bootst
 const launcher714Baseline = JSON.parse(fs.readFileSync(new URL("./content-bootstrap-7.0.14.json", import.meta.url), "utf8"));
 const launcher715Baseline = JSON.parse(fs.readFileSync(new URL("./content-bootstrap-7.0.15.json", import.meta.url), "utf8"));
 const launcher723Baseline = JSON.parse(fs.readFileSync(new URL("./content-bootstrap-7.0.23.json", import.meta.url), "utf8"));
+const launcher724Baseline = JSON.parse(fs.readFileSync(new URL("./content-bootstrap-7.0.24.json", import.meta.url), "utf8"));
 const launcher722Baseline = JSON.parse(fs.readFileSync(new URL("./content-bootstrap-7.0.22.json", import.meta.url), "utf8"));
 const launcher721Baseline = JSON.parse(fs.readFileSync(new URL("./content-bootstrap-7.0.21.json", import.meta.url), "utf8"));
 const launcher720Baseline = JSON.parse(fs.readFileSync(new URL("./content-bootstrap-7.0.20.json", import.meta.url), "utf8"));
@@ -255,7 +256,8 @@ export function registerContentRoutes(app, { dataDir, adminKontrol }) {
         atomicWrite(stateFile, JSON.stringify(state));
     }
     const currentDefaults = catalogShape(defaults, assetsDir).catalog;
-    const upgraded = upgradedBootstrapState(state, catalogShape(launcher723Baseline, assetsDir).catalog, currentDefaults, { allowReleasedBaseline: true })
+    const upgraded = upgradedBootstrapState(state, catalogShape(launcher724Baseline, assetsDir).catalog, currentDefaults, { allowReleasedBaseline: true })
+        || upgradedBootstrapState(state, catalogShape(launcher723Baseline, assetsDir).catalog, currentDefaults, { allowReleasedBaseline: true })
         || upgradedBootstrapState(state, catalogShape(launcher722Baseline, assetsDir).catalog, currentDefaults, { allowReleasedBaseline: true })
         || upgradedBootstrapState(state, catalogShape(launcher721Baseline, assetsDir).catalog, currentDefaults, { allowReleasedBaseline: true })
         || upgradedBootstrapState(state, catalogShape(launcher720Baseline, assetsDir).catalog, currentDefaults, { allowReleasedBaseline: true })
@@ -312,7 +314,8 @@ export function registerContentRoutes(app, { dataDir, adminKontrol }) {
     };
     app.get("/api/content/catalog", (req, res) => {
         const selected = componentCatalog(state.published, req.get('X-TikMnG-Content'), componentRollout);
-        const body = JSON.stringify({ ...selected, games: selected.games.filter(game => game.id !== 'crowd-control') });
+        const withdrawn = new Set(['crowd-control', 'battle-game', 'penalty-kick', 'tightrope-balance']);
+        const body = JSON.stringify({ ...selected, games: selected.games.filter(game => !withdrawn.has(game.id)) });
         res.set({ "Cache-Control": "no-store", ETag: `"${crypto.createHash("sha256").update(body).digest("hex")}"` }).type("json").send(body);
     });
     app.get("/api/admin/content", adminKontrol, route((req, res) => res.json(state)));

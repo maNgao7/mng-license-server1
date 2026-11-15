@@ -1,8 +1,28 @@
 {
   "schemaVersion": 1,
-  "revision": 2026111301,
-  "publishedAt": "2026-11-13T13:34:12.497Z",
+  "revision": 2026111501,
+  "publishedAt": "2026-11-15T00:00:00Z",
   "games": [
+    {
+      "id": "hapisten-kac",
+      "title": "Hapisten Kaç",
+      "description": "Hapisten çıkışa ilerle. Canlı yayın hediyeleri kaçış mücadelesine destek ve engeller ekler.",
+      "version": "0.2.0",
+      "url": "https://github.com/maNgao7/mng-license-server1/releases/download/v7.0.25/hapisten-kac.zip",
+      "sha256": "053b4e16eba615f9b49aeec3c0f1b83687585d8e905a84ab4b314c7b75e92e08",
+      "bytes": 123633159,
+      "requirements": "Önce Steam'den ücretsiz Punch Your Way Out Demo (App ID: 5466880) kurulmalıdır. Ardından TikMnG üzerinden mod paketini yükle. Windows 10/11 64 bit ve canlı yayın etkileşimleri için internet bağlantısı gerekir.",
+      "resources": [
+        {
+          "title": "Steam: Punch Your Way Out Demo",
+          "url": "https://store.steampowered.com/app/5466880/"
+        },
+        {
+          "title": "Hapisten Kaç hediye görseli",
+          "url": "https://tikmng.com/gift-guides/TikMnG-Hapisten-Kac-Hediyeler.png"
+        }
+      ]
+    },
     {
       "id": "rezervuar-01",
       "title": "Uslu Yaratık",
@@ -18,10 +38,10 @@
       "id": "profile-duel",
       "title": "Teke Tek Profil",
       "description": "Gül soldaki, TikTok hediyesi sağdaki profile puan kazandırır. Süre sonunda kazanan kalır, yeni rakip gelir.",
-      "version": "0.5.6",
-      "url": "https://github.com/maNgao7/mng-license-server1/releases/download/v7.0.16/profile-duel.zip",
-      "sha256": "1ef8893d5ca37f83a2c3e62280c7f86ac946ba25b875677f8580238537d3c87a",
-      "bytes": 116280,
+      "version": "0.5.7",
+      "url": "https://github.com/maNgao7/mng-license-server1/releases/download/v7.0.25/profile-duel.zip",
+      "sha256": "1f32788cd6f6905659d35cf3b9c850d3b9462461e90a0ed43b6b66c46b609e0a",
+      "bytes": 123171,
       "requirements": "Windows 10/11. Oyun, ortak TikTok yayın bağlantısını kullanır. HTTPS widget adresi oyun ve yayın bağlantısı açıkken çalışır.",
       "resources": []
     },
@@ -165,25 +185,6 @@
       ]
     },
     {
-      "id": "battle-game",
-      "title": "Şövalye Savaşı",
-      "description": "Canlı yayındaki hediyeler savaş alanına asker taşır. İki ordunun mücadelesinde izleyiciler kendi tarafını güçlendirerek savaşın gidişatını değiştirir.",
-      "version": "7.0.2",
-      "url": "https://github.com/maNgao7/mng-license-server1/releases/download/game-installers-7.0.2/battle-game-7.0.2.zip",
-      "sha256": "3498a7c7ed4a402cc96b5a56d8d3962e440e235e21cebd821e145c9e86a48b76",
-      "bytes": 8548417,
-      "requirements": "",
-      "resources": [],
-      "files": [
-        {
-          "path": ".tikmng-content.json",
-          "url": "https://github.com/maNgao7/mng-license-server1/releases/download/games-7.0.2/game-content-battle-game-7.0.2.json",
-          "bytes": 1401356,
-          "sha256": "7f3bca08203e80a23b59e32884d6547f388118220127ab86953ffd9018063a6b"
-        }
-      ]
-    },
-    {
       "id": "gelene-gecene",
       "title": "Gelene Geçene",
       "description": "Unturned dünyasında yayın hediyeleri canavarlara dönüşür. Kurtuluş görevini tamamlamaya çalışırken izleyicilerin kalkan, bomba ve yeni düşman hamlelerine uyum sağla.",
@@ -242,44 +243,6 @@
       "bytes": 70661187,
       "requirements": "",
       "resources": []
-    },
-    {
-      "id": "penalty-kick",
-      "title": "Süper Lig (Penaltı)",
-      "description": "Nişan al, penaltı ve frikik şutlarını çek. Yayın hediyeleri takımları, kaleciyi ve saha olaylarını değiştirirken canlı skoru belirle.",
-      "version": "7.0.2",
-      "url": "https://github.com/maNgao7/mng-license-server1/releases/download/game-installers-7.0.2/penalty-kick-7.0.2.zip",
-      "sha256": "33dbd532321e00519563e3f309aa319d2da74d0219c65bb011e0a9e60d47cf73",
-      "bytes": 60896834,
-      "requirements": "",
-      "resources": [],
-      "files": [
-        {
-          "path": ".tikmng-content.json",
-          "url": "https://github.com/maNgao7/mng-license-server1/releases/download/games-7.0.2/game-content-penalty-kick-7.0.2.json",
-          "bytes": 2835061,
-          "sha256": "a5ff501f5aa82c41ee45a8523b12c2de0b2e32814ba26f7c4ab6634c333d037b"
-        }
-      ]
-    },
-    {
-      "id": "tightrope-balance",
-      "title": "Dengesiz Yayıncı",
-      "description": "İki dağ arasındaki ipte hedefe yürürken hediyeler sağ ve sol kavanozları doldurur. Ağırlığı dengele, izleyicilerin hamlelerine karşı ayakta kal ve uçurumu aş.",
-      "version": "7.0.2",
-      "url": "https://github.com/maNgao7/mng-license-server1/releases/download/game-installers-7.0.2/tightrope-balance-7.0.2.zip",
-      "sha256": "7998329d3aa63e1226f6353af49ff470ee6e7f24cdb6839200bb5bcb683a8ac6",
-      "bytes": 15588641,
-      "requirements": "",
-      "resources": [],
-      "files": [
-        {
-          "path": ".tikmng-content.json",
-          "url": "https://github.com/maNgao7/mng-license-server1/releases/download/games-7.0.2/game-content-tightrope-balance-7.0.2.json",
-          "bytes": 1017993,
-          "sha256": "e0c9bf51dc07c57693b9724e822d68cfef9d8512bae463f2c6c7d8db88d03830"
-        }
-      ]
     },
     {
       "id": "zombie-war",

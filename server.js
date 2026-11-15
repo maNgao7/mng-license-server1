@@ -19,6 +19,7 @@ import { createShopierCheckout, shopierProductIds } from "./shopier-checkout.js"
 import { checkShopierOffer } from "./shopier-payment.js";
 import { createLicenseLedger } from "./license-ledger.js";
 import { manualShopierUrl, salesPlans } from "./web/sales-catalog.js";
+import { createLatestInstallerResolver, registerInstallerDownloads } from './release-downloads.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -768,11 +769,12 @@ function logEkle(lisansKod, cihazKimlik, islem, ip) {
 // =====================================================================
 // SÜRÜM BİLGİLERİ & İNDİRME LİNKLERİ
 // =====================================================================
-const EN_GUNCEL_SURUM = "7.0.24";
+const EN_GUNCEL_SURUM = "7.0.25";
 const EN_DUSUK_SURUM = "1.0.0";
-const SETUP_INDIRME_LINKI = "https://github.com/maNgao7/mng-license-server1/releases/download/v7.0.24/TikMnG-Setup-7.0.24.exe";
-const PORTABLE_INDIRME_LINKI = "https://github.com/maNgao7/mng-license-server1/releases/download/v7.0.24/TikMnG-7.0.24-Portable.exe";
-const SETUP_WEB_LINKI = SETUP_INDIRME_LINKI;
+const SETUP_INDIRME_LINKI = "https://github.com/maNgao7/mng-license-server1/releases/download/v7.0.25/TikMnG-Setup-7.0.25.exe";
+const PORTABLE_INDIRME_LINKI = "https://github.com/maNgao7/mng-license-server1/releases/download/v7.0.25/TikMnG-7.0.25-Portable.exe";
+const SETUP_WEB_LINKI = 'https://tikmng.com/download/setup';
+const resolveLatestInstaller = createLatestInstallerResolver({ fallbackUrl: SETUP_INDIRME_LINKI });
 const VARSAYILAN_PAKET_LINKLERI = Object.freeze({
     BACKGROUNDS: "https://drive.usercontent.google.com/download?id=1VHwmK2Lt-DN6jVYB1Gp2sbeW6hU_rgB6&export=download&confirm=t",
     MNG_ORBIT: "https://github.com/maNgao7/mng-license-server1/releases/download/v6.5.16/mng-orbit.zip",
@@ -785,6 +787,7 @@ const VARSAYILAN_PAKET_LINKLERI = Object.freeze({
 
 // Her güncellemede eklenen/değişen özellikler listesi
 const SURUM_NOTLARI = [
+    "v7.0.25: Hapisten Kaç 0.2.0 ve Teke Tek Profil 0.5.7. Oyun kataloğu ve güncel kurulum indirmesi yenilendi.",
     "v7.0.24: Ayrı TikMnG widget bağlantıları ve Yaratık Arena 0.1.31.",
     "v7.0.23: Oyun kurulum videoları, hediye tasarımı ve Yaratık Arena 0.1.30.",
     "v7.0.22: Turkish Forza 0.5.6, sesli yorum ve kalıcı Racon widget güncellemeleri.",
@@ -1362,15 +1365,7 @@ app.post(["/api/talep-gonder", "/api/talep"], (req, res) => {
 // DOSYA İNDİRME ENDPOINTLERİ
 // =====================================================================
 
-app.get("/download/setup", (req, res) => {
-    res.setHeader("Cache-Control", "no-store");
-    res.redirect(302, SETUP_WEB_LINKI);
-});
-
-app.get("/download/setup-direct", (req, res) => {
-    res.setHeader("Cache-Control", "no-store");
-    res.redirect(302, SETUP_INDIRME_LINKI);
-});
+registerInstallerDownloads(app, resolveLatestInstaller);
 
 app.get("/download/portable", (req, res) => {
     res.setHeader("Cache-Control", "no-store");
