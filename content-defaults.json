@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
-  "revision": 2026111501,
-  "publishedAt": "2026-11-15T00:00:00Z",
+  "revision": 2026111601,
+  "publishedAt": "2026-11-16T00:00:00Z",
   "games": [
     {
       "id": "hapisten-kac",
@@ -131,18 +131,42 @@
       "id": "vs",
       "title": "TikTok VS Profil",
       "description": "İki TikTok profilini karşı karşıya getir. İzleyicilerin katkılarıyla değişen canlı skor üzerinden yayındaki rekabeti takip et.",
-      "version": "7.0.2",
-      "url": "https://github.com/maNgao7/mng-license-server1/releases/download/game-installers-7.0.2/tiktok-vs-7.0.2.zip",
-      "sha256": "b16931136c25544027e970ef3ff636c9600dbe6e7fce542478323d22a0f729db",
-      "bytes": 347449121,
+      "version": "7.0.3",
+      "url": "https://github.com/maNgao7/mng-license-server1/releases/download/v7.0.26/tiktok-vs-7.0.3.zip",
+      "sha256": "6f0f6555ea6d1f453c9d3b03d41bbc361ef37615d696d38206b058db9cab89ad",
+      "bytes": 345709035,
       "requirements": "",
       "resources": [],
       "files": [
         {
-          "path": ".tikmng-content.json",
-          "url": "https://github.com/maNgao7/mng-license-server1/releases/download/games-7.0.2/game-content-tiktok-vs-7.0.2.json",
-          "bytes": 2454971,
-          "sha256": "ae9f7794e8f5d1c49c1aa5d678bf37319b696c2b417c1a0221d6d4572c6f412a"
+          "path": "launcher-live-client.cjs",
+          "sha256": "0af5a723419cd7ef30e8918755425a693f36c0654228d975dd07a79c2e41d046",
+          "bytes": 6435,
+          "url": "https://github.com/maNgao7/mng-license-server1/releases/download/v7.0.26/tiktok-vs-launcher-live-client.cjs"
+        },
+        {
+          "path": "launcher-live.mjs",
+          "sha256": "ac05ce410b0c1d967505d2c851e4d9b547c455c241ec6e1ddb96c5fd9708735c",
+          "bytes": 377,
+          "url": "https://github.com/maNgao7/mng-license-server1/releases/download/v7.0.26/tiktok-vs-launcher-live.mjs"
+        },
+        {
+          "path": "package.json",
+          "sha256": "c239428c6a3bbf77aa3464d27ef098b01bd46ed50fc7fc02bf3f3a699dabdd49",
+          "bytes": 519,
+          "url": "https://github.com/maNgao7/mng-license-server1/releases/download/v7.0.26/tiktok-vs-package.json"
+        },
+        {
+          "path": "public/script.js",
+          "sha256": "fa5956e1b306977c50962a1e6b22a0986bca6f12079922173b67bb33db399eec",
+          "bytes": 83188,
+          "url": "https://github.com/maNgao7/mng-license-server1/releases/download/v7.0.26/tiktok-vs-public-script.js"
+        },
+        {
+          "path": "server.js",
+          "sha256": "dc686c2c8fa0c5b52600fa1ea4484bed4ff6e419f3dc4ed144d24017fa529983",
+          "bytes": 126709,
+          "url": "https://github.com/maNgao7/mng-license-server1/releases/download/v7.0.26/tiktok-vs-server.js"
         }
       ]
     },
@@ -150,18 +174,42 @@
       "id": "puanlama",
       "title": "Profil Puanlama",
       "description": "İzleyicilerin TikTok profillerini sahneye çıkar. Sohbetten gelen oyları topla; puanları ve sıralamayı yayın boyunca takip et.",
-      "version": "7.0.2",
-      "url": "https://github.com/maNgao7/mng-license-server1/releases/download/game-installers-7.0.2/tiktok-vs-7.0.2.zip",
-      "sha256": "b16931136c25544027e970ef3ff636c9600dbe6e7fce542478323d22a0f729db",
-      "bytes": 347449121,
+      "version": "7.0.3",
+      "url": "https://github.com/maNgao7/mng-license-server1/releases/download/v7.0.26/tiktok-vs-7.0.3.zip",
+      "sha256": "6f0f6555ea6d1f453c9d3b03d41bbc361ef37615d696d38206b058db9cab89ad",
+      "bytes": 345709035,
       "requirements": "",
       "resources": [],
       "files": [
         {
-          "path": ".tikmng-content.json",
-          "url": "https://github.com/maNgao7/mng-license-server1/releases/download/games-7.0.2/game-content-tiktok-vs-7.0.2.json",
-          "bytes": 2454971,
-          "sha256": "ae9f7794e8f5d1c49c1aa5d678bf37319b696c2b417c1a0221d6d4572c6f412a"
+          "path": "launcher-live-client.cjs",
+          "sha256": "0af5a723419cd7ef30e8918755425a693f36c0654228d975dd07a79c2e41d046",
+          "bytes": 6435,
+          "url": "https://github.com/maNgao7/mng-license-server1/releases/download/v7.0.26/tiktok-vs-launcher-live-client.cjs"
+        },
+        {
+          "path": "launcher-live.mjs",
+          "sha256": "ac05ce410b0c1d967505d2c851e4d9b547c455c241ec6e1ddb96c5fd9708735c",
+          "bytes": 377,
+          "url": "https://github.com/maNgao7/mng-license-server1/releases/download/v7.0.26/tiktok-vs-launcher-live.mjs"
+        },
+        {
+          "path": "package.json",
+          "sha256": "c239428c6a3bbf77aa3464d27ef098b01bd46ed50fc7fc02bf3f3a699dabdd49",
+          "bytes": 519,
+          "url": "https://github.com/maNgao7/mng-license-server1/releases/download/v7.0.26/tiktok-vs-package.json"
+        },
+        {
+          "path": "public/script.js",
+          "sha256": "fa5956e1b306977c50962a1e6b22a0986bca6f12079922173b67bb33db399eec",
+          "bytes": 83188,
+          "url": "https://github.com/maNgao7/mng-license-server1/releases/download/v7.0.26/tiktok-vs-public-script.js"
+        },
+        {
+          "path": "server.js",
+          "sha256": "dc686c2c8fa0c5b52600fa1ea4484bed4ff6e419f3dc4ed144d24017fa529983",
+          "bytes": 126709,
+          "url": "https://github.com/maNgao7/mng-license-server1/releases/download/v7.0.26/tiktok-vs-server.js"
         }
       ]
     },
@@ -169,18 +217,42 @@
       "id": "orbit",
       "title": "MNG Orbit",
       "description": "İzleyici profilleri hareketli bir yörünge arenasında karşılaşır. Canlı yayın etkileşimleriyle büyüyen profiller rakiplerine karşı alan kazanmaya çalışır.",
-      "version": "7.0.3",
-      "url": "https://github.com/maNgao7/mng-license-server1/releases/download/orbit-7.0.3/mng-orbit-7.0.3.zip",
-      "sha256": "bc8067c6c032b747982e3bf3f3ec5890cb9638950f27160e219955d32cd48c54",
-      "bytes": 414997794,
+      "version": "7.0.4",
+      "url": "https://github.com/maNgao7/mng-license-server1/releases/download/v7.0.26/mng-orbit-7.0.4.zip",
+      "sha256": "5e8ca2efb437ff4f412b65d95d6e1854e55b16da8e39062152fac349333a2d07",
+      "bytes": 414680811,
       "requirements": "",
       "resources": [],
       "files": [
         {
-          "path": ".tikmng-content.json",
-          "url": "https://github.com/maNgao7/mng-license-server1/releases/download/orbit-7.0.3/game-content-mng-orbit-7.0.3.json",
-          "bytes": 1016167,
-          "sha256": "331fdd1a38e4f489e5dd1da6bd760ee257b9cc83e1fc92456eb3c4964bb81e7d"
+          "path": "launcher-live-client.cjs",
+          "sha256": "0af5a723419cd7ef30e8918755425a693f36c0654228d975dd07a79c2e41d046",
+          "bytes": 6435,
+          "url": "https://github.com/maNgao7/mng-license-server1/releases/download/v7.0.26/mng-orbit-launcher-live-client.cjs"
+        },
+        {
+          "path": "launcher-live.mjs",
+          "sha256": "ac05ce410b0c1d967505d2c851e4d9b547c455c241ec6e1ddb96c5fd9708735c",
+          "bytes": 377,
+          "url": "https://github.com/maNgao7/mng-license-server1/releases/download/v7.0.26/mng-orbit-launcher-live.mjs"
+        },
+        {
+          "path": "package-lock.json",
+          "sha256": "f1244b925c0885ca7263a9b3680c0bb97cfc2928184f9d514165cc29acfea700",
+          "bytes": 50710,
+          "url": "https://github.com/maNgao7/mng-license-server1/releases/download/v7.0.26/mng-orbit-package-lock.json"
+        },
+        {
+          "path": "package.json",
+          "sha256": "2f5913549435dc9950751366c27cce2f56652e6d3eb0c6bff61387465ccada73",
+          "bytes": 351,
+          "url": "https://github.com/maNgao7/mng-license-server1/releases/download/v7.0.26/mng-orbit-package.json"
+        },
+        {
+          "path": "server.js",
+          "sha256": "87b6e7795acc52fdc8852314993d2549a40d9fca9ac8e3717dc56c430644b435",
+          "bytes": 25587,
+          "url": "https://github.com/maNgao7/mng-license-server1/releases/download/v7.0.26/mng-orbit-server.js"
         }
       ]
     },
@@ -199,18 +271,42 @@
       "id": "duck-hunt",
       "title": "MNG Dodge Hunter",
       "description": "Karnaval poligonunda canlı yayın hediyeleri ördeklere dönüşür. Hareketli hedefleri vur ve izleyicilerinin katkılarıyla değişen sıralamada ilerle.",
-      "version": "7.0.2",
-      "url": "https://github.com/maNgao7/mng-license-server1/releases/download/game-installers-7.0.2/duck-hunt-7.0.2.zip",
-      "sha256": "cb8a381ec1857d51e82ea52ac9272d1df63d9a2573853a69ab91d7e93f85ab31",
-      "bytes": 15777125,
+      "version": "7.0.3",
+      "url": "https://github.com/maNgao7/mng-license-server1/releases/download/v7.0.26/duck-hunt-7.0.3.zip",
+      "sha256": "709e8b68728e2773a7f8bb567a0a3fae01d9e7550d920195ae1ca30d72bd197e",
+      "bytes": 13893569,
       "requirements": "",
       "resources": [],
       "files": [
         {
-          "path": ".tikmng-content.json",
-          "url": "https://github.com/maNgao7/mng-license-server1/releases/download/games-7.0.2/game-content-duck-hunt-7.0.2.json",
-          "bytes": 1399528,
-          "sha256": "01b02e3a083edd55ebb2adac23e57d26002935d3f7cd71544168cf5281ca85ab"
+          "path": "launcher-live-client.cjs",
+          "sha256": "0af5a723419cd7ef30e8918755425a693f36c0654228d975dd07a79c2e41d046",
+          "bytes": 6435,
+          "url": "https://github.com/maNgao7/mng-license-server1/releases/download/v7.0.26/duck-hunt-launcher-live-client.cjs"
+        },
+        {
+          "path": "launcher-live.mjs",
+          "sha256": "ac05ce410b0c1d967505d2c851e4d9b547c455c241ec6e1ddb96c5fd9708735c",
+          "bytes": 377,
+          "url": "https://github.com/maNgao7/mng-license-server1/releases/download/v7.0.26/duck-hunt-launcher-live.mjs"
+        },
+        {
+          "path": "package-lock.json",
+          "sha256": "29a9cd052b7f1182edc4c6c032a0a34e25a93d6c1dfc0612c68154539788cffb",
+          "bytes": 51809,
+          "url": "https://github.com/maNgao7/mng-license-server1/releases/download/v7.0.26/duck-hunt-package-lock.json"
+        },
+        {
+          "path": "package.json",
+          "sha256": "51a793d9b4531725f65ed8b8c76ff25b5e3d0926bdb7476386ded9fe1c31c07c",
+          "bytes": 363,
+          "url": "https://github.com/maNgao7/mng-license-server1/releases/download/v7.0.26/duck-hunt-package.json"
+        },
+        {
+          "path": "server.js",
+          "sha256": "652da4f376c50430a7d60d52c0ad9fc283720d28c1801f1cc1244ffd1cc2d16c",
+          "bytes": 17151,
+          "url": "https://github.com/maNgao7/mng-license-server1/releases/download/v7.0.26/duck-hunt-server.js"
         }
       ]
     },
@@ -218,18 +314,42 @@
       "id": "pony-life",
       "title": "Pony Katırı",
       "description": "Profil fotoğraflı atlar canlı yarış pistinde sıralanır. Hediyeler ve beğenilerle yarışa katılan izleyiciler atlarını hızlandırarak kürsüye ulaşmaya çalışır.",
-      "version": "7.0.2",
-      "url": "https://github.com/maNgao7/mng-license-server1/releases/download/game-installers-7.0.2/pony-life-7.0.2.zip",
-      "sha256": "5a5ceb25d213ef5d99f517098c8a8a13bdd72307f5ec1798a30eb87c1d791907",
-      "bytes": 28286728,
+      "version": "7.0.3",
+      "url": "https://github.com/maNgao7/mng-license-server1/releases/download/v7.0.26/pony-life-7.0.3.zip",
+      "sha256": "59772411ef65f274347b9b9ea832e0ed0a000d165abdea38e4a43e5bb0421110",
+      "bytes": 26202443,
       "requirements": "",
       "resources": [],
       "files": [
         {
-          "path": ".tikmng-content.json",
-          "url": "https://github.com/maNgao7/mng-license-server1/releases/download/games-7.0.2/game-content-pony-life-7.0.2.json",
-          "bytes": 1993126,
-          "sha256": "e541696f3684443356c64eecd21a47660abc223f0391a7181beec642edbc4080"
+          "path": "launcher-live-client.cjs",
+          "sha256": "0af5a723419cd7ef30e8918755425a693f36c0654228d975dd07a79c2e41d046",
+          "bytes": 6435,
+          "url": "https://github.com/maNgao7/mng-license-server1/releases/download/v7.0.26/pony-life-launcher-live-client.cjs"
+        },
+        {
+          "path": "launcher-live.mjs",
+          "sha256": "ac05ce410b0c1d967505d2c851e4d9b547c455c241ec6e1ddb96c5fd9708735c",
+          "bytes": 377,
+          "url": "https://github.com/maNgao7/mng-license-server1/releases/download/v7.0.26/pony-life-launcher-live.mjs"
+        },
+        {
+          "path": "package-lock.json",
+          "sha256": "85bcbb0aa02ef542f0953cae15e066ff09aeb4da69cf3d89a7e7a1d9951b9eaa",
+          "bytes": 216960,
+          "url": "https://github.com/maNgao7/mng-license-server1/releases/download/v7.0.26/pony-life-package-lock.json"
+        },
+        {
+          "path": "package.json",
+          "sha256": "0a322eb73cc1cbb6f52174d2e0d21177ae87ad930f1effede0cefbcdd5a61843",
+          "bytes": 1607,
+          "url": "https://github.com/maNgao7/mng-license-server1/releases/download/v7.0.26/pony-life-package.json"
+        },
+        {
+          "path": "server/index.js",
+          "sha256": "ae3754a99ab1f5978c592c5dae57d074a1d5a3e33fb11925dd5c0d75aa631356",
+          "bytes": 12193,
+          "url": "https://github.com/maNgao7/mng-license-server1/releases/download/v7.0.26/pony-life-server-index.js"
         }
       ]
     },
@@ -237,12 +357,44 @@
       "id": "frog-river",
       "title": "Vak Vak Jump",
       "description": "Kurbağanı seç, nehirdeki nilüferlerden ilerle. Canlı yayından gelen destek ve cezalarla değişen yarışta düşmeden hedefe ulaş.",
-      "version": "7.0.5",
-      "url": "https://github.com/maNgao7/mng-license-server1/releases/download/game-hotfix-7.0.5/frog-river-7.0.5.zip",
-      "sha256": "7b709236d6f6f1bfa18abe5031efeb3a2c09f29782d7d67f62ae27b2d028c320",
-      "bytes": 70661187,
+      "version": "7.0.6",
+      "url": "https://github.com/maNgao7/mng-license-server1/releases/download/v7.0.26/frog-river-7.0.6.zip",
+      "sha256": "b22c9f69a4ce63a9c265a6a7b31d4a9d4085ac8317d9ffdfd6c2d77d078469a3",
+      "bytes": 70595345,
       "requirements": "",
-      "resources": []
+      "resources": [],
+      "files": [
+        {
+          "path": "launcher-live-client.cjs",
+          "sha256": "0af5a723419cd7ef30e8918755425a693f36c0654228d975dd07a79c2e41d046",
+          "bytes": 6435,
+          "url": "https://github.com/maNgao7/mng-license-server1/releases/download/v7.0.26/frog-river-launcher-live-client.cjs"
+        },
+        {
+          "path": "launcher-live.mjs",
+          "sha256": "ac05ce410b0c1d967505d2c851e4d9b547c455c241ec6e1ddb96c5fd9708735c",
+          "bytes": 377,
+          "url": "https://github.com/maNgao7/mng-license-server1/releases/download/v7.0.26/frog-river-launcher-live.mjs"
+        },
+        {
+          "path": "package-lock.json",
+          "sha256": "cd385518b1892c035f861c7b0a9015d304e9746146e7a91337ee42b9c7e20fd4",
+          "bytes": 57750,
+          "url": "https://github.com/maNgao7/mng-license-server1/releases/download/v7.0.26/frog-river-package-lock.json"
+        },
+        {
+          "path": "package.json",
+          "sha256": "f67ded354f48b07d988d1b5151d6d355d18936d53d4b5d833300fb0203d02e91",
+          "bytes": 448,
+          "url": "https://github.com/maNgao7/mng-license-server1/releases/download/v7.0.26/frog-river-package.json"
+        },
+        {
+          "path": "server.js",
+          "sha256": "6af3910a8be668036069c297a13d3679f9eb42a592ddbbdfe7b7b24b090686b1",
+          "bytes": 7724,
+          "url": "https://github.com/maNgao7/mng-license-server1/releases/download/v7.0.26/frog-river-server.js"
+        }
+      ]
     },
     {
       "id": "zombie-war",

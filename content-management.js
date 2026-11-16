@@ -25,6 +25,7 @@ const launcher714Baseline = JSON.parse(fs.readFileSync(new URL("./content-bootst
 const launcher715Baseline = JSON.parse(fs.readFileSync(new URL("./content-bootstrap-7.0.15.json", import.meta.url), "utf8"));
 const launcher723Baseline = JSON.parse(fs.readFileSync(new URL("./content-bootstrap-7.0.23.json", import.meta.url), "utf8"));
 const launcher724Baseline = JSON.parse(fs.readFileSync(new URL("./content-bootstrap-7.0.24.json", import.meta.url), "utf8"));
+const launcher725Baseline = JSON.parse(fs.readFileSync(new URL("./content-bootstrap-7.0.25.json", import.meta.url), "utf8"));
 const launcher722Baseline = JSON.parse(fs.readFileSync(new URL("./content-bootstrap-7.0.22.json", import.meta.url), "utf8"));
 const launcher721Baseline = JSON.parse(fs.readFileSync(new URL("./content-bootstrap-7.0.21.json", import.meta.url), "utf8"));
 const launcher720Baseline = JSON.parse(fs.readFileSync(new URL("./content-bootstrap-7.0.20.json", import.meta.url), "utf8"));
@@ -256,7 +257,8 @@ export function registerContentRoutes(app, { dataDir, adminKontrol }) {
         atomicWrite(stateFile, JSON.stringify(state));
     }
     const currentDefaults = catalogShape(defaults, assetsDir).catalog;
-    const upgraded = upgradedBootstrapState(state, catalogShape(launcher724Baseline, assetsDir).catalog, currentDefaults, { allowReleasedBaseline: true })
+    const upgraded = upgradedBootstrapState(state, catalogShape(launcher725Baseline, assetsDir).catalog, currentDefaults, { allowReleasedBaseline: true })
+        || upgradedBootstrapState(state, catalogShape(launcher724Baseline, assetsDir).catalog, currentDefaults, { allowReleasedBaseline: true })
         || upgradedBootstrapState(state, catalogShape(launcher723Baseline, assetsDir).catalog, currentDefaults, { allowReleasedBaseline: true })
         || upgradedBootstrapState(state, catalogShape(launcher722Baseline, assetsDir).catalog, currentDefaults, { allowReleasedBaseline: true })
         || upgradedBootstrapState(state, catalogShape(launcher721Baseline, assetsDir).catalog, currentDefaults, { allowReleasedBaseline: true })

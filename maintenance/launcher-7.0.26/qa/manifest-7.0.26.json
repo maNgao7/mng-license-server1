@@ -1,0 +1,239 @@
+{
+  "version": "7.0.26",
+  "utc": "2026-11-16T00:22:28.648Z",
+  "verified": true,
+  "files": [
+    {
+      "name": "TikMnG-Setup-7.0.26.exe",
+      "bytes": 293691469,
+      "sha256": "2d7ca95d08a22a43637cec4ee0621a5f8a6667b18bbeb364b76473525cb7fdd8"
+    },
+    {
+      "name": "TikMnG-Setup-7.0.26.exe.blockmap",
+      "bytes": 306784,
+      "sha256": "794e25c13773364e75d9ad4948e94dacf9aef381d8b8f89dfce13a7fa3f68b37"
+    },
+    {
+      "name": "TikMnG-7.0.26-Portable.exe",
+      "bytes": 293512892,
+      "sha256": "286586d6ae0b259374753074336c71d0059d6156a166341d31599be07ff418db"
+    },
+    {
+      "name": "latest.yml",
+      "bytes": 459,
+      "sha256": "ad5384b48cbed4b241a8dd986ae8a7ab17b0c584d1db87ee59d89eb83e5aa480"
+    },
+    {
+      "name": "tiktok-vs-7.0.3.zip",
+      "bytes": 345709035,
+      "sha256": "6f0f6555ea6d1f453c9d3b03d41bbc361ef37615d696d38206b058db9cab89ad"
+    },
+    {
+      "name": "tiktok-vs-launcher-live-client.cjs",
+      "bytes": 6435,
+      "sha256": "0af5a723419cd7ef30e8918755425a693f36c0654228d975dd07a79c2e41d046"
+    },
+    {
+      "name": "tiktok-vs-launcher-live.mjs",
+      "bytes": 377,
+      "sha256": "ac05ce410b0c1d967505d2c851e4d9b547c455c241ec6e1ddb96c5fd9708735c"
+    },
+    {
+      "name": "tiktok-vs-package.json",
+      "bytes": 519,
+      "sha256": "c239428c6a3bbf77aa3464d27ef098b01bd46ed50fc7fc02bf3f3a699dabdd49"
+    },
+    {
+      "name": "tiktok-vs-public-script.js",
+      "bytes": 83188,
+      "sha256": "fa5956e1b306977c50962a1e6b22a0986bca6f12079922173b67bb33db399eec"
+    },
+    {
+      "name": "tiktok-vs-server.js",
+      "bytes": 126709,
+      "sha256": "dc686c2c8fa0c5b52600fa1ea4484bed4ff6e419f3dc4ed144d24017fa529983"
+    },
+    {
+      "name": "mng-orbit-7.0.4.zip",
+      "bytes": 414680811,
+      "sha256": "5e8ca2efb437ff4f412b65d95d6e1854e55b16da8e39062152fac349333a2d07"
+    },
+    {
+      "name": "mng-orbit-launcher-live-client.cjs",
+      "bytes": 6435,
+      "sha256": "0af5a723419cd7ef30e8918755425a693f36c0654228d975dd07a79c2e41d046"
+    },
+    {
+      "name": "mng-orbit-launcher-live.mjs",
+      "bytes": 377,
+      "sha256": "ac05ce410b0c1d967505d2c851e4d9b547c455c241ec6e1ddb96c5fd9708735c"
+    },
+    {
+      "name": "mng-orbit-package-lock.json",
+      "bytes": 50710,
+      "sha256": "f1244b925c0885ca7263a9b3680c0bb97cfc2928184f9d514165cc29acfea700"
+    },
+    {
+      "name": "mng-orbit-package.json",
+      "bytes": 351,
+      "sha256": "2f5913549435dc9950751366c27cce2f56652e6d3eb0c6bff61387465ccada73"
+    },
+    {
+      "name": "mng-orbit-server.js",
+      "bytes": 25587,
+      "sha256": "87b6e7795acc52fdc8852314993d2549a40d9fca9ac8e3717dc56c430644b435"
+    },
+    {
+      "name": "duck-hunt-7.0.3.zip",
+      "bytes": 13893569,
+      "sha256": "709e8b68728e2773a7f8bb567a0a3fae01d9e7550d920195ae1ca30d72bd197e"
+    },
+    {
+      "name": "duck-hunt-launcher-live-client.cjs",
+      "bytes": 6435,
+      "sha256": "0af5a723419cd7ef30e8918755425a693f36c0654228d975dd07a79c2e41d046"
+    },
+    {
+      "name": "duck-hunt-launcher-live.mjs",
+      "bytes": 377,
+      "sha256": "ac05ce410b0c1d967505d2c851e4d9b547c455c241ec6e1ddb96c5fd9708735c"
+    },
+    {
+      "name": "duck-hunt-package-lock.json",
+      "bytes": 51809,
+      "sha256": "29a9cd052b7f1182edc4c6c032a0a34e25a93d6c1dfc0612c68154539788cffb"
+    },
+    {
+      "name": "duck-hunt-package.json",
+      "bytes": 363,
+      "sha256": "51a793d9b4531725f65ed8b8c76ff25b5e3d0926bdb7476386ded9fe1c31c07c"
+    },
+    {
+      "name": "duck-hunt-server.js",
+      "bytes": 17151,
+      "sha256": "652da4f376c50430a7d60d52c0ad9fc283720d28c1801f1cc1244ffd1cc2d16c"
+    },
+    {
+      "name": "pony-life-7.0.3.zip",
+      "bytes": 26202443,
+      "sha256": "59772411ef65f274347b9b9ea832e0ed0a000d165abdea38e4a43e5bb0421110"
+    },
+    {
+      "name": "pony-life-launcher-live-client.cjs",
+      "bytes": 6435,
+      "sha256": "0af5a723419cd7ef30e8918755425a693f36c0654228d975dd07a79c2e41d046"
+    },
+    {
+      "name": "pony-life-launcher-live.mjs",
+      "bytes": 377,
+      "sha256": "ac05ce410b0c1d967505d2c851e4d9b547c455c241ec6e1ddb96c5fd9708735c"
+    },
+    {
+      "name": "pony-life-package-lock.json",
+      "bytes": 216960,
+      "sha256": "85bcbb0aa02ef542f0953cae15e066ff09aeb4da69cf3d89a7e7a1d9951b9eaa"
+    },
+    {
+      "name": "pony-life-package.json",
+      "bytes": 1607,
+      "sha256": "0a322eb73cc1cbb6f52174d2e0d21177ae87ad930f1effede0cefbcdd5a61843"
+    },
+    {
+      "name": "pony-life-server-index.js",
+      "bytes": 12193,
+      "sha256": "ae3754a99ab1f5978c592c5dae57d074a1d5a3e33fb11925dd5c0d75aa631356"
+    },
+    {
+      "name": "frog-river-7.0.6.zip",
+      "bytes": 70595345,
+      "sha256": "b22c9f69a4ce63a9c265a6a7b31d4a9d4085ac8317d9ffdfd6c2d77d078469a3"
+    },
+    {
+      "name": "frog-river-launcher-live-client.cjs",
+      "bytes": 6435,
+      "sha256": "0af5a723419cd7ef30e8918755425a693f36c0654228d975dd07a79c2e41d046"
+    },
+    {
+      "name": "frog-river-launcher-live.mjs",
+      "bytes": 377,
+      "sha256": "ac05ce410b0c1d967505d2c851e4d9b547c455c241ec6e1ddb96c5fd9708735c"
+    },
+    {
+      "name": "frog-river-package-lock.json",
+      "bytes": 57750,
+      "sha256": "cd385518b1892c035f861c7b0a9015d304e9746146e7a91337ee42b9c7e20fd4"
+    },
+    {
+      "name": "frog-river-package.json",
+      "bytes": 448,
+      "sha256": "f67ded354f48b07d988d1b5151d6d355d18936d53d4b5d833300fb0203d02e91"
+    },
+    {
+      "name": "frog-river-server.js",
+      "bytes": 7724,
+      "sha256": "6af3910a8be668036069c297a13d3679f9eb42a592ddbbdfe7b7b24b090686b1"
+    }
+  ],
+  "packages": [
+    {
+      "id": "profile-duel",
+      "version": "0.5.7",
+      "sha256": "1f32788cd6f6905659d35cf3b9c850d3b9462461e90a0ed43b6b66c46b609e0a",
+      "bytes": 123171,
+      "url": "https://github.com/maNgao7/mng-license-server1/releases/download/v7.0.25/profile-duel.zip"
+    },
+    {
+      "id": "hapisten-kac",
+      "version": "0.2.0",
+      "sha256": "053b4e16eba615f9b49aeec3c0f1b83687585d8e905a84ab4b314c7b75e92e08",
+      "bytes": 123633159,
+      "url": "https://github.com/maNgao7/mng-license-server1/releases/download/v7.0.25/hapisten-kac.zip"
+    },
+    {
+      "ids": [
+        "vs",
+        "puanlama"
+      ],
+      "version": "7.0.3",
+      "url": "https://github.com/maNgao7/mng-license-server1/releases/download/v7.0.26/tiktok-vs-7.0.3.zip",
+      "sha256": "6f0f6555ea6d1f453c9d3b03d41bbc361ef37615d696d38206b058db9cab89ad",
+      "bytes": 345709035
+    },
+    {
+      "ids": [
+        "orbit"
+      ],
+      "version": "7.0.4",
+      "url": "https://github.com/maNgao7/mng-license-server1/releases/download/v7.0.26/mng-orbit-7.0.4.zip",
+      "sha256": "5e8ca2efb437ff4f412b65d95d6e1854e55b16da8e39062152fac349333a2d07",
+      "bytes": 414680811
+    },
+    {
+      "ids": [
+        "duck-hunt"
+      ],
+      "version": "7.0.3",
+      "url": "https://github.com/maNgao7/mng-license-server1/releases/download/v7.0.26/duck-hunt-7.0.3.zip",
+      "sha256": "709e8b68728e2773a7f8bb567a0a3fae01d9e7550d920195ae1ca30d72bd197e",
+      "bytes": 13893569
+    },
+    {
+      "ids": [
+        "pony-life"
+      ],
+      "version": "7.0.3",
+      "url": "https://github.com/maNgao7/mng-license-server1/releases/download/v7.0.26/pony-life-7.0.3.zip",
+      "sha256": "59772411ef65f274347b9b9ea832e0ed0a000d165abdea38e4a43e5bb0421110",
+      "bytes": 26202443
+    },
+    {
+      "ids": [
+        "frog-river"
+      ],
+      "version": "7.0.6",
+      "url": "https://github.com/maNgao7/mng-license-server1/releases/download/v7.0.26/frog-river-7.0.6.zip",
+      "sha256": "b22c9f69a4ce63a9c265a6a7b31d4a9d4085ac8317d9ffdfd6c2d77d078469a3",
+      "bytes": 70595345
+    }
+  ]
+}

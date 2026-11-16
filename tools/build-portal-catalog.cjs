@@ -8,17 +8,18 @@ const catalog = JSON.parse(fs.readFileSync(path.join(web, 'game-catalog.json'), 
 const current = JSON.parse(fs.readFileSync(path.join(launcher, 'renderer/assets/game-covers/artwork-current.json'), 'utf8'));
 const sharp = require(process.env.SHARP_MODULE || 'C:/Users/User/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/sharp');
 const esc = value => String(value).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const icon = name => `<i data-lucide="${name}" aria-hidden="true"></i>`;
+const coverWidth = game => game.id === 'hapisten-kac' ? 480 : 500;
+const icon = name => `<svg class="portal-icon" width="24" height="24" aria-hidden="true"><use href="/portal-icons-v1.svg#${name}"></use></svg>`;
 
 async function main() {
-  if (catalog.games.length !== 16 || new Set(catalog.games.map(game => game.id)).size !== 16) throw new Error('Expected 16 unique games.');
+  if (!catalog.games.length || new Set(catalog.games.map(game => game.id)).size !== catalog.games.length) throw new Error('Expected unique games.');
   const coverRoot = path.join(web, 'game-covers');
   fs.mkdirSync(coverRoot, {recursive:true});
   const manifest = [];
   for (const game of catalog.games) {
     if (current.covers.find(cover => cover.id === game.id)?.currentFile !== `${game.cover}.png`) throw new Error(`Outdated cover: ${game.id}`);
     const source = fs.readFileSync(path.join(launcher, 'renderer/assets/game-covers', `${game.cover}.png`));
-    for (const width of [500, 1000]) {
+    for (const width of [coverWidth(game), 1000]) {
       const target = path.join(coverRoot, `${game.cover}-${width}.webp`);
       await sharp(source).resize({width, withoutEnlargement:true}).webp({quality:84}).toFile(target);
       manifest.push({id:game.id, file:path.basename(target), bytes:fs.statSync(target).size, sourceSha256:crypto.createHash('sha256').update(source).digest('hex')});
@@ -29,10 +30,10 @@ async function main() {
   const categories = [...new Set(catalog.games.map(game => game.category))];
   const cards = catalog.games.map(game => `
     <article class="catalog-card" data-game="${game.id}" data-category="${esc(game.category)}">
-      <button class="catalog-open" data-game-open="${game.id}" aria-label="${esc(game.title)} oyununu incele">
-        <div class="catalog-art"><img src="/game-covers/${game.cover}-500.webp" srcset="/game-covers/${game.cover}-500.webp 500w, /game-covers/${game.cover}-1000.webp 1000w" sizes="(max-width:600px) 100vw, (max-width:1000px) 50vw, 33vw" width="1000" height="667" loading="lazy" alt="${esc(game.title)} oyununa özel kapak">${game.isNew ? '<span class="catalog-new">Yeni</span>' : ''}<span class="catalog-art-arrow">${icon('arrow-up-right')}</span></div>
+      <a class="catalog-open" href="/oyunlar/${game.id}" data-game-open="${game.id}" aria-label="${esc(game.title)} oyununu incele" aria-haspopup="dialog">
+        <div class="catalog-art"><img src="/game-covers/${game.cover}-${coverWidth(game)}.webp" srcset="/game-covers/${game.cover}-${coverWidth(game)}.webp ${coverWidth(game)}w, /game-covers/${game.cover}-1000.webp 1000w" sizes="(max-width:600px) 100vw, (max-width:1000px) 50vw, 33vw" width="1000" height="667" loading="lazy" alt="${esc(game.title)} oyununa özel kapak">${game.isNew ? '<span class="catalog-new">Yeni</span>' : ''}<span class="catalog-art-arrow">${icon('arrow-up-right')}</span></div>
         <div class="catalog-copy"><span class="catalog-category">${esc(game.category)}</span><h3>${esc(game.title)}</h3><p>${esc(game.tagline)}</p><span class="catalog-command">Oyunu incele ${icon('arrow-right')}</span></div>
-      </button>
+      </a>
     </article>`).join('');
   const section = `<section id="games" aria-labelledby="catalogTitle">
     <div class="container catalog-container">
@@ -43,7 +44,7 @@ async function main() {
       <p class="catalog-requirements">Windows 10 / 11 · Oyunlar ayrı indirilir. Bazı oyunlar Steam üzerinden temel oyun kurulumu gerektirir.</p>
     </div>
   </section>`;
-  const announcement = `<aside class="release-band release-feature" aria-label="TikMnG yenilikleri"><div class="container"><img class="release-cover" src="/game-covers/minecraft-yilan-cover-v2-500.webp" alt="Minecraft Yılan Oyunu" width="144" height="96" loading="lazy"><div class="release-copy"><span class="release-pill">7.0.2 · YENİ OYUN</span><strong>Minecraft Yılan Oyunu</strong><p>${catalog.games.length} oyun, yenilenen widgetlar ve yayına özel hediye tasarımları.</p></div><button type="button" data-game-open="minecraft-snake-arena">Oyunu incele ${icon('arrow-up-right')}</button></div></aside>`;
+  const announcement = "<aside class=\"release-band release-feature\" aria-label=\"TikMnG yenilikleri\"><div class=\"container\"><img class=\"release-cover\" src=\"/game-covers/hapisten-kac-v1-480.webp\" alt=\"Hapisten Kaç\" width=\"144\" height=\"81\" loading=\"lazy\"><div class=\"release-copy\"><span class=\"release-pill\">7.0.25 · YENİ OYUN</span><strong>Hapisten Kaç</strong><p>Steam'den Punch Your Way Out Demo'yu kur, TikMnG ile kaçışa başla.</p></div><a href=\"/oyunlar/hapisten-kac\" data-game-open=\"hapisten-kac\" aria-haspopup=\"dialog\">Oyunu incele <svg class=\"portal-icon\" width=\"24\" height=\"24\" aria-hidden=\"true\"><use href=\"/portal-icons-v1.svg#arrow-up-right\"></use></svg></a></div></aside>";
   const giftBand = `<section class="designer-band" id="giftDesign" aria-labelledby="giftBandTitle"><div class="container"><div><span class="catalog-eyebrow">SENİN YAYININ, SENİN TASARIMIN</span><h2 id="giftBandTitle">Hediyelerin sahnede yerini alsın.</h2><p>Launcher'daki hediye tasarım aracı şimdi webde de aynı deneyimle. Düzenini seç, hediyelerini yerleştir, tasarımını kaydet ve şeffaf PNG olarak indir.</p><a href="/hediye-tasarimi" class="portal-command primary">${icon('gift')} Hediye tasarla ${icon('arrow-up-right')}</a></div><div class="designer-sample" aria-label="Örnek hediye tasarımı"><img src="/designer-sample.webp" width="800" height="450" loading="lazy" alt="Sesli Sürüş için hediye ve eylem başlıklarının yerleştirildiği örnek tasarım"></div></div></section>`;
   let html = fs.readFileSync(path.join(web, 'index.html'), 'utf8');
   // Replace only the public game section; authentication and live demo code stay intact.
@@ -51,14 +52,14 @@ async function main() {
   const how = html.indexOf('<section id="how"', start);
   const end = html.indexOf('</section>', start) + '</section>'.length;
   if (start < 0 || how < 0 || end <= start) throw new Error('Public catalogue boundaries missing.');
-  html = html.slice(0, start) + html.slice(end);
+  html = html.slice(0, start) + section + html.slice(end);
   const generatedStart = html.indexOf('<!-- TIKMNG-CATALOG-ANNOUNCEMENT -->');
   if (generatedStart >= 0) {
     const generatedEnd = html.indexOf('<!-- /TIKMNG-CATALOG-ANNOUNCEMENT -->', generatedStart) + '<!-- /TIKMNG-CATALOG-ANNOUNCEMENT -->'.length;
     html = html.slice(0, generatedStart) + html.slice(generatedEnd);
   }
-  const demo = html.indexOf('<section class="portal-demo"');
-  html = html.slice(0, demo) + `<!-- TIKMNG-CATALOG-ANNOUNCEMENT -->\n${announcement}\n<!-- /TIKMNG-CATALOG-ANNOUNCEMENT -->\n\n${section}\n\n    ` + html.slice(demo);
+  const catalogPosition = html.indexOf('<section id="games"');
+  html = html.slice(0, catalogPosition) + `<!-- TIKMNG-CATALOG-ANNOUNCEMENT -->\n${announcement}\n<!-- /TIKMNG-CATALOG-ANNOUNCEMENT -->\n\n` + html.slice(catalogPosition);
   const oldGiftStart = html.indexOf('<!-- TIKMNG-DESIGNER-BAND -->');
   if (oldGiftStart >= 0) {
     const oldGiftEnd = html.indexOf('<!-- /TIKMNG-DESIGNER-BAND -->', oldGiftStart) + '<!-- /TIKMNG-DESIGNER-BAND -->'.length;

@@ -3,7 +3,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const catalog = JSON.parse(document.getElementById('publicGameCatalog').textContent);
   const games = catalog.games;
   const esc = value => String(value).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-  const icon = name => `<i data-lucide="${name}" aria-hidden="true"></i>`;
+  const icon = name => `<svg class="portal-icon" width="24" height="24" aria-hidden="true"><use href="/portal-icons-v1.svg#${name}"></use></svg>`;
   const search = document.getElementById('gameSearch');
   let category = '';
   const normalize = value => value.toLocaleLowerCase('tr').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/ı/g,'i');
@@ -41,7 +41,6 @@ document.addEventListener('DOMContentLoaded', () => {
   function openDialog(content, source) {
     opener = source;
     dialog.innerHTML = `<button type="button" class="portal-dialog-close" aria-label="Kapat" autofocus>${icon('x')}</button>${content}`;
-    window.lucide?.createIcons({root:dialog});
     dialog.showModal();
     document.documentElement.classList.add('portal-modal-open');
     dialog.querySelector('.portal-dialog-close').addEventListener('click', () => dialog.close());
@@ -54,6 +53,11 @@ document.addEventListener('DOMContentLoaded', () => {
     openDialog(`<div class="game-dialog-layout"><img class="game-dialog-art" src="/game-covers/${game.cover}-1000.webp" alt="${esc(game.title)} kapağı" width="1000" height="667"><div class="game-dialog-content"><span class="catalog-eyebrow">${esc(game.category)}</span><h2 id="portalDialogTitle">${esc(game.title)}</h2><p>${esc(game.description)}</p><ul>${game.features.map(feature => `<li>${icon('check')}${esc(feature)}</li>`).join('')}</ul><p class="game-dialog-requirement">${esc(game.requirements)}</p><a class="portal-command primary" href="/download/setup">${icon('download')} Launcher'ı indir</a></div></div>`, source);
     gameSetup(game);
     const content = dialog.querySelector('.game-dialog-content');
+    const details = document.createElement('a');
+    details.className = 'portal-command';
+    details.href = '/oyunlar/' + game.id;
+    details.textContent = 'Oyun sayfasını aç';
+    content.append(details);
     if (game.steamUrl) {
       const demo = document.createElement('a'); demo.className='portal-command'; demo.href=game.steamUrl;
       demo.target='_blank'; demo.rel='noopener noreferrer'; demo.textContent="Steam'den ücretsiz demoyu indir";
@@ -80,7 +84,12 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     content.append(notes);
   }
-  document.querySelectorAll('[data-game-open]').forEach(button => button.addEventListener('click', () => openGame(button.dataset.gameOpen,button)));
+  const plainClick = event => event.button === 0 && !event.ctrlKey && !event.metaKey && !event.shiftKey && !event.altKey;
+  document.querySelectorAll('[data-game-open]').forEach(link => link.addEventListener('click', event => {
+    if (!plainClick(event) || typeof dialog.showModal !== 'function') return;
+    event.preventDefault();
+    openGame(link.dataset.gameOpen, link);
+  }));
   const newsButton = document.createElement('button');
   newsButton.type = 'button';
   newsButton.className = 'portal-news-button';
@@ -90,9 +99,10 @@ document.addEventListener('DOMContentLoaded', () => {
   document.querySelector('.nav-actions').prepend(newsButton);
   try { newsButton.classList.toggle('is-read',localStorage.getItem('tikmng-website-news') === catalog.revision); } catch {}
   function openNews(source) {
-    openDialog(`<div class="portal-news-content"><span class="catalog-eyebrow">TIKMNG'DE YENİLİKLER</span><h2 id="portalDialogTitle">${games.length} oyun, yepyeni bir keşif alanı.</h2><p>Hapisten Kaç artık kütüphanede. Önce Steam'den Punch Your Way Out Demo'yu kur. Oyunları kapakları, mekanikleri ve kurulum gereksinimleriyle keşfet. Launcher'daki hediye tasarım aracını webde de kullan.</p><div class="portal-news-list">${games.map(game => `<a href="#games" data-news-game="${game.id}"><img src="/game-covers/${game.cover}-${game.id === 'hapisten-kac' ? 480 : 500}.webp" alt="" width="72" height="48" loading="lazy"><span>${esc(game.title)}<small>${esc(game.category)}${game.isNew ? ' · Yeni' : ''}</small></span></a>`).join('')}</div><a class="portal-command primary" href="/hediye-tasarimi">${icon('gift')} Hediye tasarımını aç</a></div>`,source);
+    openDialog(`<div class="portal-news-content"><span class="catalog-eyebrow">TIKMNG'DE YENİLİKLER</span><h2 id="portalDialogTitle">${games.length} oyun, yepyeni bir keşif alanı.</h2><p>Hapisten Kaç artık kütüphanede. Önce Steam'den Punch Your Way Out Demo'yu kur. Oyunları kapakları, mekanikleri ve kurulum gereksinimleriyle keşfet. Launcher'daki hediye tasarım aracını webde de kullan.</p><div class="portal-news-list">${games.map(game => `<a href="/oyunlar/${game.id}" data-news-game="${game.id}"><img src="/game-covers/${game.cover}-${game.id === 'hapisten-kac' ? 480 : 500}.webp" alt="" width="72" height="48" loading="lazy"><span>${esc(game.title)}<small>${esc(game.category)}${game.isNew ? ' · Yeni' : ''}</small></span></a>`).join('')}</div><a class="portal-command primary" href="/hediye-tasarimi">${icon('gift')} Hediye tasarımını aç</a></div>`,source);
     try { localStorage.setItem('tikmng-website-news',catalog.revision); newsButton.classList.add('is-read'); } catch {}
     dialog.querySelectorAll('[data-news-game]').forEach(link => link.addEventListener('click', event => {
+      if (!plainClick(event)) return;
       event.preventDefault(); const id = link.dataset.newsGame; dialog.close(); openGame(id,source);
     }));
   }
@@ -100,5 +110,4 @@ document.addEventListener('DOMContentLoaded', () => {
   document.querySelectorAll('[data-news-open]').forEach(button => button.addEventListener('click', () => openNews(button)));
   // The catalogue is the next primary experience after the announcement band.
   window.dispatchEvent(new Event('resize'));
-  window.lucide?.createIcons();
 });

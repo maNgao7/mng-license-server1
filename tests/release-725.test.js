@@ -6,7 +6,7 @@ import { upgradedBootstrapState } from '../content-bootstrap.js';
 const read = file => fs.readFileSync(new URL('../' + file, import.meta.url), 'utf8');
 const json = file => JSON.parse(read(file));
 const previous = json('content-bootstrap-7.0.24.json');
-const current = json('content-defaults.json');
+const current = json('content-bootstrap-7.0.25.json');
 const withdrawn = new Set(['battle-game', 'penalty-kick', 'tightrope-balance']);
 
 test('7.0.25 changes only the new game, Profile Duel and three retired defaults; media stays exact', () => {
@@ -75,8 +75,8 @@ test('website JSON, embedded catalog, static cards, counts and supplied Hapisten
     assert.equal(game.steamUrl, 'https://store.steampowered.com/app/5466880/');
     for (const width of [480, 720, 1000, 1440]) assert.ok(fs.statSync(new URL(`../web/game-covers/${game.cover}-${width}.webp`, import.meta.url)).size > 0);
     assert.ok(fs.statSync(new URL('../web' + game.giftGuide, import.meta.url)).size > 0);
-    assert.match(html, /<div>© 2026 TikMnG · v7\.0\.25\./);
-    assert.match(html, /"softwareVersion": "7\.0\.25"/);
-    assert.equal(json('package.json').version, '7.0.25');
-    assert.equal(json('package-lock.json').packages[''].version, '7.0.25');
+    assert.match(html, /<div>© 2026 TikMnG · v7\.0\.26\./);
+    assert.match(html, /"softwareVersion": "7\.0\.26"/);
+    assert.equal(json('package.json').version, '7.0.26');
+    assert.equal(json('package-lock.json').packages[''].version, '7.0.26');
 });

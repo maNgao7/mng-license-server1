@@ -20,6 +20,7 @@ import { checkShopierOffer } from "./shopier-payment.js";
 import { createLicenseLedger } from "./license-ledger.js";
 import { manualShopierUrl, salesPlans } from "./web/sales-catalog.js";
 import { createLatestInstallerResolver, registerInstallerDownloads } from './release-downloads.js';
+import { registerPublicWebsite, servePublicAssets } from "./public-website.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -535,9 +536,15 @@ app.get("/admin/lucide.js", (req, res) => {
     res.sendFile(path.join(__dirname, "node_modules/lucide/dist/umd/lucide.min.js"));
 });
 
-// Web Sitesi & Statik Dosyalar (Önbellek Engelleme ve Çift Konum Koruması)
+// Public website routes and assets.
+registerPublicWebsite(app, {
+    webRoot: path.join(__dirname, "web"),
+    fallbackHome: path.join(__dirname, "index.html"),
+    checkoutAvailable: () => Boolean(shopierCheckout && shopierStorageAvailable())
+});
+
 app.use((req, res, next) => {
-    if (req.url === "/" || req.url.endsWith(".html")) {
+    if (req.url.endsWith(".html")) {
         res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
         res.setHeader("Pragma", "no-cache");
         res.setHeader("Expires", "0");
@@ -545,52 +552,12 @@ app.use((req, res, next) => {
     next();
 });
 
-app.get("/", (req, res) => {
-    const webPath = path.join(__dirname, "web", "index.html");
-    const rootPath = path.join(__dirname, "index.html");
-    if (shopierCheckout && shopierStorageAvailable() && fs.existsSync(webPath)) {
-        return fs.readFile(webPath, "utf-8", (error, html) => {
-            if (error) return res.sendFile(webPath);
-            res.type("html").send(html.replace('<meta name="tikmng-checkout" content="closed">',
-                '<meta name="tikmng-checkout" content="shopier">'));
-        });
-    }
-    if (fs.existsSync(webPath)) return res.sendFile(webPath);
-    if (fs.existsSync(rootPath)) return res.sendFile(rootPath);
-    res.send("TikMnG Web Portal");
-});
-
-app.get("/hediye-tasarimi", (req, res) => {
-    res.sendFile(path.join(__dirname, "web", "gift-designer.html"));
-});
-
-app.get("/widgetlar", (req, res) => {
-    res.sendFile(path.join(__dirname, "web", "widgets.html"));
-});
-
 app.get(["/agency", "/agency/", "/agency.html"], (_req, res) => {
     res.set({ "Cache-Control": "no-store", "X-Robots-Tag": "noindex, nofollow" });
     res.sendFile(path.join(__dirname, "web", "agency.html"));
 });
 
-app.get("/robots.txt", (req, res) => {
-    const publicBaseUrl = String(process.env.PUBLIC_BASE_URL || "https://tikmng.com").replace(/\/$/, "");
-    res.type("text/plain").send(`User-agent: *\nAllow: /\nDisallow: /admin\nDisallow: /api/\nSitemap: ${publicBaseUrl}/sitemap.xml\n`);
-});
-
-app.get("/sitemap.xml", (req, res) => {
-    const publicBaseUrl = String(process.env.PUBLIC_BASE_URL || "https://tikmng.com").replace(/\/$/, "");
-    res.type("application/xml").send(`<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url><loc>${publicBaseUrl}/</loc><lastmod>2026-10-13</lastmod><changefreq>weekly</changefreq><priority>1.0</priority></url>
-  <url><loc>${publicBaseUrl}/hediye-tasarimi</loc><lastmod>2026-10-13</lastmod><changefreq>monthly</changefreq><priority>0.9</priority></url>
-  <url><loc>${publicBaseUrl}/widgetlar</loc><lastmod>2026-10-13</lastmod><changefreq>monthly</changefreq><priority>0.9</priority></url>
-  <url><loc>${publicBaseUrl}/privacy.html</loc><lastmod>2026-10-13</lastmod><changefreq>yearly</changefreq><priority>0.4</priority></url>
-  <url><loc>${publicBaseUrl}/terms.html</loc><lastmod>2026-10-13</lastmod><changefreq>yearly</changefreq><priority>0.4</priority></url>
-</urlset>`);
-});
-
-app.use(express.static(path.join(__dirname, "web")));
+app.use(servePublicAssets(path.join(__dirname, "web")));
 // Admin Paneli
 app.use("/admin", express.static(path.join(__dirname, "admin", "public")));
 app.get(["/admin", "/admin/*"], (req, res) => {
@@ -769,10 +736,10 @@ function logEkle(lisansKod, cihazKimlik, islem, ip) {
 // =====================================================================
 // SÜRÜM BİLGİLERİ & İNDİRME LİNKLERİ
 // =====================================================================
-const EN_GUNCEL_SURUM = "7.0.25";
+const EN_GUNCEL_SURUM = "7.0.26";
 const EN_DUSUK_SURUM = "1.0.0";
-const SETUP_INDIRME_LINKI = "https://github.com/maNgao7/mng-license-server1/releases/download/v7.0.25/TikMnG-Setup-7.0.25.exe";
-const PORTABLE_INDIRME_LINKI = "https://github.com/maNgao7/mng-license-server1/releases/download/v7.0.25/TikMnG-7.0.25-Portable.exe";
+const SETUP_INDIRME_LINKI = "https://github.com/maNgao7/mng-license-server1/releases/download/v7.0.26/TikMnG-Setup-7.0.26.exe";
+const PORTABLE_INDIRME_LINKI = "https://github.com/maNgao7/mng-license-server1/releases/download/v7.0.26/TikMnG-7.0.26-Portable.exe";
 const SETUP_WEB_LINKI = 'https://tikmng.com/download/setup';
 const resolveLatestInstaller = createLatestInstallerResolver({ fallbackUrl: SETUP_INDIRME_LINKI });
 const VARSAYILAN_PAKET_LINKLERI = Object.freeze({
@@ -787,6 +754,7 @@ const VARSAYILAN_PAKET_LINKLERI = Object.freeze({
 
 // Her güncellemede eklenen/değişen özellikler listesi
 const SURUM_NOTLARI = [
+    "v7.0.26: Oyun açılışı, yayın bağlantısı ve web kataloğu iyileştirmeleri.",
     "v7.0.25: Hapisten Kaç 0.2.0 ve Teke Tek Profil 0.5.7. Oyun kataloğu ve güncel kurulum indirmesi yenilendi.",
     "v7.0.24: Ayrı TikMnG widget bağlantıları ve Yaratık Arena 0.1.31.",
     "v7.0.23: Oyun kurulum videoları, hediye tasarımı ve Yaratık Arena 0.1.30.",
