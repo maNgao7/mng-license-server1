@@ -149,7 +149,8 @@ for (const [filename, revision, arenaVersion] of [
     ['content-bootstrap-7.0.22.json', 2026111203, '0.1.29'],
     ['content-bootstrap-7.0.23.json', 2026111204, '0.1.30'],
     ['content-bootstrap-7.0.24.json', 2026111301, '0.1.31'],
-    ['content-bootstrap-7.0.25.json', 2026111501, '0.1.31']
+    ['content-bootstrap-7.0.25.json', 2026111501, '0.1.31'],
+    ['content-bootstrap-7.0.26.json', 2026111601, '0.1.31']
 ]) test(`actual rev${revision} catalog receives the current games once and retains its full backup`, async t => {
     const previous = JSON.parse(fs.readFileSync(path.join(root, filename), 'utf8'));
     const current = JSON.parse(fs.readFileSync(path.join(root, 'content-defaults.json'), 'utf8'));
@@ -182,7 +183,7 @@ for (const [filename, revision, arenaVersion] of [
 });
 
 test('Arena hotfix startup and restart retain customized rev11, rev12 and rev13 catalogs and pending administrator drafts', async t => {
-    const baselines = ['content-bootstrap-7.0.15.json', 'content-bootstrap-arena-0.1.21.json', 'content-bootstrap-arena-0.1.22.json', 'content-bootstrap-arena-0.1.23.json', 'content-bootstrap-7.0.24.json']
+    const baselines = ['content-bootstrap-7.0.15.json', 'content-bootstrap-arena-0.1.21.json', 'content-bootstrap-arena-0.1.22.json', 'content-bootstrap-arena-0.1.23.json', 'content-bootstrap-7.0.24.json', 'content-bootstrap-7.0.26.json']
         .map(filename => JSON.parse(fs.readFileSync(path.join(root, filename), 'utf8')));
     const changes = [
         ['Arena', catalog => catalog.games[0].title = 'Administrator Arena title'],
@@ -225,10 +226,10 @@ test("public defaults include Uslu Yaratık, Forza and Teke Tek Profil and exclu
     assert.equal(byId['yaratik-arena'].url, 'https://github.com/maNgao7/mng-license-server1/releases/download/v7.0.24/yaratik-arena.zip');
     assert.equal(byId['yaratik-arena'].bytes, 151527788);
     assert.equal(byId['yaratik-arena'].sha256, '0e6d1c5a42e348866339d87a45ee7d3b5943b07cdec0dc0fef139b963004b01c');
-    assert.equal(byId['rezervuar-01'].version, '0.2.9');
-    assert.equal(byId['rezervuar-01'].bytes, 133789993);
-    assert.equal(byId['rezervuar-01'].sha256, 'a5d3b0590f714b1cb67c5c849ac2ef5ac9db9bd5fe7109bf2da65c70995a56cf');
-    assert.match(byId['rezervuar-01'].url, /\/v7\.0\.21\/uslu-yaratik\.zip$/);
+    assert.equal(byId['rezervuar-01'].version, '0.2.10');
+    assert.equal(byId['rezervuar-01'].bytes, 133790898);
+    assert.equal(byId['rezervuar-01'].sha256, '9af0e88b203d39b846399665a61fbce1551b4438b0c45177048b28647c299c8b');
+    assert.match(byId['rezervuar-01'].url, /\/uslu-yaratik-0\.2\.10\/uslu-yaratik\.zip$/);
     assert.equal(byId['turkish-forza-05'].version, '0.5.6');
     assert.equal(byId['profile-duel'].version, '0.5.7');
     assert.equal(byId['hapisten-kac'].version, '0.2.0');
@@ -242,7 +243,7 @@ test("public defaults include Uslu Yaratık, Forza and Teke Tek Profil and exclu
     assert.equal(byId['profile-contest'].sha256, 'bfea65a15399612a8cfea4a74bc6e0718b757e220544451aa4ab583d02dca7ab');
     assert.equal(byId['crowd-control'], undefined);
     assert.equal(response.data.media.length, 285);
-    assert.equal(response.data.revision, 2026111601);
+    assert.equal(response.data.revision, 2026111602);
     assert.equal(byId.caahr.version, '0.6.12');
     assert.equal(byId.caahr.bytes, 63233577);
     assert.equal(byId['frog-river'].version,'7.0.6');

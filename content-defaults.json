@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
-  "revision": 2026111601,
-  "publishedAt": "2026-11-16T00:00:00Z",
+  "revision": 2026111602,
+  "publishedAt": "2026-11-16T20:10:02.264Z",
   "games": [
     {
       "id": "hapisten-kac",
@@ -27,10 +27,10 @@
       "id": "rezervuar-01",
       "title": "Uslu Yaratık",
       "description": "Sığ suya ses çıkarmadan platformlardan ilerle. Yayındaki hediyeler, takipler ve beğeniler parkurun akışını değiştirebilir.",
-      "version": "0.2.9",
-      "url": "https://github.com/maNgao7/mng-license-server1/releases/download/v7.0.21/uslu-yaratik.zip",
-      "sha256": "a5d3b0590f714b1cb67c5c849ac2ef5ac9db9bd5fe7109bf2da65c70995a56cf",
-      "bytes": 133789993,
+      "version": "0.2.10",
+      "url": "https://github.com/maNgao7/mng-license-server1/releases/download/uslu-yaratik-0.2.10/uslu-yaratik.zip",
+      "sha256": "9af0e88b203d39b846399665a61fbce1551b4438b0c45177048b28647c299c8b",
+      "bytes": 133790898,
       "requirements": "Windows 10/11 64 bit ve en az 1 GB boş alan. TikMnG üzerinden yüklenir. Canlı yayın etkileşimleri için internet bağlantısı gerekir.",
       "resources": []
     },

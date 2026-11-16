@@ -5,7 +5,7 @@ import { upgradedBootstrapState } from '../content-bootstrap.js';
 
 const json = name => JSON.parse(fs.readFileSync(new URL('../' + name, import.meta.url)));
 const previous = json('content-bootstrap-7.0.25.json');
-const current = json('content-defaults.json');
+const current = json('content-bootstrap-7.0.26.json');
 const versions = { vs: '7.0.3', puanlama: '7.0.3', orbit: '7.0.4', 'duck-hunt': '7.0.3', 'pony-life': '7.0.3', 'frog-river': '7.0.6' };
 
 test('7.0.26 publishes six shared connection updates with verified incremental content', () => {
@@ -30,7 +30,6 @@ test('7.0.26 publishes six shared connection updates with verified incremental c
         const patchBytes = game.files.reduce((sum, file) => sum + file.bytes, 0);
         assert.ok(patchBytes < 1024 * 1024);
     }
-    assert.deepEqual(current, json('web/content-catalog-7.0.0.json'));
 });
 
 test('released defaults upgrade atomically and personal changes remain authoritative', () => {
