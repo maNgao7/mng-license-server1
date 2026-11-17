@@ -7,7 +7,7 @@
     <meta name="tikmng-checkout" content="closed">
     <title>TikMnG · Lisans Satın Al</title>
     <link rel="stylesheet" href="/purchase-preview.css">
-    <script type="module" src="/shopier-checkout.js?v=20261117-individual"></script>
+    <script type="module" src="/shopier-checkout.js?v=20261117-osb-2"></script>
 </head>
 <body class="checkout-page">
 <header><a class="brand" href="/">Tik<span>MnG</span></a></header>
@@ -25,18 +25,23 @@
         </form>
         <form id="confirm-checkout" hidden>
             <h2>Shopier ödemesi</h2>
-            <p>Shopier’de ödeme yaparken satıcıya not alanına aşağıdaki referansı aynen yaz.</p>
+            <p>Aşağıdaki referansı kopyala ve Shopier’de “Sipariş özelleştirme notunuz” alanına yapıştır.</p>
             <label for="reference">Sipariş referansı</label>
             <input id="reference" readonly>
+            <button id="copy-reference" type="button">Referansı kopyala</button>
+            <p id="reference-status" role="status"></p>
             <p><a id="shopier-link" target="_blank" rel="noopener noreferrer">Shopier’de ödemeyi aç</a></p>
-            <label for="order-id">Ödeme sonrası Shopier sipariş numarası</label>
-            <input id="order-id" inputmode="numeric" pattern="[0-9]{1,30}" required>
-            <button type="submit">Ödemeyi doğrula ve lisansı al</button>
+            <p id="return-instructions" hidden>Ödemeden sonra bu sekmeye dön. Onay geldiğinde lisans kodun burada görünecek.</p>
+            <div id="order-id-field">
+                <label for="order-id">Ödeme sonrası Shopier sipariş numarası</label>
+                <input id="order-id" inputmode="numeric" pattern="[0-9]{1,30}" required>
+            </div>
+            <button id="confirm-payment" type="submit">Ödemeyi doğrula ve lisansı al</button>
             <p id="confirm-status" role="status"></p>
             <div id="issued-license" hidden>
                 <label for="license-code">Lisans kodu</label>
                 <input id="license-code" readonly>
-                <button id="copy-license" type="button">Kodu kopyala</button>
+                <button id="copy-license" type="button">Lisans kodunu kopyala</button>
                 <div id="issued-panel" hidden>
                     <label for="panel-code">Ajans paneli giriş kodu</label>
                     <input id="panel-code" readonly>

@@ -12,6 +12,15 @@ import { salesPlans } from "../web/sales-catalog.js";
 
 const password = "test-admin-password-only";
 const products = Object.fromEntries(salesPlans.map((plan, i) => [plan.id, String(5000 + i)]));
+const osbUsername = "test-seller";
+const osbSecret = "test-osb-secret";
+const osbOptions = { scope: "individual", paymentSource: "osb" };
+
+function osbNotification(base, event, secret = osbSecret) {
+    const res = Buffer.from(JSON.stringify(event)).toString("base64");
+    const hash = createHmac("sha256", secret).update(res + osbUsername).digest("hex");
+    return fetch(base + "/api/shopier/osb", { method: "POST", body: new URLSearchParams({ res, hash }) });
+}
 
 function encryptedBackup(state) {
     const iv = randomBytes(12);
@@ -94,14 +103,15 @@ async function createLedgerFixture(t) {
         }
         await rmdir(root);
     });
-    async function start({ salesEnabled = true, scope = "all", configuredProducts = products } = {}) {
+    async function start({ salesEnabled = true, scope = "all", paymentSource = "api", configuredProducts = products } = {}) {
         const module = `data:text/javascript;base64,${Buffer.from(mock).toString("base64")}`;
         server = spawn(process.execPath, ["--import", module, "server.js"], {
             cwd: new URL("../", import.meta.url), stdio: "ignore",
             env: { SystemRoot: process.env.SystemRoot, HOST: "127.0.0.1", PORT: String(port),
                 MNG_DATA_DIR: root, MOCK_PROVIDER_DIR: root, ADMIN_SIFRE: password,
                 BACKUP_REPO: "test/backup", GITHUB_TOKEN: "test-only", SHOPIER_SALES_ENABLED: String(salesEnabled),
-                SHOPIER_LICENSE_STORAGE: "github", SHOPIER_API_TOKEN: "test-only",
+                SHOPIER_LICENSE_STORAGE: "github", SHOPIER_API_TOKEN: paymentSource === "api" ? "test-only" : "",
+                SHOPIER_PAYMENT_SOURCE: paymentSource, SHOPIER_OSB_USERNAME: osbUsername, SHOPIER_OSB_SECRET: osbSecret,
                 SHOPIER_CLAIM_SECRET: "test-claim-signing-key-no-production",
                 SHOPIER_SALES_SCOPE: scope, SHOPIER_PRODUCT_IDS: JSON.stringify(configuredProducts) },
         });
@@ -179,6 +189,91 @@ test("individual-only sales deliver one weekly code and leave agencies on the ma
     const result = await post("/api/shopier/redeem", claim);
     assert.match(result.code, /^MNGS-[A-F0-9]{20}$/);
     assert.deepEqual(await post("/api/shopier/redeem", claim), result);
+});
+
+test("Shopier's signed test can reach a closed store without writing the ledger", async t => {
+    const { base, root, start, post } = await createLedgerFixture(t);
+    await start({ ...osbOptions, salesEnabled: false });
+    const ledgerPath = path.join(root, "github.json");
+    const before = await readFile(ledgerPath, "utf8");
+    const testEvent = { istest: "1", orderid: "7001", email: "test@example.test", customernote: "private" };
+    assert.equal((await osbNotification(base, testEvent, "wrong-key")).status, 403);
+    const acknowledged = await osbNotification(base, testEvent);
+    assert.equal(acknowledged.status, 200);
+    assert.equal(await acknowledged.text(), "success");
+    assert.equal(await readFile(ledgerPath, "utf8"), before);
+    await post("/api/shopier/checkout", { planId: "individual-weekly", username: "test.creator" }, 503);
+    const login = await fetch(base + "/api/admin/giris", {
+        method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ sifre: password }),
+    });
+    const cookie = login.headers.get("set-cookie").split(";")[0];
+    const report = await (await fetch(base + "/api/admin/shopier/hazirlik", { headers: { cookie } })).json();
+    assert.equal(report.canliSatisAcik, false);
+    assert.equal(report.odemeKaynagi, "osb");
+    assert.equal(report.shopierBildirimAyariHazir, true);
+    assert.ok(Number.isFinite(Date.parse(report.sonShopierBildirimTesti)));
+    assert.doesNotMatch(JSON.stringify(report), /test@example|private|test-osb-secret/);
+});
+
+test("OSB claims require signed exact payment and deliver one durable code for each paid plan", { timeout: 15_000 }, async t => {
+    const { base, root, file, start, stop, post } = await createLedgerFixture(t);
+    await start(osbOptions);
+    const weekly = await post("/api/shopier/checkout", { planId: "individual-weekly", username: "weekly.creator" }, 201);
+    const monthly = await post("/api/shopier/checkout", { planId: "individual-monthly", username: "monthly.creator" }, 201);
+    const weekClaim = { token: weekly.token };
+    const monthClaim = { token: monthly.token };
+    assert.equal(weekly.verification, "osb");
+    assert.equal(monthly.verification, "osb");
+    await post("/api/shopier/checkout", { planId: "agency-10-monthly", username: "Agency" }, 400);
+    const weekEvent = { istest: "0", orderid: "7001", currency: "0", price: "300.00",
+        productcount: "1", productid: products["individual-weekly"], customernote: weekly.reference };
+    const monthEvent = { ...weekEvent, orderid: "7002", price: "800.00",
+        productid: products["individual-monthly"], customernote: monthly.reference };
+    assert.equal((await post("/api/shopier/redeem", { ...weekClaim, orderId: weekEvent.orderid }, 409)).code, undefined);
+    assert.equal((await osbNotification(base, weekEvent, "wrong-key")).status, 403);
+    assert.equal((await osbNotification(base, { ...weekEvent, istest: 1 })).status, 200);
+    assert.equal((await osbNotification(base, { ...weekEvent, orderid: "7003",
+        customernote: "no-checkout-note" })).status, 200);
+    assert.equal((await osbNotification(base, { ...monthEvent, orderid: "7004",
+        customernote: weekly.reference, productcount: 2 })).status, 200);
+    assert.equal((await post("/api/shopier/redeem", weekClaim, 409)).code, undefined);
+    const badAmount = await post("/api/shopier/checkout", { planId: "individual-weekly", username: "weekly.creator" }, 201);
+    assert.equal((await osbNotification(base, { ...weekEvent, orderid: "7005", price: "299.99",
+        customernote: badAmount.reference })).status, 200);
+    assert.equal((await post("/api/shopier/redeem", { token: badAmount.token }, 409)).code, undefined);
+    const badProduct = await post("/api/shopier/checkout", { planId: "individual-weekly", username: "weekly.creator" }, 201);
+    assert.equal((await osbNotification(base, { ...weekEvent, orderid: "7006", productid: monthEvent.productid,
+        customernote: badProduct.reference })).status, 200);
+    assert.equal((await post("/api/shopier/redeem", { token: badProduct.token }, 409)).code, undefined);
+
+    await file("reject-write", {});
+    assert.equal((await osbNotification(base, weekEvent)).status, 503);
+    await rm(path.join(root, "reject-write.json"));
+    const acknowledgements = await Promise.all([osbNotification(base, weekEvent), osbNotification(base, weekEvent)]);
+    for (const response of acknowledgements) assert.equal(await response.text(), "success");
+    assert.equal((await osbNotification(base, { ...monthEvent, orderid: "7001" })).status, 409);
+    assert.equal((await post("/api/shopier/redeem", monthClaim, 409)).code, undefined);
+    assert.equal((await osbNotification(base, monthEvent)).status, 200);
+
+    await stop();
+    await start(osbOptions);
+    await file("reject-write", {});
+    assert.equal((await post("/api/shopier/redeem", weekClaim, 503)).code, undefined);
+    await rm(path.join(root, "reject-write.json"));
+    const [week, duplicate, month] = await Promise.all([post("/api/shopier/redeem", weekClaim),
+        post("/api/shopier/redeem", weekClaim), post("/api/shopier/redeem", monthClaim)]);
+    assert.deepEqual(duplicate, week);
+    assert.notEqual(week.code, month.code);
+    for (const [receipt, days] of [[week, 7], [month, 30]]) {
+        assert.match(receipt.code, /^MNGS-[A-F0-9]{20}$/);
+        const activation = await post("/api/license/verify", { code: receipt.code, deviceId: "paid-device" });
+        assert.equal(activation.valid, true);
+        assert.equal(activation.remainingDays, days);
+    }
+    await stop();
+    await start(osbOptions);
+    assert.deepEqual(await post("/api/shopier/redeem", weekClaim), week);
+    assert.deepEqual(await post("/api/shopier/redeem", monthClaim), month);
 });
 
 test("Shopier code and agency membership survive restarts with no persistent Render disk", { timeout: 15_000 }, async t => {

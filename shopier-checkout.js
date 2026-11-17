@@ -21,7 +21,7 @@ export function shopierProductIds(json, plans = salesPlans) {
 
 export function createShopierCheckout({
     secret, apiToken, products, licenses, saveLicense, issueCode,
-    verifyPayment = verifyShopierPayment, now = Date.now,
+    verifyPayment = verifyShopierPayment, findPaidOrder, now = Date.now,
 }) {
     let pendingLicenseWrite = Promise.resolve();
 
@@ -37,7 +37,8 @@ export function createShopierCheckout({
             amountMinor: plan.priceMinor, discountMinor: 0, createdAt: now() };
         const data = Buffer.from(JSON.stringify(quote)).toString("base64url");
         return { reference, token: `${data}.${sign(secret, data)}`,
-            paymentUrl: `https://www.shopier.com/tikmng/${quote.productId}`, amountMinor: quote.amountMinor };
+            paymentUrl: `https://www.shopier.com/tikmng/${quote.productId}`, amountMinor: quote.amountMinor,
+            ...(findPaidOrder && { verification: "osb" }) };
     }
 
     function readQuote(token) {
@@ -54,12 +55,14 @@ export function createShopierCheckout({
 
     async function redeem(token, orderId) {
         const quote = readQuote(token);
-        if (!quote || typeof orderId !== "string" || !/^\d{1,30}$/.test(orderId)) return null;
+        if (!quote) return null;
         const plan = salesPlans.find(item => item.id === quote.planId);
-        if (!plan) return null;
+        if (!plan || products[plan.id] !== quote.productId) return null;
 
-        const paid = await verifyPayment({ apiToken, orderId, quote });
+        if (!findPaidOrder && (typeof orderId !== "string" || !/^\d{1,30}$/.test(orderId))) return null;
+        const paid = findPaidOrder ? findPaidOrder(quote) : await verifyPayment({ apiToken, orderId, quote });
         if (!paid) return null;
+        if (findPaidOrder) orderId = paid.orderId;
         const result = pendingLicenseWrite.then(() => deliver(quote, plan, orderId));
         pendingLicenseWrite = result.catch(() => {});
         return result;
@@ -78,6 +81,7 @@ export function createShopierCheckout({
             license.shopier?.orderId === orderId || license.shopier?.reference === quote.reference);
         if (existing) {
             if (existing.shopier.orderId !== orderId || existing.shopier.reference !== quote.reference
+                || existing.shopier.planId !== quote.planId || existing.shopier.amountMinor !== quote.amountMinor
                 || ["iptal", "arsivlendi"].includes(existing.durum)) return null;
             const result = { code: existing.kod, planId: quote.planId };
             if (plan.kind === "agency" && existing.tip === "ajans" && existing.agency_portal_access?.version === 1) {
