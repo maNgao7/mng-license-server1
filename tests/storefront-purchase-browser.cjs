@@ -65,7 +65,7 @@ for (const width of [1280, 360]) {
                 assert.equal(await options.count(), 7);
             } else {
                 assert.equal(await purchase.getAttribute('href'), '#fiyatlandirma');
-                assert.match(await whatsapp.textContent(), /WHATSAPP SİPARİŞ/);
+                assert.match(await whatsapp.textContent(), /WhatsApp destek/);
                 assert.equal(await whatsapp.evaluate(link => getComputedStyle(link).backgroundColor), 'rgb(37, 211, 102)');
                 const purchaseLinks = await page.locator('.plan-periods a, [data-license-order]').evaluateAll(links => links.map(link => link.href));
                 assert.equal(purchaseLinks.length, 9);
@@ -74,7 +74,19 @@ for (const width of [1280, 360]) {
                     '/tikmng/52768059', '/tikmng/52768060', '/tikmng/52768061', '/tikmng/52768062', '/tikmng/52768058',
                 ]);
                 assert.ok(purchaseLinks.every(href => new URL(href).origin === 'https://www.shopier.com'));
-                assertWhatsApp(await page.locator('#shopier-order-support a').getAttribute('href'));
+                const orderActions = page.locator('#shopier-order-support .shopier-order-actions a');
+                assert.equal(await orderActions.count(), 2);
+                for (const [index, plan] of ['Haftalık', 'Aylık'].entries()) {
+                    const action = orderActions.nth(index);
+                    await action.scrollIntoViewIfNeeded();
+                    const href = await action.getAttribute('href');
+                    assertWhatsApp(href);
+                    const message = new URL(href).searchParams.get('text');
+                    assert.ok(message.includes(`TikMnG Bireysel ${plan} lisansı`));
+                    assert.match(message, /\nShopier sipariş numaram: .*\nTikTok kullanıcı adım: @/);
+                    const box = await action.boundingBox();
+                    assert.ok(box.x >= 0 && box.x + box.width <= width + 1 && box.height >= 44);
+                }
             }
         });
     }

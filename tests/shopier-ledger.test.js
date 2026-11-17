@@ -129,13 +129,15 @@ async function createLedgerFixture(t) {
         }
         await rmdir(root);
     });
-    async function start({ salesEnabled = true, scope = "all", paymentSource = "api", automatic = false, configuredProducts = products } = {}) {
+    async function start({ salesEnabled = true, selfService = true, scope = "all", paymentSource = "api",
+        automatic = false, configuredProducts = products } = {}) {
         const module = `data:text/javascript;base64,${Buffer.from(mock).toString("base64")}`;
         server = spawn(process.execPath, ["--import", module, "server.js"], {
             cwd: new URL("../", import.meta.url), stdio: "ignore",
             env: { SystemRoot: process.env.SystemRoot, HOST: "127.0.0.1", PORT: String(port),
                 MNG_DATA_DIR: root, MOCK_PROVIDER_DIR: root, ADMIN_SIFRE: password,
                 BACKUP_REPO: "test/backup", GITHUB_TOKEN: "test-only", SHOPIER_SALES_ENABLED: String(salesEnabled),
+                SHOPIER_SELF_SERVICE_ENABLED: String(selfService),
                 SHOPIER_LICENSE_STORAGE: "github", SHOPIER_API_TOKEN: paymentSource === "api" || automatic ? "test-only" : "",
                 MOCK_AUTO_CHECKOUT: String(automatic),
                 SHOPIER_PAYMENT_SOURCE: paymentSource, SHOPIER_OSB_USERNAME: osbUsername, SHOPIER_OSB_SECRET: osbSecret,
@@ -309,6 +311,33 @@ test("OSB claims require signed exact payment and deliver one durable code for e
     await start(osbOptions);
     assert.deepEqual(await post("/api/shopier/redeem", weekClaim), week);
     assert.deepEqual(await post("/api/shopier/redeem", monthClaim), month);
+});
+
+test("manual storefront uses catalog products while an existing signed checkout can be recovered", async t => {
+    const { base, start, stop, post } = await createLedgerFixture(t);
+    const options = { ...osbOptions, automatic: true };
+    await start(options);
+    const buyer = { planId: "individual-weekly", username: "weekly.creator" };
+    const oldOrder = await fetch(base + "/api/shopier/checkout", { method: "POST",
+        headers: { "Content-Type": "application/json" }, body: JSON.stringify(buyer) });
+    assert.equal(oldOrder.status, 201);
+    const cookie = oldOrder.headers.get("set-cookie").split(";")[0];
+    const quote = await oldOrder.json();
+    await stop();
+    await start({ ...options, selfService: false });
+
+    const home = await (await fetch(base)).text();
+    assert.match(home, /<meta name="tikmng-checkout" content="closed">/);
+    assert.match(home, /Haftalık aldım · WhatsApp/);
+    assert.match(home, /Aylık aldım · WhatsApp/);
+    const checkout = base + "/satin-al?plan=individual-weekly";
+    const redirect = await fetch(checkout, { redirect: "manual" });
+    assert.equal(redirect.status, 302);
+    assert.equal(redirect.headers.get("location"), "https://www.shopier.com/tikmng/52768054");
+    await post("/api/shopier/checkout", buyer, 410);
+
+    assert.equal((await fetch(checkout, { headers: { cookie }, redirect: "manual" })).status, 200);
+    assert.deepEqual(await (await fetch(base + "/api/shopier/current", { headers: { cookie } })).json(), quote);
 });
 
 test("automatic private-product checkout delivers without a buyer reference and survives restart", { timeout: 20_000 }, async t => {

@@ -452,6 +452,7 @@ registerContentRoutes(app, { dataDir: DATA_DIR, adminKontrol });
 
 const shopierToken = String(process.env.SHOPIER_API_TOKEN || "").trim();
 const shopierPaymentSource = process.env.SHOPIER_PAYMENT_SOURCE || "api";
+const shopierSelfServiceEnabled = process.env.SHOPIER_SELF_SERVICE_ENABLED === "true";
 const shopierScope = process.env.SHOPIER_SALES_SCOPE || "all";
 const shopierPlans = shopierScope === "all" ? salesPlans
     : shopierScope === "individual" ? salesPlans.filter(plan => plan.kind === "individual") : [];
@@ -615,7 +616,7 @@ app.get("/api/admin/shopier/hazirlik", adminKontrol, shopierReadinessLimit, asyn
         return { paket, fiyatTL: priceMinor / 100, durum, shopierHata };
     }));
     res.json({
-        canliSatisAcik: shopierCheckoutMode() !== "closed",
+        canliSatisAcik: shopierSelfServiceEnabled && shopierCheckoutMode() !== "closed",
         satisKapsami: shopierScope,
         odemeKaynagi: shopierPaymentSource,
         shopierBildirimAyariHazir: shopierOsbConfigured,
@@ -708,7 +709,10 @@ app.get("/satin-al/odeme", shopierRateLimit, (req, res) => {
 app.get("/satin-al", (req, res, next) => {
     res.set("Cache-Control", "no-store");
     const mode = shopierCheckoutMode();
-    if (mode === "closed" || (req.query.plan !== undefined && !shopierPlans.some(plan => plan.id === req.query.plan))) {
+    const existing = shopierCheckout?.readQuote(cookieDegeri(req, "tikmng_checkout"));
+    const recovering = existing && (req.query.plan === undefined || req.query.plan === existing.planId);
+    if (mode === "closed" || (!shopierSelfServiceEnabled && !recovering)
+        || (req.query.plan !== undefined && !shopierPlans.some(plan => plan.id === req.query.plan))) {
         return res.redirect(302, manualShopierUrl(req.query.plan) || "/#fiyatlandirma");
     }
     fs.readFile(path.join(__dirname, "web", "shopier-checkout.html"), "utf8", (error, html) => {
@@ -722,6 +726,9 @@ app.use("/api/shopier", shopierRateLimit, (_req, res, next) => {
     next();
 });
 app.post("/api/shopier/checkout", (req, res, next) => {
+    if (!shopierSelfServiceEnabled) {
+        return res.status(410).json({ error: "Yeni lisans siparişleri Shopier üzerinden alınır. TikMnG fiyatlandırma sayfasından paketini seç." });
+    }
     let checkout;
     try { checkout = shopierCheckout.open(req.body?.planId, req.body?.username); }
     catch (error) { return next(error); }
@@ -758,7 +765,7 @@ app.get("/admin/lucide.js", (req, res) => {
 registerPublicWebsite(app, {
     webRoot: path.join(__dirname, "web"),
     fallbackHome: path.join(__dirname, "index.html"),
-    checkoutMode: shopierCheckoutMode
+    checkoutMode: () => shopierSelfServiceEnabled ? shopierCheckoutMode() : "closed"
 });
 
 app.use((req, res, next) => {

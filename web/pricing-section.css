@@ -5,6 +5,40 @@
 .plan-section h2{margin:.3em 0;font-size:clamp(2rem,5vw,3.8rem);line-height:1.08}
 .plan-lead{max-width:650px;color:#becace;margin:0 0 10px}
 .plan-order-note{color:#a3e9df;margin:0 0 28px}
+.shopier-order-support {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 16px;
+    margin: 0 0 22px;
+    padding: clamp(16px, 2.5vw, 24px);
+    border: 1px solid #397457;
+    border-radius: 14px;
+    background: #192a24;
+}
+.shopier-order-support[hidden] { display: none; }
+.shopier-order-support h3 { margin: 0 0 6px; color: #edf9f1; font-size: clamp(1.05rem, 2vw, 1.3rem); }
+.shopier-order-support p { margin: 0; color: #c5dbd0; }
+.shopier-order-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.shopier-order-actions a {
+    display: inline-flex;
+    min-height: 46px;
+    align-items: center;
+    justify-content: center;
+    padding: 9px 14px;
+    border-radius: 9px;
+    background: #76e6a0;
+    color: #0d2116;
+    font-weight: 800;
+    text-align: center;
+    text-decoration: none;
+}
+.shopier-order-actions a:hover { background: #a5efbf; }
+.shopier-order-actions a:focus-visible { outline: 2px solid #edf9f1; outline-offset: 3px; }
+.plan-card .agency-order-support { margin: -10px 0 20px; }
+.agency-order-support a { color: var(--plan); text-underline-offset: 3px; }
+@media (max-width: 900px) { .shopier-order-support { grid-template-columns: 1fr; } }
+@media (max-width: 460px) { .shopier-order-actions a { width: 100%; } }
 .plan-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
 .plan-card{--plan:#68e0d2;border:1px solid #415458;border-top:3px solid var(--plan);border-radius:16px;padding:clamp(20px,4vw,36px);background:#192226;color:#f4f9fa}
 .plan-card-agency{--plan:#cab6ff;background:#242033;border-color:#635480;border-top-color:var(--plan)}
