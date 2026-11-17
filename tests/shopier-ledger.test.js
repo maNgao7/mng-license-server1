@@ -39,6 +39,7 @@ import { createHash } from 'node:crypto';
 const root = process.env.MOCK_PROVIDER_DIR;
 const read = (name) => JSON.parse(readFileSync(root + '/' + name + '.json', 'utf8'));
 const prices = { '/v1/products/5000': '300.00', '/v1/products/5002': '2000.00' };
+if (process.env.MOCK_AUTO_CHECKOUT === 'true') prices['/v1/products/5001'] = '800.00';
 globalThis.fetch = async (input, options = {}) => {
     const url = new URL(input);
     if (url.hostname === 'api.github.com') {
@@ -52,8 +53,23 @@ globalThis.fetch = async (input, options = {}) => {
         if (existsSync(root + '/lost-ack.json')) throw new Error('simulated lost acknowledgement');
         return Response.json({ content: { sha } });
     }
+    if (url.hostname === 'api.shopier.com' && url.pathname === '/v1/products' && options.method === 'POST') {
+        const products = existsSync(root + '/created-products.json') ? read('created-products') : [];
+        const body = JSON.parse(options.body);
+        const product = { ...body, id: String(6200 + products.length), priceData: { ...body.priceData, discount: false } };
+        products.push(product);
+        writeFileSync(root + '/created-products.json', JSON.stringify(products));
+        return Response.json(product);
+    }
+    if (url.hostname === 'api.shopier.com' && url.pathname.startsWith('/v1/products/') && options.method === 'PUT') {
+        const products = read('created-products');
+        Object.assign(products.find(p => p.id === url.pathname.split('/').pop()), JSON.parse(options.body));
+        writeFileSync(root + '/created-products.json', JSON.stringify(products));
+        return Response.json({});
+    }
     if (url.hostname === 'api.shopier.com' && prices[url.pathname]) {
         return Response.json({ id: url.pathname.split('/').pop(), type: 'digital', stockStatus: 'inStock',
+            media: [{ type: 'image', url: 'https://example.test/license.jpg', placement: 1 }],
             priceData: { currency: 'TRY', discount: false, price: prices[url.pathname] } });
     }
     if (url.hostname === 'api.shopier.com' && url.pathname === '/v1/products/5001') {
@@ -62,8 +78,13 @@ globalThis.fetch = async (input, options = {}) => {
     if (url.hostname === 'api.shopier.com' && url.pathname.startsWith('/v1/products/')) {
         return new Response(null, { status: 404 });
     }
-    if (url.hostname === 'api.shopier.com' && url.pathname === '/v1/orders/7001') {
-        return Response.json(read('order'));
+    if (url.hostname === 'api.shopier.com' && url.pathname === '/v1/orders') {
+        const order = existsSync(root + '/order.json') ? read('order') : null;
+        return Response.json(order?.lineItems?.some(item => item.productId === url.searchParams.get('productId')) ? [order] : []);
+    }
+    if (url.hostname === 'api.shopier.com' && url.pathname.startsWith('/v1/orders/')) {
+        const order = existsSync(root + '/order.json') ? read('order') : null;
+        return order?.id === url.pathname.split('/').pop() ? Response.json(order) : new Response(null, { status: 404 });
     }
     throw new Error('Unexpected test network request');
 };`;
@@ -94,7 +115,7 @@ async function createLedgerFixture(t) {
     }
     t.after(async () => {
         await stop();
-        for (const name of ["github.json", "order.json", "reject-write.json", "lost-ack.json",
+        for (const name of ["github.json", "order.json", "reject-write.json", "lost-ack.json", "created-products.json",
             "lisanslar.json", "lisanslar_backup.json", "aktivasyon_log.json", "talepler.json", "kara_liste.json", "content-state.json"]) {
             await rm(path.join(root, name), { force: true });
         }
@@ -103,14 +124,15 @@ async function createLedgerFixture(t) {
         }
         await rmdir(root);
     });
-    async function start({ salesEnabled = true, scope = "all", paymentSource = "api", configuredProducts = products } = {}) {
+    async function start({ salesEnabled = true, scope = "all", paymentSource = "api", automatic = false, configuredProducts = products } = {}) {
         const module = `data:text/javascript;base64,${Buffer.from(mock).toString("base64")}`;
         server = spawn(process.execPath, ["--import", module, "server.js"], {
             cwd: new URL("../", import.meta.url), stdio: "ignore",
             env: { SystemRoot: process.env.SystemRoot, HOST: "127.0.0.1", PORT: String(port),
                 MNG_DATA_DIR: root, MOCK_PROVIDER_DIR: root, ADMIN_SIFRE: password,
                 BACKUP_REPO: "test/backup", GITHUB_TOKEN: "test-only", SHOPIER_SALES_ENABLED: String(salesEnabled),
-                SHOPIER_LICENSE_STORAGE: "github", SHOPIER_API_TOKEN: paymentSource === "api" ? "test-only" : "",
+                SHOPIER_LICENSE_STORAGE: "github", SHOPIER_API_TOKEN: paymentSource === "api" || automatic ? "test-only" : "",
+                MOCK_AUTO_CHECKOUT: String(automatic),
                 SHOPIER_PAYMENT_SOURCE: paymentSource, SHOPIER_OSB_USERNAME: osbUsername, SHOPIER_OSB_SECRET: osbSecret,
                 SHOPIER_CLAIM_SECRET: "test-claim-signing-key-no-production",
                 SHOPIER_SALES_SCOPE: scope, SHOPIER_PRODUCT_IDS: JSON.stringify(configuredProducts) },
@@ -282,6 +304,85 @@ test("OSB claims require signed exact payment and deliver one durable code for e
     await start(osbOptions);
     assert.deepEqual(await post("/api/shopier/redeem", weekClaim), week);
     assert.deepEqual(await post("/api/shopier/redeem", monthClaim), month);
+});
+
+test("automatic private-product checkout delivers without a buyer reference and survives restart", { timeout: 20_000 }, async t => {
+    const { base, root, file, start, stop, post } = await createLedgerFixture(t);
+    const options = { ...osbOptions, automatic: true };
+    await start(options);
+    await file("reject-write", {});
+    await post("/api/shopier/checkout", { planId: "individual-weekly", username: "weekly.creator" }, 503);
+    await rm(path.join(root, "reject-write.json"));
+    assert.equal(JSON.parse(await readFile(path.join(root, "created-products.json"), "utf8"))[0].stockQuantity, 0);
+    const response = await fetch(base + "/api/shopier/checkout", { method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ planId: "individual-weekly", username: "weekly.creator" }) });
+    assert.equal(response.status, 201);
+    const week = await response.json();
+    const cookie = response.headers.get("set-cookie").split(";")[0];
+    assert.match(response.headers.get("set-cookie"), /HttpOnly/);
+    assert.match(week.paymentUrl, /^\/satin-al\/odeme\?token=/);
+    const current = await fetch(base + "/api/shopier/current", { headers: { cookie } });
+    assert.deepEqual(await current.json(), week);
+    const redirect = await fetch(base + week.paymentUrl);
+    const form = await redirect.text();
+    assert.match(form, /action="https:\/\/www\.shopier\.com\/s\/shipping\/tikmng"/);
+    assert.match(form, /name="product_id" value="6201"/);
+    assert.equal(redirect.headers.get("referrer-policy"), "no-referrer");
+    const month = await post("/api/shopier/checkout", { planId: "individual-monthly", username: "monthly.creator" }, 201);
+    await post("/api/shopier/redeem", { token: week.token }, 409);
+    await stop();
+    await start(options);
+    const paidOrder = (id, productId, price) => ({ id, paymentStatus: "paid", currency: "TRY",
+        dateCreated: new Date().toISOString(), note: "",
+        lineItems: [{ productId, type: "digital", quantity: 1, price, total: price }], refunds: [],
+        totals: { subtotal: price, total: price, discount: "0.00", shipping: "0.00" } });
+    await file("order", paidOrder("7001", "6201", "300.00"));
+    const event = { istest: 0, orderid: "7001", currency: 0, price: "300.00",
+        productcount: 1, productid: "6201", customernote: "" };
+    assert.equal(await (await osbNotification(base, event)).text(), "success");
+    const [issued, duplicate] = await Promise.all([
+        post("/api/shopier/redeem", { token: week.token }),
+        post("/api/shopier/redeem", { token: week.token }),
+    ]);
+    assert.deepEqual(issued, duplicate);
+    assert.equal((await post("/api/license/verify", { code: issued.code, deviceId: "weekly-device" })).remainingDays, 7);
+    await file("order", paidOrder("7002", "6202", "800.00"));
+    // Returning to the site recovers a missed notification from the exact private product.
+    const monthly = await post("/api/shopier/redeem", { token: month.token });
+    assert.equal((await post("/api/license/verify", { code: monthly.code, deviceId: "monthly-device" })).remainingDays, 30);
+    await stop();
+    await start(options);
+    assert.deepEqual(await post("/api/shopier/redeem", { token: week.token }), issued);
+    assert.deepEqual(await post("/api/shopier/redeem", { token: month.token }), monthly);
+});
+
+test("only an administrator can recover an already paid legacy checkout without its note", async t => {
+    const { base, file, start, stop, post } = await createLedgerFixture(t);
+    await start(osbOptions);
+    const legacy = await post("/api/shopier/checkout", { planId: "individual-weekly", username: "paid.creator" }, 201);
+    await stop();
+    await start({ ...osbOptions, automatic: true });
+    const claim = { token: legacy.token, orderId: "7001" };
+    await file("order", { id: "7001", paymentStatus: "paid", currency: "TRY", note: "",
+        dateCreated: new Date().toISOString(),
+        lineItems: [{ productId: "5000", type: "digital", quantity: 1, price: "300.00", total: "300.00" }],
+        refunds: [], totals: { subtotal: "300.00", total: "300.00", discount: "0.00", shipping: "0.00" } });
+    await post("/api/shopier/redeem", { token: legacy.token }, 409);
+    await post("/api/admin/shopier/eslestir", claim, 401);
+    const login = await fetch(base + "/api/admin/giris", { method: "POST",
+        headers: { "Content-Type": "application/json" }, body: JSON.stringify({ sifre: password }) });
+    const cookie = login.headers.get("set-cookie").split(";")[0];
+    const recover = () => fetch(base + "/api/admin/shopier/eslestir", { method: "POST",
+        headers: { cookie }, body: new URLSearchParams(claim) });
+    const recovered = await recover();
+    assert.equal(recovered.status, 200);
+    const buyerCookie = recovered.headers.get("set-cookie").split(";")[0];
+    const restored = await fetch(base + "/api/shopier/current", { headers: { cookie: buyerCookie } });
+    assert.equal((await restored.json()).token, legacy.token);
+    const license = await recovered.json();
+    assert.deepEqual(await (await recover()).json(), license);
+    assert.deepEqual(await post("/api/shopier/redeem", { token: legacy.token }), license);
 });
 
 test("Shopier code and agency membership survive restarts with no persistent Render disk", { timeout: 15_000 }, async t => {

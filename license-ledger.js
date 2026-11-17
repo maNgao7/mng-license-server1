@@ -36,7 +36,7 @@ export function createLicenseLedger({ read, write, checkpoint, scheduleBackup })
     return { transact, isStaging: () => staging };
 }
 
-function accessState({ licenses, blacklist, shopierOrders }) {
-    return JSON.stringify([licenses, blacklist, shopierOrders], (key, value) =>
+function accessState({ licenses, blacklist, shopierOrders, shopierCheckouts }) {
+    return JSON.stringify([licenses, blacklist, shopierOrders, shopierCheckouts], (key, value) =>
         key === "son_kontrol" || key === "giris_sayisi" ? undefined : value);
 }

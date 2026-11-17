@@ -17,6 +17,8 @@ import { createOverlayAuthorization } from "./overlay-authorization.js";
 import { createHttpTraffic } from "./http-traffic.js";
 import { createShopierCheckout, shopierProductIds } from "./shopier-checkout.js";
 import { checkShopierOffer } from "./shopier-payment.js";
+import { createShopierPaymentProduct, disableShopierPaymentProduct, getShopierOrder, findShopierOrdersForProduct,
+    matchShopierAutomaticPayment } from "./shopier-autopay.js";
 import { readShopierOsbForm, readShopierOsb, shopierOsbReceipt, sameShopierReceipt,
     receiptIsCurrent, shopierReceiptMatchesQuote } from "./shopier-osb.js";
 import { createLicenseLedger } from "./license-ledger.js";
@@ -89,6 +91,7 @@ let aktivasyonLogVeritabani = [];
 let taleplerVeritabani = [];
 let karaListeVeritabani = [];
 let shopierOrders = [];
+let shopierCheckouts = [];
 
 // =====================================================================
 // ÜCRETSİZ GITHUB YEDEĞİ
@@ -162,7 +165,8 @@ function githubBackupSnapshot() {
         activationLogs: aktivasyonLogVeritabani.slice(-1000),
         requests: taleplerVeritabani,
         blacklist: karaListeVeritabani,
-        shopierOrders
+        shopierOrders,
+        shopierCheckouts
     };
 }
 
@@ -173,11 +177,13 @@ async function githubBackupLoad() {
     const state = githubBackupDecrypt(Buffer.from(String(remote.content).replace(/\n/g, ""), "base64").toString("utf8"));
     if (!Array.isArray(state.licenses) || !Array.isArray(state.activationLogs) || !Array.isArray(state.requests) || !Array.isArray(state.blacklist)) throw new Error("GitHub yedeği eksik veri içeriyor");
     if (state.shopierOrders !== undefined && !Array.isArray(state.shopierOrders)) throw new Error("Shopier kayıtları geçersiz.");
+    if (state.shopierCheckouts !== undefined && !Array.isArray(state.shopierCheckouts)) throw new Error("Satın alma kayıtları geçersiz.");
     lisanslarVeritabani = state.licenses;
     aktivasyonLogVeritabani = state.activationLogs;
     taleplerVeritabani = state.requests;
     karaListeVeritabani = state.blacklist;
     shopierOrders = state.shopierOrders ?? [];
+    shopierCheckouts = state.shopierCheckouts ?? [];
     githubBackupSha = remote.sha || null;
     return true;
 }
@@ -232,12 +238,13 @@ function githubBackupSchedule() {
 
 const licenseLedger = createLicenseLedger({
     read: () => ({ licenses: lisanslarVeritabani, blacklist: karaListeVeritabani,
-        activationLogs: aktivasyonLogVeritabani, shopierOrders }),
-    write({ licenses, blacklist, activationLogs, shopierOrders: orders }) {
+        activationLogs: aktivasyonLogVeritabani, shopierOrders, shopierCheckouts }),
+    write({ licenses, blacklist, activationLogs, shopierOrders: orders, shopierCheckouts: checkouts }) {
         lisanslarVeritabani = licenses;
         karaListeVeritabani = blacklist;
         aktivasyonLogVeritabani = activationLogs;
         shopierOrders = orders;
+        shopierCheckouts = checkouts;
     },
     checkpoint(state, publish) {
         return enqueueGithubWrite(async () => {
@@ -457,6 +464,7 @@ const shopierOsbCredentials = {
 const useShopierOsb = shopierPaymentSource === "osb";
 const shopierOsbConfigured = useShopierOsb && shopierScope === "individual" && useGithubLicenseLedger
     && Boolean(shopierOsbCredentials.username && shopierOsbCredentials.secret);
+const shopierAutomaticCheckout = shopierOsbConfigured && Boolean(shopierToken);
 let shopierOsbLastTest = null;
 const shopierIndividualCodePattern = /^MNGS-[A-F0-9]{20}$/;
 function shopierStorageAvailable() {
@@ -468,12 +476,77 @@ function findShopierOsbPaidOrder(quote) {
     return lisanslarVeritabani.some(license => license.shopier?.orderId === receipt.orderId
         && license.shopier?.reference === receipt.reference) ? receipt : null;
 }
+async function prepareShopierPayment(quote) {
+    if (!shopierStorageAvailable()) throw storageUnavailable();
+    const product = await createShopierPaymentProduct({
+        apiToken: shopierToken, templateProductId: quote.productId, quote,
+    });
+    const session = { ...quote, baseProductId: quote.productId, productId: product.productId, automatic: true };
+    try {
+        await licenseLedger.transact(() => {
+            if (!shopierStorageAvailable()) throw storageUnavailable();
+            shopierCheckouts = shopierCheckouts.filter(item => Date.now() - item.createdAt < 30 * 86_400_000);
+            shopierCheckouts.push(session);
+        });
+    } catch (error) {
+        await disableShopierPaymentProduct({ apiToken: shopierToken, productId: product.productId })
+            .catch(() => console.warn("Shopier checkout product could not be closed after a storage failure."));
+        throw error;
+    }
+    return session;
+}
+function recordShopierReceipt(receipt) {
+    return licenseLedger.transact(() => {
+        if (!shopierStorageAvailable()) throw storageUnavailable();
+        const seen = shopierOrders.find(order => order.orderId === receipt.orderId || order.reference === receipt.reference);
+        if (seen) return sameShopierReceipt(seen, receipt);
+        const delivered = lisanslarVeritabani.some(license => license.shopier?.orderId === receipt.orderId
+            || license.shopier?.reference === receipt.reference);
+        if (!delivered) {
+            shopierOrders = shopierOrders.filter(order => receiptIsCurrent(order, receipt.receivedAt));
+            shopierOrders.push(receipt);
+        }
+        return true;
+    });
+}
+async function recordShopierAutomaticOrder(orderId) {
+    const order = await getShopierOrder({ apiToken: shopierToken, orderId });
+    if (!order) return false;
+    for (const session of shopierCheckouts) {
+        const receipt = matchShopierAutomaticPayment(order, session);
+        if (receipt) return recordShopierReceipt(receipt);
+    }
+    return false;
+}
+const shopierPaymentLookups = new Map();
+async function findShopierPaidOrder(quote) {
+    const receipt = findShopierOsbPaidOrder(quote);
+    if (receipt || !quote.automatic) return receipt;
+    if (!shopierCheckouts.some(item => item.reference === quote.reference && item.productId === quote.productId)) return null;
+    let lookup = shopierPaymentLookups.get(quote.reference);
+    if (!lookup || Date.now() - lookup.startedAt >= 5000) {
+        const request = findShopierOrdersForProduct({ apiToken: shopierToken, productId: quote.productId })
+            .then(async orders => {
+                for (const order of orders) {
+                    const payment = matchShopierAutomaticPayment(order, quote);
+                    if (payment) return recordShopierReceipt(payment);
+                }
+                return false;
+            });
+        lookup = { startedAt: Date.now(), request };
+        shopierPaymentLookups.set(quote.reference, lookup);
+        if (shopierPaymentLookups.size > 1000) shopierPaymentLookups.delete(shopierPaymentLookups.keys().next().value);
+    }
+    await lookup.request;
+    return findShopierOsbPaidOrder(quote);
+}
 const shopierCheckout = process.env.SHOPIER_SALES_ENABLED === "true" && shopierStorageAvailable()
     && ADMIN_SIFRE.length >= 16 && shopierClaimSecret.length >= 32 && shopierProducts
     && (shopierOsbConfigured || (shopierPaymentSource === "api" && shopierToken))
     ? createShopierCheckout({
         secret: shopierClaimSecret, apiToken: shopierToken, products: shopierProducts,
-        findPaidOrder: useShopierOsb ? findShopierOsbPaidOrder : undefined,
+        findPaidOrder: useShopierOsb ? findShopierPaidOrder : undefined,
+        preparePayment: shopierAutomaticCheckout ? prepareShopierPayment : undefined,
         licenses: () => lisanslarVeritabani,
         issueCode({ agency, owner }) {
             for (let attempt = 0; attempt < 30; attempt++) {
@@ -551,6 +624,39 @@ app.get("/api/admin/shopier/hazirlik", adminKontrol, shopierReadinessLimit, asyn
     });
 });
 
+app.get("/admin/shopier-eslestir", adminKontrol, (_req, res) => {
+    res.set("Cache-Control", "no-store").type("html").send(`<!doctype html><html lang="tr">
+        <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+        <title>Shopier siparişini eşleştir</title>
+        <form method="POST" action="/api/admin/shopier/eslestir">
+        <label>Sipariş numarası<input name="orderId" required pattern="[0-9]{1,30}"></label>
+        <label>Satın alma oturumu<textarea name="token" required maxlength="2048"></textarea></label>
+        <button type="submit">Ödenmiş siparişi doğrula ve lisansı teslim et</button></form></html>`);
+});
+app.post("/api/admin/shopier/eslestir", adminKontrol,
+    express.urlencoded({ extended: false, limit: "8kb", parameterLimit: 3 }), async (req, res, next) => {
+    res.set("Cache-Control", "no-store");
+    try {
+        const quote = shopierCheckout?.readQuote(req.body?.token);
+        if (!quote || !/^\d{1,30}$/.test(req.body?.orderId || "") || !shopierToken) {
+            return res.status(400).json({ error: "Sipariş ve satın alma oturumunu kontrol edin." });
+        }
+        const order = await getShopierOrder({ apiToken: shopierToken, orderId: req.body.orderId });
+        const receipt = order && matchShopierAutomaticPayment(order, quote);
+        if (!receipt || !await recordShopierReceipt(receipt)) {
+            return res.status(409).json({ error: "Ödenmiş paket bu oturumla eşleştirilemedi." });
+        }
+        const result = await shopierCheckout.redeem(req.body.token);
+        if (result) res.cookie("tikmng_checkout", req.body.token, {
+            httpOnly: true, secure: process.env.RENDER === "true" || req.secure,
+            sameSite: "lax", path: "/", maxAge: 30 * 86_400_000,
+        });
+        return result ? res.json(result) : res.status(409).json({ error: "Lisans teslimi doğrulanamadı." });
+    } catch (error) {
+        next(error);
+    }
+});
+
 app.post("/api/shopier/osb",
     express.urlencoded({ extended: false, limit: "32kb", parameterLimit: 8 }),
     express.raw({ type: "multipart/form-data", limit: "32kb" }), (req, res, next) => {
@@ -570,24 +676,37 @@ app.post("/api/shopier/osb",
             return res.send("success");
         }
         const receipt = shopierOsbReceipt(event, shopierProducts, Date.now());
+        if (shopierAutomaticCheckout && /^\d{1,30}$/.test(String(event.orderid))) {
+            return recordShopierAutomaticOrder(String(event.orderid)).then(async matched => {
+                if (!matched && receipt) await recordShopierReceipt(receipt);
+                return res.send("success");
+            });
+        }
         if (!receipt) return res.send("success");
         if (!shopierCheckout || !shopierStorageAvailable()) return res.status(503).send("unavailable");
-        return licenseLedger.transact(() => {
-            if (!shopierStorageAvailable()) throw storageUnavailable();
-            const seen = shopierOrders.find(order => order.orderId === receipt.orderId || order.reference === receipt.reference);
-            if (seen) return sameShopierReceipt(seen, receipt);
-            const delivered = lisanslarVeritabani.some(license => license.shopier?.orderId === receipt.orderId
-                || license.shopier?.reference === receipt.reference);
-            if (!delivered) {
-                shopierOrders = shopierOrders.filter(order => receiptIsCurrent(order, receipt.receivedAt));
-                shopierOrders.push(receipt);
-            }
-            return true;
-        }).then(accepted => accepted ? res.send("success") : res.status(409).send("conflicting notification"));
+        return recordShopierReceipt(receipt)
+            .then(accepted => accepted ? res.send("success") : res.status(409).send("conflicting notification"));
     }).catch(next);
 });
 
 app.get("/shopier-checkout.html", (_req, res) => res.redirect(302, "/satin-al"));
+app.get("/satin-al/odeme", shopierRateLimit, (req, res) => {
+    res.set("Cache-Control", "no-store").set("Referrer-Policy", "no-referrer");
+    const quote = shopierCheckout?.readQuote(req.query.token);
+    if (!quote?.automatic || !shopierStorageAvailable()
+        || !shopierCheckouts.some(item => item.reference === quote.reference && item.productId === quote.productId)) {
+        return res.status(400).type("text").send("Ödeme oturumu bulunamadı. TikMnG satın alma sayfasından tekrar başlayın.");
+    }
+    const nonce = crypto.randomBytes(18).toString("base64");
+    res.set("Content-Security-Policy", `default-src 'none'; script-src 'nonce-${nonce}'; form-action https://www.shopier.com; base-uri 'none'; frame-ancestors 'none'`);
+    res.type("html").send(`<!doctype html><html lang="tr"><meta charset="utf-8">
+        <meta name="viewport" content="width=device-width,initial-scale=1"><title>Shopier ödemesi</title>
+        <form id="shopier-payment" method="POST" action="https://www.shopier.com/s/shipping/tikmng">
+        <input type="hidden" name="product_id" value="${quote.productId}">
+        <input type="hidden" name="quantity" value="1">
+        <noscript><button type="submit">Shopier ödemesine git</button></noscript></form>
+        <script nonce="${nonce}">document.getElementById("shopier-payment").submit()</script></html>`);
+});
 app.get("/satin-al", (req, res, next) => {
     res.set("Cache-Control", "no-store");
     const mode = shopierCheckoutMode();
@@ -605,19 +724,31 @@ app.use("/api/shopier", shopierRateLimit, (_req, res, next) => {
     next();
 });
 app.post("/api/shopier/checkout", (req, res, next) => {
-    const checkout = shopierCheckout.open(req.body?.planId, req.body?.username);
+    let checkout;
+    try { checkout = shopierCheckout.open(req.body?.planId, req.body?.username); }
+    catch (error) { return next(error); }
     if (!checkout) return res.status(400).json({ error: "Paket ve kullanıcı adını kontrol et." });
-    if (useShopierOsb) return res.status(201).json(checkout);
+    if (useShopierOsb) return Promise.resolve(checkout).then(result => {
+        res.cookie("tikmng_checkout", result.token, {
+            httpOnly: true, secure: process.env.RENDER === "true" || req.secure,
+            sameSite: "lax", path: "/", maxAge: 30 * 86_400_000,
+        });
+        return res.status(201).json(result);
+    }).catch(next);
     checkShopierOffer({ apiToken: shopierToken, productId: shopierProducts[req.body.planId], priceMinor: checkout.amountMinor })
         .then(available => available ? res.status(201).json(checkout)
             : res.status(409).json({ error: "Paket şu anda satın alınamıyor." }))
         .catch(next);
 });
+app.get("/api/shopier/current", (req, res) => {
+    const checkout = shopierCheckout.resume(cookieDegeri(req, "tikmng_checkout"));
+    return checkout ? res.json(checkout) : res.status(204).end();
+});
 app.post("/api/shopier/redeem", (req, res, next) => {
     shopierCheckout.redeem(req.body?.token, req.body?.orderId).then(result => {
         if (result) return res.json(result);
         return res.status(409).json({ error: useShopierOsb
-            ? "Shopier bildirimi henüz eşleşmedi. Ödemen tamamlandıysa sipariş notuna yazdığın referansı kontrol et."
+            ? "Ödeme onayı bekleniyor. Onay geldiğinde lisansın bu ekranda görünecek."
             : "Sipariş henüz doğrulanamadı. Sipariş numarasını ve Shopier’e yazdığın referansı kontrol et." });
     }).catch(next);
 });

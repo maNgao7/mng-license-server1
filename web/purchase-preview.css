@@ -91,3 +91,35 @@ aside p,td,#price span,.metrics span{color:var(--muted)}.table-wrap{overflow:aut
 .purchase-outro li::before{content:"✓";margin-right:8px;color:var(--plan-accent)}
 .purchase-outro .outro-wish{margin-top:24px!important;color:var(--plan-accent)!important;font-weight:750}
 @media(max-width:360px){.order-summary .summary dt,.order-summary .summary dd{padding:7px 8px}}
+
+/* Shopier checkout only; shared purchase and admin previews keep their layouts. */
+.checkout-page #purchase.shopier-purchase{width:min(640px,calc(100% - 36px));padding-top:clamp(28px,5vw,56px);padding-bottom:40px}
+.checkout-page .checkout-heading h1{font-size:clamp(2rem,5vw,3rem);line-height:1.12;letter-spacing:-.035em;text-wrap:balance}
+.checkout-page .checkout-heading .intro{margin:16px 0 28px;max-width:55ch;line-height:1.65}
+.checkout-page #purchase.shopier-purchase .checkout{grid-template-columns:minmax(0,1fr);gap:18px}
+.checkout-page .shopier-card{padding:clamp(20px,4vw,32px);border:1px solid var(--line);border-radius:16px;background:var(--card);min-width:0}
+.checkout-page .shopier-card legend{font-size:1.15rem;margin-bottom:12px}
+.checkout-page .shopier-card label{font-weight:650;margin-top:18px}
+.checkout-page .shopier-card select,.checkout-page .shopier-card input,.checkout-page .shopier-card textarea{width:100%;min-width:0;min-height:50px;border:1px solid #53666c;border-radius:9px;padding:12px;color:var(--text);background:var(--bg);font:inherit}
+.checkout-page .shopier-card select{padding-right:28px}
+.checkout-page .field-help,.checkout-page .payment-help{color:var(--muted);font-size:.875rem;line-height:1.6;margin:8px 0 0}
+.checkout-page .checkout-total{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px 16px;border-top:1px solid var(--line);padding-top:20px;margin-top:24px}
+.checkout-page .checkout-total span{color:var(--muted)}
+.checkout-page .checkout-total strong{font-size:1.65rem;font-variant-numeric:tabular-nums;letter-spacing:-.025em}
+.checkout-page #purchase .checkout-primary{display:flex;align-items:center;justify-content:center;gap:14px;width:100%;min-height:58px;margin-top:20px;padding:15px 18px;font-size:1.1rem;border-radius:10px;background:var(--accent);color:#102322}
+.checkout-page #purchase .checkout-primary:hover{background:#9ef1e7}
+.checkout-page .checkout-primary:disabled{opacity:.7;cursor:wait}
+.checkout-page #purchase .checkout-secondary{background:transparent;color:var(--accent);font-size:.9rem;font-weight:650;padding:10px 0;margin-top:10px;min-height:44px;text-align:left;text-decoration:underline;text-underline-offset:4px}
+.checkout-page #purchase .checkout-secondary:hover{color:#b6fff4}
+.checkout-page .checkout-status{font-size:.925rem;line-height:1.65;color:var(--muted);margin:12px 0 0;overflow-wrap:anywhere}
+.checkout-page .checkout-status:empty{margin:0}
+.checkout-page .quote-summary{margin:0;font-size:1.1rem;font-weight:650;overflow-wrap:anywhere}
+.checkout-page .payment-state{border-top:2px solid var(--accent)}
+.checkout-page .payment-state .eyebrow{margin:0 0 10px}
+.checkout-page .payment-state h2{font-size:1.3rem;margin:0}
+.checkout-page .shopier-card #license-code,.checkout-page .shopier-card #panel-code{margin-top:6px;padding:14px;resize:none;overflow-wrap:anywhere;word-break:break-all;font:650 1.15rem/1.65 ui-monospace,monospace;color:var(--accent)}
+.checkout-page .shopier-card .copy-code{display:block;margin-top:4px}
+.checkout-page .activation-note{border-top:1px solid var(--line);padding-top:16px;margin:16px 0 0;color:var(--muted);font-size:.9rem;line-height:1.65}
+.checkout-page #issued-panel{margin-top:20px;padding-top:8px;border-top:1px solid var(--line)}
+.checkout-page #issued-panel a{display:block;margin-top:12px}
+@media(max-width:390px){.checkout-page #purchase.shopier-purchase{width:calc(100% - 24px)}.checkout-page .shopier-card{padding:18px}.checkout-page .shopier-card .checkout-primary{font-size:1rem}}

@@ -6,51 +6,55 @@
     <meta name="robots" content="noindex">
     <meta name="tikmng-checkout" content="closed">
     <title>TikMnG · Lisans Satın Al</title>
-    <link rel="stylesheet" href="/purchase-preview.css">
-    <script type="module" src="/shopier-checkout.js?v=20261117-osb-2"></script>
+    <link rel="stylesheet" href="/purchase-preview.css?v=20261117-checkout-3">
+    <script type="module" src="/shopier-checkout.js?v=20261117-checkout-3"></script>
 </head>
 <body class="checkout-page">
-<header><a class="brand" href="/">Tik<span>MnG</span></a></header>
-<main id="purchase">
-    <h1>TikMnG lisansı</h1>
+<header><a class="brand" href="/">Tik<span>MnG</span></a><span class="badge">LİSANS SATIN AL</span></header>
+<main id="purchase" class="shopier-purchase">
+    <div class="checkout-heading">
+        <h1>TikMnG lisansı</h1>
+        <p class="intro">TikTok kullanıcı adını yaz, Shopier’de ödemeni tamamla. Lisans kodun bu sayfada görünsün.</p>
+    </div>
+    <p id="restore-status" class="checkout-status" role="status">Ödeme oturumun kontrol ediliyor…</p>
     <div class="checkout">
-        <form id="start-checkout">
-            <h2>Paket seç</h2>
-            <label for="plan">Lisans paketi</label>
-            <select id="plan" required></select>
-            <label for="username" id="username-label">TikTok kullanıcı adı</label>
-            <input id="username" autocomplete="off" maxlength="80" required>
-            <button type="submit">Shopier ödeme adımını hazırla</button>
-            <p id="start-status" role="status"></p>
+        <form id="start-checkout" class="shopier-card" hidden>
+            <fieldset id="checkout-details">
+                <legend>Lisans bilgilerin</legend>
+                <label for="plan">Lisans paketi</label>
+                <select id="plan" required></select>
+                <label for="username" id="username-label">TikTok kullanıcı adı</label>
+                <input id="username" autocomplete="off" autocapitalize="none" spellcheck="false" maxlength="80" placeholder="@kullaniciadi" aria-describedby="username-help" required>
+                <p id="username-help" class="field-help">TikTok’ta kullandığın kullanıcı adını gir.</p>
+            </fieldset>
+            <p id="quote-summary" class="quote-summary" hidden></p>
+            <div class="checkout-total"><span id="plan-summary">Toplam</span><strong id="checkout-total"></strong></div>
+            <button id="pay-button" class="checkout-primary" type="submit">Shopier ödemesine git <span aria-hidden="true">↗</span></button>
+            <p class="payment-help">Kartla ödeme Shopier üzerinden yapılır. Ödeme sonrası bu sekmeye dön.</p>
+            <p id="start-status" class="checkout-status" role="status" aria-live="polite"></p>
+            <button id="change-checkout" class="checkout-secondary" type="button" hidden>Paket veya kullanıcı adını değiştir</button>
         </form>
-        <form id="confirm-checkout" hidden>
-            <h2>Shopier ödemesi</h2>
-            <p>Aşağıdaki referansı kopyala ve Shopier’de “Sipariş özelleştirme notunuz” alanına yapıştır.</p>
-            <label for="reference">Sipariş referansı</label>
-            <input id="reference" readonly>
-            <button id="copy-reference" type="button">Referansı kopyala</button>
-            <p id="reference-status" role="status"></p>
-            <p><a id="shopier-link" target="_blank" rel="noopener noreferrer">Shopier’de ödemeyi aç</a></p>
-            <p id="return-instructions" hidden>Ödemeden sonra bu sekmeye dön. Onay geldiğinde lisans kodun burada görünecek.</p>
-            <div id="order-id-field">
-                <label for="order-id">Ödeme sonrası Shopier sipariş numarası</label>
-                <input id="order-id" inputmode="numeric" pattern="[0-9]{1,30}" required>
-            </div>
-            <button id="confirm-payment" type="submit">Ödemeyi doğrula ve lisansı al</button>
-            <p id="confirm-status" role="status"></p>
+        <section id="payment-state" class="shopier-card payment-state" aria-labelledby="payment-heading" hidden>
+            <p class="eyebrow" id="payment-label">ÖDEME DURUMU</p>
+            <h2 id="payment-heading">Ödeme onayı bekleniyor</h2>
+            <p id="confirm-status" class="checkout-status" role="status" aria-live="polite"></p>
+            <button id="retry-check" class="checkout-secondary" type="button" hidden>Otomatik kontrolü yeniden başlat</button>
             <div id="issued-license" hidden>
-                <label for="license-code">Lisans kodu</label>
-                <input id="license-code" readonly>
-                <button id="copy-license" type="button">Lisans kodunu kopyala</button>
+                <label for="license-code">Lisans kodun</label>
+                <textarea id="license-code" rows="2" readonly spellcheck="false" aria-describedby="activation-note"></textarea>
+                <button id="copy-license" class="checkout-secondary copy-code" type="button">Lisans kodunu kopyala</button>
+                <p id="copy-status" class="checkout-status" role="status" aria-live="polite"></p>
+                <p id="activation-note" class="activation-note">Lisans süren ilk etkinleştirmede başlar.</p>
                 <div id="issued-panel" hidden>
                     <label for="panel-code">Ajans paneli giriş kodu</label>
-                    <input id="panel-code" readonly>
-                    <button id="copy-panel" type="button">Panel kodunu kopyala</button>
+                    <textarea id="panel-code" rows="3" readonly spellcheck="false"></textarea>
+                    <button id="copy-panel" class="checkout-secondary" type="button">Panel kodunu kopyala</button>
                     <a href="/agency">Ajans paneline git</a>
                 </div>
             </div>
-        </form>
+        </section>
     </div>
+    <noscript>Satın alma işlemi için tarayıcında JavaScript’i etkinleştir.</noscript>
 </main>
 </body>
 </html>

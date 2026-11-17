@@ -21,7 +21,7 @@ export function shopierProductIds(json, plans = salesPlans) {
 
 export function createShopierCheckout({
     secret, apiToken, products, licenses, saveLicense, issueCode,
-    verifyPayment = verifyShopierPayment, findPaidOrder, now = Date.now,
+    verifyPayment = verifyShopierPayment, findPaidOrder, preparePayment, now = Date.now,
 }) {
     let pendingLicenseWrite = Promise.resolve();
 
@@ -35,9 +35,16 @@ export function createShopierCheckout({
         const reference = `MNG-${randomBytes(16).toString("hex").toUpperCase()}`;
         const quote = { reference, planId, owner, productId: products[planId],
             amountMinor: plan.priceMinor, discountMinor: 0, createdAt: now() };
+        return preparePayment ? preparePayment(quote).then(checkoutResponse) : checkoutResponse(quote);
+    }
+
+    function checkoutResponse(quote) {
         const data = Buffer.from(JSON.stringify(quote)).toString("base64url");
-        return { reference, token: `${data}.${sign(secret, data)}`,
-            paymentUrl: `https://www.shopier.com/tikmng/${quote.productId}`, amountMinor: quote.amountMinor,
+        const token = `${data}.${sign(secret, data)}`;
+        return { reference: quote.reference, token, planId: quote.planId, username: quote.owner,
+            paymentUrl: quote.automatic ? "/satin-al/odeme?token=" + encodeURIComponent(token)
+                : `https://www.shopier.com/tikmng/${quote.productId}`,
+            amountMinor: quote.amountMinor,
             ...(findPaidOrder && { verification: "osb" }) };
     }
 
@@ -57,10 +64,10 @@ export function createShopierCheckout({
         const quote = readQuote(token);
         if (!quote) return null;
         const plan = salesPlans.find(item => item.id === quote.planId);
-        if (!plan || products[plan.id] !== quote.productId) return null;
+        if (!plan || products[plan.id] !== (quote.baseProductId || quote.productId)) return null;
 
         if (!findPaidOrder && (typeof orderId !== "string" || !/^\d{1,30}$/.test(orderId))) return null;
-        const paid = findPaidOrder ? findPaidOrder(quote) : await verifyPayment({ apiToken, orderId, quote });
+        const paid = findPaidOrder ? await findPaidOrder(quote) : await verifyPayment({ apiToken, orderId, quote });
         if (!paid) return null;
         if (findPaidOrder) orderId = paid.orderId;
         const result = pendingLicenseWrite.then(() => deliver(quote, plan, orderId));
@@ -115,5 +122,10 @@ export function createShopierCheckout({
         return result;
     }
 
-    return { open, redeem };
+    function resume(token) {
+        const quote = readQuote(token);
+        return quote ? checkoutResponse(quote) : null;
+    }
+
+    return { open, redeem, readQuote, resume };
 }
