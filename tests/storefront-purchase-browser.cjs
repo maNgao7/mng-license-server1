@@ -22,6 +22,48 @@ function assertWhatsApp(href) {
     assert.match(url.searchParams.get('text'), /TikMnG/);
 }
 
+for (const width of [1440, 360]) {
+    test(`trial gift opens, copies and closes at ${width}px`, async t => {
+        const site = 'http://localhost';
+        const code = 'MNG-DENEME-1234ABCD';
+        const page = await browser.newPage({ viewport: { width, height: 850 } });
+        t.after(() => page.close());
+        await page.context().grantPermissions(['clipboard-read', 'clipboard-write'], { origin: site });
+        await page.route('**/*', route => {
+            const url = new URL(route.request().url());
+            if (url.origin !== site) return route.abort();
+            if (url.pathname === '/') return route.fulfill({ contentType: 'text/html; charset=utf-8', body: homepage });
+            if (url.pathname === '/api/promo-license') return route.fulfill({ json: { code, days: 7 } });
+            return route.fulfill({ path: path.join(web, url.pathname) }).catch(() => route.fulfill({ status: 404 }));
+        });
+        await page.goto(site);
+        const gift = page.getByRole('button', { name: 'Sürpriz Kutu' });
+        await gift.waitFor();
+        if (width > 720) {
+            const download = await page.getByRole('link', { name: 'Hemen İndir' }).boundingBox();
+            const button = await gift.boundingBox();
+            assert.ok(download.x + download.width <= button.x);
+            assert.ok(button.x + button.width <= width);
+        }
+        await gift.click();
+        const dialog = page.getByRole('dialog', { name: '7 gün ücretsiz deneme' });
+        await dialog.waitFor();
+        assert.equal(await dialog.getByLabel('Deneme lisans kodun').inputValue(), code);
+        const bounds = await dialog.boundingBox();
+        assert.ok(Math.abs(bounds.x + bounds.width / 2 - width / 2) < 2);
+        assert.ok(Math.abs(bounds.y + bounds.height / 2 - 425) < 12);
+        await dialog.getByRole('button', { name: 'Kopyala' }).click();
+        await dialog.getByText('Lisans kodu kopyalandı.').waitFor();
+        assert.equal(await page.evaluate(() => navigator.clipboard.readText()), code);
+        if (width > 720 && process.env.TRIAL_SCREENSHOT) {
+            await page.screenshot({ path: process.env.TRIAL_SCREENSHOT, animations: 'disabled' });
+        }
+        await page.keyboard.press('Escape');
+        await dialog.waitFor({ state: 'hidden' });
+        assert.equal(await gift.evaluate(element => document.activeElement === element), true);
+    });
+}
+
 for (const width of [1280, 360]) {
     for (const ready of [true, false]) {
         test(`homepage purchase with Shopier ${ready ? 'ready' : 'closed'} at ${width}px`, async t => {

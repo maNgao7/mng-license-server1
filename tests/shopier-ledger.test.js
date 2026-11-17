@@ -37,6 +37,8 @@ const mock = `
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 const root = process.env.MOCK_PROVIDER_DIR;
+const now = Date.now;
+Date.now = () => now() + Number(process.env.MOCK_CLOCK_OFFSET || 0);
 const read = (name) => JSON.parse(readFileSync(root + '/' + name + '.json', 'utf8'));
 const prices = { '/v1/products/5000': '300.00', '/v1/products/5002': '2000.00' };
 globalThis.fetch = async (input, options = {}) => {
@@ -130,12 +132,14 @@ async function createLedgerFixture(t) {
         await rmdir(root);
     });
     async function start({ salesEnabled = true, selfService = true, scope = "all", paymentSource = "api",
-        automatic = false, configuredProducts = products } = {}) {
+        automatic = false, configuredProducts = products, clockOffset = 0,
+        trialEnabled = true, trialDays = 7 } = {}) {
         const module = `data:text/javascript;base64,${Buffer.from(mock).toString("base64")}`;
         server = spawn(process.execPath, ["--import", module, "server.js"], {
             cwd: new URL("../", import.meta.url), stdio: "ignore",
             env: { SystemRoot: process.env.SystemRoot, HOST: "127.0.0.1", PORT: String(port),
                 MNG_DATA_DIR: root, MOCK_PROVIDER_DIR: root, ADMIN_SIFRE: password,
+                MOCK_CLOCK_OFFSET: String(clockOffset), TIKMNG_TRIAL_ENABLED: String(trialEnabled), TIKMNG_TRIAL_DAYS: String(trialDays),
                 BACKUP_REPO: "test/backup", GITHUB_TOKEN: "test-only", SHOPIER_SALES_ENABLED: String(salesEnabled),
                 SHOPIER_SELF_SERVICE_ENABLED: String(selfService),
                 SHOPIER_LICENSE_STORAGE: "github", SHOPIER_API_TOKEN: paymentSource === "api" || automatic ? "test-only" : "",
@@ -159,6 +163,68 @@ async function createLedgerFixture(t) {
     }
     return { root, file, resetLedger, base, start, stop, post };
 }
+
+test("one public trial code starts separate, durable periods for each launcher device", async t => {
+    const { base, start, stop, post, file, root } = await createLedgerFixture(t);
+    const day = 86_400_000;
+    const a = "a".repeat(32), b = "b".repeat(32), unused = "c".repeat(32);
+    const clientVersion = "7.0.26";
+    await start({ salesEnabled: false });
+    const offer = await fetch(base + "/api/promo-license");
+    assert.equal(offer.status, 200);
+    assert.equal(offer.headers.get("cache-control"), "no-store");
+    const { code, days } = await offer.json();
+    assert.match(code, /^MNG-DENEME-[A-F0-9]{8}$/);
+    assert.equal(days, 7);
+    const verifyTrial = (deviceId, status = 200) => post("/api/license/verify", { code, deviceId, clientVersion }, status);
+    const checkTrial = (deviceId, proof = {}) => post("/api/license/check", { code, deviceId, clientVersion, ...proof });
+    const overlayInput = deviceId => ({ licenseCode: code, deviceId,
+        installationId: "trial-fixture", channel: "test-channel" });
+    const overlaySession = async deviceId => {
+        const result = await post("/api/overlay/session", overlayInput(deviceId));
+        return JSON.parse(Buffer.from(result.ticket.split(".")[0], "base64url")).ownerId;
+    };
+    assert.equal((await checkTrial(a)).valid, false);
+    const unavailable = await fetch(base + "/api/overlay/session", {
+        method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(overlayInput(a)),
+    });
+    assert.equal(unavailable.status, 403);
+    await file("reject-write", true);
+    await verifyTrial(a, 503);
+    await rm(path.join(root, "reject-write.json"));
+    assert.equal((await checkTrial(a)).valid, false);
+    const [first, repeat] = await Promise.all([verifyTrial(a), verifyTrial(a)]);
+    assert.equal(first.valid, true, JSON.stringify(first));
+    assert.equal(first.remainingDays, 7);
+    assert.equal(repeat.expiresAt, first.expiresAt);
+    assert.equal(repeat.activationToken, first.activationToken);
+    const ownerA = await overlaySession(a);
+
+    await stop();
+    await start({ salesEnabled: false, clockOffset: 2 * day });
+    const later = await verifyTrial(b);
+    assert.equal(later.remainingDays, 7);
+    assert.ok(later.expiresAt >= first.expiresAt + 2 * day);
+    const checked = await checkTrial(a);
+    assert.equal(checked.remainingDays, 5);
+    assert.equal(checked.expiresAt, first.expiresAt);
+    assert.equal((await checkTrial(unused, { expiresAt: first.expiresAt, activationToken: first.activationToken })).valid, false);
+    const ownerB = await overlaySession(b);
+    assert.ok(ownerA && ownerB);
+    assert.notEqual(ownerA, ownerB);
+
+    await stop();
+    await start({ salesEnabled: false, clockOffset: 7 * day, trialEnabled: false, trialDays: 14 });
+    assert.equal((await fetch(base + "/api/promo-license")).status, 404);
+    assert.equal((await verifyTrial(a)).reason, "expired");
+    assert.equal((await checkTrial(b)).expiresAt, later.expiresAt);
+    assert.equal((await verifyTrial(unused)).valid, false);
+
+    await stop();
+    await start({ salesEnabled: false, clockOffset: 7 * day, trialDays: 14 });
+    assert.equal((await verifyTrial(unused)).remainingDays, 14);
+    assert.equal((await verifyTrial(a)).reason, "expired");
+});
 
 test("Shopier readiness requires admin login and checks all plans with live sales closed", async t => {
     const { root, base, start } = await createLedgerFixture(t);

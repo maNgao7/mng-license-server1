@@ -22,6 +22,7 @@ import { createShopierPaymentProduct, disableShopierPaymentProduct, getShopierOr
 import { readShopierOsbForm, readShopierOsb, shopierOsbReceipt, shopierAutomaticOsbReceipt, sameShopierReceipt,
     receiptIsCurrent, shopierReceiptMatchesQuote } from "./shopier-osb.js";
 import { createLicenseLedger } from "./license-ledger.js";
+import { promoLicense, promoRecordCode, promoDeviceId, findLauncherLicense, createPromoLicense } from "./promo-license.js";
 import { manualShopierUrl, salesPlans } from "./web/sales-catalog.js";
 import { createLatestInstallerResolver, registerInstallerDownloads } from './release-downloads.js';
 import { registerPublicWebsite, servePublicAssets, withShopierCheckout } from "./public-website.js";
@@ -414,14 +415,18 @@ app.use(helmet({
     referrerPolicy: { policy: "strict-origin-when-cross-origin" }
 }));
 
-const overlayAuthorize = createOverlayAuthorization({ licenses: () => lisanslarVeritabani, blacklist: () => karaListeVeritabani });
+const overlayAuthorize = createOverlayAuthorization({
+    licenses: () => lisanslarVeritabani,
+    blacklist: () => karaListeVeritabani,
+    resolveLicense: findLauncherLicense,
+});
 const overlaySecret = String(process.env.OVERLAY_RELAY_SECRET || '').trim() || (ADMIN_SIFRE.length >= 16
     ? crypto.createHash('sha256').update('TikMnG-overlay-relay-v1:' + ADMIN_SIFRE).digest('hex') : '');
 const overlayRelay = overlaySecret.length >= 32 ? registerOverlayRelay(app, {
     secret: overlaySecret, authorize: overlayAuthorize,
     revalidate: claims => {
         const license = lisanslarVeritabani.find(item => crypto.createHash('sha256').update('TikMnG-overlay-owner:' + item.kod).digest('hex') === claims.ownerId);
-        return license ? overlayAuthorize({ licenseCode: license.kod, deviceId: claims.deviceId }) : false;
+        return license ? overlayAuthorize({ licenseCode: license.promo_code || license.kod, deviceId: claims.deviceId }) : false;
     }
 }) : null;
 app.get('/api/overlay/health', (_req, res) => res.json({ available: Boolean(overlayRelay), protocolVersion: 1 }));
@@ -1170,7 +1175,33 @@ app.get("/api/version", (req, res) => {
 // MÜÅTERİ LİSANS DOÄRULAMA APİSİ (Launcher Bağlantısı)
 // =====================================================================
 
-app.post("/api/license/verify", durableLicenseRoute((req, res) => {
+function promoRegistrationAvailable() {
+    if (useGithubLicenseLedger || process.env.RENDER === "true") return shopierStorageAvailable();
+    return true;
+}
+
+app.get("/api/promo-license", (_req, res) => {
+    res.setHeader("Cache-Control", "no-store");
+    if (!promoLicense.enabled || karaListeVeritabani.includes(promoLicense.code)) return res.status(404).json({ available: false });
+    if (!promoRegistrationAvailable()) return res.status(503).json({ available: false });
+    res.json({ code: promoLicense.code, days: promoLicense.days });
+});
+
+const promoRegistrationLimit = rateLimit({
+    windowMs: 60 * 60 * 1000,
+    limit: 60,
+    legacyHeaders: false,
+    standardHeaders: "draft-8",
+    skip(req) {
+        const { code, deviceId } = req.body || {};
+        return typeof code !== "string" || code.trim().toUpperCase() !== promoLicense.code
+            || typeof deviceId !== "string" || !promoDeviceId.test(deviceId.trim())
+            || Boolean(findLauncherLicense(lisanslarVeritabani, promoLicense.code, deviceId.trim()));
+    },
+    message: { valid: false, reason: "rate_limited", message: "Çok fazla deneme kaydı açıldı. Daha sonra tekrar deneyin." },
+});
+
+app.post("/api/license/verify", promoRegistrationLimit, durableLicenseRoute((req, res) => {
     let { code, deviceId, clientVersion } = req.body;
     const ip = req.headers["x-forwarded-for"] || req.socket.remoteAddress;
 
@@ -1211,11 +1242,19 @@ app.post("/api/license/verify", durableLicenseRoute((req, res) => {
         });
     }
 
-    let lisans = lisanslarVeritabani.find(l => l.kod === temizKod);
+    let lisans = findLauncherLicense(lisanslarVeritabani, temizKod, deviceId);
+    if (!lisans && temizKod === promoLicense.code) {
+        if (!promoLicense.enabled || !promoDeviceId.test(deviceId)) {
+            return res.json({ valid: false, reason: "invalid_license", message: "Deneme lisansı kullanılamıyor." });
+        }
+        if (!promoRegistrationAvailable()) throw storageUnavailable();
+        lisans = createPromoLicense(deviceId);
+        lisanslarVeritabani.unshift(lisans);
+    }
 
     // Kendi Kendini Kurtaran Lisans: Eğer sunucu yeniden başladığında lisanslar.json sıfırlandıysa
     // kriptografik olarak imzalanmış geçerli kodları anında otomatik kurtarır!
-    if (!lisans && !shopierIndividualCodePattern.test(temizKod)) {
+    if (!lisans && !shopierIndividualCodePattern.test(temizKod) && !promoRecordCode.test(temizKod)) {
         const kriptoBilgi = kodKriptoKontrol(temizKod);
         if (kriptoBilgi && !kriptoBilgi.recordRequired) {
             lisans = {
@@ -1420,12 +1459,13 @@ app.post("/api/license/check", durableLicenseRoute((req, res) => {
         return res.json({ valid: false, reason: "revoked", message: "Bu lisans kalıcı olarak iptal edilmiştir." });
     }
 
-    let lisans = lisanslarVeritabani.find(l => l.kod === temizKod);
+    let lisans = findLauncherLicense(lisanslarVeritabani, temizKod, deviceId);
 
     // Kendi Kendini Onaran / Kurtaran Senkronizasyon:
     // Eğer Render yeniden başladıysa ve lisanslar.json sıfırlandıysa,
     // istemcinin sunduğu aktivasyon tokeni ile bitiş zamanı matematiksel olarak doğrulanır.
-    if (!lisans && activationToken && !shopierIndividualCodePattern.test(temizKod)) {
+    if (!lisans && activationToken && temizKod !== promoLicense.code
+        && !shopierIndividualCodePattern.test(temizKod) && !promoRecordCode.test(temizKod)) {
         const tokenGecerli = aktivasyonTokenDogrula(temizKod, deviceId, expiresAt, activationToken);
         if (tokenGecerli) {
             const keyInfo = readAgencyReceipt(activationToken, temizKod, deviceId, expiresAt, ADMIN_SIFRE) || kodKriptoKontrol(temizKod);
