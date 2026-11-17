@@ -133,7 +133,7 @@ test("a simulated Shopier response completes a purchase without charging a card"
     providerOrder = {
         id: "825", note: pending.reference, paymentStatus: "unpaid", currency: "TRY",
         lineItems: [{ productId: products["agency-120-monthly"], type: "digital", quantity: 1 }],
-        totals: { subtotal: "12500.00", total: "12500.00", discount: "0.00", shipping: "0.00" },
+        totals: { subtotal: "10000.00", total: "10000.00", discount: "0.00", shipping: "0.00" },
         refunds: [],
     };
     assert.equal(await checkout.redeem(pending.token, "825"), null);

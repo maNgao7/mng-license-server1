@@ -1,4 +1,4 @@
-import { manualShopierUrl, salesPlans } from "./sales-catalog.js?v=20261110g";
+import { manualShopierUrl, salesPlans } from "./sales-catalog.js?v=20261117-prices-v2";
 
 const heroActions = document.querySelector(".hero-cta-group");
 const contact = heroActions.querySelector('a.btn-whatsapp[href^="https://wa.me/"]');

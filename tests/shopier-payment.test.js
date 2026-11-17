@@ -48,7 +48,7 @@ test("verifies a matching simulated paid order for every catalog plan", async ()
 
 test("matches the server-calculated discount and total in kuruş", async () => {
     const { quote, order } = checkoutFixture(salesPlans[0], 6250);
-    assert.equal((await verify(quote, order)).amountMinor, 43750);
+    assert.equal((await verify(quote, order)).amountMinor, 23750);
     order.totals.discount = "0.00";
     assert.equal(await verify(quote, order), null);
 });

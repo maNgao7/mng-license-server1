@@ -29,7 +29,7 @@ import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 const root = process.env.MOCK_PROVIDER_DIR;
 const read = (name) => JSON.parse(readFileSync(root + '/' + name + '.json', 'utf8'));
-const prices = { '/v1/products/5000': '500.00', '/v1/products/5002': '2500.00' };
+const prices = { '/v1/products/5000': '300.00', '/v1/products/5002': '2000.00' };
 globalThis.fetch = async (input, options = {}) => {
     const url = new URL(input);
     if (url.hostname === 'api.github.com') {
@@ -164,7 +164,7 @@ test("Shopier code and agency membership survive restarts with no persistent Ren
     const offer = await post("/api/shopier/checkout", { planId: "agency-10-monthly", username: "Test ajans" }, 201);
     await file("order", { id: "7001", note: offer.reference, paymentStatus: "paid", currency: "TRY",
         lineItems: [{ productId: "5002", type: "digital", quantity: 1 }], refunds: [],
-        totals: { subtotal: "2500.00", total: "2500.00", discount: "0.00", shipping: "0.00" } });
+        totals: { subtotal: "2000.00", total: "2000.00", discount: "0.00", shipping: "0.00" } });
     const claim = { token: offer.token, orderId: "7001" };
     await file("reject-write", {});
     assert.equal((await post("/api/shopier/redeem", claim, 503)).code, undefined);
@@ -191,7 +191,7 @@ test("Paid individual licenses require their persisted row for verify and check"
     const offer = await post("/api/shopier/checkout", { planId, username: "test.creator" }, 201);
     await file("order", { id: orderId, note: offer.reference, paymentStatus: "paid", currency: "TRY",
         lineItems: [{ productId, type: "digital", quantity: 1 }], refunds: [],
-        totals: { subtotal: "500.00", total: "500.00", discount: "0.00", shipping: "0.00" } });
+        totals: { subtotal: "300.00", total: "300.00", discount: "0.00", shipping: "0.00" } });
     const claim = { token: offer.token, orderId };
     const { code } = await post("/api/shopier/redeem", claim);
     assert.match(code, /^MNGS-[A-F0-9]{20}$/);
@@ -215,7 +215,7 @@ test("Paid individual licenses require their persisted row for verify and check"
     await start();
     const licenses = JSON.parse(await readFile(path.join(root, "lisanslar.json"), "utf8"));
     const paid = licenses.find(license => license.kod === code);
-    assert.deepEqual(paid.shopier, { orderId, reference: offer.reference, planId, amountMinor: 50000 });
+    assert.deepEqual(paid.shopier, { orderId, reference: offer.reference, planId, amountMinor: 30000 });
     assert.equal(paid.activation_token, activationToken);
     assert.equal((await post("/api/shopier/redeem", claim)).code, code);
     assert.equal((await post("/api/license/verify", paidDevice)).expiresAt, expiresAt);
