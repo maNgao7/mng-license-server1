@@ -201,6 +201,14 @@ test("Shopier's signed test can reach a closed store without writing the ledger"
     const acknowledged = await osbNotification(base, testEvent);
     assert.equal(acknowledged.status, 200);
     assert.equal(await acknowledged.text(), "success");
+    const res = Buffer.from(JSON.stringify(testEvent)).toString("base64");
+    const hash = createHmac("sha256", osbSecret).update(res + osbUsername).digest("hex");
+    const form = new FormData();
+    form.set("res", res);
+    form.set("hash", hash);
+    const multipart = await fetch(base + "/api/shopier/osb", { method: "POST", body: form });
+    assert.equal(multipart.status, 200);
+    assert.equal(await multipart.text(), "success");
     assert.equal(await readFile(ledgerPath, "utf8"), before);
     await post("/api/shopier/checkout", { planId: "individual-weekly", username: "test.creator" }, 503);
     const login = await fetch(base + "/api/admin/giris", {

@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { createHmac } from "node:crypto";
 import { test } from "node:test";
-import { readShopierOsb } from "../shopier-osb.js";
+import { readShopierOsbForm, readShopierOsb } from "../shopier-osb.js";
 
 const credentials = { username: "osb-test-seller", secret: "osb-test-secret" };
 const event = { istest: 1, email: "private@example.test", customernote: "private note" };
@@ -26,4 +26,21 @@ test("OSB diagnostics identify rejected envelopes without exposing their content
         assert.doesNotMatch(JSON.stringify(diagnostics), /private|osb-test-secret|osb-test-seller/);
     }
     assert.deepEqual(readShopierOsb(signed(event), credentials, () => assert.fail("Valid test rejected")), event);
+});
+
+test("native multipart parsing retains signed values and rejects ambiguous or file fields", async () => {
+    const envelope = signed(event);
+    async function parse(form) {
+        const response = new Response(form);
+        return readShopierOsbForm(Buffer.from(await response.arrayBuffer()), response.headers.get("content-type"));
+    }
+    const form = new FormData();
+    for (const [name, value] of Object.entries(envelope)) form.set(name, value);
+    assert.deepEqual(await parse(form), envelope);
+    assert.deepEqual(readShopierOsb(await parse(form), credentials), event);
+    form.append("res", "duplicate");
+    assert.equal(await parse(form), null);
+    form.set("res", new Blob(["invalid file"]), "payload.txt");
+    assert.equal(await parse(form), null);
+    assert.equal(await readShopierOsbForm(Buffer.from("invalid body"), "multipart/form-data"), null);
 });

@@ -17,7 +17,7 @@ import { createOverlayAuthorization } from "./overlay-authorization.js";
 import { createHttpTraffic } from "./http-traffic.js";
 import { createShopierCheckout, shopierProductIds } from "./shopier-checkout.js";
 import { checkShopierOffer } from "./shopier-payment.js";
-import { readShopierOsb, shopierOsbReceipt, sameShopierReceipt,
+import { readShopierOsbForm, readShopierOsb, shopierOsbReceipt, sameShopierReceipt,
     receiptIsCurrent, shopierReceiptMatchesQuote } from "./shopier-osb.js";
 import { createLicenseLedger } from "./license-ledger.js";
 import { manualShopierUrl, salesPlans } from "./web/sales-catalog.js";
@@ -551,34 +551,40 @@ app.get("/api/admin/shopier/hazirlik", adminKontrol, shopierReadinessLimit, asyn
     });
 });
 
-app.post("/api/shopier/osb", express.urlencoded({ extended: false, limit: "32kb", parameterLimit: 8 }), (req, res, next) => {
+app.post("/api/shopier/osb",
+    express.urlencoded({ extended: false, limit: "32kb", parameterLimit: 8 }),
+    express.raw({ type: "multipart/form-data", limit: "32kb" }), (req, res, next) => {
     res.set("Cache-Control", "no-store").type("text");
     if (!shopierOsbConfigured || !shopierProducts) return res.status(503).send("unavailable");
-    if (!req.is("application/x-www-form-urlencoded")) return res.status(415).send("unsupported media type");
-    const event = readShopierOsb(req.body, shopierOsbCredentials,
-        reason => console.warn("Shopier OSB rejected:", reason));
-    if (!event) return res.status(403).send("invalid notification");
-    if (Number(event.istest) === 1) {
-        shopierOsbLastTest = new Date().toISOString();
-        console.log("Shopier OSB signed test accepted.");
-        return res.send("success");
+    if (!req.is(["application/x-www-form-urlencoded", "multipart/form-data"])) {
+        console.warn("Shopier OSB rejected: unsupported-media-type");
+        return res.status(415).send("unsupported media type");
     }
-    const receipt = shopierOsbReceipt(event, shopierProducts, Date.now());
-    if (!receipt) return res.send("success");
-    if (!shopierCheckout || !shopierStorageAvailable()) return res.status(503).send("unavailable");
-    licenseLedger.transact(() => {
-        if (!shopierStorageAvailable()) throw storageUnavailable();
-        const seen = shopierOrders.find(order => order.orderId === receipt.orderId || order.reference === receipt.reference);
-        if (seen) return sameShopierReceipt(seen, receipt);
-        const delivered = lisanslarVeritabani.some(license => license.shopier?.orderId === receipt.orderId
-            || license.shopier?.reference === receipt.reference);
-        if (!delivered) {
-            shopierOrders = shopierOrders.filter(order => receiptIsCurrent(order, receipt.receivedAt));
-            shopierOrders.push(receipt);
+    readShopierOsbForm(req.body, req.get("content-type")).then(form => {
+        const event = readShopierOsb(form, shopierOsbCredentials,
+            reason => console.warn("Shopier OSB rejected:", reason));
+        if (!event) return res.status(403).send("invalid notification");
+        if (Number(event.istest) === 1) {
+            shopierOsbLastTest = new Date().toISOString();
+            console.log("Shopier OSB signed test accepted.");
+            return res.send("success");
         }
-        return true;
-    }).then(accepted => accepted ? res.send("success") : res.status(409).send("conflicting notification"))
-        .catch(next);
+        const receipt = shopierOsbReceipt(event, shopierProducts, Date.now());
+        if (!receipt) return res.send("success");
+        if (!shopierCheckout || !shopierStorageAvailable()) return res.status(503).send("unavailable");
+        return licenseLedger.transact(() => {
+            if (!shopierStorageAvailable()) throw storageUnavailable();
+            const seen = shopierOrders.find(order => order.orderId === receipt.orderId || order.reference === receipt.reference);
+            if (seen) return sameShopierReceipt(seen, receipt);
+            const delivered = lisanslarVeritabani.some(license => license.shopier?.orderId === receipt.orderId
+                || license.shopier?.reference === receipt.reference);
+            if (!delivered) {
+                shopierOrders = shopierOrders.filter(order => receiptIsCurrent(order, receipt.receivedAt));
+                shopierOrders.push(receipt);
+            }
+            return true;
+        }).then(accepted => accepted ? res.send("success") : res.status(409).send("conflicting notification"));
+    }).catch(next);
 });
 
 app.get("/shopier-checkout.html", (_req, res) => res.redirect(302, "/satin-al"));

@@ -2,6 +2,23 @@ import { createHmac, timingSafeEqual } from "node:crypto";
 
 const evidenceLifetime = 30 * 86_400_000;
 
+export async function readShopierOsbForm(body, contentType) {
+    if (!/^multipart\/form-data(?:;|$)/i.test(contentType || "")) return body;
+    try {
+        const form = await new Response(body, { headers: { "content-type": contentType } }).formData();
+        if ([...form].length > 8) return null;
+        const values = {};
+        for (const name of ["res", "hash"]) {
+            const items = form.getAll(name);
+            if (items.length !== 1 || typeof items[0] !== "string") return null;
+            values[name] = items[0];
+        }
+        return values;
+    } catch {
+        return null;
+    }
+}
+
 export function readShopierOsb(form, { username, secret }, onReject = () => {}) {
     function reject(reason) {
         onReject(reason);
