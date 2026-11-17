@@ -7,13 +7,13 @@ import { salesPlans } from "./web/sales-catalog.js";
 const dayMs = 86_400_000;
 const sign = (secret, data) => createHmac("sha256", secret).update(`shopier-checkout-v1:${data}`).digest("base64url");
 
-export function shopierProductIds(json) {
+export function shopierProductIds(json, plans = salesPlans) {
     try {
         const config = JSON.parse(json);
-        const ids = salesPlans.map(plan => config[plan.id]);
-        return ids.every(id => typeof id === "string" && /^\d{1,20}$/.test(id))
-            && new Set(ids).size === salesPlans.length
-            ? Object.fromEntries(salesPlans.map((plan, i) => [plan.id, ids[i]])) : null;
+        const ids = plans.map(plan => config[plan.id]);
+        return ids.length > 0 && ids.every(id => typeof id === "string" && /^\d{1,20}$/.test(id))
+            && new Set(ids).size === plans.length
+            ? Object.fromEntries(plans.map((plan, i) => [plan.id, ids[i]])) : null;
     } catch {
         return null;
     }
@@ -27,7 +27,7 @@ export function createShopierCheckout({
 
     function open(planId, username) {
         const plan = salesPlans.find(item => item.id === planId);
-        if (!plan || typeof username !== "string") return null;
+        if (!plan || !Object.hasOwn(products, plan.id) || typeof username !== "string") return null;
         const owner = username.trim().replace(/^@/, "");
         if (plan.kind === "individual" ? !/^[a-z\d._]{1,24}$/i.test(owner)
             : owner.length > 80 || !agencySlug(owner)) return null;

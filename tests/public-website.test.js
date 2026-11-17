@@ -16,7 +16,7 @@ let server, checkoutReady = false;
 
 before(async () => {
     const app = express();
-    registerPublicWebsite(app, { webRoot, checkoutAvailable: () => checkoutReady });
+    registerPublicWebsite(app, { webRoot, checkoutMode: () => checkoutReady ? "shopier" : "closed" });
     app.use(servePublicAssets(webRoot));
     app.get("/api/test", (_req, res) => res.json({ data: "example ".repeat(300) }));
     server = app.listen(0, "127.0.0.1");

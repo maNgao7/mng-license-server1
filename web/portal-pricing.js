@@ -3,8 +3,10 @@ import { manualShopierUrl, salesPlans } from "./sales-catalog.js?v=20261117-pric
 const heroActions = document.querySelector(".hero-cta-group");
 const contact = heroActions.querySelector('a.btn-whatsapp[href^="https://wa.me/"]');
 const priceFormat = new Intl.NumberFormat("tr-TR");
-const shopierOpen = document.querySelector('meta[name="tikmng-checkout"]')?.content === "shopier";
-const purchaseUrl = plan => shopierOpen ? `/satin-al?plan=${encodeURIComponent(plan.id)}`
+const mode = document.querySelector('meta[name="tikmng-checkout"]')?.content;
+const shopierOpen = mode === "shopier" || mode === "shopier-individual";
+const purchaseUrl = plan => (mode === "shopier" || (mode === "shopier-individual" && plan.kind === "individual"))
+    ? `/satin-al?plan=${encodeURIComponent(plan.id)}`
     : manualShopierUrl(plan.id) || "/satin-al";
 
 for (const plan of salesPlans) {
@@ -34,6 +36,8 @@ if (shopierOpen) {
     heroActions.classList.add("shopier-open");
 
     const note = document.querySelector(".plan-order-note");
-    if (note) note.textContent = "Paketini seç, Shopier’de kartla öde ve lisans kodunu al.";
-    document.getElementById("shopier-order-support").hidden = true;
+    if (note) note.textContent = mode === "shopier-individual"
+        ? "Bireysel lisansını Shopier ödemesinden sonra bu sitede alabilirsin. Ajans lisansı manuel teslim edilir."
+        : "Paketini seç, Shopier’de kartla öde ve lisans kodunu al.";
+    document.getElementById("shopier-order-support").hidden = mode === "shopier";
 }

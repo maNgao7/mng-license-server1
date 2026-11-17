@@ -94,7 +94,7 @@ async function createLedgerFixture(t) {
         }
         await rmdir(root);
     });
-    async function start({ salesEnabled = true } = {}) {
+    async function start({ salesEnabled = true, scope = "all", configuredProducts = products } = {}) {
         const module = `data:text/javascript;base64,${Buffer.from(mock).toString("base64")}`;
         server = spawn(process.execPath, ["--import", module, "server.js"], {
             cwd: new URL("../", import.meta.url), stdio: "ignore",
@@ -102,7 +102,8 @@ async function createLedgerFixture(t) {
                 MNG_DATA_DIR: root, MOCK_PROVIDER_DIR: root, ADMIN_SIFRE: password,
                 BACKUP_REPO: "test/backup", GITHUB_TOKEN: "test-only", SHOPIER_SALES_ENABLED: String(salesEnabled),
                 SHOPIER_LICENSE_STORAGE: "github", SHOPIER_API_TOKEN: "test-only",
-                SHOPIER_CLAIM_SECRET: "test-claim-signing-key-no-production", SHOPIER_PRODUCT_IDS: JSON.stringify(products) },
+                SHOPIER_CLAIM_SECRET: "test-claim-signing-key-no-production",
+                SHOPIER_SALES_SCOPE: scope, SHOPIER_PRODUCT_IDS: JSON.stringify(configuredProducts) },
         });
         for (let attempt = 0; attempt < 100; attempt++) {
             if (server.exitCode !== null) throw Error("Test server failed to start.");
@@ -154,6 +155,30 @@ test("Shopier readiness requires admin login and checks all plans with live sale
     assert.equal(noPlan.headers.get("location"), "/#fiyatlandirma");
     assert.equal((await fetch(`${base}/api/shopier/checkout`, { method: "POST" })).status, 503);
     assert.equal(await readFile(ledgerPath, "utf8"), ledgerBefore);
+});
+
+test("individual-only sales deliver one weekly code and leave agencies on the manual route", async t => {
+    const { base, start, file, post } = await createLedgerFixture(t);
+    await start({ scope: "individual", configuredProducts: {
+        "individual-weekly": "5000", "individual-monthly": "5001",
+    } });
+    assert.match(await (await fetch(base)).text(), /<meta name="tikmng-checkout" content="shopier-individual">/);
+    const individual = await fetch(`${base}/satin-al?plan=individual-weekly`);
+    assert.equal(individual.status, 200);
+    assert.match(await individual.text(), /<meta name="tikmng-checkout" content="shopier-individual">/);
+    const agency = await fetch(`${base}/satin-al?plan=agency-10-monthly`, { redirect: "manual" });
+    assert.equal(agency.status, 302);
+    assert.equal(agency.headers.get("location"), "https://www.shopier.com/tikmng/52768058");
+    await post("/api/shopier/checkout", { planId: "agency-10-monthly", username: "Test ajans" }, 400);
+    const offer = await post("/api/shopier/checkout", { planId: "individual-weekly", username: "test.creator" }, 201);
+    assert.equal(offer.amountMinor, 30000);
+    await file("order", { id: "7001", note: offer.reference, paymentStatus: "paid", currency: "TRY",
+        lineItems: [{ productId: "5000", type: "digital", quantity: 1 }], refunds: [],
+        totals: { subtotal: "300.00", total: "300.00", discount: "0.00", shipping: "0.00" } });
+    const claim = { token: offer.token, orderId: "7001" };
+    const result = await post("/api/shopier/redeem", claim);
+    assert.match(result.code, /^MNGS-[A-F0-9]{20}$/);
+    assert.deepEqual(await post("/api/shopier/redeem", claim), result);
 });
 
 test("Shopier code and agency membership survive restarts with no persistent Render disk", { timeout: 15_000 }, async t => {

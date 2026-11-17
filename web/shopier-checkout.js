@@ -4,9 +4,11 @@ const el = id => document.getElementById(id);
 const storageKey = "tikmng-shopier-checkout";
 const money = new Intl.NumberFormat("tr-TR", { style: "currency", currency: "TRY" });
 const planField = el("plan");
+const mode = document.querySelector('meta[name="tikmng-checkout"]')?.content;
+const plans = mode === "shopier-individual" ? salesPlans.filter(plan => plan.kind === "individual") : salesPlans;
 let checkout;
 
-for (const plan of salesPlans) {
+for (const plan of plans) {
     const group = plan.kind === "agency" ? `Ajans · ${plan.seats} yayıncı · Aylık`
         : `Bireysel · ${plan.period === "weekly" ? "Haftalık" : "Aylık"}`;
     planField.add(new Option(`${group} · ${money.format(plan.priceMinor / 100)}`, plan.id));
@@ -17,7 +19,7 @@ function updateLabel() {
     el("username-label").textContent = planField.value.startsWith("agency-") ? "Ajans adı" : "TikTok kullanıcı adı";
 }
 const requestedPlan = new URLSearchParams(location.search).get("plan");
-if (salesPlans.some(plan => plan.id === requestedPlan)) planField.value = requestedPlan;
+if (plans.some(plan => plan.id === requestedPlan)) planField.value = requestedPlan;
 updateLabel();
 
 function showCheckout(data) {

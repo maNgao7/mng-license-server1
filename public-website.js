@@ -7,6 +7,11 @@ const origin = "https://tikmng.com";
 const documentCache = "public, max-age=0, must-revalidate";
 const shortCache = "public, max-age=300";
 const checkoutClosed = '<meta name="tikmng-checkout" content="closed">';
+
+export function withShopierCheckout(html, mode) {
+    if (mode !== "shopier" && mode !== "shopier-individual") return html;
+    return html.replace(checkoutClosed, checkoutClosed.replace("closed", mode));
+}
 const pages = [
     ["/hediye-tasarimi", "gift-designer.html"],
     ["/widgetlar", "widgets.html"],
@@ -87,7 +92,7 @@ function assetCache(file) {
     if (/^(?:portal-v[234]|agency-entry|pricing-section|portal-pricing|legal)\.(?:css|js)$/.test(file)) return "public, max-age=3600";
 }
 
-export function registerPublicWebsite(app, { webRoot, fallbackHome, checkoutAvailable }) {
+export function registerPublicWebsite(app, { webRoot, fallbackHome, checkoutMode }) {
     const catalog = JSON.parse(fs.readFileSync(path.join(webRoot, "game-catalog.json"), "utf8"));
     const games = new Map(catalog.games.map(game => [game.id, gamePage(game, origin + "/oyunlar/" + game.id)]));
     const gameUrls = Array.from(games.keys(), id => "  <url><loc>" + escapeHtml(origin + "/oyunlar/" + id) + "</loc></url>");
@@ -97,10 +102,11 @@ export function registerPublicWebsite(app, { webRoot, fallbackHome, checkoutAvai
     app.get("/index.html", (req, res) => redirectTo(req, res, "/"));
     app.get("/", compressPublicText, (_req, res) => {
         res.set("Cache-Control", documentCache);
-        if (checkoutAvailable() && fs.existsSync(home)) {
+        const mode = checkoutMode();
+        if (mode !== "closed" && fs.existsSync(home)) {
             return fs.readFile(home, "utf8", (error, html) => {
                 if (error) return res.sendFile(home);
-                res.type("html").send(html.replace(checkoutClosed, checkoutClosed.replace("closed", "shopier")));
+                res.type("html").send(withShopierCheckout(html, mode));
             });
         }
         if (fs.existsSync(home)) return res.sendFile(home);

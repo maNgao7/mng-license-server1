@@ -20,7 +20,7 @@ import { checkShopierOffer } from "./shopier-payment.js";
 import { createLicenseLedger } from "./license-ledger.js";
 import { manualShopierUrl, salesPlans } from "./web/sales-catalog.js";
 import { createLatestInstallerResolver, registerInstallerDownloads } from './release-downloads.js';
-import { registerPublicWebsite, servePublicAssets } from "./public-website.js";
+import { registerPublicWebsite, servePublicAssets, withShopierCheckout } from "./public-website.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -436,7 +436,10 @@ registerAgencyPortal(app, {
 registerContentRoutes(app, { dataDir: DATA_DIR, adminKontrol });
 
 const shopierToken = String(process.env.SHOPIER_API_TOKEN || "").trim();
-const shopierProducts = shopierProductIds(process.env.SHOPIER_PRODUCT_IDS);
+const shopierScope = process.env.SHOPIER_SALES_SCOPE || "all";
+const shopierPlans = shopierScope === "all" ? salesPlans
+    : shopierScope === "individual" ? salesPlans.filter(plan => plan.kind === "individual") : [];
+const shopierProducts = shopierProductIds(process.env.SHOPIER_PRODUCT_IDS, shopierPlans);
 const shopierClaimSecret = String(process.env.SHOPIER_CLAIM_SECRET || "").trim();
 const shopierIndividualCodePattern = /^MNGS-[A-F0-9]{20}$/;
 function shopierStorageAvailable() {
@@ -472,11 +475,16 @@ const shopierCheckout = process.env.SHOPIER_SALES_ENABLED === "true" && shopierS
         }
     }) : null;
 
+function shopierCheckoutMode() {
+    if (!shopierCheckout || !shopierStorageAvailable()) return "closed";
+    return shopierScope === "individual" ? "shopier-individual" : "shopier";
+}
+
 const shopierRateLimit = rateLimit({ windowMs: 60_000, limit: 15, legacyHeaders: false });
 const shopierReadinessLimit = rateLimit({ windowMs: 60_000, limit: 3, legacyHeaders: false });
 app.get("/api/admin/shopier/hazirlik", adminKontrol, shopierReadinessLimit, async (_req, res) => {
     res.set("Cache-Control", "no-store");
-    const paketler = await Promise.all(salesPlans.map(async ({ id, kind, period, seats, priceMinor }) => {
+    const paketler = await Promise.all(shopierPlans.map(async ({ id, kind, period, seats, priceMinor }) => {
         const paket = kind === "agency" ? `Ajans / ${seats} yayıncı`
             : period === "weekly" ? "Bireysel / haftalık" : "Bireysel / aylık";
         let durum = "Shopier anahtarı veya ürün eşlemesi eksik";
@@ -496,7 +504,8 @@ app.get("/api/admin/shopier/hazirlik", adminKontrol, shopierReadinessLimit, asyn
         return { paket, fiyatTL: priceMinor / 100, durum, shopierHata };
     }));
     res.json({
-        canliSatisAcik: Boolean(shopierCheckout && shopierStorageAvailable()),
+        canliSatisAcik: shopierCheckoutMode() !== "closed",
+        satisKapsami: shopierScope,
         shopierAnahtariGirildi: Boolean(shopierToken),
         urunEslemesiGecerli: Boolean(shopierProducts),
         kodGuvenlikAyariGecerli: shopierClaimSecret.length >= 32,
@@ -506,12 +515,16 @@ app.get("/api/admin/shopier/hazirlik", adminKontrol, shopierReadinessLimit, asyn
 });
 
 app.get("/shopier-checkout.html", (_req, res) => res.redirect(302, "/satin-al"));
-app.get("/satin-al", (req, res) => {
+app.get("/satin-al", (req, res, next) => {
     res.set("Cache-Control", "no-store");
-    if (!shopierCheckout || !shopierStorageAvailable()) {
+    const mode = shopierCheckoutMode();
+    if (mode === "closed" || (req.query.plan !== undefined && !shopierPlans.some(plan => plan.id === req.query.plan))) {
         return res.redirect(302, manualShopierUrl(req.query.plan) || "/#fiyatlandirma");
     }
-    return res.sendFile(path.join(__dirname, "web", "shopier-checkout.html"));
+    fs.readFile(path.join(__dirname, "web", "shopier-checkout.html"), "utf8", (error, html) => {
+        if (error) return next(error);
+        res.type("html").send(withShopierCheckout(html, mode));
+    });
 });
 app.use("/api/shopier", shopierRateLimit, (_req, res, next) => {
     res.set("Cache-Control", "no-store");
@@ -540,7 +553,7 @@ app.get("/admin/lucide.js", (req, res) => {
 registerPublicWebsite(app, {
     webRoot: path.join(__dirname, "web"),
     fallbackHome: path.join(__dirname, "index.html"),
-    checkoutAvailable: () => Boolean(shopierCheckout && shopierStorageAvailable())
+    checkoutMode: shopierCheckoutMode
 });
 
 app.use((req, res, next) => {

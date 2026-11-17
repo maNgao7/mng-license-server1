@@ -28,7 +28,7 @@ test("17 November approved base prices and existing Shopier product identities m
     }
     const homepage = readFileSync(new URL("../web/index.html", import.meta.url), "utf8");
     const loader = readFileSync(new URL("../web/portal-pricing.js", import.meta.url), "utf8");
-    assert.match(homepage, /portal-pricing\.js\?v=20261117-prices-v2/);
+    assert.match(homepage, /portal-pricing\.js\?v=20261117-individual/);
     assert.match(loader, /sales-catalog\.js\?v=20261117-prices-v2/);
 });
 
