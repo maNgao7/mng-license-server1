@@ -170,8 +170,14 @@ export function matchShopierAutomaticPayment(order, quote) {
     if (order.refunds !== undefined && (!Array.isArray(order.refunds)
         || order.refunds.some(refund => refund?.status !== "failed"))) return null;
     const { subtotal, shipping, discount, total } = order.totals ?? {};
+    const discountMinor = moneyInKurus(discount);
+    const amountMinor = moneyInKurus(total);
     if (moneyInKurus(subtotal) !== quote.amountMinor || moneyInKurus(shipping) !== 0
-        || moneyInKurus(discount) !== 0 || moneyInKurus(total) !== quote.amountMinor) return null;
+        || discountMinor === null || amountMinor === null || amountMinor <= 0
+        || amountMinor + discountMinor !== quote.amountMinor) return null;
+    if (discountMinor > 0 && (!quote.automatic || !Array.isArray(order.discounts) || order.discounts.length !== 1
+        || order.discounts[0]?.method !== "discountCode" || typeof order.discounts[0]?.id !== "string"
+        || !order.discounts[0].id.trim())) return null;
     return { orderId: order.id, productId: quote.productId, reference: quote.reference,
-        amountMinor: quote.amountMinor, receivedAt: Date.now() };
+        amountMinor, ...(discountMinor > 0 && { discountMinor }), receivedAt: Date.now() };
 }

@@ -77,7 +77,8 @@ export function shopierAutomaticOsbReceipt(event, sessions, receivedAt) {
 
 export function sameShopierReceipt(a, b) {
     return a.orderId === b.orderId && a.productId === b.productId
-        && a.reference === b.reference && a.amountMinor === b.amountMinor;
+        && a.reference === b.reference && a.amountMinor === b.amountMinor
+        && (a.discountMinor ?? 0) === (b.discountMinor ?? 0);
 }
 
 export function receiptIsCurrent(receipt, now) {
@@ -85,7 +86,10 @@ export function receiptIsCurrent(receipt, now) {
 }
 
 export function shopierReceiptMatchesQuote(receipt, quote) {
+    const discountMinor = receipt.discountMinor ?? 0;
     return receipt.reference === quote.reference && receipt.productId === quote.productId
-        && receipt.amountMinor === quote.amountMinor && receipt.receivedAt >= quote.createdAt
+        && Number.isSafeInteger(discountMinor) && (discountMinor === 0 || (quote.automatic && discountMinor > 0))
+        && Number.isSafeInteger(receipt.amountMinor) && receipt.amountMinor > 0
+        && receipt.amountMinor + discountMinor === quote.amountMinor && receipt.receivedAt >= quote.createdAt
         && quote.discountMinor === 0;
 }

@@ -329,10 +329,9 @@ test("automatic private-product checkout delivers without a buyer reference and 
     assert.match(week.paymentUrl, /^\/satin-al\/odeme\?token=/);
     const current = await fetch(base + "/api/shopier/current", { headers: { cookie } });
     assert.deepEqual(await current.json(), week);
-    const redirect = await fetch(base + week.paymentUrl);
-    const form = await redirect.text();
-    assert.match(form, /action="https:\/\/www\.shopier\.com\/s\/shipping\/tikmng"/);
-    assert.match(form, /name="product_id" value="6201"/);
+    const redirect = await fetch(base + week.paymentUrl, { redirect: "manual" });
+    assert.equal(redirect.status, 303);
+    assert.equal(redirect.headers.get("location"), "https://www.shopier.com/6201");
     assert.equal(redirect.headers.get("referrer-policy"), "no-referrer");
     const month = await post("/api/shopier/checkout", { planId: "individual-monthly", username: "monthly.creator" }, 201);
     await post("/api/shopier/redeem", { token: week.token }, 409);
@@ -357,7 +356,11 @@ test("automatic private-product checkout delivers without a buyer reference and 
     assert.deepEqual(issued, duplicate);
     assert.equal((await post("/api/license/verify", { code: issued.code, deviceId: "weekly-device" })).remainingDays, 7);
     await rm(path.join(root, "block-order-reads.json"));
-    await file("order", paidOrder("7002", "6202", "800.00"));
+    const discounted = paidOrder("7002", "6202", "800.00");
+    discounted.totals.discount = "50.00";
+    discounted.totals.total = "750.00";
+    discounted.discounts = [{ id: "501", method: "discountCode" }];
+    await file("order", discounted);
     // Returning to the site recovers a missed notification from the exact private product.
     const monthly = await post("/api/shopier/redeem", { token: month.token });
     assert.equal((await post("/api/license/verify", { code: monthly.code, deviceId: "monthly-device" })).remainingDays, 30);

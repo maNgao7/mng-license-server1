@@ -70,7 +70,8 @@ export function createShopierCheckout({
         const paid = findPaidOrder ? await findPaidOrder(quote) : await verifyPayment({ apiToken, orderId, quote });
         if (!paid) return null;
         if (findPaidOrder) orderId = paid.orderId;
-        const result = pendingLicenseWrite.then(() => deliver(quote, plan, orderId));
+        const discountMinor = quote.automatic ? paid.discountMinor ?? 0 : 0;
+        const result = pendingLicenseWrite.then(() => deliver(quote, plan, orderId, discountMinor));
         pendingLicenseWrite = result.catch(() => {});
         return result;
     }
@@ -83,12 +84,14 @@ export function createShopierCheckout({
         return `MNGA-${digest.toUpperCase()}`;
     }
 
-    async function deliver(quote, plan, orderId) {
+    async function deliver(quote, plan, orderId, discountMinor) {
+        const amountMinor = quote.amountMinor - discountMinor;
         const existing = licenses().find(license =>
             license.shopier?.orderId === orderId || license.shopier?.reference === quote.reference);
         if (existing) {
             if (existing.shopier.orderId !== orderId || existing.shopier.reference !== quote.reference
-                || existing.shopier.planId !== quote.planId || existing.shopier.amountMinor !== quote.amountMinor
+                || existing.shopier.planId !== quote.planId || existing.shopier.amountMinor !== amountMinor
+                || (existing.shopier.discountMinor ?? 0) !== discountMinor
                 || ["iptal", "arsivlendi"].includes(existing.durum)) return null;
             const result = { code: existing.kod, planId: quote.planId };
             if (plan.kind === "agency" && existing.tip === "ajans" && existing.agency_portal_access?.version === 1) {
@@ -107,7 +110,8 @@ export function createShopierCheckout({
             sure_birim: "gun", sure_miktar: days, durum: "beklemede",
             olusturma_zamani: now(), aktivasyon_zamani: null, bitis_zamani: null,
             cihaz_kimlik: null, notlar: "",
-            shopier: { orderId, reference: quote.reference, planId: plan.id, amountMinor: quote.amountMinor },
+            shopier: { orderId, reference: quote.reference, planId: plan.id, amountMinor,
+                ...(discountMinor > 0 && { discountMinor }) },
         };
         const result = { code, planId: plan.id };
         if (agency) {

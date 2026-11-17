@@ -363,6 +363,21 @@ test("does not match a different checkout even when the buyer note contains its 
     assert.equal(matchShopierAutomaticPayment(order, { ...quote, productId: "91002" }), null);
 });
 
+test("matches a Shopier-approved discount code to the private product and exact paid total", () => {
+    const { quote, order } = fixture();
+    quote.automatic = true;
+    order.totals.discount = "50.00";
+    order.totals.total = "250.00";
+    order.discounts = [{ id: "70007", method: "discountCode" }];
+    const receipt = matchShopierAutomaticPayment(order, quote);
+    assert.deepEqual(receipt, { orderId: order.id, productId: quote.productId, reference,
+        amountMinor: 25000, discountMinor: 5000, receivedAt: receipt?.receivedAt });
+    assert.equal(matchShopierAutomaticPayment(order, { ...quote, automatic: false }), null);
+    assert.equal(matchShopierAutomaticPayment({ ...order, discounts: [] }, quote), null);
+    assert.equal(matchShopierAutomaticPayment({ ...order, discounts: [{ id: "70007", method: "automaticDiscount" }] }, quote), null);
+    assert.equal(matchShopierAutomaticPayment({ ...order, totals: { ...order.totals, total: "249.99" } }, quote), null);
+});
+
 test("payment matching rejects mismatched, malformed, or ambiguous evidence", async t => {
     const cases = {
         "missing order": value => { value.order = null; },

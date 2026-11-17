@@ -698,19 +698,12 @@ app.get("/shopier-checkout.html", (_req, res) => res.redirect(302, "/satin-al"))
 app.get("/satin-al/odeme", shopierRateLimit, (req, res) => {
     res.set("Cache-Control", "no-store").set("Referrer-Policy", "no-referrer");
     const quote = shopierCheckout?.readQuote(req.query.token);
-    if (!quote?.automatic || !shopierStorageAvailable()
+    if (!quote?.automatic || !/^[1-9]\d{0,19}$/.test(quote.productId) || !shopierStorageAvailable()
         || !shopierCheckouts.some(item => item.reference === quote.reference && item.productId === quote.productId)) {
         return res.status(400).type("text").send("Ödeme oturumu bulunamadı. TikMnG satın alma sayfasından tekrar başlayın.");
     }
-    const nonce = crypto.randomBytes(18).toString("base64");
-    res.set("Content-Security-Policy", `default-src 'none'; script-src 'nonce-${nonce}'; form-action https://www.shopier.com; base-uri 'none'; frame-ancestors 'none'`);
-    res.type("html").send(`<!doctype html><html lang="tr"><meta charset="utf-8">
-        <meta name="viewport" content="width=device-width,initial-scale=1"><title>Shopier ödemesi</title>
-        <form id="shopier-payment" method="POST" action="https://www.shopier.com/s/shipping/tikmng">
-        <input type="hidden" name="product_id" value="${quote.productId}">
-        <input type="hidden" name="quantity" value="1">
-        <noscript><button type="submit">Shopier ödemesine git</button></noscript></form>
-        <script nonce="${nonce}">document.getElementById("shopier-payment").submit()</script></html>`);
+    // Opening the product does not append it to an existing Shopier basket.
+    return res.redirect(303, `https://www.shopier.com/${quote.productId}`);
 });
 app.get("/satin-al", (req, res, next) => {
     res.set("Cache-Control", "no-store");

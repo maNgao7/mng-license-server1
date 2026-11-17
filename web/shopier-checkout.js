@@ -95,7 +95,7 @@ function showCheckout(data) {
     const plan = salesPlans.find(plan => plan.id === data.planId);
     el("quote-summary").textContent = [planName(plan), data.username].filter(Boolean).join(" · ");
     el("quote-summary").hidden = false;
-    el("plan-summary").textContent = "Ödeme tutarı";
+    el("plan-summary").textContent = "Paket fiyatı";
     el("checkout-total").textContent = Number.isSafeInteger(data.amountMinor) && data.amountMinor > 0
         ? money.format(data.amountMinor / 100) : "Shopier’de görüntülenir";
     details.hidden = true;
