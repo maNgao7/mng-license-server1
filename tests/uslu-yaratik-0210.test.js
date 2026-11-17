@@ -8,7 +8,7 @@ const previous = json('content-bootstrap-7.0.26.json');
 const current = json('content-defaults.json');
 const id = 'rezervuar-01';
 
-test('Uslu Yaratık 0.2.10 updates exactly one game package and keeps launcher 7.0.26', () => {
+test('Uslu Yaratık 0.2.10 updates exactly one game package independently of the launcher', () => {
     const oldGame = previous.games.find(game => game.id === id);
     const game = current.games.find(game => game.id === id);
     assert.equal(oldGame.version, '0.2.9');
@@ -25,7 +25,7 @@ test('Uslu Yaratık 0.2.10 updates exactly one game package and keeps launcher 7
         games: previous.games.map(item => item.id === id ? game : item),
     });
     assert.deepEqual(current, json('web/content-catalog-7.0.0.json'));
-    assert.equal(json('package.json').version, '7.0.26');
+    assert.equal(json('package.json').version, '7.0.27');
 });
 
 test('the exact 7.0.26 catalog upgrades once without mutating the previous state', () => {

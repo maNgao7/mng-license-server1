@@ -966,10 +966,10 @@ function logEkle(lisansKod, cihazKimlik, islem, ip) {
 // =====================================================================
 // SÜRÜM BİLGİLERİ & İNDİRME LİNKLERİ
 // =====================================================================
-const EN_GUNCEL_SURUM = "7.0.26";
+const EN_GUNCEL_SURUM = "7.0.27";
 const EN_DUSUK_SURUM = "1.0.0";
-const SETUP_INDIRME_LINKI = "https://github.com/maNgao7/mng-license-server1/releases/download/v7.0.26/TikMnG-Setup-7.0.26.exe";
-const PORTABLE_INDIRME_LINKI = "https://github.com/maNgao7/mng-license-server1/releases/download/v7.0.26/TikMnG-7.0.26-Portable.exe";
+const SETUP_INDIRME_LINKI = "https://github.com/maNgao7/mng-license-server1/releases/download/v7.0.27/TikMnG-Setup-7.0.27.exe";
+const PORTABLE_INDIRME_LINKI = "https://github.com/maNgao7/mng-license-server1/releases/download/v7.0.27/TikMnG-7.0.27-Portable.exe";
 const SETUP_WEB_LINKI = 'https://tikmng.com/download/setup';
 const resolveLatestInstaller = createLatestInstallerResolver({ fallbackUrl: SETUP_INDIRME_LINKI });
 const VARSAYILAN_PAKET_LINKLERI = Object.freeze({
@@ -984,6 +984,7 @@ const VARSAYILAN_PAKET_LINKLERI = Object.freeze({
 
 // Her güncellemede eklenen/değişen özellikler listesi
 const SURUM_NOTLARI = [
+    "v7.0.27: Hapisten Kaç kurulum videosu ve son 30 dakikada uyarı veren lisans geri sayımı.",
     "v7.0.26: Oyun açılışı, yayın bağlantısı ve web kataloğu iyileştirmeleri.",
     "v7.0.25: Hapisten Kaç 0.2.0 ve Teke Tek Profil 0.5.7. Oyun kataloğu ve güncel kurulum indirmesi yenilendi.",
     "v7.0.24: Ayrı TikMnG widget bağlantıları ve Yaratık Arena 0.1.31.",
