@@ -1,6 +1,7 @@
 import { salesPlans } from "./web/sales-catalog.js";
 
 const apiUrl = "https://api.shopier.com/v1";
+const defaultApprovedImageUrl = "https://tikmng.com/portal-hero-v2.png";
 const productIdPattern = /^[1-9]\d{0,19}$/;
 const orderIdPattern = /^[A-Za-z0-9_-]{1,80}$/;
 const referencePattern = /^MNG-[A-F0-9]{32}$/;
@@ -63,31 +64,26 @@ function matchesProductPrice(product, amountMinor) {
         && (product.priceData.shippingPrice === undefined || moneyInKurus(product.priceData.shippingPrice) === 0);
 }
 
-function approvedImage(media) {
-    if (media?.type !== "image" || typeof media.url !== "string") return false;
+function approvedImage(value) {
+    if (typeof value !== "string") return false;
     try {
-        const url = new URL(media.url);
-        return url.protocol === "https:" && !url.username && !url.password;
+        const url = new URL(value);
+        return url.protocol === "https:" && !url.username && !url.password && /\.png$/i.test(url.pathname);
     } catch {
         return false;
     }
 }
 
 /** The caller owns quote signing and durable product-to-checkout storage. No POST retries. */
-export async function createShopierPaymentProduct({ apiToken, templateProductId, quote, fetchProvider = fetch }) {
+export async function createShopierPaymentProduct({ apiToken, templateProductId, quote,
+    approvedImageUrl = defaultApprovedImageUrl, fetchProvider = fetch }) {
     const plan = salesPlans.find(plan => plan.id === quote?.planId);
     if (!validProductId(templateProductId) || !validQuote(quote) || !plan || plan.priceMinor !== quote.amountMinor) {
         throw new Error("Shopier sipariş teklifi geçersiz.");
     }
-    const context = { apiToken, fetchProvider };
-    const template = await request(context, `/products/${templateProductId}`);
-    if (template?.id !== templateProductId || !matchesProductPrice(template, quote.amountMinor)) {
-        throw new Error("Shopier şablon ürünü doğrulanamadı.");
-    }
-    const media = Array.isArray(template.media) ? template.media.filter(approvedImage) : [];
-    const image = media.find(item => item.placement === 1) ?? media[0];
-    if (!image) throw new Error("Shopier şablon görseli doğrulanamadı.");
+    if (!approvedImage(approvedImageUrl)) throw new Error("Shopier onaylı ürün görseli geçersiz.");
 
+    // Catalog prices and the server-approved PNG are authoritative; product GETs may be forbidden.
     // Official POST schema: title, type, media (including placement), priceData, shippingPayer.
     // https://developer.shopier.com/reference/post-products.md
     const days = plan.period === "weekly" ? 7 : 30;
@@ -95,10 +91,10 @@ export async function createShopierPaymentProduct({ apiToken, templateProductId,
         ? `TikMnG ${days} Günlük Dijital Ajans Lisansı (${plan.seats} Yayıncı)`
         : `TikMnG ${days} Günlük Dijital Bireysel Lisans`;
     const price = `${Math.floor(quote.amountMinor / 100)}.${String(quote.amountMinor % 100).padStart(2, "0")}`;
-    const product = await request(context, "/products", {
+    const product = await request({ apiToken, fetchProvider }, "/products", {
         method: "POST",
         body: JSON.stringify({ title, type: "digital",
-            media: [{ type: "image", url: image.url, placement: 1 }],
+            media: [{ type: "image", url: approvedImageUrl, placement: 1 }],
             priceData: { currency: "TRY", price }, shippingPayer: "sellerPays",
             stockQuantity: 1, customListing: true }),
     });

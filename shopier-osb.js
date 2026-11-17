@@ -40,20 +40,39 @@ export function readShopierOsb(form, { username, secret }, onReject = () => {}) 
 
 const numericValue = value => typeof value === "string" || typeof value === "number" ? String(value) : "";
 
-export function shopierOsbReceipt(event, products, receivedAt) {
-    const { orderid, currency, price, productcount, productid, customernote } = event;
+function singleProductPayment(event) {
+    const { orderid, currency, price, productcount, productid } = event;
     const orderId = numericValue(orderid);
     const productId = numericValue(productid);
-    const reference = typeof customernote === "string" ? customernote.trim() : "";
     const amount = numericValue(price);
-    if (!/^\d{1,30}$/.test(orderId) || !Object.values(products).includes(productId)
+    if (!/^\d{1,30}$/.test(orderId) || !/^\d{1,20}$/.test(productId)
         || ![0, "0"].includes(currency) || ![1, "1"].includes(productcount)
-        || !/^MNG-[A-F0-9]{32}$/.test(reference)
         || !/^\d{1,10}(\.\d{1,2})?$/.test(amount)) return null;
     const [whole, fraction = ""] = amount.split(".");
     const amountMinor = Number(whole) * 100 + Number(fraction.padEnd(2, "0"));
     if (amountMinor <= 0) return null;
-    return { orderId, productId, reference, amountMinor, receivedAt };
+    return { orderId, productId, amountMinor };
+}
+
+export function shopierOsbReceipt(event, products, receivedAt) {
+    const payment = singleProductPayment(event);
+    const reference = typeof event.customernote === "string" ? event.customernote.trim() : "";
+    if (!payment || !Object.values(products).includes(payment.productId)
+        || !/^MNG-[A-F0-9]{32}$/.test(reference)) return null;
+    return { ...payment, reference, receivedAt };
+}
+
+/** Only call after the notification signature is verified. */
+export function shopierAutomaticOsbReceipt(event, sessions, receivedAt) {
+    if (![0, "0"].includes(event.istest)) return null;
+    const payment = singleProductPayment(event);
+    if (!payment) return null;
+    const matches = sessions.filter(session => session.automatic && session.productId === payment.productId);
+    if (matches.length !== 1) return null;
+    const [session] = matches;
+    const receipt = { ...payment, reference: session.reference, receivedAt };
+    return receivedAt - session.createdAt < evidenceLifetime && shopierReceiptMatchesQuote(receipt, session)
+        ? receipt : null;
 }
 
 export function sameShopierReceipt(a, b) {

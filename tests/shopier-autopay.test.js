@@ -9,25 +9,22 @@ import { salesPlans } from "../web/sales-catalog.js";
 const apiToken = "mock-provider-token-never-a-real-secret";
 const templateProductId = "5000";
 const reference = "MNG-0123456789ABCDEF0123456789ABCDEF";
-const imageUrl = "https://approved.example.test/license.png?version=2";
+const imageUrl = "https://tikmng.com/portal-hero-v2.png";
 const decimal = minor => (minor / 100).toFixed(2);
 
 function fixture(plan = salesPlans[0]) {
     const quote = { reference, planId: plan.id, owner: "private-buyer", productId: "91001",
         amountMinor: plan.priceMinor, discountMinor: 0, createdAt: Date.parse("2026-11-17T10:00:00.678Z") };
-    const template = { id: templateProductId, title: "Approved template", type: "digital",
-        customNote: "Old manual reference prompt must not be copied", description: "Old manual instructions",
+    const product = { id: quote.productId, title: "Digital license", type: "digital",
         priceData: { price: decimal(plan.priceMinor), currency: "TRY", discount: false, shippingPrice: "0.00" },
-        media: [{ id: "2", type: "image", url: "https://approved.example.test/secondary.png", placement: 2 },
-            { id: "1", type: "image", url: imageUrl, placement: 1 }] };
-    const product = { ...structuredClone(template), id: quote.productId, stockQuantity: 1, customListing: true };
+        media: [{ type: "image", url: imageUrl, placement: 1 }], stockQuantity: 1, customListing: true };
     const order = { id: "70001", paymentStatus: "paid", currency: "TRY", status: "unfulfilled",
         dateCreated: "2026-11-17T13:00:01+0300", note: "",
         lineItems: [{ productId: quote.productId, title: "Digital license", type: "digital", quantity: 1,
             price: decimal(quote.amountMinor), total: decimal(quote.amountMinor) }],
         totals: { subtotal: decimal(quote.amountMinor), shipping: "0.00", discount: "0.00", total: decimal(quote.amountMinor) },
         refunds: [] };
-    return { quote, template, product, order };
+    return { quote, product, order };
 }
 
 function checkRequest(options, method) {
@@ -40,15 +37,10 @@ function checkRequest(options, method) {
     if (options.body) assert.equal(options.headers["Content-Type"], "application/json");
 }
 
-function creationFetch(template, product, calls = []) {
+function creationFetch(product, calls = []) {
     return async (url, options) => {
         calls.push({ url, options });
-        if (calls.length === 1) {
-            assert.equal(url, `https://api.shopier.com/v1/products/${templateProductId}`);
-            checkRequest(options, "GET");
-            return Response.json(template);
-        }
-        assert.equal(calls.length, 2, "creation must not retry a product POST");
+        assert.equal(calls.length, 1, "creation must make a single POST without a template GET or retry");
         assert.equal(url, "https://api.shopier.com/v1/products");
         checkRequest(options, "POST");
         return Response.json(product);
@@ -57,34 +49,33 @@ function creationFetch(template, product, calls = []) {
 
 test("creates each approved 7/30-day offer with only documented fields and one approved image", async () => {
     for (const plan of salesPlans) {
-        const { quote, template, product } = fixture(plan);
+        const { quote, product } = fixture(plan);
         const originalQuote = structuredClone(quote);
-        const originalTemplate = structuredClone(template);
         const calls = [];
         assert.deepEqual(await createShopierPaymentProduct({ apiToken: ` ${apiToken} `, templateProductId, quote,
-            fetchProvider: creationFetch(template, product, calls) }), { productId: product.id });
-        assert.equal(calls.length, 2);
-        const body = JSON.parse(calls[1].options.body);
+            fetchProvider: creationFetch(product, calls) }), { productId: product.id });
+        assert.equal(calls.length, 1);
+        const body = JSON.parse(calls[0].options.body);
         assert.match(body.title, new RegExp(`TikMnG ${plan.period === "weekly" ? 7 : 30} Günlük Dijital`));
         if (plan.kind === "agency") assert.ok(body.title.includes(`${plan.seats} Yayıncı`));
         assert.deepEqual(body, { title: body.title, type: "digital",
             media: [{ type: "image", url: imageUrl, placement: 1 }],
             priceData: { currency: "TRY", price: decimal(plan.priceMinor) },
             shippingPayer: "sellerPays", stockQuantity: 1, customListing: true });
-        assert.equal(calls[1].options.body.includes(reference), false);
-        assert.equal(calls[1].options.body.includes(quote.owner), false);
+        assert.equal(calls[0].options.body.includes(reference), false);
+        assert.equal(calls[0].options.body.includes(quote.owner), false);
         assert.deepEqual(quote, originalQuote);
-        assert.deepEqual(template, originalTemplate);
     }
 });
 
 test("creates a fresh provider product on every checkout without reusing the template", async () => {
-    const { quote, template } = fixture();
+    const { quote, product } = fixture();
     let creations = 0;
     const fetchProvider = async (url, options) => {
-        if (!options.body) return Response.json(template);
+        assert.equal(url, "https://api.shopier.com/v1/products");
+        checkRequest(options, "POST");
         creations++;
-        return Response.json({ ...template, id: String(91000 + creations), stockQuantity: 1, customListing: true });
+        return Response.json({ ...product, id: String(91000 + creations) });
     };
     const first = await createShopierPaymentProduct({ apiToken, templateProductId, quote, fetchProvider });
     const second = await createShopierPaymentProduct({ apiToken, templateProductId,
@@ -120,28 +111,23 @@ test("rejects invalid or unapproved checkout inputs before making any provider r
     });
 });
 
-test("rejects unapproved templates without creating a product", async t => {
-    const cases = {
-        "different template": value => { value.id = "5001"; },
-        "physical product": value => { value.type = "physical"; },
-        "foreign currency": value => { value.priceData.currency = "USD"; },
-        "wrong price": value => { value.priceData.price = "299.99"; },
-        "discount enabled": value => { value.priceData.discount = true; },
-        "ambiguous discount": value => { delete value.priceData.discount; },
-        "shipping charge": value => { value.priceData.shippingPrice = "0.01"; },
-        "missing media": value => { delete value.media; },
-        "unapproved media type": value => { value.media = [{ type: "video", url: imageUrl }]; },
-        "insecure media": value => { value.media = [{ type: "image", url: "http://example.test/a.png" }]; },
-        "credential URL": value => { value.media = [{ type: "image", url: "https://user:pass@example.test/a.png" }]; },
-    };
-    for (const [label, mutate] of Object.entries(cases)) await t.test(label, async () => {
-        const { quote, template, product } = fixture();
-        mutate(template);
-        const calls = [];
-        await assert.rejects(createShopierPaymentProduct({ apiToken, templateProductId, quote,
-            fetchProvider: creationFetch(template, product, calls) }), /şablon/);
-        assert.equal(calls.length, 1);
-    });
+test("uses an explicitly approved HTTPS PNG override without looking up the template", async () => {
+    const { quote, product } = fixture();
+    const approvedImageUrl = "https://approved.example.test/license.png?version=2";
+    const calls = [];
+    await createShopierPaymentProduct({ apiToken, templateProductId, quote, approvedImageUrl,
+        fetchProvider: creationFetch(product, calls) });
+    assert.equal(calls.length, 1);
+    assert.deepEqual(JSON.parse(calls[0].options.body).media, [{ type: "image", url: approvedImageUrl, placement: 1 }]);
+});
+
+test("rejects invalid approved image overrides before contacting the provider", async () => {
+    const { quote } = fixture();
+    for (const approvedImageUrl of [null, "", "not-a-url", "http://example.test/a.png", "https://example.test/a.webp",
+        "https://user:pass@example.test/a.png", "https://example.test/a.webp?format=.png"]) {
+        await assert.rejects(createShopierPaymentProduct({ apiToken, templateProductId, quote, approvedImageUrl,
+            fetchProvider: async () => assert.fail("invalid image contacted the provider") }), /görseli geçersiz/);
+    }
 });
 
 test("never accepts an unverified product response as a checkout product", async t => {
@@ -161,10 +147,10 @@ test("never accepts an unverified product response as a checkout product", async
         "wrong stock": value => { value.stockQuantity = 2; },
     };
     for (const [label, mutate] of Object.entries(cases)) await t.test(label, async () => {
-        const { quote, template, product } = fixture();
+        const { quote, product } = fixture();
         mutate(product);
         await assert.rejects(createShopierPaymentProduct({ apiToken, templateProductId, quote,
-            fetchProvider: creationFetch(template, product) }), /ödeme ürünü/);
+            fetchProvider: creationFetch(product) }), /ödeme ürünü/);
     });
 });
 
@@ -308,18 +294,18 @@ test("malformed success JSON is sanitized for operations that consume a JSON bod
 });
 
 test("each HTTP request has a 10-second abort signal, including POST and PUT", async t => {
-    const { quote, template } = fixture();
+    const { quote, product, order } = fixture();
     const durations = [];
     t.mock.method(AbortSignal, "timeout", duration => {
         durations.push(duration);
         return new AbortController().signal;
     });
     await createShopierPaymentProduct({ apiToken, templateProductId, quote,
-        fetchProvider: creationFetch(template, fixture().product) });
-    await getShopierOrder({ apiToken, orderId: "70001", fetchProvider: async () => Response.json(fixture().order) });
+        fetchProvider: creationFetch(product) });
+    await getShopierOrder({ apiToken, orderId: order.id, fetchProvider: async () => Response.json(order) });
     await findShopierOrdersForProduct({ apiToken, productId: quote.productId, fetchProvider: async () => Response.json([]) });
     await disableShopierPaymentProduct({ apiToken, productId: quote.productId, fetchProvider: async () => new Response(null, { status: 204 }) });
-    assert.deepEqual(durations, [10000, 10000, 10000, 10000, 10000]);
+    assert.deepEqual(durations, [10000, 10000, 10000, 10000]);
 });
 
 test("timeout aborts are sanitized instead of leaking transport error text", async t => {
@@ -345,13 +331,14 @@ test("timeout aborts are sanitized instead of leaking transport error text", asy
 });
 
 test("POST failure does not retry or return the template product", async () => {
-    const { quote, template } = fixture();
+    const { quote } = fixture();
     let requests = 0;
-    await assert.rejects(createShopierPaymentProduct({ apiToken, templateProductId, quote, fetchProvider: async () => {
+    await assert.rejects(createShopierPaymentProduct({ apiToken, templateProductId, quote, fetchProvider: async (_url, options) => {
+        checkRequest(options, "POST");
         requests++;
-        return requests === 1 ? Response.json(template) : new Response("PRIVATE", { status: 503 });
+        return new Response("PRIVATE", { status: 503 });
     } }), /503/);
-    assert.equal(requests, 2);
+    assert.equal(requests, 1);
 });
 
 test("matches each plan using only paid evidence and private product binding, without a buyer reference", () => {

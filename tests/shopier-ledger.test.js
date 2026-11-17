@@ -39,7 +39,6 @@ import { createHash } from 'node:crypto';
 const root = process.env.MOCK_PROVIDER_DIR;
 const read = (name) => JSON.parse(readFileSync(root + '/' + name + '.json', 'utf8'));
 const prices = { '/v1/products/5000': '300.00', '/v1/products/5002': '2000.00' };
-if (process.env.MOCK_AUTO_CHECKOUT === 'true') prices['/v1/products/5001'] = '800.00';
 globalThis.fetch = async (input, options = {}) => {
     const url = new URL(input);
     if (url.hostname === 'api.github.com') {
@@ -67,6 +66,10 @@ globalThis.fetch = async (input, options = {}) => {
         writeFileSync(root + '/created-products.json', JSON.stringify(products));
         return Response.json({});
     }
+    if (url.hostname === 'api.shopier.com' && url.pathname.startsWith('/v1/products/')
+        && process.env.MOCK_AUTO_CHECKOUT === 'true') {
+        return new Response(null, { status: 403 });
+    }
     if (url.hostname === 'api.shopier.com' && prices[url.pathname]) {
         return Response.json({ id: url.pathname.split('/').pop(), type: 'digital', stockStatus: 'inStock',
             media: [{ type: 'image', url: 'https://example.test/license.jpg', placement: 1 }],
@@ -79,10 +82,12 @@ globalThis.fetch = async (input, options = {}) => {
         return new Response(null, { status: 404 });
     }
     if (url.hostname === 'api.shopier.com' && url.pathname === '/v1/orders') {
+        if (existsSync(root + '/block-order-reads.json')) return new Response(null, { status: 403 });
         const order = existsSync(root + '/order.json') ? read('order') : null;
         return Response.json(order?.lineItems?.some(item => item.productId === url.searchParams.get('productId')) ? [order] : []);
     }
     if (url.hostname === 'api.shopier.com' && url.pathname.startsWith('/v1/orders/')) {
+        if (existsSync(root + '/block-order-reads.json')) return new Response(null, { status: 403 });
         const order = existsSync(root + '/order.json') ? read('order') : null;
         return order?.id === url.pathname.split('/').pop() ? Response.json(order) : new Response(null, { status: 404 });
     }
@@ -115,7 +120,7 @@ async function createLedgerFixture(t) {
     }
     t.after(async () => {
         await stop();
-        for (const name of ["github.json", "order.json", "reject-write.json", "lost-ack.json", "created-products.json",
+        for (const name of ["github.json", "order.json", "block-order-reads.json", "reject-write.json", "lost-ack.json", "created-products.json",
             "lisanslar.json", "lisanslar_backup.json", "aktivasyon_log.json", "talepler.json", "kara_liste.json", "content-state.json"]) {
             await rm(path.join(root, name), { force: true });
         }
@@ -337,9 +342,13 @@ test("automatic private-product checkout delivers without a buyer reference and 
         dateCreated: new Date().toISOString(), note: "",
         lineItems: [{ productId, type: "digital", quantity: 1, price, total: price }], refunds: [],
         totals: { subtotal: price, total: price, discount: "0.00", shipping: "0.00" } });
-    await file("order", paidOrder("7001", "6201", "300.00"));
+    await file("block-order-reads", {});
     const event = { istest: 0, orderid: "7001", currency: 0, price: "300.00",
         productcount: 1, productid: "6201", customernote: "" };
+    assert.equal((await osbNotification(base, event, "wrong-signature")).status, 403);
+    assert.equal(await (await osbNotification(base, { ...event, istest: 1 })).text(), "success");
+    await post("/api/shopier/redeem", { token: week.token }, 409);
+    assert.equal(await (await osbNotification(base, event)).text(), "success");
     assert.equal(await (await osbNotification(base, event)).text(), "success");
     const [issued, duplicate] = await Promise.all([
         post("/api/shopier/redeem", { token: week.token }),
@@ -347,6 +356,7 @@ test("automatic private-product checkout delivers without a buyer reference and 
     ]);
     assert.deepEqual(issued, duplicate);
     assert.equal((await post("/api/license/verify", { code: issued.code, deviceId: "weekly-device" })).remainingDays, 7);
+    await rm(path.join(root, "block-order-reads.json"));
     await file("order", paidOrder("7002", "6202", "800.00"));
     // Returning to the site recovers a missed notification from the exact private product.
     const monthly = await post("/api/shopier/redeem", { token: month.token });

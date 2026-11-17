@@ -19,7 +19,7 @@ import { createShopierCheckout, shopierProductIds } from "./shopier-checkout.js"
 import { checkShopierOffer } from "./shopier-payment.js";
 import { createShopierPaymentProduct, disableShopierPaymentProduct, getShopierOrder, findShopierOrdersForProduct,
     matchShopierAutomaticPayment } from "./shopier-autopay.js";
-import { readShopierOsbForm, readShopierOsb, shopierOsbReceipt, sameShopierReceipt,
+import { readShopierOsbForm, readShopierOsb, shopierOsbReceipt, shopierAutomaticOsbReceipt, sameShopierReceipt,
     receiptIsCurrent, shopierReceiptMatchesQuote } from "./shopier-osb.js";
 import { createLicenseLedger } from "./license-ledger.js";
 import { manualShopierUrl, salesPlans } from "./web/sales-catalog.js";
@@ -532,6 +532,10 @@ async function findShopierPaidOrder(quote) {
                     if (payment) return recordShopierReceipt(payment);
                 }
                 return false;
+            }).catch(error => {
+                // A signed notification can still confirm this checkout when order reads are forbidden.
+                if (error?.shopierStatus === 401 || error?.shopierStatus === 403) return false;
+                throw error;
             });
         lookup = { startedAt: Date.now(), request };
         shopierPaymentLookups.set(quote.reference, lookup);
@@ -675,14 +679,15 @@ app.post("/api/shopier/osb",
             console.log("Shopier OSB signed test accepted.");
             return res.send("success");
         }
-        const receipt = shopierOsbReceipt(event, shopierProducts, Date.now());
-        if (shopierAutomaticCheckout && /^\d{1,30}$/.test(String(event.orderid))) {
-            return recordShopierAutomaticOrder(String(event.orderid)).then(async matched => {
-                if (!matched && receipt) await recordShopierReceipt(receipt);
-                return res.send("success");
-            });
+        const receivedAt = Date.now();
+        const receipt = shopierAutomaticOsbReceipt(event, shopierCheckouts, receivedAt)
+            ?? shopierOsbReceipt(event, shopierProducts, receivedAt);
+        if (!receipt) {
+            if (shopierAutomaticCheckout && /^\d{1,30}$/.test(String(event.orderid))) {
+                return recordShopierAutomaticOrder(String(event.orderid)).then(() => res.send("success"));
+            }
+            return res.send("success");
         }
-        if (!receipt) return res.send("success");
         if (!shopierCheckout || !shopierStorageAvailable()) return res.status(503).send("unavailable");
         return recordShopierReceipt(receipt)
             .then(accepted => accepted ? res.send("success") : res.status(409).send("conflicting notification"));
