@@ -555,10 +555,12 @@ app.post("/api/shopier/osb", express.urlencoded({ extended: false, limit: "32kb"
     res.set("Cache-Control", "no-store").type("text");
     if (!shopierOsbConfigured || !shopierProducts) return res.status(503).send("unavailable");
     if (!req.is("application/x-www-form-urlencoded")) return res.status(415).send("unsupported media type");
-    const event = readShopierOsb(req.body, shopierOsbCredentials);
+    const event = readShopierOsb(req.body, shopierOsbCredentials,
+        reason => console.warn("Shopier OSB rejected:", reason));
     if (!event) return res.status(403).send("invalid notification");
     if (Number(event.istest) === 1) {
         shopierOsbLastTest = new Date().toISOString();
+        console.log("Shopier OSB signed test accepted.");
         return res.send("success");
     }
     const receipt = shopierOsbReceipt(event, shopierProducts, Date.now());

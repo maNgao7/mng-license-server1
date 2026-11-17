@@ -2,17 +2,22 @@ import { createHmac, timingSafeEqual } from "node:crypto";
 
 const evidenceLifetime = 30 * 86_400_000;
 
-export function readShopierOsb(form, { username, secret }) {
+export function readShopierOsb(form, { username, secret }, onReject = () => {}) {
+    function reject(reason) {
+        onReject(reason);
+        return null;
+    }
     const { res, hash } = form ?? {};
-    if (typeof res !== "string" || !/^[A-Za-z0-9+/]+={0,2}$/.test(res)
-        || typeof hash !== "string" || !/^[a-f\d]{64}$/i.test(hash)) return null;
+    if (typeof res !== "string" || typeof hash !== "string") return reject("missing-fields");
+    if (!/^[A-Za-z0-9+/]+={0,2}$/.test(res)) return reject("payload-encoding");
+    if (!/^[a-f\d]{64}$/i.test(hash)) return reject("signature-format");
     const expected = createHmac("sha256", secret).update(res + username).digest();
-    if (!timingSafeEqual(expected, Buffer.from(hash, "hex"))) return null;
+    if (!timingSafeEqual(expected, Buffer.from(hash, "hex"))) return reject("signature-mismatch");
     try {
         const event = JSON.parse(Buffer.from(res, "base64").toString("utf8"));
-        return [0, 1, "0", "1"].includes(event?.istest) ? event : null;
+        return [0, 1, "0", "1"].includes(event?.istest) ? event : reject("test-flag-" + typeof event?.istest);
     } catch {
-        return null;
+        return reject("payload-json");
     }
 }
 
