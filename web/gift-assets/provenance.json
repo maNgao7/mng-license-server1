@@ -2,8 +2,8 @@
   "schemaVersion": 4,
   "policy": "verified-old-plus-new-numeric-id-union",
   "identityPolicy": "Union by explicit numeric ID only; never alias by name, price, image, ordinal or similarity.",
-  "catalogCount": 905,
-  "catalogSha256": "50ee246ea578c259d4c84ab82399dda7aba3bc9741bc62ba828ac89d533fcada",
+  "catalogCount": 985,
+  "catalogSha256": "8e81bc655e5902dbd67c91754c659886a475acadc0de992586e16448a987db08",
   "metadataUrl": "https://tikfinity.zerody.one/api/getAllGifts?lang=tr&client=giftlist",
   "capturedAt": "2026-10-25T15:14:14.463Z",
   "inputManifestSha256": "a28082c301ce49543ab8fc6c954f1905916c31883f01cd742166b4b2d23c93c1",
@@ -50383,6 +50383,1062 @@
           }
         ]
       }
+    }
+  ],
+  "catalogUpdates": [
+    {
+      "capturedAt": "2026-11-20T18:59:21.674932+00:00",
+      "previousCatalogSha256": "238713412dd1779b71e0e6713f7b54a87f0082ca0c41cd49bf65c8415ee4f836",
+      "sources": [
+        {
+          "url": "https://tikfinity.zerody.one/api/getAllGifts?lang=tr&client=giftlist",
+          "sha256": "3e324ca05641260d18f783322aa17f405fd58de642840ecd3ce0436e89ba5a8d"
+        },
+        {
+          "url": "https://tikfinity.zerody.one/api/getAllGifts?lang=en&client=giftlist",
+          "sha256": "624125ed100b9413c6f43a63dee6d127228bc912ecfdf8302337fbe8635749fd"
+        },
+        {
+          "url": "https://www.eulerstream.com/docs/tiktok-gifts-list",
+          "sha256": "f00d37a4f1fbb4ee3b2e208ba5b33bfc8ba8fed6fcf2b8208a90e1c64f26fdab"
+        },
+        {
+          "url": "https://standoutstreamers.com.au/tiktok-gift-catalog/",
+          "sha256": "e931b6bfd2154667e3eb60143caaf25673a903fc8e79c5f32a6101b144412d76"
+        },
+        {
+          "url": "https://streamtoearn.io/tr/gifts?region=TR",
+          "sha256": "6f6cff6a9ef98a0e128babcbfbb075317ebc61e108678781bb62b90775857d81"
+        }
+      ],
+      "records": [
+        {
+          "id": "5524",
+          "name": "Çar",
+          "coins": 100,
+          "sources": [
+            "https://tikfinity.zerody.one/api/getAllGifts?lang=tr&client=giftlist",
+            "https://www.eulerstream.com/docs/tiktok-gifts-list",
+            "https://standoutstreamers.com.au/tiktok-gift-catalog/"
+          ],
+          "sourceSha256": "143c96a748cfa537f867411037da3f6e9198aadd6e0315cd706eebb999991ef9",
+          "pngSha256": "e99d63919c2b47264065bdddf230917706ed1b77fe95fdd73c2daec282862a7f",
+          "liveVerification": "unverified-live"
+        },
+        {
+          "id": "5582",
+          "name": "Mishka Bear",
+          "coins": 100,
+          "sources": [
+            "https://tikfinity.zerody.one/api/getAllGifts?lang=tr&client=giftlist",
+            "https://www.eulerstream.com/docs/tiktok-gifts-list"
+          ],
+          "sourceSha256": "76f1b54f4423543ed8e6a29fad864e88bb452a54b9996e64a09e109cd2685592",
+          "pngSha256": "15f7152ec45e050e001bc9a504b4431e5f544089c5de578e48d40fbfac7d3696",
+          "liveVerification": "unverified-live"
+        },
+        {
+          "id": "5794",
+          "name": "Hindistan Cevizi",
+          "coins": 199,
+          "sources": [
+            "https://tikfinity.zerody.one/api/getAllGifts?lang=tr&client=giftlist",
+            "https://www.eulerstream.com/docs/tiktok-gifts-list",
+            "https://standoutstreamers.com.au/tiktok-gift-catalog/"
+          ],
+          "sourceSha256": "880bee60e8283b74b893da26f411f028ca0e6087a2b40948e0ce7ae86b9eae60",
+          "pngSha256": "6f2261be71753c201752e0c24ab0b414dda7222b975f9b1cfa7d2b8f9567d160",
+          "liveVerification": "unverified-live"
+        },
+        {
+          "id": "6592",
+          "name": "TGIF",
+          "coins": 1,
+          "sources": [
+            "https://tikfinity.zerody.one/api/getAllGifts?lang=tr&client=giftlist",
+            "https://tik.tools/tr/gifts/tgif"
+          ],
+          "sourceSha256": "d5e493e8d64212fee0d941a0c5291bf26ab06aba4aab877730feebfad9c1de80",
+          "pngSha256": "d5546445275f9022462dda400558cfb4ad69e2378d17b35a0521628b1d98162e",
+          "liveVerification": "unverified-live"
+        },
+        {
+          "id": "7816",
+          "name": "Altın Palmiye Ağacı",
+          "coins": 10,
+          "sources": [
+            "https://tikfinity.zerody.one/api/getAllGifts?lang=tr&client=giftlist",
+            "https://tik.tools/tr/gifts/golden-palm-tree"
+          ],
+          "sourceSha256": "51e9440ab260e96a8bb05d132a72ef980cc0200f33a7d357bf55b3abdbe4ad0a",
+          "pngSha256": "9c1caaf1f54ccdf3cc44bef2c512eb2e3a63e3b0a4469417e011515b5d975acf",
+          "liveVerification": "unverified-live"
+        },
+        {
+          "id": "8265",
+          "name": "İyi Cumalar",
+          "coins": 399,
+          "sources": [
+            "https://tikfinity.zerody.one/api/getAllGifts?lang=tr&client=giftlist",
+            "https://tik.tools/tr/gifts/happy-friday"
+          ],
+          "sourceSha256": "2b5b40a732263d8b5f4d0457afac16b4f0e90fdaab38c9d1bb6e262d16db4375",
+          "pngSha256": "8b8382ea677afa2dce78e8a869aa737aad5c9b661759f2c3f58d63d35927ab3a",
+          "liveVerification": "unverified-live"
+        },
+        {
+          "id": "9580",
+          "name": "Yardımlaşmalı Yemek",
+          "coins": 3000,
+          "sources": [
+            "https://tikfinity.zerody.one/api/getAllGifts?lang=tr&client=giftlist",
+            "https://www.eulerstream.com/docs/tiktok-gifts-list",
+            "https://standoutstreamers.com.au/tiktok-gift-catalog/"
+          ],
+          "sourceSha256": "f8b2d32da41bada1c73bb48bd6aa759b8a19dc16d8e5c6dd078f34ba8721734f",
+          "pngSha256": "c273ce0c46c4c1b30972109ee7ec640ad3ab32eb8c87c4d9433c4ddf66a6fa56",
+          "liveVerification": "unverified-live"
+        },
+        {
+          "id": "9803",
+          "name": "Buz Krallığı",
+          "coins": 20000,
+          "sources": [
+            "https://tikfinity.zerody.one/api/getAllGifts?lang=tr&client=giftlist",
+            "https://tik.tools/tr/gifts/ice-kingdom"
+          ],
+          "sourceSha256": "71d177b96732ef609bbd2efae8af203eddb538455bc826c2e6fcd36297ec32e9",
+          "pngSha256": "5ac15f084547386204e21967f603b2c7efb60eccaea52602ca7de6e34cbf3395",
+          "liveVerification": "unverified-live"
+        },
+        {
+          "id": "10101",
+          "name": "Buz Kraliçesi",
+          "coins": 12000,
+          "sources": [
+            "https://tikfinity.zerody.one/api/getAllGifts?lang=tr&client=giftlist",
+            "https://tik.tools/tr/gifts/ice-queen"
+          ],
+          "sourceSha256": "360a6082f16a43fd153b13fafad3ca310107e977444dd7c23615110cc30cbb53",
+          "pngSha256": "15284500417c8c3064c1ad04ba0f39019ed4ae0b1a7bde5ee25d3d0554b03547",
+          "liveVerification": "unverified-live"
+        },
+        {
+          "id": "11068",
+          "name": "Şahin",
+          "coins": 10999,
+          "sources": [
+            "https://tikfinity.zerody.one/api/getAllGifts?lang=tr&client=giftlist",
+            "https://www.eulerstream.com/docs/tiktok-gifts-list",
+            "https://standoutstreamers.com.au/tiktok-gift-catalog/"
+          ],
+          "sourceSha256": "6df2d035f0ce4c34f735e3c890220cc613adfccf75f2171bf24e3e9caf38bad5",
+          "pngSha256": "5bbeb50c88eb51c0952330ba20ea7c3893751920a0983027459895a075887e3a",
+          "liveVerification": "unverified-live"
+        },
+        {
+          "id": "11491",
+          "name": "Zürafa",
+          "coins": 1000,
+          "sources": [
+            "https://tikfinity.zerody.one/api/getAllGifts?lang=tr&client=giftlist",
+            "https://www.eulerstream.com/docs/tiktok-gifts-list",
+            "https://standoutstreamers.com.au/tiktok-gift-catalog/"
+          ],
+          "sourceSha256": "3faf756ae6db76cb518ab397ab7e13440d6b10edd0d41a96156d92e5ff8f3947",
+          "pngSha256": "d81720b289d74154672852e050224b1277214677a4900098178f944e8178e1eb",
+          "liveVerification": "unverified-live"
+        },
+        {
+          "id": "12277",
+          "name": "Gümüş Spor Araba",
+          "coins": 1000,
+          "sources": [
+            "https://tikfinity.zerody.one/api/getAllGifts?lang=tr&client=giftlist",
+            "https://www.eulerstream.com/docs/tiktok-gifts-list",
+            "https://standoutstreamers.com.au/tiktok-gift-catalog/"
+          ],
+          "sourceSha256": "58d6798ad70a14b6e8a52ea1b8f49a6d6cdf4a52f8157f4d64096014315dd15c",
+          "pngSha256": "d43e801880ab711cc3523ff0242e6a0b4cb6876c49aea1f6d12a85ad099bfeb7",
+          "liveVerification": "unverified-live"
+        },
+        {
+          "id": "12843",
+          "name": "Balkabaklı Turta",
+          "coins": 5,
+          "sources": [
+            "https://tikfinity.zerody.one/api/getAllGifts?lang=tr&client=giftlist",
+            "https://www.eulerstream.com/docs/tiktok-gifts-list",
+            "https://standoutstreamers.com.au/tiktok-gift-catalog/"
+          ],
+          "sourceSha256": "f0d9a442cdf3b4ebf8ca73e783970c2cb765a008adf2c7e9cf636b090404cfd7",
+          "pngSha256": "eba2cf5ac74096ab525c9236c41286265137147e990681cd06bcb5e490c21656",
+          "liveVerification": "unverified-live"
+        },
+        {
+          "id": "14488",
+          "name": "Capybara",
+          "coins": 30,
+          "sources": [
+            "https://tikfinity.zerody.one/api/getAllGifts?lang=tr&client=giftlist",
+            "https://www.eulerstream.com/docs/tiktok-gifts-list",
+            "https://standoutstreamers.com.au/tiktok-gift-catalog/"
+          ],
+          "sourceSha256": "9e6c43656d986a3fd696684c288012a3ac763d801f66998c282f0fe9abd719fd",
+          "pngSha256": "7e29cecfa2604354731519a37d1174ffe239bcd46843ac4b15bf1f2d5d96ebfa",
+          "liveVerification": "unverified-live"
+        },
+        {
+          "id": "17211",
+          "name": "Sonbahar Havai Fişekleri",
+          "coins": 2000,
+          "sources": [
+            "https://tikfinity.zerody.one/api/getAllGifts?lang=tr&client=giftlist",
+            "https://www.eulerstream.com/docs/tiktok-gifts-list",
+            "https://standoutstreamers.com.au/tiktok-gift-catalog/"
+          ],
+          "sourceSha256": "1e8e9fe6d069a478341034ba0510e70afdcf10dc08dec4bea3d64e54502d7058",
+          "pngSha256": "3777d2dbe9ccd4a23ebf5f2142130381a6cfd2427ac26fd6536e92abed89e5c9",
+          "liveVerification": "unverified-live"
+        },
+        {
+          "id": "17803",
+          "name": "Havalı aşk",
+          "coins": 1,
+          "sources": [
+            "https://tikfinity.zerody.one/api/getAllGifts?lang=tr&client=giftlist",
+            "https://tik.tools/tr/gifts/cool-love"
+          ],
+          "sourceSha256": "9673c66a1e48fbe0b925189464f84258fe0fa6856d67c2c760e18df4bffa8d79",
+          "pngSha256": "94eeb0d1ef6ec7177622d079bc5159e687c6c0a860412a82af562b28ddc1a0e5",
+          "liveVerification": "unverified-live"
+        },
+        {
+          "id": "17934",
+          "name": "Rüzgar Gücü",
+          "coins": 299,
+          "sources": [
+            "https://tikfinity.zerody.one/api/getAllGifts?lang=tr&client=giftlist",
+            "https://tik.tools/tr/gifts/wind-force"
+          ],
+          "sourceSha256": "d5f9259a24beb8e3fe38ae5aa9a044baf86d3a673e9e0f174b5b3a12963f4347",
+          "pngSha256": "882b2832fb2a7d9df05267d4c0d52f575f0fcc47c2fed017899a7d864745951c",
+          "liveVerification": "unverified-live"
+        },
+        {
+          "id": "1282707",
+          "name": "Çiçek Kuryesi",
+          "coins": 249,
+          "sources": [
+            "https://tikfinity.zerody.one/api/getAllGifts?lang=tr&client=giftlist",
+            "https://www.eulerstream.com/docs/tiktok-gifts-list",
+            "https://standoutstreamers.com.au/tiktok-gift-catalog/"
+          ],
+          "sourceSha256": "49d49ded117161120165396cf6a38ff9869102518d7db83a18177eb969215d89",
+          "pngSha256": "e9005d200811e7493e4e743db75c2811b744e87bb2821ba2a68d96aa1975d3ed",
+          "liveVerification": "unverified-live"
+        },
+        {
+          "id": "1283013",
+          "name": "Yıldızlı Dilek",
+          "coins": 399,
+          "sources": [
+            "https://tikfinity.zerody.one/api/getAllGifts?lang=tr&client=giftlist",
+            "https://www.eulerstream.com/docs/tiktok-gifts-list",
+            "https://standoutstreamers.com.au/tiktok-gift-catalog/"
+          ],
+          "sourceSha256": "9f95f8627ee89151db6b032da396c40458ebd64c23f8bebd67095948395e5c1a",
+          "pngSha256": "56c04fcfd129e904ebd975155c87b15c050a51c8cbe6e57bb827dae5449a97b2",
+          "liveVerification": "unverified-live"
+        },
+        {
+          "id": "1298035",
+          "name": "Titrek Puding",
+          "coins": 399,
+          "sources": [
+            "https://tikfinity.zerody.one/api/getAllGifts?lang=tr&client=giftlist",
+            "https://www.eulerstream.com/docs/tiktok-gifts-list",
+            "https://standoutstreamers.com.au/tiktok-gift-catalog/"
+          ],
+          "sourceSha256": "9dd99045f7a410ea5313467fa86cee475beb11983aa2d1ffc7c8dbcc3118cabd",
+          "pngSha256": "0f6adb597c02914c93ef58ea1cc2e82ccdb4ac24fef7bb242b1703dbba7f0cc1",
+          "liveVerification": "unverified-live"
+        },
+        {
+          "id": "1298047",
+          "name": "Sihirli Baloncuk",
+          "coins": 199,
+          "sources": [
+            "https://tikfinity.zerody.one/api/getAllGifts?lang=tr&client=giftlist",
+            "https://www.eulerstream.com/docs/tiktok-gifts-list",
+            "https://standoutstreamers.com.au/tiktok-gift-catalog/"
+          ],
+          "sourceSha256": "96e5a9bf9a182605845499bd72de1671aa36cf3a40280716f2683368bdb97259",
+          "pngSha256": "99dc1f2489a5cb140baae2d651c5cb2811864c67e785290e4705f42d5d0a6fad",
+          "liveVerification": "unverified-live"
+        },
+        {
+          "id": "1298054",
+          "name": "Siber Yumruk Tokuşturma",
+          "coins": 349,
+          "sources": [
+            "https://tikfinity.zerody.one/api/getAllGifts?lang=tr&client=giftlist",
+            "https://www.eulerstream.com/docs/tiktok-gifts-list",
+            "https://standoutstreamers.com.au/tiktok-gift-catalog/"
+          ],
+          "sourceSha256": "0fe78e5b9b28305d3f90f5dced49bf7215022a3a7ff796978208dc9a13c5793a",
+          "pngSha256": "0c6c0105c363f1a63175c08bd9c600ed2d60b8171dca9be56c05895e0129fa7b",
+          "liveVerification": "unverified-live"
+        },
+        {
+          "id": "1342573",
+          "name": "Klavye Melodisi",
+          "coins": 199,
+          "sources": [
+            "https://tikfinity.zerody.one/api/getAllGifts?lang=tr&client=giftlist",
+            "https://www.eulerstream.com/docs/tiktok-gifts-list",
+            "https://standoutstreamers.com.au/tiktok-gift-catalog/"
+          ],
+          "sourceSha256": "9c9e4ecbb43f5b3300dc440669351cae2da0f707106ce97a3f4e471b1e980254",
+          "pngSha256": "6e8776a8eaf17e94ae1f251f5b103d8f5f2007d3f6e3e3ef1986d417c8e29244",
+          "liveVerification": "unverified-live"
+        },
+        {
+          "id": "1342741",
+          "name": "İçerik Üreticisi Kurtuluyor",
+          "coins": 5000,
+          "sources": [
+            "https://tikfinity.zerody.one/api/getAllGifts?lang=tr&client=giftlist",
+            "https://www.eulerstream.com/docs/tiktok-gifts-list",
+            "https://standoutstreamers.com.au/tiktok-gift-catalog/"
+          ],
+          "sourceSha256": "cf03a367d05d13d90d868076be4f13585514f7ce871358bf3fd8ca03c77c7b6a",
+          "pngSha256": "cb9a25390239427da54848fef31eb75a728e8a625c49d19fe86f09b655c526d7",
+          "liveVerification": "unverified-live"
+        },
+        {
+          "id": "1342745",
+          "name": "İçerik Üreticisi Geziyor",
+          "coins": 5000,
+          "sources": [
+            "https://tikfinity.zerody.one/api/getAllGifts?lang=tr&client=giftlist",
+            "https://www.eulerstream.com/docs/tiktok-gifts-list",
+            "https://standoutstreamers.com.au/tiktok-gift-catalog/"
+          ],
+          "sourceSha256": "b2431bb5207762b8944201ed2fd8ff3f92041674cd400d8ce99668c089080464",
+          "pngSha256": "ebaf27dd5914283c0a49e00b87d4e673e6cf944c1976d5d5761ac6fe034524ea",
+          "liveVerification": "unverified-live"
+        },
+        {
+          "id": "1342749",
+          "name": "İçerik Üreticisi Piknikte",
+          "coins": 5000,
+          "sources": [
+            "https://tikfinity.zerody.one/api/getAllGifts?lang=tr&client=giftlist",
+            "https://www.eulerstream.com/docs/tiktok-gifts-list",
+            "https://standoutstreamers.com.au/tiktok-gift-catalog/"
+          ],
+          "sourceSha256": "298b041a8937ca857fec26694388c935bb79666d3ba014eaa2b895a073d1d2dc",
+          "pngSha256": "7c72b05d81c847c99b8e07844e4c6d5f6f943c8c0a0381e1a89c200082f2704f",
+          "liveVerification": "unverified-live"
+        },
+        {
+          "id": "1342752",
+          "name": "İçerik Üreticisi Büyülüyor",
+          "coins": 5000,
+          "sources": [
+            "https://tikfinity.zerody.one/api/getAllGifts?lang=tr&client=giftlist",
+            "https://www.eulerstream.com/docs/tiktok-gifts-list",
+            "https://standoutstreamers.com.au/tiktok-gift-catalog/"
+          ],
+          "sourceSha256": "7cc42b4b080516dc877b8d29d440c63b31fc3b40abac3c287b4767f253da7a6b",
+          "pngSha256": "ba7eca11252a64734d07eda4b17ea1d6bd5047bc86994f464dd531ce77398043",
+          "liveVerification": "unverified-live"
+        },
+        {
+          "id": "1342755",
+          "name": "İçerik Üreticisi Huzurlu",
+          "coins": 5000,
+          "sources": [
+            "https://tikfinity.zerody.one/api/getAllGifts?lang=tr&client=giftlist",
+            "https://www.eulerstream.com/docs/tiktok-gifts-list",
+            "https://standoutstreamers.com.au/tiktok-gift-catalog/"
+          ],
+          "sourceSha256": "e183fc9e4c88590a8a82c560e623c74b0c954b1d09f635da77c9c82804d81e46",
+          "pngSha256": "7318b8f039367003c27d89b0e9f1bf5b49010436c9485622d098ae0f2daad0d0",
+          "liveVerification": "unverified-live"
+        },
+        {
+          "id": "1342756",
+          "name": "İçerik Üreticisi Serenadı",
+          "coins": 5000,
+          "sources": [
+            "https://tikfinity.zerody.one/api/getAllGifts?lang=tr&client=giftlist",
+            "https://www.eulerstream.com/docs/tiktok-gifts-list",
+            "https://standoutstreamers.com.au/tiktok-gift-catalog/"
+          ],
+          "sourceSha256": "595d50a32191b9dabfb50a1785616588ac1a53d704fe70379dab2a5b5e25821f",
+          "pngSha256": "5b1c6955b9a77e47d54e5a678a635f282f407a63cd3d6cc51b0f464c99ee4c14",
+          "liveVerification": "unverified-live"
+        },
+        {
+          "id": "1343004",
+          "name": "Plaj Yengeci",
+          "coins": 99,
+          "sources": [
+            "https://tikfinity.zerody.one/api/getAllGifts?lang=tr&client=giftlist",
+            "https://www.eulerstream.com/docs/tiktok-gifts-list",
+            "https://standoutstreamers.com.au/tiktok-gift-catalog/"
+          ],
+          "sourceSha256": "d3c1335e8215e3fa062a5c48166d9553a360350c1cb0cd6ff3e2f064693db9f1",
+          "pngSha256": "001a7b582385bff3a48f443198ce2245dce4911c9cca529fdb4dd83f8b8d5b12",
+          "liveVerification": "unverified-live"
+        },
+        {
+          "id": "1343043",
+          "name": "Yağmurda Yavru Köpek",
+          "coins": 249,
+          "sources": [
+            "https://tikfinity.zerody.one/api/getAllGifts?lang=tr&client=giftlist",
+            "https://www.eulerstream.com/docs/tiktok-gifts-list",
+            "https://standoutstreamers.com.au/tiktok-gift-catalog/"
+          ],
+          "sourceSha256": "72c8590d05b1a74c60cb6bdd70fae11f2c7a41425f4a8859fceca5d68cb53857",
+          "pngSha256": "269705f8db6f29eed4ba1d6678db7e517e670dc8c75faef216398e1e64079615",
+          "liveVerification": "unverified-live"
+        },
+        {
+          "id": "1343049",
+          "name": "Şanslı Sincap",
+          "coins": 349,
+          "sources": [
+            "https://tikfinity.zerody.one/api/getAllGifts?lang=tr&client=giftlist",
+            "https://www.eulerstream.com/docs/tiktok-gifts-list",
+            "https://standoutstreamers.com.au/tiktok-gift-catalog/"
+          ],
+          "sourceSha256": "e4b22653377976bbeefbefa4595096564d771d047b156a846d70cfe89a913093",
+          "pngSha256": "fff32024a7b7502acaca86870625070b9bd497f63101611456ce860e6a411359",
+          "liveVerification": "unverified-live"
+        },
+        {
+          "id": "1370390",
+          "name": "Uykucu Penguen",
+          "coins": 299,
+          "sources": [
+            "https://tikfinity.zerody.one/api/getAllGifts?lang=tr&client=giftlist",
+            "https://www.eulerstream.com/docs/tiktok-gifts-list",
+            "https://standoutstreamers.com.au/tiktok-gift-catalog/"
+          ],
+          "sourceSha256": "ea43b9068ccfb79d59db7bca4e5236baf7fcc2a59f51ba9e107e8435ba2d9057",
+          "pngSha256": "83757f287c8a34fabbaa2802d2d8098f750c4ac6026aa99ada9a356bc317ce0e",
+          "liveVerification": "unverified-live"
+        },
+        {
+          "id": "1402973",
+          "name": "Ce-eee Kardeş",
+          "coins": 199,
+          "sources": [
+            "https://tikfinity.zerody.one/api/getAllGifts?lang=tr&client=giftlist",
+            "https://www.eulerstream.com/docs/tiktok-gifts-list",
+            "https://standoutstreamers.com.au/tiktok-gift-catalog/"
+          ],
+          "sourceSha256": "858667b3e6c14baba6394b083efd7a56dd853ee4191cc47c050c381ac97ba2e2",
+          "pngSha256": "a35b73c57e1abcf0afe8f1545a77d4dfa166bc90b36549d109337c5b3034b91b",
+          "liveVerification": "unverified-live"
+        },
+        {
+          "id": "1402975",
+          "name": "Hangi Kardeş?",
+          "coins": 799,
+          "sources": [
+            "https://tikfinity.zerody.one/api/getAllGifts?lang=tr&client=giftlist",
+            "https://www.eulerstream.com/docs/tiktok-gifts-list",
+            "https://standoutstreamers.com.au/tiktok-gift-catalog/"
+          ],
+          "sourceSha256": "46c7fdb81c050bb91738e58fac63d4c7d35a05cc58a26e0f1a0a0796a492b8dc",
+          "pngSha256": "c2752b0f4d11f977ee727419ad3069d73d1f176775241111c8cd600682f0a19d",
+          "liveVerification": "unverified-live"
+        },
+        {
+          "id": "1402977",
+          "name": "Şeker mi İstedin?",
+          "coins": 2599,
+          "sources": [
+            "https://tikfinity.zerody.one/api/getAllGifts?lang=tr&client=giftlist",
+            "https://www.eulerstream.com/docs/tiktok-gifts-list",
+            "https://standoutstreamers.com.au/tiktok-gift-catalog/"
+          ],
+          "sourceSha256": "9fb10038654cf97002b30dfa4b5c04dba46b789f77b6f3785c7c2c92f1e4cd8a",
+          "pngSha256": "4830bb00e72527a7770deafd2f8c4773e546808db9e4ca06fdd6841e9ca10505",
+          "liveVerification": "unverified-live"
+        },
+        {
+          "id": "1402980",
+          "name": "Aranıyorsun!",
+          "coins": 9999,
+          "sources": [
+            "https://tikfinity.zerody.one/api/getAllGifts?lang=tr&client=giftlist",
+            "https://www.eulerstream.com/docs/tiktok-gifts-list",
+            "https://standoutstreamers.com.au/tiktok-gift-catalog/"
+          ],
+          "sourceSha256": "b02cbffa27d58845a182410164cfdd712e0f9bfd5036e615b00d98905d0f08cd",
+          "pngSha256": "d1e1a4866b0bb641b0d9c862753287321d81e67a497949eb35450657b2cca005",
+          "liveVerification": "unverified-live"
+        },
+        {
+          "id": "1428885",
+          "name": "Disko Kapibara",
+          "coins": 199,
+          "sources": [
+            "https://tikfinity.zerody.one/api/getAllGifts?lang=tr&client=giftlist",
+            "https://www.eulerstream.com/docs/tiktok-gifts-list",
+            "https://standoutstreamers.com.au/tiktok-gift-catalog/"
+          ],
+          "sourceSha256": "28d54a1486f5931934eb0955ad82fd0539f6abb7eb1f983309e5850c439ab806",
+          "pngSha256": "d43c4864239192bae1edd8c4e965df93e46f280f107c8434564aabd8404839c0",
+          "liveVerification": "unverified-live"
+        },
+        {
+          "id": "1428886",
+          "name": "Robot Tacı",
+          "coins": 249,
+          "sources": [
+            "https://tikfinity.zerody.one/api/getAllGifts?lang=tr&client=giftlist",
+            "https://www.eulerstream.com/docs/tiktok-gifts-list",
+            "https://standoutstreamers.com.au/tiktok-gift-catalog/"
+          ],
+          "sourceSha256": "38f51ef72b3dd2741990f2c6c2a456038283fdbb9149583ada12da12a2ca1c1b",
+          "pngSha256": "665220fcb578fb8d41a8dea0f0d5ecbaa074e706633e47089698543deb55b6b5",
+          "liveVerification": "unverified-live"
+        },
+        {
+          "id": "1428887",
+          "name": "Gök Mavisi Zırh",
+          "coins": 500,
+          "sources": [
+            "https://tikfinity.zerody.one/api/getAllGifts?lang=tr&client=giftlist",
+            "https://www.eulerstream.com/docs/tiktok-gifts-list",
+            "https://standoutstreamers.com.au/tiktok-gift-catalog/"
+          ],
+          "sourceSha256": "7aff26f35eeb7e9a11608024e05feb71b5fa7fa47087ab159336eb62916ad1f1",
+          "pngSha256": "059114815810cdc85ec891bde03126e11e9fefa838e360b686cd0ac224a859c4",
+          "liveVerification": "unverified-live"
+        },
+        {
+          "id": "1428888",
+          "name": "Gül Tacı",
+          "coins": 349,
+          "sources": [
+            "https://tikfinity.zerody.one/api/getAllGifts?lang=tr&client=giftlist",
+            "https://www.eulerstream.com/docs/tiktok-gifts-list",
+            "https://standoutstreamers.com.au/tiktok-gift-catalog/"
+          ],
+          "sourceSha256": "96fbe9a94cdfa02bf146ea9aede4d4140dd0debeec8f8986041bda29e73a55d6",
+          "pngSha256": "d744f4230e60b2ccd1a4ed4c45abdaff54244f5a4e9c3bda6344a06f14c9fc15",
+          "liveVerification": "unverified-live"
+        },
+        {
+          "id": "1444186",
+          "name": "FEST Müzisyeni",
+          "coins": 1599,
+          "sources": [
+            "https://tikfinity.zerody.one/api/getAllGifts?lang=tr&client=giftlist",
+            "https://www.eulerstream.com/docs/tiktok-gifts-list",
+            "https://standoutstreamers.com.au/tiktok-gift-catalog/"
+          ],
+          "sourceSha256": "cbd511ae06ac8ad381e26f3ac7bf82560bf7a6064bb3562603e5a70aabe17be2",
+          "pngSha256": "686d863f621bf60a0291e45d69181d8747364abcb22312fb03e6763cbc067aec",
+          "liveVerification": "unverified-live"
+        },
+        {
+          "id": "1444188",
+          "name": "FEST Dansçısı",
+          "coins": 1599,
+          "sources": [
+            "https://tikfinity.zerody.one/api/getAllGifts?lang=tr&client=giftlist",
+            "https://www.eulerstream.com/docs/tiktok-gifts-list",
+            "https://standoutstreamers.com.au/tiktok-gift-catalog/"
+          ],
+          "sourceSha256": "d746a529117278c6ec1d749ff9d9bf945836efae5be044fdb6e136051c903604",
+          "pngSha256": "7efad5491a01d33e0ee98448f9652d55f102a7f0605c680ad64f91443296c0d7",
+          "liveVerification": "unverified-live"
+        },
+        {
+          "id": "1444192",
+          "name": "LIVE FEST 26",
+          "coins": 1,
+          "sources": [
+            "https://tikfinity.zerody.one/api/getAllGifts?lang=tr&client=giftlist",
+            "https://www.eulerstream.com/docs/tiktok-gifts-list",
+            "https://standoutstreamers.com.au/tiktok-gift-catalog/"
+          ],
+          "sourceSha256": "1643d206fcb9e0713e4b80d0e95e1c3b09ab48b462a1fd9d98a503eec041e320",
+          "pngSha256": "f6b4c59b129f0364d83a9c4395e53d300f15cf0f952a86f5c680128063093dc7",
+          "liveVerification": "unverified-live"
+        },
+        {
+          "id": "1444195",
+          "name": "FEST Kâşifi",
+          "coins": 99,
+          "sources": [
+            "https://tikfinity.zerody.one/api/getAllGifts?lang=tr&client=giftlist",
+            "https://www.eulerstream.com/docs/tiktok-gifts-list",
+            "https://standoutstreamers.com.au/tiktok-gift-catalog/"
+          ],
+          "sourceSha256": "0124053c8891512b7e71dfa5fd29a1cddd3e947c19767c2465fdc3fc7950db41",
+          "pngSha256": "bb28c2081693191b9ec47dfb44a71b29780279895e81de4a1d77672d47ffc008",
+          "liveVerification": "unverified-live"
+        },
+        {
+          "id": "1444198",
+          "name": "FEST Enerjisi",
+          "coins": 299,
+          "sources": [
+            "https://tikfinity.zerody.one/api/getAllGifts?lang=tr&client=giftlist",
+            "https://www.eulerstream.com/docs/tiktok-gifts-list",
+            "https://standoutstreamers.com.au/tiktok-gift-catalog/"
+          ],
+          "sourceSha256": "2fb11a0d92e892e076c2297133d84d753c657fefbc0ebe90961b4f54d24f6be2",
+          "pngSha256": "8abe78823cc7f92a168d8ce4c7994e1d8fbcad8c4aedba315c6e311e6032da93",
+          "liveVerification": "unverified-live"
+        },
+        {
+          "id": "1444204",
+          "name": "FEST Gösteri Zamanı!",
+          "coins": 2999,
+          "sources": [
+            "https://tikfinity.zerody.one/api/getAllGifts?lang=tr&client=giftlist",
+            "https://standoutstreamers.com.au/tiktok-gift-catalog/"
+          ],
+          "sourceSha256": "0d01f4dcc66763b4ad5f67b6aa0c79179b1278a233e6b914e4bc08c3716e529b",
+          "pngSha256": "06763a8f1ee4f131593c8aa7f2ef5c913bc6ea22e9ec6dc4d72385be48c44dd7",
+          "liveVerification": "unverified-live"
+        },
+        {
+          "id": "1444208",
+          "name": "FEST Dünyası",
+          "coins": 9999,
+          "sources": [
+            "https://tikfinity.zerody.one/api/getAllGifts?lang=tr&client=giftlist",
+            "https://standoutstreamers.com.au/tiktok-gift-catalog/"
+          ],
+          "sourceSha256": "1f2e84f6c5f95fb189426464f4f855a0c30119ddf2bdaab18faa0f13c236aef1",
+          "pngSha256": "29806b98cde8a4799c19b918803fc116f9193fc14b243d81a6a36cbd7f0a44a5",
+          "liveVerification": "unverified-live"
+        },
+        {
+          "id": "1447275",
+          "name": "Müzik Albümü",
+          "coins": 1,
+          "sources": [
+            "https://tikfinity.zerody.one/api/getAllGifts?lang=tr&client=giftlist",
+            "https://www.eulerstream.com/docs/tiktok-gifts-list",
+            "https://standoutstreamers.com.au/tiktok-gift-catalog/"
+          ],
+          "sourceSha256": "7baeeeee268ed7008e501aed7cf207fbcac1cef0b647ee71468e94f032c97a77",
+          "pngSha256": "c035395b68d3716d0c1b53223423bb32fae7bef29a541bc3ad478f512f4366d6",
+          "liveVerification": "unverified-live"
+        },
+        {
+          "id": "1447277",
+          "name": "Plak Çevirme",
+          "coins": 349,
+          "sources": [
+            "https://tikfinity.zerody.one/api/getAllGifts?lang=tr&client=giftlist",
+            "https://www.eulerstream.com/docs/tiktok-gifts-list",
+            "https://standoutstreamers.com.au/tiktok-gift-catalog/"
+          ],
+          "sourceSha256": "ca0d3467ccdeeb80b31b06ce4a594b96e1345bcadb168434fb85166f42736ee3",
+          "pngSha256": "660281b32545b47559bd92ef9add54bcbbeb0d87cf7dd4334f7682a9b4fc0faa",
+          "liveVerification": "unverified-live"
+        },
+        {
+          "id": "1447278",
+          "name": "Büyük gösteri",
+          "coins": 999,
+          "sources": [
+            "https://tikfinity.zerody.one/api/getAllGifts?lang=tr&client=giftlist",
+            "https://www.eulerstream.com/docs/tiktok-gifts-list",
+            "https://standoutstreamers.com.au/tiktok-gift-catalog/"
+          ],
+          "sourceSha256": "a02cc866853c10bb0dee0fdfdb393e23afadcc20b006dce05b70f2d050eae9f7",
+          "pngSha256": "4df315766ce4e11d6689535bd1cf9336bd78169601e06bd4ea366678e07bec7a",
+          "liveVerification": "unverified-live"
+        },
+        {
+          "id": "1462838",
+          "name": "Palamut",
+          "coins": 1,
+          "sources": [
+            "https://tikfinity.zerody.one/api/getAllGifts?lang=tr&client=giftlist",
+            "https://www.eulerstream.com/docs/tiktok-gifts-list",
+            "https://standoutstreamers.com.au/tiktok-gift-catalog/"
+          ],
+          "sourceSha256": "cbef041c66adb44bc891e6778c967ba1d7b8a59d39fdcc695df5a54f4458fa86",
+          "pngSha256": "bad4980c7beb0a49a61d1bbaf941280ea36afa5eb90be77d85d7693bb266f259",
+          "liveVerification": "unverified-live"
+        },
+        {
+          "id": "1462840",
+          "name": "Dağ Keçisi",
+          "coins": 100,
+          "sources": [
+            "https://tikfinity.zerody.one/api/getAllGifts?lang=tr&client=giftlist",
+            "https://www.eulerstream.com/docs/tiktok-gifts-list",
+            "https://standoutstreamers.com.au/tiktok-gift-catalog/"
+          ],
+          "sourceSha256": "1c2e5727f8850de3029d4b3498a6acb8db7af79d99e2af5715edcbb3cc188c6a",
+          "pngSha256": "c1be1f5b2cc502527979d7c13ccefd6f2c61aae409fb5f0606824056de73765f",
+          "liveVerification": "unverified-live"
+        },
+        {
+          "id": "1462842",
+          "name": "Tavşancık",
+          "coins": 200,
+          "sources": [
+            "https://tikfinity.zerody.one/api/getAllGifts?lang=tr&client=giftlist",
+            "https://www.eulerstream.com/docs/tiktok-gifts-list",
+            "https://standoutstreamers.com.au/tiktok-gift-catalog/"
+          ],
+          "sourceSha256": "5ffa73721bfdc304e5dfc77a248a4655b60e1b69a6b508e034834f9c10fe11be",
+          "pngSha256": "34d5c027d9407ee1601ad548e1470eb97acce65e5d798341095293e5d1521c51",
+          "liveVerification": "unverified-live"
+        },
+        {
+          "id": "1462843",
+          "name": "Hamstercık",
+          "coins": 500,
+          "sources": [
+            "https://tikfinity.zerody.one/api/getAllGifts?lang=tr&client=giftlist",
+            "https://www.eulerstream.com/docs/tiktok-gifts-list",
+            "https://standoutstreamers.com.au/tiktok-gift-catalog/"
+          ],
+          "sourceSha256": "429f59e52f304aa8991ad533e035dfcc0292d37753ef097bfed227b6882a1e80",
+          "pngSha256": "35a704d867efb903d279f31a2a2b85e33acecd40dc3ee4f94ee2936fabae3f34",
+          "liveVerification": "unverified-live"
+        },
+        {
+          "id": "1462895",
+          "name": "Sahne Dalışı",
+          "coins": 2000,
+          "sources": [
+            "https://tikfinity.zerody.one/api/getAllGifts?lang=tr&client=giftlist",
+            "https://www.eulerstream.com/docs/tiktok-gifts-list",
+            "https://standoutstreamers.com.au/tiktok-gift-catalog/"
+          ],
+          "sourceSha256": "85f767192908fb73bcf79e1df7134e5b690717383db2fe39ec6357d5e37e3c94",
+          "pngSha256": "1d7d5f872782ab911d8d9ef9c2da710df5943c7180ab47e265460326d361123d",
+          "liveVerification": "unverified-live"
+        },
+        {
+          "id": "1465470",
+          "name": "Sage'in Serüveni",
+          "coins": 4999,
+          "sources": [
+            "https://tikfinity.zerody.one/api/getAllGifts?lang=tr&client=giftlist",
+            "https://www.eulerstream.com/docs/tiktok-gifts-list",
+            "https://standoutstreamers.com.au/tiktok-gift-catalog/"
+          ],
+          "sourceSha256": "dad06195e7a350cbe25b83f693e4b998300ee72ecd29bb6d323e6cada403d628",
+          "pngSha256": "6aee73c1a48a8fb1187dfef22b91866ea77fda2327978fb46f4608d0fa93965f",
+          "liveVerification": "unverified-live"
+        },
+        {
+          "id": "1470918",
+          "name": "Üç Dişli Hayat Mızrağı",
+          "coins": 14999,
+          "sources": [
+            "https://tikfinity.zerody.one/api/getAllGifts?lang=tr&client=giftlist",
+            "https://www.eulerstream.com/docs/tiktok-gifts-list",
+            "https://standoutstreamers.com.au/tiktok-gift-catalog/"
+          ],
+          "sourceSha256": "e9df9a3fd45a3dde2b612b7e8df7918da6a1b6c2ba94d8a0e12c38c60c4753b0",
+          "pngSha256": "172294aa22c1331986883ae791e0d0538e78247dffe3fc419704adf1d7597e56",
+          "liveVerification": "unverified-live"
+        },
+        {
+          "id": "1470919",
+          "name": "Anne'nin Çağrısı",
+          "coins": 25999,
+          "sources": [
+            "https://tikfinity.zerody.one/api/getAllGifts?lang=tr&client=giftlist",
+            "https://www.eulerstream.com/docs/tiktok-gifts-list",
+            "https://standoutstreamers.com.au/tiktok-gift-catalog/"
+          ],
+          "sourceSha256": "abb96c8980267cf1135cd29f760207c32ea0a415d11d698e204b969740b296b4",
+          "pngSha256": "1e62cdd6bfd6ae89b655f67baa03a37ac7c6d55da92c3d06dad4862ea46edea0",
+          "liveVerification": "unverified-live"
+        },
+        {
+          "id": "1470920",
+          "name": "Denizin Vârisi",
+          "coins": 42999,
+          "sources": [
+            "https://tikfinity.zerody.one/api/getAllGifts?lang=tr&client=giftlist",
+            "https://www.eulerstream.com/docs/tiktok-gifts-list",
+            "https://standoutstreamers.com.au/tiktok-gift-catalog/"
+          ],
+          "sourceSha256": "16ccb846fc4a4e5cef56123db1cab79d096685cde30a9570cb18c09983090e45",
+          "pngSha256": "d32d67942fa87865388fb8eb0a64a3d5aab69538212a02e19c3ecc15b04a0355",
+          "liveVerification": "unverified-live"
+        },
+        {
+          "id": "1473066",
+          "name": "Ay Serenadı",
+          "coins": 400,
+          "sources": [
+            "https://tikfinity.zerody.one/api/getAllGifts?lang=tr&client=giftlist",
+            "https://www.eulerstream.com/docs/tiktok-gifts-list",
+            "https://standoutstreamers.com.au/tiktok-gift-catalog/"
+          ],
+          "sourceSha256": "05acdc0a70c1c2a98ef923af30a9cb7b87da4ecef9b12877a50697a21ca338f4",
+          "pngSha256": "0d0b5d0437a70acf088d2eaa9d4e9dc7f65827ab1f12e43ec1e8ac3f3e79f25c",
+          "liveVerification": "unverified-live"
+        },
+        {
+          "id": "1473067",
+          "name": "Rock Şeytanı",
+          "coins": 349,
+          "sources": [
+            "https://tikfinity.zerody.one/api/getAllGifts?lang=tr&client=giftlist",
+            "https://www.eulerstream.com/docs/tiktok-gifts-list",
+            "https://standoutstreamers.com.au/tiktok-gift-catalog/"
+          ],
+          "sourceSha256": "b30432b92f67ce3c846dc643bff2605924eda95799cc1fbd91192021d039f463",
+          "pngSha256": "b90694765626dabfe59a51cbb1c88a8bc8a3795f6f2579ecb5423721c0a478ad",
+          "liveVerification": "unverified-live"
+        },
+        {
+          "id": "1473068",
+          "name": "Diva Tüyleri",
+          "coins": 450,
+          "sources": [
+            "https://tikfinity.zerody.one/api/getAllGifts?lang=tr&client=giftlist",
+            "https://www.eulerstream.com/docs/tiktok-gifts-list",
+            "https://standoutstreamers.com.au/tiktok-gift-catalog/"
+          ],
+          "sourceSha256": "ad9b9e90e8bebab906a481109bfc5a6b65821e7c00d97e367df6c39c96ffdfd5",
+          "pngSha256": "ec1df2b4dc1581ed0314a6257ad1d89677c8dc14e8655de0b77f191007f2fe7b",
+          "liveVerification": "unverified-live"
+        },
+        {
+          "id": "1479226",
+          "name": "Ürkütücü Rock",
+          "coins": 2200,
+          "sources": [
+            "https://tikfinity.zerody.one/api/getAllGifts?lang=tr&client=giftlist",
+            "https://www.eulerstream.com/docs/tiktok-gifts-list",
+            "https://standoutstreamers.com.au/tiktok-gift-catalog/"
+          ],
+          "sourceSha256": "f57dbc907add465ea3c00729454caa724ed12fe1f2bfe72bda912340b962995e",
+          "pngSha256": "e838ad428751568352d30ccc121804477c4893f8b8cbeba6008f2ada021e19bb",
+          "liveVerification": "unverified-live"
+        },
+        {
+          "id": "1479429",
+          "name": "Cadılar Bayramı İdolü",
+          "coins": 3200,
+          "sources": [
+            "https://tikfinity.zerody.one/api/getAllGifts?lang=tr&client=giftlist",
+            "https://www.eulerstream.com/docs/tiktok-gifts-list",
+            "https://standoutstreamers.com.au/tiktok-gift-catalog/"
+          ],
+          "sourceSha256": "66e05006662807f316bc337b8e93028bd45b6e2402f6d4782c89aeac319a28b9",
+          "pngSha256": "26f5752505f84dae1a1309a028ebdc1c76ee03faae233a665dd5430dc85dd49a",
+          "liveVerification": "unverified-live"
+        },
+        {
+          "id": "1479742",
+          "name": "Gökkuşağı Lalesi",
+          "coins": 1,
+          "sources": [
+            "https://tikfinity.zerody.one/api/getAllGifts?lang=tr&client=giftlist",
+            "https://tik.tools/tr/gifts/rainbow-tulip"
+          ],
+          "sourceSha256": "12c4271e6eff49b6c3c9b3e8b83b782cb622bbe05d15220ef1086b3c2df2fb96",
+          "pngSha256": "4a8b2bfbab1af8335d87ff9dfe1a3e3db51ef6681605c5ce6c0ff5b0fc9a0b63",
+          "liveVerification": "unverified-live"
+        },
+        {
+          "id": "1479743",
+          "name": "Donmuş Lale",
+          "coins": 1,
+          "sources": [
+            "https://tikfinity.zerody.one/api/getAllGifts?lang=tr&client=giftlist",
+            "https://tik.tools/tr/gifts/frozen-tulip"
+          ],
+          "sourceSha256": "65574ba2f1587ed1a4a223b9bbf9e6a4a5c18fdd58e0dd4e6f3926e0ef102b0a",
+          "pngSha256": "b9f4fbf6536bb1d90b24171823b3fb6b2ed3caccfd7a08abb6404a38f51ee3af",
+          "liveVerification": "unverified-live"
+        },
+        {
+          "id": "1479744",
+          "name": "Metal Lale",
+          "coins": 1,
+          "sources": [
+            "https://tikfinity.zerody.one/api/getAllGifts?lang=tr&client=giftlist",
+            "https://tik.tools/tr/gifts/metal-tulip"
+          ],
+          "sourceSha256": "ce99f71c9174d8c6e49b59da42b08d87204222f321e253ac211f74afcff0197d",
+          "pngSha256": "4d5df1b32da0a410bff32611d3cfc3e48b316dd486186697309368f688ed2c19",
+          "liveVerification": "unverified-live"
+        },
+        {
+          "id": "1484295",
+          "name": "Taş Kâğıt Makas",
+          "coins": 99,
+          "sources": [
+            "https://tikfinity.zerody.one/api/getAllGifts?lang=tr&client=giftlist",
+            "https://tik.tools/tr/gifts/rock-paper-scissor"
+          ],
+          "sourceSha256": "9c33e9885dc8dd824d84563897db189d07fedf087ec6c9b74e5e229adc7fc488",
+          "pngSha256": "bd68f1564b67c5c91c2fe6f21c323c47408cb594ab5996f5e5efd31c81de014c",
+          "liveVerification": "unverified-live"
+        },
+        {
+          "id": "1484518",
+          "name": "Gulu Gulu Kapmaca",
+          "coins": 15000,
+          "sources": [
+            "https://tikfinity.zerody.one/api/getAllGifts?lang=tr&client=giftlist",
+            "https://www.eulerstream.com/docs/tiktok-gifts-list",
+            "https://standoutstreamers.com.au/tiktok-gift-catalog/"
+          ],
+          "sourceSha256": "42a141ebfae53e808ac8dde2959825e3d3dbe05e6977ef932dea0570a98c2db7",
+          "pngSha256": "4d7d7ee952816a1792a0a3ebac9f9cb4466272abdeeea2ca31a4d7f3e9f06499",
+          "liveVerification": "unverified-live"
+        },
+        {
+          "id": "1486116",
+          "name": "Bereket Boynuzu",
+          "coins": 400,
+          "sources": [
+            "https://tikfinity.zerody.one/api/getAllGifts?lang=tr&client=giftlist",
+            "https://www.eulerstream.com/docs/tiktok-gifts-list",
+            "https://standoutstreamers.com.au/tiktok-gift-catalog/"
+          ],
+          "sourceSha256": "dd292c58e7456a91e1d3820db4381f3f5219b4761b3cdf327ebd1ce8d84c2b41",
+          "pngSha256": "d117ce6059c82432c31db194c686987928980f8aa404e88dc8b9a712e53e9bbc",
+          "liveVerification": "unverified-live"
+        },
+        {
+          "id": "1499230",
+          "name": "Mutlu Parıltı",
+          "coins": 1,
+          "sources": [
+            "https://tikfinity.zerody.one/api/getAllGifts?lang=tr&client=giftlist",
+            "https://www.eulerstream.com/docs/tiktok-gifts-list",
+            "https://standoutstreamers.com.au/tiktok-gift-catalog/"
+          ],
+          "sourceSha256": "57d06c04b434ec5eab63acf36d69e0d846fff16c9cda86bd7cc87a476e6fb585",
+          "pngSha256": "431a6d6ceff469dba79322d23e6c6cec9a77358b87cb6136fdf50d89cdc952fa",
+          "liveVerification": "unverified-live"
+        },
+        {
+          "id": "1499231",
+          "name": "Meraklı Twinkle",
+          "coins": 10,
+          "sources": [
+            "https://tikfinity.zerody.one/api/getAllGifts?lang=tr&client=giftlist",
+            "https://www.eulerstream.com/docs/tiktok-gifts-list",
+            "https://standoutstreamers.com.au/tiktok-gift-catalog/"
+          ],
+          "sourceSha256": "9df61b184ef0a928b5464d27b3f1c0db6075b9259249b09fa4f2dfdeed8a9eac",
+          "pngSha256": "f02e89c8f23098a58ce38dd323b4fbd73bdf22fe80283f4d13ec73b139491af8",
+          "liveVerification": "unverified-live"
+        },
+        {
+          "id": "1499232",
+          "name": "Yıldızlar Salonu",
+          "coins": 100,
+          "sources": [
+            "https://tikfinity.zerody.one/api/getAllGifts?lang=tr&client=giftlist",
+            "https://www.eulerstream.com/docs/tiktok-gifts-list",
+            "https://standoutstreamers.com.au/tiktok-gift-catalog/"
+          ],
+          "sourceSha256": "0e0d6231334eb6da5511ad20d47bf38887ec2bd8c7fbf2a88cc9fdebdb9759a7",
+          "pngSha256": "c83f7834d69fb4a06c477ef3ddee7323ea064ee89375e539cfc2c1ed7c230ddf",
+          "liveVerification": "unverified-live"
+        },
+        {
+          "id": "1499233",
+          "name": "Twinkle Merhaba Diyor!",
+          "coins": 500,
+          "sources": [
+            "https://tikfinity.zerody.one/api/getAllGifts?lang=tr&client=giftlist",
+            "https://www.eulerstream.com/docs/tiktok-gifts-list",
+            "https://standoutstreamers.com.au/tiktok-gift-catalog/"
+          ],
+          "sourceSha256": "02996d88c0752c921c3c20c8e96d66ce43a004090fd49f9ad63a4a56fa93dc19",
+          "pngSha256": "1ed716ba94bc992cb26caa1a71788904072df4269ec4b398235e5bf47b3f8ea2",
+          "liveVerification": "unverified-live"
+        },
+        {
+          "id": "1501078",
+          "name": "Güllerle Sokak Müzisyeni",
+          "coins": 1999,
+          "sources": [
+            "https://tikfinity.zerody.one/api/getAllGifts?lang=tr&client=giftlist",
+            "https://www.eulerstream.com/docs/tiktok-gifts-list",
+            "https://standoutstreamers.com.au/tiktok-gift-catalog/"
+          ],
+          "sourceSha256": "3b75b2aceb9501c564abe31c90daa8aa4465714036bcd5b47467b88c33da1ea8",
+          "pngSha256": "087f54a0cc785f96c124a98db23ea01e000af089dd1368cd3608307baf82a650",
+          "liveVerification": "unverified-live"
+        },
+        {
+          "id": "1501083",
+          "name": "Kovboy Ritmi",
+          "coins": 499,
+          "sources": [
+            "https://tikfinity.zerody.one/api/getAllGifts?lang=tr&client=giftlist",
+            "https://www.eulerstream.com/docs/tiktok-gifts-list",
+            "https://standoutstreamers.com.au/tiktok-gift-catalog/"
+          ],
+          "sourceSha256": "d4374c3ad3fa6bc89405178da100cd9e684314ef6b6710120eb7b99dc7a66006",
+          "pngSha256": "e83ac717896ba42fc18a62d17879ee321c87b75a626fd4fbfeb788759dfcac0a",
+          "liveVerification": "unverified-live"
+        },
+        {
+          "id": "1514426",
+          "name": "Muhteşem Galaksi",
+          "coins": 1000,
+          "sources": [
+            "https://tikfinity.zerody.one/api/getAllGifts?lang=tr&client=giftlist",
+            "https://www.eulerstream.com/docs/tiktok-gifts-list",
+            "https://standoutstreamers.com.au/tiktok-gift-catalog/"
+          ],
+          "sourceSha256": "ee9e1eabd339cdfa2c3dc3b84eaa59e906e11c18a4f01c79f26ad7425afcd50a",
+          "pngSha256": "19d5cccdc23d4daca67300c6fa1a604c1032c5e56bea4a3c7a6d4b11eccdecf3",
+          "liveVerification": "unverified-live"
+        },
+        {
+          "id": "1514427",
+          "name": "Kış Kralı",
+          "coins": 29999,
+          "sources": [
+            "https://tikfinity.zerody.one/api/getAllGifts?lang=tr&client=giftlist",
+            "https://www.eulerstream.com/docs/tiktok-gifts-list",
+            "https://standoutstreamers.com.au/tiktok-gift-catalog/"
+          ],
+          "sourceSha256": "27934f085f46e7e2b3e89402e2186074efdf4946d9d5a505a1027f88e05c1295",
+          "pngSha256": "1ebdf60e40a2769a2c8989c09de00a5163b4d2c87f65a173b488bd51be1e6b01",
+          "liveVerification": "unverified-live"
+        },
+        {
+          "id": "1514428",
+          "name": "TikTok Harikaları",
+          "coins": 44999,
+          "sources": [
+            "https://tikfinity.zerody.one/api/getAllGifts?lang=tr&client=giftlist",
+            "https://www.eulerstream.com/docs/tiktok-gifts-list",
+            "https://standoutstreamers.com.au/tiktok-gift-catalog/"
+          ],
+          "sourceSha256": "b3037b62b98e9ace80550b00ae9b469a13c5e02ad10a1eae92a193fa34f5d7c3",
+          "pngSha256": "4fd74cbdd7e96962d89e080ed8adf913c9b6c4040feabbf7b5271465b448806b",
+          "liveVerification": "unverified-live"
+        }
+      ]
     }
   ]
 }

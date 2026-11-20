@@ -1,0 +1,15 @@
+{
+  "gifts": 985,
+  "games": [
+    {
+      "id": "yaratik-arena",
+      "readyMs": 21362,
+      "windowMode": true
+    },
+    {
+      "id": "minecraft-snake-arena",
+      "readyMs": 20689,
+      "windowMode": null
+    }
+  ]
+}
