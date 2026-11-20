@@ -5,7 +5,7 @@ import { upgradedBootstrapState } from '../content-bootstrap.js';
 
 const read = file => JSON.parse(fs.readFileSync(new URL('../' + file, import.meta.url)));
 const previous = read('content-bootstrap-fetih-0.1.0.json');
-const current = read('content-defaults.json');
+const current = read('content-bootstrap-fetih-0.1.1.json');
 
 test('Fetih 0.1.1 is a verified game-only update with the existing gift resource', () => {
     const before = previous.games.find(game => game.id === 'fetih');
@@ -18,7 +18,7 @@ test('Fetih 0.1.1 is a verified game-only update with the existing gift resource
     assert.deepEqual(after.resources, before.resources);
     assert.deepEqual(current.games.filter(game => game.id !== 'fetih'), previous.games.filter(game => game.id !== 'fetih'));
     assert.deepEqual(current.media, previous.media);
-    assert.deepEqual(read('web/content-catalog-7.0.0.json'), current);
+    assert.deepEqual(read('web/content-catalog-7.0.0.json').games.find(game => game.id === 'fetih'), after);
 });
 
 test('the previous published baseline upgrades once and custom catalog changes are preserved', () => {

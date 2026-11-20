@@ -1,0 +1,27 @@
+{
+  "version": "7.0.33",
+  "gifts": 985,
+  "newGiftFilesVerified": 80,
+  "files": [
+    {
+      "name": "TikMnG-Setup-7.0.33.exe",
+      "bytes": 299818784,
+      "sha256": "5debf35ef8981f5d3ce5abf0de2419ad400de8c38c1213ddc7e2e24be5e4a0ea"
+    },
+    {
+      "name": "TikMnG-Setup-7.0.33.exe.blockmap",
+      "bytes": 310878,
+      "sha256": "a0c9d073400e12d99880e7b0a9e153ecacd7648f29f8160d5e9e56410a0c811a"
+    },
+    {
+      "name": "TikMnG-7.0.33-Portable.exe",
+      "bytes": 299640200,
+      "sha256": "38f19eb53ecc41301ab838cb3671194c6df1dc47c579ad5fb0653459b2265771"
+    },
+    {
+      "name": "latest.yml",
+      "bytes": 462,
+      "sha256": "b5b6957bf8c904ffb5f18889210199ecd09d30aade9ffc28c5ab66f827b2e2af"
+    }
+  ]
+}
