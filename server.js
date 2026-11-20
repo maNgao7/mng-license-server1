@@ -966,10 +966,10 @@ function logEkle(lisansKod, cihazKimlik, islem, ip) {
 // =====================================================================
 // SÜRÜM BİLGİLERİ & İNDİRME LİNKLERİ
 // =====================================================================
-const EN_GUNCEL_SURUM = "7.0.29";
+const EN_GUNCEL_SURUM = "7.0.30";
 const EN_DUSUK_SURUM = "1.0.0";
-const SETUP_INDIRME_LINKI = "https://github.com/maNgao7/mng-license-server1/releases/download/v7.0.29/TikMnG-Setup-7.0.29.exe";
-const PORTABLE_INDIRME_LINKI = "https://github.com/maNgao7/mng-license-server1/releases/download/v7.0.29/TikMnG-7.0.29-Portable.exe";
+const SETUP_INDIRME_LINKI = "https://github.com/maNgao7/mng-license-server1/releases/download/v7.0.30/TikMnG-Setup-7.0.30.exe";
+const PORTABLE_INDIRME_LINKI = "https://github.com/maNgao7/mng-license-server1/releases/download/v7.0.30/TikMnG-7.0.30-Portable.exe";
 const SETUP_WEB_LINKI = 'https://tikmng.com/download/setup';
 const resolveLatestInstaller = createLatestInstallerResolver({ fallbackUrl: SETUP_INDIRME_LINKI });
 const VARSAYILAN_PAKET_LINKLERI = Object.freeze({
@@ -984,6 +984,7 @@ const VARSAYILAN_PAKET_LINKLERI = Object.freeze({
 
 // Her güncellemede eklenen/değişen özellikler listesi
 const SURUM_NOTLARI = [
+    "v7.0.30: Kavanoz widgetlarında biriken ve yeni gelen hediyelerin gösterimi düzeltildi. Kopyalanan yayın bağlantıları bağlı yayın sunucusunun HTTPS adresini kullanır.",
     "v7.0.29: Fetih oyun sayfasına tanıtım ve kurulum videosu eklendi.",
     "v7.0.28: Fetih genel yayında. Steam gerektirmeyen oyun paketi, altı adımlı yayın rehberi ve indirilebilir hediye görseli.",
     "v7.0.27: Hapisten Kaç kurulum videosu ve son 30 dakikada uyarı veren lisans geri sayımı.",

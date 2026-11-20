@@ -1,0 +1,26 @@
+{
+  "version": "7.0.30",
+  "gameReinstallRequired": false,
+  "files": [
+    {
+      "name": "TikMnG-Setup-7.0.30.exe",
+      "bytes": 295662109,
+      "sha256": "94796240bbf3a2979a1e2673dbb1154346e125f5781092007e8671aca53a752a"
+    },
+    {
+      "name": "TikMnG-7.0.30-Portable.exe",
+      "bytes": 295483530,
+      "sha256": "9987fbe6f6c017c3edb3a07b05230e6630ddbd3310f7e5bc9eebcbc85fd99d12"
+    },
+    {
+      "name": "TikMnG-Setup-7.0.30.exe.blockmap",
+      "bytes": 308357,
+      "sha256": "648e40593e9e7f306b3e538265aa20c3dcceb873bad88065653e57e613cdb75f"
+    },
+    {
+      "name": "latest.yml",
+      "bytes": 516,
+      "sha256": "02d7e236356100a584afd0c4fb506da0f682f08dc18d5d25bca5891bc5e479c4"
+    }
+  ]
+}
