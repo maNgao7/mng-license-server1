@@ -1,7 +1,23 @@
 {
-  "revision": "20261115-7.0.25",
-  "heading": "17 oyun. Her yayına başka bir heyecan.",
+  "revision": "20261120-7.0.28",
+  "heading": "18 oyun. Her yayına başka bir heyecan.",
   "games": [
+    {
+      "id": "fetih",
+      "title": "Fetih",
+      "category": "Aksiyon & Strateji",
+      "cover": "fetih-v1",
+      "isNew": true,
+      "tagline": "Yayınınla Türkiye haritasında fethe çık.",
+      "description": "Türkiye haritasında izleyicilerinin ordularını yerleştir; asker, tank, helikopter ve jetlerle gerçek zamanlı mücadeleyi yönet. Yayın etkileşimleri orduları güçlendirir, kazanan Fetih sahnesinde ilan edilir.",
+      "features": [
+        "Asker, tank, helikopter ve jetlerle gerçek zamanlı savaş",
+        "Ayarlanabilir beğeni, takip ve hediye eylemleri",
+        "Oyun motoru dahil · Steam kurulumu gerekmez"
+      ],
+      "requirements": "Windows 10/11 64 bit. Oyun motoru pakete dahildir; Steam veya başka bir oyun kurulumu gerekmez. Canlı yayın etkileşimleri için internet bağlantısı gerekir.",
+      "giftGuide": "/gift-guides/TikMnG-Fetih-Hediyeler.png"
+    },
     {
       "id": "hapisten-kac",
       "title": "Hapisten Kaç",

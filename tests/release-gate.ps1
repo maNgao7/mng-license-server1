@@ -15,7 +15,7 @@ try {
 import fs from 'node:fs';
 for (const file of ['content-defaults.json', 'web/content-catalog-7.0.0.json']) {
     const catalog = JSON.parse(fs.readFileSync(file));
-    for (const id of ['hapisten-kac', 'profile-duel']) {
+    for (const id of ['hapisten-kac', 'profile-duel', 'fetih']) {
         const game = catalog.games.find(game => game.id === id);
         if (!game || !/^[a-f0-9]{64}$/.test(game.sha256) || !Number.isSafeInteger(game.bytes) || game.bytes <= 0)
             throw Error(file + ': real release SHA-256/bytes required for ' + id);

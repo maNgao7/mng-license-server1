@@ -161,7 +161,7 @@ for (const [filename, revision, arenaVersion] of [
     const published = await f.public();
     assert.deepEqual(published, current);
     assert.deepEqual(published.games.find(game => game.id === 'yaratik-arena'), current.games.find(game => game.id === 'yaratik-arena'));
-    const changed = new Set(['yaratik-arena', 'orbit', 'vs', 'puanlama', 'duck-hunt', 'pony-life', 'frog-river', 'turkish-forza-05', 'profile-duel', 'rezervuar-01', 'hapisten-kac', ...withdrawn]);
+    const changed = new Set(['fetih', 'yaratik-arena', 'orbit', 'vs', 'puanlama', 'duck-hunt', 'pony-life', 'frog-river', 'turkish-forza-05', 'profile-duel', 'rezervuar-01', 'hapisten-kac', ...withdrawn]);
     assert.deepEqual(published.games.filter(game => !changed.has(game.id)), previous.games.filter(game => !changed.has(game.id)));
     assert.deepEqual(published.media, previous.media);
     assert.deepEqual(published.launcher, previous.launcher);
@@ -172,8 +172,8 @@ for (const [filename, revision, arenaVersion] of [
     assert.deepEqual(JSON.parse(fs.readFileSync(path.join(f.dir, 'content-state.json'), 'utf8')), { draft: current, published: current });
     assert.deepEqual(fs.readdirSync(path.join(f.dir, 'content-revisions')), []);
     const version = (await f.request('/api/version', 'GET', undefined, false)).data;
-    assert.equal(version.latestVersion, '7.0.27');
-    assert.equal(version.downloadUrl, 'https://github.com/maNgao7/mng-license-server1/releases/download/v7.0.27/TikMnG-Setup-7.0.27.exe');
+    assert.equal(version.latestVersion, '7.0.28');
+    assert.equal(version.downloadUrl, 'https://github.com/maNgao7/mng-license-server1/releases/download/v7.0.28/TikMnG-Setup-7.0.28.exe');
     assert.equal(version.webUrl, 'https://tikmng.com/download/setup');
     for (const name of licenseFiles) assert.deepEqual(JSON.parse(fs.readFileSync(path.join(f.dir, `${name}.json`))), []);
     await f.stop(); await f.start();
@@ -221,7 +221,7 @@ test("public defaults include Uslu Yaratık, Forza and Teke Tek Profil and exclu
     assert.match(response.headers.get("etag"), /^"[a-f0-9]{64}"$/);
     assert.equal(response.data.launcher, undefined);
     const byId = Object.fromEntries(response.data.games.map(item => [item.id, item]));
-    assert.equal(response.data.games.length, 18);
+    assert.equal(response.data.games.length, 19);
     assert.equal(byId['yaratik-arena'].version, '0.1.31');
     assert.equal(byId['yaratik-arena'].url, 'https://github.com/maNgao7/mng-license-server1/releases/download/v7.0.24/yaratik-arena.zip');
     assert.equal(byId['yaratik-arena'].bytes, 151527788);
@@ -243,7 +243,7 @@ test("public defaults include Uslu Yaratık, Forza and Teke Tek Profil and exclu
     assert.equal(byId['profile-contest'].sha256, 'bfea65a15399612a8cfea4a74bc6e0718b757e220544451aa4ab583d02dca7ab');
     assert.equal(byId['crowd-control'], undefined);
     assert.equal(response.data.media.length, 285);
-    assert.equal(response.data.revision, 2026111602);
+    assert.equal(response.data.revision, 2026112001);
     assert.equal(byId.caahr.version, '0.6.12');
     assert.equal(byId.caahr.bytes, 63233577);
     assert.equal(byId['frog-river'].version,'7.0.6');

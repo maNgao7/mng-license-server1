@@ -1,0 +1,527 @@
+{
+  "schemaVersion": 1,
+  "node": {
+    "version": "v24.20.0",
+    "sha256": "5c976096e04e5c2c1f091938926234cc9fbebfe9787ddd149351b3b0ecc707b5"
+  },
+  "packages": [
+    {
+      "name": "@bufbuild/protobuf",
+      "version": "2.16.0",
+      "path": "node_modules/@bufbuild/protobuf",
+      "packageSha256": "44218ea11ba904877bcbc9a22d42eb14b9df86df1490b2390e296348276049bf",
+      "license": "(Apache-2.0 AND BSD-3-Clause)"
+    },
+    {
+      "name": "@keyv/serialize",
+      "version": "1.1.1",
+      "path": "node_modules/@keyv/serialize",
+      "packageSha256": "191241178c9adee32a6fca2667499dac3333282b5fc660ed1179d8eada75ec96",
+      "license": "MIT"
+    },
+    {
+      "name": "@sec-ant/readable-stream",
+      "version": "0.4.1",
+      "path": "node_modules/@sec-ant/readable-stream",
+      "packageSha256": "53c850ede79e9f4982160a565b66ed6980046a885b1767b46f1cdf186ee4321c",
+      "license": "MIT"
+    },
+    {
+      "name": "@types/http-cache-semantics",
+      "version": "4.2.0",
+      "path": "node_modules/@types/http-cache-semantics",
+      "packageSha256": "5c63ed5462e2fb00aa749274302f720b6c2e31ef53fb431a88f7ff948d01345a",
+      "license": "MIT"
+    },
+    {
+      "name": "agent-base",
+      "version": "6.0.2",
+      "path": "node_modules/agent-base",
+      "packageSha256": "05daa619e51686fd21d15f987f943f6692c56b9f489f555cbaf42a4263d5c5e8",
+      "license": "MIT"
+    },
+    {
+      "name": "asynckit",
+      "version": "0.4.0",
+      "path": "node_modules/asynckit",
+      "packageSha256": "63eb9ff63be2e241ee6e80434d4641d6e9b5157d88bd3bbb692fcb2dfc8da4a9",
+      "license": "MIT"
+    },
+    {
+      "name": "axios",
+      "version": "1.20.0",
+      "path": "node_modules/axios",
+      "packageSha256": "cc221510be6315b0ebf648d7e4346680e47a828fafcbb9cc141922d2d219761e",
+      "license": "MIT"
+    },
+    {
+      "name": "byte-counter",
+      "version": "0.1.0",
+      "path": "node_modules/byte-counter",
+      "packageSha256": "58a30d838059f75996d1afb2b13cacbc790466fb4b5042b1fc1f9c77895a9c06",
+      "license": "MIT"
+    },
+    {
+      "name": "call-bind-apply-helpers",
+      "version": "1.0.2",
+      "path": "node_modules/call-bind-apply-helpers",
+      "packageSha256": "59639b628c6846f674857c6a613fd47e2e4d2a24036cdf0f7a62ac634f4c8a5f",
+      "license": "MIT"
+    },
+    {
+      "name": "chunk-data",
+      "version": "0.1.0",
+      "path": "node_modules/chunk-data",
+      "packageSha256": "bf2501c87ca31fc830beed0e75659ee4cc40ba5cd810f09d45e77b3f43b3a311",
+      "license": "MIT"
+    },
+    {
+      "name": "combined-stream",
+      "version": "1.0.8",
+      "path": "node_modules/combined-stream",
+      "packageSha256": "761adece21443081ae818fe0e18864d7fa03f387075b89afa6cc5dd98356fafa",
+      "license": "MIT"
+    },
+    {
+      "name": "debug",
+      "version": "4.4.3",
+      "path": "node_modules/debug",
+      "packageSha256": "ea8e33d63fe5f3a4c36609b6c3df8e2ef1f8b8ba2fc3a2e1e53cb27291f384af",
+      "license": "MIT"
+    },
+    {
+      "name": "delayed-stream",
+      "version": "1.0.0",
+      "path": "node_modules/delayed-stream",
+      "packageSha256": "4f5bd886efbd8feda6ac04db6ac1aa8b2e8dfc159503b0652667e1bc88efd4cb",
+      "license": "MIT"
+    },
+    {
+      "name": "dunder-proto",
+      "version": "1.0.1",
+      "path": "node_modules/dunder-proto",
+      "packageSha256": "24df71008e4225c858f389dd2728b76cf66b752256d42a38ed7930aacae7fe2b",
+      "license": "MIT"
+    },
+    {
+      "name": "es-define-property",
+      "version": "1.0.1",
+      "path": "node_modules/es-define-property",
+      "packageSha256": "3a2cb30dae30a96705dcd9aa2d5fb190cf8200f27badccfa5a81a4374e5708b4",
+      "license": "MIT"
+    },
+    {
+      "name": "es-errors",
+      "version": "1.3.0",
+      "path": "node_modules/es-errors",
+      "packageSha256": "1a0a0bcccc76b915cb64073317312840cf6363e9144b96f406d0059774dd5278",
+      "license": "MIT"
+    },
+    {
+      "name": "es-object-atoms",
+      "version": "1.1.2",
+      "path": "node_modules/es-object-atoms",
+      "packageSha256": "e4b7882975d10c68457945c883e1060d0b058af5b1216215c872263f42e12fc9",
+      "license": "MIT"
+    },
+    {
+      "name": "es-set-tostringtag",
+      "version": "2.1.0",
+      "path": "node_modules/es-set-tostringtag",
+      "packageSha256": "c9506942c9ef472286aff079bb65b7f3edcaccbc7f59fac9f419787b570086e5",
+      "license": "MIT"
+    },
+    {
+      "name": "follow-redirects",
+      "version": "1.16.1",
+      "path": "node_modules/follow-redirects",
+      "packageSha256": "3b63e57223c63eff7b1c9ecdcd6615af8c6fcbaa9d436e949f02acf2b6dbe588",
+      "license": "MIT"
+    },
+    {
+      "name": "form-data",
+      "version": "4.0.6",
+      "path": "node_modules/form-data",
+      "packageSha256": "d5222c863d975ddefb3ec2c012d3c3ab92f51ef8f3f5c3080dee02c79d217665",
+      "license": "MIT"
+    },
+    {
+      "name": "function-bind",
+      "version": "1.1.2",
+      "path": "node_modules/function-bind",
+      "packageSha256": "edb1c4faf4148e6e3d74ed8dbac1a1dc359a647ff4207aad4851396dc7a3559a",
+      "license": "MIT"
+    },
+    {
+      "name": "get-intrinsic",
+      "version": "1.3.0",
+      "path": "node_modules/get-intrinsic",
+      "packageSha256": "45b14763baacc59b0fd7b39e3ad983d5d2aaf7f5ed682f2fce9edb469826c999",
+      "license": "MIT"
+    },
+    {
+      "name": "get-proto",
+      "version": "1.0.1",
+      "path": "node_modules/get-proto",
+      "packageSha256": "73839e012ac7134a632c9d9fc6bdb700ac9ab5553cce39eb789ba2b65663e734",
+      "license": "MIT"
+    },
+    {
+      "name": "gopd",
+      "version": "1.2.0",
+      "path": "node_modules/gopd",
+      "packageSha256": "33ace32dc861f6da9d1fd9d0a44c66e8c6ff3b13358d070683c1c2978ff5f19f",
+      "license": "MIT"
+    },
+    {
+      "name": "has-symbols",
+      "version": "1.1.0",
+      "path": "node_modules/has-symbols",
+      "packageSha256": "5190268c0e3308d7446d1f7c036238f329f786938453e6017cb90980b3612e7a",
+      "license": "MIT"
+    },
+    {
+      "name": "has-tostringtag",
+      "version": "1.0.2",
+      "path": "node_modules/has-tostringtag",
+      "packageSha256": "30ab773c52021a6b800ea48f251abeeb1f6e378300f819204dfbb38d6e43f3ad",
+      "license": "MIT"
+    },
+    {
+      "name": "hasown",
+      "version": "2.0.4",
+      "path": "node_modules/hasown",
+      "packageSha256": "40b750c55a8bacf2c5ac316f5299dd44d48acc101c189a00cd59d39376b5eb89",
+      "license": "MIT"
+    },
+    {
+      "name": "http-cache-semantics",
+      "version": "4.3.0",
+      "path": "node_modules/http-cache-semantics",
+      "packageSha256": "dbe99941ed2092d43257294405cfb389a476ef54a029488b51125e6f3a777fde",
+      "license": "BSD-2-Clause"
+    },
+    {
+      "name": "https-proxy-agent",
+      "version": "5.0.1",
+      "path": "node_modules/https-proxy-agent",
+      "packageSha256": "d41d9127cbed43df8e2d404bfaf41361942a8afeb82eb57ccf8515e04eb33d1d",
+      "license": "MIT"
+    },
+    {
+      "name": "is-stream",
+      "version": "4.0.1",
+      "path": "node_modules/is-stream",
+      "packageSha256": "fc7c9b9a57fbe9f4553d969cce8829a91c6f288f593855abacf5b2f2ad2deeb2",
+      "license": "MIT"
+    },
+    {
+      "name": "math-intrinsics",
+      "version": "1.1.0",
+      "path": "node_modules/math-intrinsics",
+      "packageSha256": "39d74aa5a354153130706286dd60a2d8409ce0c8f66546eff2edcac0afff17e1",
+      "license": "MIT"
+    },
+    {
+      "name": "mime-db",
+      "version": "1.52.0",
+      "path": "node_modules/mime-db",
+      "packageSha256": "d03e37b915a050af548d543f4e45ff5de06ec767c19e745f18c431d9dc26b5bf",
+      "license": "MIT"
+    },
+    {
+      "name": "mime-types",
+      "version": "2.1.35",
+      "path": "node_modules/mime-types",
+      "packageSha256": "5053cc10259c3913ab6b6c8f13170a619c0d1836c1d9081238329a559fafeb3a",
+      "license": "MIT"
+    },
+    {
+      "name": "ms",
+      "version": "2.1.3",
+      "path": "node_modules/ms",
+      "packageSha256": "1a6b4d9739790c0b94ab96c8cc0507e281c164c311ff4fbf5e57fb8d26290b40",
+      "license": "MIT"
+    },
+    {
+      "name": "proxy-from-env",
+      "version": "2.1.0",
+      "path": "node_modules/proxy-from-env",
+      "packageSha256": "d01e73f0bf86e192e7eab7ff3f6f9e1284695ecc713ace22d982f9a35c9be451",
+      "license": "MIT"
+    },
+    {
+      "name": "quick-lru",
+      "version": "5.1.1",
+      "path": "node_modules/quick-lru",
+      "packageSha256": "bf5251a87213147e4e97a56fb5feade15734354f418b907d074b7ff595eff9ff",
+      "license": "MIT"
+    },
+    {
+      "name": "resolve-alpn",
+      "version": "1.2.1",
+      "path": "node_modules/resolve-alpn",
+      "packageSha256": "104151f28e42154024f78af2f8af97b4a476c6a55f64454788d2204f441c4527",
+      "license": "MIT"
+    },
+    {
+      "name": "rxjs",
+      "version": "7.8.2",
+      "path": "node_modules/rxjs",
+      "packageSha256": "2399f5d968d1d693ecd206e7972fd26cb7e3daa45931ecc12202b3a924be38b7",
+      "license": "Apache-2.0"
+    },
+    {
+      "name": "tagged-tag",
+      "version": "1.0.0",
+      "path": "node_modules/tagged-tag",
+      "packageSha256": "85d0af116e49402c9cfca1bb434c1de2d86ce724d0465d4c7daafca07810c12e",
+      "license": "MIT"
+    },
+    {
+      "name": "tiktok-live-api-sdk",
+      "version": "0.4.0-beta1",
+      "path": "node_modules/tiktok-live-api-sdk",
+      "packageSha256": "74e93eeb9415763479050e48cbade6c4ab479f07a0586b8cee1e3c7503c3268b",
+      "license": "MIT"
+    },
+    {
+      "name": "tiktok-live-connector",
+      "version": "2.4.4",
+      "path": "node_modules/tiktok-live-connector",
+      "packageSha256": "2751ea1a3d9ff3ab93060c842170adebff5c76b13eed652544a1d6e4a04d400a",
+      "license": "AGPL-3.0-only"
+    },
+    {
+      "name": "@sindresorhus/is",
+      "version": "8.1.0",
+      "path": "node_modules/tiktok-live-connector/node_modules/@sindresorhus/is",
+      "packageSha256": "dfa6e2b95bd349562e8a5e41cfa76ef278b1508d3222e4fe4e793d3e98716597",
+      "license": "MIT"
+    },
+    {
+      "name": "cacheable-lookup",
+      "version": "7.0.0",
+      "path": "node_modules/tiktok-live-connector/node_modules/cacheable-lookup",
+      "packageSha256": "e5c9b1896b83229cc0c50935889563464789e89c88c7fd37183a313629511dc4",
+      "license": "MIT"
+    },
+    {
+      "name": "cacheable-request",
+      "version": "13.0.19",
+      "path": "node_modules/tiktok-live-connector/node_modules/cacheable-request",
+      "packageSha256": "4cdddb40546eecc666bf6a2b4bbab1ce6069be121e6adfc6e2e3b71952efe7d1",
+      "license": "MIT"
+    },
+    {
+      "name": "decompress-response",
+      "version": "10.0.0",
+      "path": "node_modules/tiktok-live-connector/node_modules/decompress-response",
+      "packageSha256": "e7b412562f04b5e77627dbc4baab79d77b4687a03d031d81c00864948a0c2c3d",
+      "license": "MIT"
+    },
+    {
+      "name": "get-stream",
+      "version": "9.0.1",
+      "path": "node_modules/tiktok-live-connector/node_modules/get-stream",
+      "packageSha256": "73c1309fdf7d1086c33c4095ecd081b0993b4b98f3bbc46c6ff10349830623c9",
+      "license": "MIT"
+    },
+    {
+      "name": "got",
+      "version": "15.1.0",
+      "path": "node_modules/tiktok-live-connector/node_modules/got",
+      "packageSha256": "87c1d1565b3a3a57dc07e99be71a4ff220a3441580d5ac32697ee61972203b9f",
+      "license": "MIT"
+    },
+    {
+      "name": "http2-wrapper",
+      "version": "2.2.1",
+      "path": "node_modules/tiktok-live-connector/node_modules/http2-wrapper",
+      "packageSha256": "608f1bae7a646d4201ec1f84685128046cde41de93d49a308a57b681f9ed0771",
+      "license": "MIT"
+    },
+    {
+      "name": "keyv",
+      "version": "5.6.0",
+      "path": "node_modules/tiktok-live-connector/node_modules/keyv",
+      "packageSha256": "c010aefc9bdae5618edf0c4e206544d6fb83ff65fe120e3a57a79f57d272a9b6",
+      "license": "MIT"
+    },
+    {
+      "name": "lowercase-keys",
+      "version": "4.0.1",
+      "path": "node_modules/tiktok-live-connector/node_modules/lowercase-keys",
+      "packageSha256": "60034a6df2d95932d1ae1bfec2b8f52a43e97ea14c0caa0dcd048d970603eb4c",
+      "license": "MIT"
+    },
+    {
+      "name": "mimic-response",
+      "version": "4.0.0",
+      "path": "node_modules/tiktok-live-connector/node_modules/mimic-response",
+      "packageSha256": "9de5953cbb394363ee9e09e28920362732803dde4203584e5605c8563dc39d73",
+      "license": "MIT"
+    },
+    {
+      "name": "normalize-url",
+      "version": "8.1.1",
+      "path": "node_modules/tiktok-live-connector/node_modules/normalize-url",
+      "packageSha256": "4251910b61ae472b6180b1a16d9bce19ba4b55a65057b0b25bd4d8ea5ce35e0a",
+      "license": "MIT"
+    },
+    {
+      "name": "responselike",
+      "version": "4.0.2",
+      "path": "node_modules/tiktok-live-connector/node_modules/responselike",
+      "packageSha256": "82d166462c1b21afad581caca91887fbac3b415a80a5745257ca14601192b0b3",
+      "license": "MIT"
+    },
+    {
+      "name": "lowercase-keys",
+      "version": "3.0.0",
+      "path": "node_modules/tiktok-live-connector/node_modules/responselike/node_modules/lowercase-keys",
+      "packageSha256": "9345ec23681c4be6e4684f4a9a6a74fef5fe3d0e05fc2810e9f66522a398bcce",
+      "license": "MIT"
+    },
+    {
+      "name": "type-fest",
+      "version": "5.10.0",
+      "path": "node_modules/tiktok-live-connector/node_modules/type-fest",
+      "packageSha256": "5af34044f523961a0af5c5cc76c2a4cf740a6354b4b020147ea0b7153c34288a",
+      "license": "(MIT OR CC0-1.0)"
+    },
+    {
+      "name": "tiktok-live-proto",
+      "version": "0.2.4",
+      "path": "node_modules/tiktok-live-proto",
+      "packageSha256": "10565697d52654c702ed08a3d4d9754702c2026ef318ab5e0b2850f128303f31",
+      "license": "AGPL-3.0-only"
+    },
+    {
+      "name": "tslib",
+      "version": "2.8.1",
+      "path": "node_modules/tslib",
+      "packageSha256": "f02b4851df316f29bdfcd404aa1eb41e4e216b5859015f81fcd3e91caf8be931",
+      "license": "0BSD"
+    },
+    {
+      "name": "typed-emitter",
+      "version": "2.1.0",
+      "path": "node_modules/typed-emitter",
+      "packageSha256": "14fde7b5a35da1b3928a1116892da0175aca3bc2e09179bf0fb8223197a461b4",
+      "license": "MIT"
+    },
+    {
+      "name": "uint8array-extras",
+      "version": "1.6.0",
+      "path": "node_modules/uint8array-extras",
+      "packageSha256": "883937367ce5be56870e5bb6b064c55c9ce758af40b7dd884d5a7a3261d93013",
+      "license": "MIT"
+    },
+    {
+      "name": "ws",
+      "version": "8.22.0",
+      "path": "node_modules/ws",
+      "packageSha256": "c1ef91ca04eb4754c011c5f0e7638b5078ff71104fada400c44ac761cf93e0b1",
+      "license": "MIT"
+    }
+  ],
+  "optionalMissing": [],
+  "vendors": [
+    {
+      "file": "live-session.cjs",
+      "sha256": "69418bab078e829f6be88db4e0f3fc1f2e46d6a5b40f923a6754f268a1103252"
+    },
+    {
+      "file": "pk-profiles.cjs",
+      "sha256": "3d87facb02db3c9e7be56ff95e3650d1f14282a4bae132db41d0872094f5c156"
+    },
+    {
+      "file": "forza-publisher.cjs",
+      "sha256": "a18ab475b08f486377b15afbe7fffffba4f42c056089b8996db93e4e5da8a7fe"
+    },
+    {
+      "file": "shared-game-events.cjs",
+      "sha256": "9731badcd3ea001dbbc494eb166e0143189075957f21ae1d1e1e39d89943ac89"
+    }
+  ],
+  "catalog": {
+    "count": 905,
+    "sha256": "b02ac70cae67eb7d4d1aa479b57c21d24205576ea5138bcbc6beae615eed2e89"
+  },
+  "bridge": "animal-times",
+  "files": [
+    {
+      "file": "bridge.cjs",
+      "sha256": "60f171650f8767d27c84f5c7831223b9ae8dc2d9090792d699ea60d4299119b4"
+    },
+    {
+      "file": "owner-helper.cjs",
+      "sha256": "1525b097c0b6420f8e284b01e21821745cc884b92ef5286620362c3a7f717ac0"
+    },
+    {
+      "file": "launcher-glue.cjs",
+      "sha256": "6ee3ef3dca784e16f1d49b8bbffea5cb59c8fe525b517a87a912d7b84fc6ff81"
+    },
+    {
+      "file": "package.json",
+      "sha256": "c34f19dcab3e9cbf273e278084f50f427f4444623da5a8bf850557b645c136fe"
+    },
+    {
+      "file": "lib/catalog.cjs",
+      "sha256": "de1485d04d4b628c0d7cb484876ff5f23829f80d4f7e5344a73339c09e044d34"
+    },
+    {
+      "file": "lib/desktop-profile-source.cjs",
+      "sha256": "428904d3e77b6c7a3c34c7df3f7d99af98a1c4820067b1c9d45c20b6e2b38283"
+    },
+    {
+      "file": "lib/desktop-profile-worker.cjs",
+      "sha256": "3d9bef65730de6403e591b493aeb703a066f263d5256f96310b46a7b7782e77d"
+    },
+    {
+      "file": "lib/events.cjs",
+      "sha256": "390df71251a0ae4d8f50a8d41368505aef31ba9eb7f4f8861d599cb4bec253a9"
+    },
+    {
+      "file": "lib/journal.cjs",
+      "sha256": "65dc80a6e6f15b0c96e89f58568ae386d1d865ea4aa48482dc5bedc13cfdc315"
+    },
+    {
+      "file": "lib/owner.cjs",
+      "sha256": "a4ac36fa31b0fcefa9e1a59a00b365f3555d93794ee109a77daa17e8bf8d67d1"
+    },
+    {
+      "file": "lib/profiles.cjs",
+      "sha256": "7ea85496b33d890e45b3ee3b046b86e6131b8a9c689b13c3b9a14eed6563508e"
+    },
+    {
+      "file": "lib/runtime-profiles.cjs",
+      "sha256": "99175b2088c9bab27e3cce2be63fd2411a060fd63758e0f4271f2adf6f8b2dd3"
+    },
+    {
+      "file": "lib/server.cjs",
+      "sha256": "c16ff240601a29d63eef0424476f965e6e2694cd5ff3f1cbde1e200ed20feb10"
+    },
+    {
+      "file": "vendor/forza-publisher.cjs",
+      "sha256": "a18ab475b08f486377b15afbe7fffffba4f42c056089b8996db93e4e5da8a7fe"
+    },
+    {
+      "file": "vendor/live-session.cjs",
+      "sha256": "69418bab078e829f6be88db4e0f3fc1f2e46d6a5b40f923a6754f268a1103252"
+    },
+    {
+      "file": "vendor/pk-profiles.cjs",
+      "sha256": "3d87facb02db3c9e7be56ff95e3650d1f14282a4bae132db41d0872094f5c156"
+    },
+    {
+      "file": "vendor/portrait-engine.cjs",
+      "sha256": "ec88096205f1380fe17b0db5938c2afdc708174ca540db4a1134c10f5d435f62"
+    },
+    {
+      "file": "vendor/shared-game-events.cjs",
+      "sha256": "9731badcd3ea001dbbc494eb166e0143189075957f21ae1d1e1e39d89943ac89"
+    }
+  ]
+}

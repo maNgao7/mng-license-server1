@@ -5,7 +5,7 @@ import { upgradedBootstrapState } from '../content-bootstrap.js';
 
 const json = name => JSON.parse(fs.readFileSync(new URL('../' + name, import.meta.url)));
 const previous = json('content-bootstrap-7.0.26.json');
-const current = json('content-defaults.json');
+const current = json('content-bootstrap-uslu-0.2.10.json');
 const id = 'rezervuar-01';
 
 test('Uslu Yaratık 0.2.10 updates exactly one game package independently of the launcher', () => {
@@ -24,8 +24,8 @@ test('Uslu Yaratık 0.2.10 updates exactly one game package independently of the
         ...previous, revision: current.revision, publishedAt: current.publishedAt,
         games: previous.games.map(item => item.id === id ? game : item),
     });
-    assert.deepEqual(current, json('web/content-catalog-7.0.0.json'));
-    assert.equal(json('package.json').version, '7.0.27');
+    assert.deepEqual(current.games.find(game => game.id === id), json('web/content-catalog-7.0.0.json').games.find(game => game.id === id));
+    assert.equal(json('package.json').version, '7.0.28');
 });
 
 test('the exact 7.0.26 catalog upgrades once without mutating the previous state', () => {

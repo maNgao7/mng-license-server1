@@ -1,0 +1,12 @@
+{
+  "passed": true,
+  "mode": "packaged",
+  "publicNotAdminPreview": true,
+  "localArchiveTransport": true,
+  "gameVersion": "0.1.0",
+  "steps": 6,
+  "giftPngByteVerified": true,
+  "nativeStartup": true,
+  "repeatedPlayReusesSession": true,
+  "errors": []
+}

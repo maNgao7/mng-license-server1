@@ -1,0 +1,102 @@
+{
+  "schemaVersion": 1,
+  "games": [
+    {
+      "id": "fetih",
+      "title": "Fetih",
+      "cover": "fetih-v1",
+      "announcementId": "fetih-0.1.0",
+      "definition": {
+        "id": "fetih",
+        "klasor": "fetih",
+        "boyut": "124 MB · Oyun motoru dahil",
+        "paketSurumu": "0.1.0"
+      }
+    },
+    {
+      "id": "hapisten-kac",
+      "title": "Hapisten Kaç",
+      "cover": "hapisten-kac-v1",
+      "announcementId": "hapisten-kac-0.2.0",
+      "definition": {
+        "id": "hapisten-kac",
+        "klasor": "hapisten-kac",
+        "boyut": "Mod paketi + Steam demosu",
+        "paketSurumu": "0.2.0"
+      }
+    },
+    {
+      "id": "rezervuar-01",
+      "title": "Uslu Yaratık",
+      "cover": "uslu-yaratik",
+      "announcementId": "rezervuar-01-0.2.9",
+      "definition": {
+        "id": "rezervuar-01",
+        "klasor": "rezervuar-01",
+        "boyut": "127 MB",
+        "paketSurumu": "0.2.9"
+      }
+    },
+    {
+      "id": "profile-duel",
+      "title": "Teke Tek Profil",
+      "cover": "profile-duel-v1",
+      "announcementId": "profile-duel-0.5.7",
+      "definition": {
+        "id": "profile-duel",
+        "klasor": "profile-duel",
+        "paketSurumu": "0.5.7",
+        "boyut": "Profil düellosu"
+      }
+    },
+    {
+      "id": "turkish-forza-05",
+      "title": "Turkish Forza 0.5",
+      "cover": "turkish-forza-05-v1",
+      "announcementId": "turkish-forza-05-0.5.0",
+      "definition": {
+        "id": "turkish-forza-05",
+        "klasor": "turkish-forza-05",
+        "boyut": "Mod paketi + Steam demosu",
+        "paketSurumu": "0.5.1"
+      }
+    },
+    {
+      "id": "yaratik-arena",
+      "title": "Yaratık Arena",
+      "cover": "yaratik-arena-v1",
+      "announcementId": "yaratik-arena-0.1.20",
+      "definition": {
+        "id": "yaratik-arena",
+        "klasor": "yaratik-arena",
+        "boyut": "Mod paketi + Steam demosu",
+        "paketSurumu": "0.1.29"
+      }
+    },
+    {
+      "id": "profile-contest",
+      "title": "Profil Yarışması",
+      "cover": "profile-contest-v1",
+      "definition": {
+        "id": "profile-contest",
+        "klasor": "profile-contest",
+        "boyut": "Küçük oyun paketi",
+        "paketSurumu": "0.3.0"
+      }
+    },
+    {
+      "id": "minecraft-snake-arena",
+      "title": "Minecraft Yılan Oyunu",
+      "cover": "minecraft-yilan-cover-v2",
+      "definition": {
+        "id": "minecraft-snake-arena",
+        "klasor": "minecraft-snake-arena",
+        "boyut": "787 MB",
+        "paketSurumu": "0.16.0",
+        "minecraft": true,
+        "modFile": "tikmng_snake_arena-0.16.0.jar",
+        "configFile": "tikmng-snake-arena.json"
+      }
+    }
+  ]
+}

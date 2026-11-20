@@ -1,0 +1,45 @@
+{
+  "passed": true,
+  "asarMatchesTestedSource": true,
+  "originalColorsAndIcon": true,
+  "privatePreviewExcluded": true,
+  "zipAndGiftHashes": true,
+  "installerUpdateMetadata": true,
+  "files": [
+    {
+      "name": "TikMnG-Setup-7.0.28.exe",
+      "bytes": 295662175,
+      "sha256": "3321f0ce0fe6331dd92623beb7c24f79938a5198281e5881a4068e87e9d7bc51"
+    },
+    {
+      "name": "TikMnG-7.0.28-Portable.exe",
+      "bytes": 295483603,
+      "sha256": "b9616da7aca5b1524955b5082b3e30c70c4b0c25813f8d88108a1b5baac6461e"
+    },
+    {
+      "name": "TikMnG-Setup-7.0.28.exe.blockmap",
+      "bytes": 307383,
+      "sha256": "2bf1f50298a2feead93766f8e8cc801c62972fbbd9bb8a5ccdab8692d4b25822"
+    },
+    {
+      "name": "latest.yml",
+      "bytes": 516,
+      "sha256": "1ce10b80b6c6a5c9efe960622a46c9b87d4e208829ea19362d072a2cc73718b4"
+    },
+    {
+      "name": "Fetih-Windows-x64.zip",
+      "bytes": 129621136,
+      "sha256": "b4ecf9a51132a6fb6f7e734805ced76b2dde14790dabda3015cb4e7204983a20"
+    },
+    {
+      "name": "Fetih-Windows-x64.sha256",
+      "bytes": 89,
+      "sha256": "1ad2f956b630623b40cb47e936b254568251e249f96df5d22fd9a673089c4c13"
+    },
+    {
+      "name": "TikMnG-Fetih-Hediyeler.png",
+      "bytes": 1406321,
+      "sha256": "9364b48c5fc83da761e47a7ee2e9ccf0e30cba0ac3d42b8a5482c73da561ce8f"
+    }
+  ]
+}
