@@ -25,7 +25,7 @@ test('Uslu Yaratık 0.2.10 updates exactly one game package independently of the
         games: previous.games.map(item => item.id === id ? game : item),
     });
     assert.deepEqual(current.games.find(game => game.id === id), json('web/content-catalog-7.0.0.json').games.find(game => game.id === id));
-    assert.equal(json('package.json').version, '7.0.30');
+    assert.equal(json('package.json').version, '7.0.31');
 });
 
 test('the exact 7.0.26 catalog upgrades once without mutating the previous state', () => {
