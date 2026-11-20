@@ -160,6 +160,19 @@ test('state gzip reduces wire bytes without changing JSON, scopes or private cac
     assert.ok(response.body.length < Buffer.byteLength(body) / 5);
 });
 
+test('the sandboxed browser can detect change polling for state responses only', async t => {
+    const f = await fixture(t), session = await f.session(), publisher = await f.connect(session.ticket);
+    for (const [route, expected] of [['/api/widget/state?type=gifts&transport=changes', '1'], ['/widget/view/gifts', undefined]]) {
+        const pending = f.read(session.path + route, { headers: { Origin: 'null' } });
+        const request = await publisher.next('request');
+        respond(publisher, request, '{}', {'x-tikmng-changes':'1', 'content-type':'application/json'});
+        const response = await pending;
+        assert.equal(response.headers['x-tikmng-changes'], expected);
+        assert.equal(response.headers['access-control-expose-headers'], expected && 'X-TikMnG-Changes');
+        assert.equal(response.headers['access-control-allow-origin'], '*');
+    }
+});
+
 test('state gzip honours negotiation and excludes media, SSE, ranges, small bodies and no-body statuses', async t => {
     const f = await fixture(t), session = await f.session(), publisher = await f.connect(session.ticket);
     for (const [route, encoding, type, status, extra, body] of [

@@ -1,0 +1,26 @@
+[
+  {
+    "from": "7.0.30",
+    "to": "7.0.31",
+    "downloadBytes": 177595281,
+    "ranges": 1322,
+    "installerBytes": 295662010,
+    "checksumMatches": true
+  },
+  {
+    "from": "7.0.31",
+    "to": "7.0.32",
+    "downloadBytes": 199975380,
+    "ranges": 833,
+    "installerBytes": 295911256,
+    "checksumMatches": true
+  },
+  {
+    "from": "7.0.32",
+    "to": "7.0.33",
+    "downloadBytes": 1209526,
+    "ranges": 6,
+    "installerBytes": 295911304,
+    "checksumMatches": true
+  }
+]

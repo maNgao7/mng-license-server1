@@ -46,7 +46,7 @@ const MAX_BODY = 512 * 1024 * 1024;
 const HOUR = 60 * 60 * 1000;
 const SAFE_HEADERS = new Set([
     "content-type", "content-length", "content-range", "content-encoding", "accept-ranges",
-    "etag", "last-modified", "content-language", "content-security-policy", "location"
+    "etag", "last-modified", "content-language", "content-security-policy", "location", "x-tikmng-changes"
 ]);
 const FALLBACK_CSP = "default-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; media-src 'self' blob: https:; connect-src 'self'; font-src 'self' data:";
 const ISOLATION_CSP = "sandbox allow-scripts; base-uri 'none'; object-src 'none'; form-action 'none'";
@@ -305,6 +305,9 @@ export function registerOverlayRelay(app, { secret, authorize, publicOrigin, rev
                 context.length = headers["content-length"] === undefined ? null : Number(headers["content-length"]);
                 safeHeaders(context.res);
                 for (const [name, val] of Object.entries(headers)) context.res.setHeader(name, val);
+                if (context.stateRequest && headers['x-tikmng-changes'] === '1') {
+                    context.res.setHeader('Access-Control-Expose-Headers', 'X-TikMnG-Changes');
+                } else context.res.removeHeader('X-TikMnG-Changes');
                 // Only immutable, revision-scoped owned media may use a private browser cache.
                 // State, HTML, errors, redirects and old publishers always remain no-store.
                 if (context.cacheableMedia && [200, 206].includes(frame.status) &&

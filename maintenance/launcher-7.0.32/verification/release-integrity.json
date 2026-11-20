@@ -1,0 +1,36 @@
+{
+  "passed": true,
+  "changed": [
+    "lib/game-launch-session.cjs",
+    "lib/minecraft-path-compat.cjs",
+    "lib/required-game-hotfix.cjs",
+    "lib/shared-game-assets.cjs",
+    "lib/widget-snapshot.cjs",
+    "main.js",
+    "package.json",
+    "renderer/widgets/game.html"
+  ],
+  "unchanged": 6150,
+  "files": [
+    {
+      "name": "TikMnG-Setup-7.0.32.exe",
+      "bytes": 295911256,
+      "sha256": "6619bc4374bd510d9723e941049d24067404c1048b9fffc77c61914d9c8cc547"
+    },
+    {
+      "name": "TikMnG-7.0.32-Portable.exe",
+      "bytes": 295732674,
+      "sha256": "4a429818ef6fbbc6a4ea39a59043994bcba17720279231dad392d6dc92bf659a"
+    },
+    {
+      "name": "TikMnG-Setup-7.0.32.exe.blockmap",
+      "bytes": 305517,
+      "sha256": "152bbe08ba1693154e5a9bcbd6519d009b48797b2319dbb78c3cf33cb5b8bff7"
+    },
+    {
+      "name": "latest.yml",
+      "bytes": 472,
+      "sha256": "4346f020806f16f51b197211b0de5844dc33177b6792c874627c6b6f4a739592"
+    }
+  ]
+}

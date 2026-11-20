@@ -966,10 +966,10 @@ function logEkle(lisansKod, cihazKimlik, islem, ip) {
 // =====================================================================
 // SÜRÜM BİLGİLERİ & İNDİRME LİNKLERİ
 // =====================================================================
-const EN_GUNCEL_SURUM = "7.0.31";
+const EN_GUNCEL_SURUM = "7.0.32";
 const EN_DUSUK_SURUM = "1.0.0";
-const SETUP_INDIRME_LINKI = "https://github.com/maNgao7/mng-license-server1/releases/download/v7.0.31/TikMnG-Setup-7.0.31.exe";
-const PORTABLE_INDIRME_LINKI = "https://github.com/maNgao7/mng-license-server1/releases/download/v7.0.31/TikMnG-7.0.31-Portable.exe";
+const SETUP_INDIRME_LINKI = "https://github.com/maNgao7/mng-license-server1/releases/download/v7.0.32/TikMnG-Setup-7.0.32.exe";
+const PORTABLE_INDIRME_LINKI = "https://github.com/maNgao7/mng-license-server1/releases/download/v7.0.32/TikMnG-7.0.32-Portable.exe";
 const SETUP_WEB_LINKI = 'https://tikmng.com/download/setup';
 const resolveLatestInstaller = createLatestInstallerResolver({ fallbackUrl: SETUP_INDIRME_LINKI });
 const VARSAYILAN_PAKET_LINKLERI = Object.freeze({
@@ -984,6 +984,7 @@ const VARSAYILAN_PAKET_LINKLERI = Object.freeze({
 
 // Her güncellemede eklenen/değişen özellikler listesi
 const SURUM_NOTLARI = [
+    "v7.0.32: Oyun açılışında isteğe bağlı indirmeler beklenmez. Hediye görselleri daha hızlı hazırlanır. Yayın widgetları bağlantı kesintilerinde daha kararlı çalışır ve küçük launcher güncellemeleri için paket yapısı iyileştirildi.",
     "v7.0.31: Oyun açma isteği hemen gönderiliyor. Yaratık Arena ve Turkish Forza dosyaları daha hızlı doğrulanıyor. Turkish Forza, pist hazır olduğunda açılış müziğinin sonunu beklemeden açılıyor.",
     "v7.0.30: Kavanoz widgetlarında biriken ve yeni gelen hediyelerin gösterimi düzeltildi. Kopyalanan yayın bağlantıları bağlı yayın sunucusunun HTTPS adresini kullanır.",
     "v7.0.29: Fetih oyun sayfasına tanıtım ve kurulum videosu eklendi.",
