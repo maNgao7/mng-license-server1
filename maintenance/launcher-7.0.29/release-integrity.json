@@ -1,0 +1,31 @@
+{
+  "passed": true,
+  "changedFiles": [
+    "package.json",
+    "renderer/workspace.js"
+  ],
+  "unchangedFiles": 6154,
+  "installerUpdateMetadata": true,
+  "files": [
+    {
+      "name": "TikMnG-Setup-7.0.29.exe",
+      "bytes": 295663113,
+      "sha256": "08447d2ed0d923bbff306caab03b66d942383e358cf2c6f93f59e0643539ec85"
+    },
+    {
+      "name": "TikMnG-7.0.29-Portable.exe",
+      "bytes": 295484528,
+      "sha256": "ec1d2c1cd3bacd2ec6da44d27c506327af2230a6100c8ce4d609ef6492ec1819"
+    },
+    {
+      "name": "TikMnG-Setup-7.0.29.exe.blockmap",
+      "bytes": 309510,
+      "sha256": "6caa22f605706e8c1129f569c2bbc69c8d9c72819dbfa667d8e691944af3c24d"
+    },
+    {
+      "name": "latest.yml",
+      "bytes": 481,
+      "sha256": "97b3972428be0ea01cd0402d5b99d1d1574176c6836776147e076bc6d7e0d964"
+    }
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "passed": true,
+  "mode": "packaged",
+  "publicNotAdminPreview": true,
+  "localArchiveTransport": true,
+  "gameVersion": "0.1.0",
+  "videoURL": "https://youtu.be/v1PtHDv3VhM",
+  "videoButtonRoutesCorrectly": true,
+  "steps": 6,
+  "giftPngByteVerified": true,
+  "nativeStartup": true,
+  "repeatedPlayReusesSession": true,
+  "errors": []
+}

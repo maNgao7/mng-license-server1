@@ -75,8 +75,8 @@ test('website JSON, embedded catalog, static cards, counts and supplied Hapisten
     assert.equal(game.steamUrl, 'https://store.steampowered.com/app/5466880/');
     for (const width of [480, 720, 1000, 1440]) assert.ok(fs.statSync(new URL(`../web/game-covers/${game.cover}-${width}.webp`, import.meta.url)).size > 0);
     assert.ok(fs.statSync(new URL('../web' + game.giftGuide, import.meta.url)).size > 0);
-    assert.match(html, /<div>© 2026 TikMnG · v7\.0\.28\./);
-    assert.match(html, /"softwareVersion": "7\.0\.28"/);
-    assert.equal(json('package.json').version, '7.0.28');
-    assert.equal(json('package-lock.json').packages[''].version, '7.0.28');
+    assert.match(html, /<div>© 2026 TikMnG · v7\.0\.29\./);
+    assert.match(html, /"softwareVersion": "7\.0\.29"/);
+    assert.equal(json('package.json').version, '7.0.29');
+    assert.equal(json('package-lock.json').packages[''].version, '7.0.29');
 });
