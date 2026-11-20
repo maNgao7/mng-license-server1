@@ -1,0 +1,297 @@
+<!doctype html>
+<html lang="tr">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="icon" href="data:,">
+    <title>Ülke Liderleri</title>
+    <style>
+        :root {
+            color-scheme: dark;
+            --gold: #ecc77e;
+            --ivory: #fff1d3;
+            --muted: #b8c6ba;
+            --rule: #e5be7540;
+            font-family: "Segoe UI", sans-serif;
+        }
+
+        * { box-sizing: border-box; }
+        [hidden] { display: none !important; }
+
+        body {
+            margin: 0;
+            padding: 12px;
+            color: var(--ivory);
+            background: transparent;
+        }
+
+        main {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            width: min(100%, 408px);
+            max-height: max(0px, calc(100vh - 24px));
+            padding: 0 14px 14px;
+            border: 1px solid #c59a56;
+            border-radius: 16px 16px 9px 9px;
+            background:
+                linear-gradient(180deg, #162e27db, #101e1df5 48%, #0a1617fa),
+                repeating-linear-gradient(126deg, #8bc0ac24 0 1px, transparent 1px 5px),
+                #112520;
+            box-shadow: 0 5px 10px #040a0bc9, inset 0 1px #ffe6a699;
+        }
+
+        main::before {
+            position: absolute;
+            inset: 5px;
+            border: 1px solid var(--rule);
+            border-radius: 11px 11px 4px 4px;
+            pointer-events: none;
+            content: "";
+        }
+
+        header {
+            position: relative;
+            flex: none;
+            padding: 17px 6px 14px;
+            background: radial-gradient(ellipse at 50% 0, #c8b06b25, transparent 70%);
+            text-align: center;
+        }
+
+        .ornament {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            color: var(--gold);
+        }
+
+        .ornament::before, .ornament::after {
+            width: 56px;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, currentColor);
+            content: "";
+        }
+
+        .ornament::after { transform: scaleX(-1); }
+
+        .rosette {
+            display: grid;
+            width: 23px;
+            height: 23px;
+            place-items: center;
+            background: currentColor;
+            clip-path: polygon(50% 0%, 65% 23%, 85% 15%, 77% 35%, 100% 50%, 77% 65%, 85% 85%,
+                65% 77%, 50% 100%, 35% 77%, 15% 85%, 23% 65%, 0% 50%, 23% 35%, 15% 15%, 35% 23%);
+        }
+
+        .rosette::after {
+            width: 8px;
+            height: 8px;
+            border: 1px solid #81582f;
+            background: #29665a;
+            transform: rotate(45deg);
+            content: "";
+        }
+
+        h1 {
+            margin: 5px 0 0;
+            font: 600 clamp(23px, 7vw, 34px)/1.12 Georgia, serif;
+            text-shadow: 0 2px 4px #071311;
+        }
+
+        .columns, #leaders li {
+            display: grid;
+            grid-template-columns: 2.1rem minmax(0, 1fr) auto;
+            align-items: center;
+            gap: 9px;
+            padding-inline: 11px;
+        }
+
+        .columns {
+            flex: none;
+            padding-block: 7px 8px;
+            border-top: 1px solid var(--rule);
+            color: var(--gold);
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.12em;
+        }
+
+        .columns span:first-child, .rank { text-align: center; }
+
+        .columns span:last-child { text-align: end; }
+
+        #leaders {
+            min-height: 0;
+            margin: 0;
+            padding: 0;
+            overflow: auto;
+            scrollbar-width: thin;
+            scrollbar-color: #967447 #11231f;
+        }
+
+        /* Hide native markers while retaining ordered-list semantics. */
+        #leaders li::marker { content: ""; }
+        #leaders li {
+            min-height: 57px;
+            padding-block: 8px;
+            border: 1px solid #e5be751f;
+            border-radius: 6px;
+            background: #a6cbb907;
+        }
+
+        #leaders li + li { margin-top: 4px; }
+
+        #leaders li:first-child {
+            border-color: #d9aa5f85;
+            background: linear-gradient(100deg, #a76f2e40, #d6a64b17 63%, #c693361b);
+            box-shadow: inset 0 1px #e5be7528;
+        }
+
+        .rank {
+            display: grid;
+            justify-self: center;
+            width: 30px;
+            height: 30px;
+            place-items: center;
+            border: 1px solid #bccdbb37;
+            border-radius: 50%;
+            color: #d7e1d5;
+            font: 600 15px/1 Georgia, serif;
+            font-variant-numeric: lining-nums tabular-nums;
+        }
+
+        li:first-child .rank {
+            border-color: #f7d898;
+            background: #eac57d;
+            color: #251b11;
+        }
+
+        .identity { min-width: 0; }
+
+        .name, .handle {
+            display: block;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            text-align: start;
+        }
+
+        .name { font-size: 16px; font-weight: 650; line-height: 1.25; }
+        li:first-child .name { color: #ffe4b0; }
+        .handle { margin-top: 2px; color: var(--muted); font-size: 12px; line-height: 1.2; }
+
+        .wins {
+            justify-self: end;
+            padding-inline-start: 4px;
+            color: #e0eade;
+            font-size: 19px;
+            font-weight: 700;
+            font-variant-numeric: tabular-nums;
+        }
+
+        #leaders li:first-child .wins { color: var(--gold); }
+
+        #status {
+            margin: 0;
+            padding: 11px 8px 4px;
+            border-top: 1px solid var(--rule);
+            color: var(--muted);
+            font-size: 13px;
+            text-align: center;
+        }
+
+        @media (max-width: 300px) {
+            body { padding: 8px; }
+            main { max-height: max(0px, calc(100vh - 16px)); padding-inline: 10px; }
+            .columns, #leaders li { grid-template-columns: 1.6rem minmax(0, 1fr) auto; gap: 6px; padding-inline: 7px; }
+            .rank { width: 25px; height: 25px; font-size: 13px; }
+            .name, .wins { font-size: 14px; }
+            .handle { font-size: 11px; }
+        }
+    </style>
+</head>
+<body>
+    <main aria-labelledby="title">
+        <header>
+            <div class="ornament" aria-hidden="true"><span class="rosette"></span></div>
+            <h1 id="title">Ülke Liderleri</h1>
+        </header>
+        <div class="columns" aria-hidden="true" hidden><span>#</span><span>Lider</span><span>Zafer</span></div>
+        <ol id="leaders" role="list" hidden></ol>
+        <p id="status" role="status">Liderler yükleniyor…</p>
+    </main>
+    <template id="leader-row">
+        <li>
+            <span class="rank" aria-hidden="true"></span>
+            <span class="identity"><bdi class="name"></bdi><bdi class="handle" hidden></bdi></span>
+            <span class="wins"></span>
+        </li>
+    </template>
+    <script>
+        'use strict';
+
+        const list = document.getElementById('leaders');
+        const columns = document.querySelector('.columns');
+        const status = document.getElementById('status');
+        const template = document.getElementById('leader-row');
+        const number = new Intl.NumberFormat('tr-TR');
+        let revision = '';
+        const type = 'fetih-liderler';
+        const stateUrl = new URL('../../api/widget/state', location.href);
+        if (location.pathname === '/ulke-liderleri') stateUrl.pathname = '/api/widget/state';
+
+        function showStatus(message) {
+            if (status.textContent !== message) status.textContent = message;
+            status.hidden = !message;
+        }
+
+        function render(leaders) {
+            const fragment = document.createDocumentFragment();
+            for (const [index, { uniqueId, displayName, wins }] of leaders.entries()) {
+                const row = template.content.cloneNode(true);
+                const username = uniqueId ? `@${uniqueId}` : '';
+                row.querySelector('.rank').textContent = index + 1;
+                const name = row.querySelector('.name');
+                name.textContent = displayName || username;
+                if (displayName && uniqueId && displayName !== uniqueId && displayName !== username) {
+                    const handle = row.querySelector('.handle');
+                    handle.textContent = username;
+                    handle.hidden = false;
+                }
+                const count = row.querySelector('.wins');
+                const formattedWins = number.format(wins);
+                count.textContent = `×${formattedWins}`;
+                count.title = `${formattedWins} galibiyet`;
+                fragment.append(row);
+            }
+            list.replaceChildren(fragment);
+            columns.hidden = list.hidden = leaders.length === 0;
+        }
+
+        async function refresh() {
+            const controller = new AbortController();
+            const timeout = setTimeout(() => controller.abort(), 5000);
+            try {
+                stateUrl.search = new URLSearchParams({ type, revision });
+                const response = await fetch(stateUrl, { signal: controller.signal, cache: 'no-store' });
+                if (response.status !== 204) {
+                    if (!response.ok) throw new Error('Lider tablosu okunamadı.');
+                    const data = await response.json();
+                    render(data.rows);
+                    revision = data.revision;
+                }
+                showStatus(list.hidden ? 'Henüz ülke lideri yok.' : '');
+            } catch {
+                showStatus(list.hidden ? 'Lider tablosuna ulaşılamıyor.' : '');
+            } finally {
+                clearTimeout(timeout);
+                setTimeout(refresh, 2500);
+            }
+        }
+
+        refresh();
+    </script>
+</body>
+</html>

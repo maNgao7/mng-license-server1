@@ -1,0 +1,6 @@
+## Fetih 0.1.1
+
+- 905 özgün hediye simgesi, katalogdaki doğrulanmış dosya adlarından paketlenir. Hazır yedi kural TikTok hediye kimliğine göre uygulanır. Eski kullanıcı eşleşmeleri korunur ve yeni kurallar bir kez eklenir. Hediye olayı, ortak yayın sahibinden aynı kimlikle tekrar geldiğinde ikinci kez işlenmez.
+- Türkiye varsayılandır. Dünya haritası Natural Earth 1:110m verisinden hazırlanan ayrı, 34 bölgeli bir atlastır. Orijinal Steam sürümü kayıtları saklanır ve Dünya ile karışmaz.
+- İki widget yerelde 32188 portundan sunulur ve mevcut TikMnG relay istemcisiyle sabit, Fetih’e özel bir HTTPS yoluna çıkar. Ülke Liderleri world-v1.json içindeki kamuya açık skor alanlarını, Ordu Sıralaması widget-armies-v1.json içindeki en yüksek altı orduyu sunar. Eşitlikte tank, helikopter ve jet sayısı karşılaştırılır. Sonuç değişmedikçe sayfa ve satırlar yenilenmez.
+- Oyun ZIP’i, ayrı profil ve gerçek Windows dışa aktarımıyla başlatıldı. Türkiye-Dünya geçişi, hazır kurallar, tekrarın engellenmesi, başlangıç ve bitiş, temiz tur, oyun içi görsel/klip, küçük cephe efektleri ve yerel relay tarayıcısı test edildi. Canlı TikTok hediyesi kullanılmadı. Eski Steam test kapısı demo motoru eksik olduğu için çalışmadı. Yeni bağımsız paket kendi Windows akışında sınandı.
