@@ -29,6 +29,7 @@ const uslu0210Baseline = JSON.parse(fs.readFileSync(new URL("./content-bootstrap
 const fetih010Baseline = JSON.parse(fs.readFileSync(new URL("./content-bootstrap-fetih-0.1.0.json", import.meta.url), "utf8"));
 const launcher732Baseline = JSON.parse(fs.readFileSync(new URL("./content-bootstrap-fetih-0.1.1.json", import.meta.url), "utf8"));
 const fetih012Baseline = JSON.parse(fs.readFileSync(new URL("./content-bootstrap-pre-fetih-0.1.2.json", import.meta.url), "utf8"));
+const fetih013Baseline = JSON.parse(fs.readFileSync(new URL("./content-bootstrap-pre-fetih-0.1.3.json", import.meta.url), "utf8"));
 const launcher726Baseline = JSON.parse(fs.readFileSync(new URL("./content-bootstrap-7.0.26.json", import.meta.url), "utf8"));
 const launcher725Baseline = JSON.parse(fs.readFileSync(new URL("./content-bootstrap-7.0.25.json", import.meta.url), "utf8"));
 const launcher722Baseline = JSON.parse(fs.readFileSync(new URL("./content-bootstrap-7.0.22.json", import.meta.url), "utf8"));
@@ -262,7 +263,8 @@ export function registerContentRoutes(app, { dataDir, adminKontrol }) {
         atomicWrite(stateFile, JSON.stringify(state));
     }
     const currentDefaults = catalogShape(defaults, assetsDir).catalog;
-    const upgraded = upgradedBootstrapState(state, catalogShape(fetih012Baseline, assetsDir).catalog, currentDefaults, { allowReleasedBaseline: true })
+    const upgraded = upgradedBootstrapState(state, catalogShape(fetih013Baseline, assetsDir).catalog, currentDefaults, { allowReleasedBaseline: true })
+        || upgradedBootstrapState(state, catalogShape(fetih012Baseline, assetsDir).catalog, currentDefaults, { allowReleasedBaseline: true })
         || upgradedBootstrapState(state, catalogShape(launcher732Baseline, assetsDir).catalog, currentDefaults, { allowReleasedBaseline: true })
         || upgradedBootstrapState(state, catalogShape(fetih010Baseline, assetsDir).catalog, currentDefaults, { allowReleasedBaseline: true })
         || upgradedBootstrapState(state, catalogShape(uslu0210Baseline, assetsDir).catalog, currentDefaults, { allowReleasedBaseline: true })
