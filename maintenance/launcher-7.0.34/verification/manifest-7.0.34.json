@@ -1,0 +1,31 @@
+{
+  "version": "7.0.34",
+  "baseline": "7.0.33",
+  "testedArchiveFiles": 6238,
+  "changedArchiveFiles": [
+    "package.json",
+    "renderer/workspace.js"
+  ],
+  "files": [
+    {
+      "name": "TikMnG-Setup-7.0.34.exe",
+      "bytes": 299818961,
+      "sha256": "6e8cf36ac4d36b5cec16bdfcbca0914f3ba352e504e75af7ce05bd459b419dfd"
+    },
+    {
+      "name": "TikMnG-Setup-7.0.34.exe.blockmap",
+      "bytes": 311162,
+      "sha256": "5676592e02943cc0c802145b57a7ab0a9ebb369981b8673b127774b7ae305713"
+    },
+    {
+      "name": "TikMnG-7.0.34-Portable.exe",
+      "bytes": 299640383,
+      "sha256": "0fd22c12a594cbd1f1aa80dd05704787de5f2fee5c14eb106393ac78a5d87748"
+    },
+    {
+      "name": "latest.yml",
+      "bytes": 416,
+      "sha256": "2e1c047779f030a73d92e02dfb9c4bb22f200f483c41bc9489bb5fa456a6d747"
+    }
+  ]
+}
