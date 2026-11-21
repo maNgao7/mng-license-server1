@@ -1,16 +1,16 @@
 {
   "schemaVersion": 1,
-  "revision": 2026112003,
-  "publishedAt": "2026-11-20T19:25:49.602Z",
+  "revision": 2026112101,
+  "publishedAt": "2026-11-21T14:56:58.087Z",
   "games": [
     {
       "id": "fetih",
       "title": "Fetih",
       "description": "Türkiye ve Dünya haritalarında izleyicilerinin ordularını yerleştir; asker, tank, helikopter ve jetlerle gerçek zamanlı mücadeleyi yönet. Yayın etkileşimleri orduları güçlendirir, kazanan Fetih sahnesinde ilan edilir.",
-      "version": "0.1.1",
-      "url": "https://github.com/maNgao7/mng-license-server1/releases/download/fetih-0.1.1/Fetih-Windows-x64.zip",
-      "sha256": "dfa6f536dce22622dfe40c7057975696953b0da3a8c8674f9abccb7f138d6411",
-      "bytes": 172735905,
+      "version": "0.1.2",
+      "url": "https://github.com/maNgao7/mng-license-server1/releases/download/fetih-0.1.2/Fetih-Windows-x64.zip",
+      "sha256": "79571206318ed438701bbface0b3a83b537b2c291bdcf7c64afef80e37577c81",
+      "bytes": 175023118,
       "requirements": "Windows 10/11 64 bit. Oyun motoru pakete dahildir; Steam veya başka bir oyun kurulumu gerekmez. Canlı yayın etkileşimleri için internet bağlantısı gerekir.",
       "resources": [
         {

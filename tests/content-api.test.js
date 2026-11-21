@@ -151,7 +151,8 @@ for (const [filename, revision, arenaVersion] of [
     ['content-bootstrap-7.0.24.json', 2026111301, '0.1.31'],
     ['content-bootstrap-7.0.25.json', 2026111501, '0.1.31'],
     ['content-bootstrap-7.0.26.json', 2026111601, '0.1.31'],
-    ['content-bootstrap-fetih-0.1.1.json', 2026112002, '0.1.31']
+    ['content-bootstrap-fetih-0.1.1.json', 2026112002, '0.1.31'],
+    ['content-bootstrap-pre-fetih-0.1.2.json', 2026112003, '0.1.32']
 ]) test(`actual rev${revision} catalog receives the current games once and retains its full backup`, async t => {
     const previous = JSON.parse(fs.readFileSync(path.join(root, filename), 'utf8'));
     const current = JSON.parse(fs.readFileSync(path.join(root, 'content-defaults.json'), 'utf8'));
@@ -244,7 +245,9 @@ test("public defaults include Uslu Yaratık, Forza and Teke Tek Profil and exclu
     assert.equal(byId['profile-contest'].sha256, 'bfea65a15399612a8cfea4a74bc6e0718b757e220544451aa4ab583d02dca7ab');
     assert.equal(byId['crowd-control'], undefined);
     assert.equal(response.data.media.length, 285);
-    assert.equal(response.data.revision, 2026112003);
+    assert.equal(response.data.revision, 2026112101);
+    assert.equal(byId.fetih.version, '0.1.2');
+    assert.match(byId.fetih.url, /\/fetih-0\.1\.2\/Fetih-Windows-x64\.zip$/);
     assert.equal(byId.caahr.version, '0.6.12');
     assert.equal(byId.caahr.bytes, 63233577);
     assert.equal(byId['frog-river'].version,'7.0.6');
