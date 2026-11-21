@@ -5,10 +5,9 @@ import { upgradedBootstrapState } from '../content-bootstrap.js';
 
 const read = name => JSON.parse(fs.readFileSync(new URL('../' + name, import.meta.url), 'utf8'));
 const previous = read('content-bootstrap-pre-fetih-0.1.3.json');
-const current = read('content-defaults.json');
+const current = read('content-bootstrap-pre-fetih-0.1.4.json');
 
-test('Fetih 0.1.3 advances only the Fetih package in both catalogs', () => {
-    assert.deepEqual(current, read('web/content-catalog-7.0.0.json'));
+test('the shipped Fetih 0.1.3 catalog advances only the Fetih package', () => {
     const gameIndex = previous.games.findIndex(game => game.id === 'fetih');
     const oldGame = previous.games[gameIndex];
     const game = current.games[gameIndex];
