@@ -5,10 +5,9 @@ import { upgradedBootstrapState } from '../content-bootstrap.js';
 
 const read = name => JSON.parse(fs.readFileSync(new URL('../' + name, import.meta.url), 'utf8'));
 const previous = read('content-bootstrap-pre-fetih-0.1.4.json');
-const current = read('content-defaults.json');
+const current = read('content-bootstrap-pre-hapisten-kac-0.2.1.json');
 
 test('Fetih 0.1.4 replaces only the Fetih package in the live and web catalogs', () => {
-    assert.deepEqual(current, read('web/content-catalog-7.0.0.json'));
     const expected = structuredClone(previous);
     const oldGame = expected.games.find(game => game.id === 'fetih');
     const game = current.games.find(game => game.id === 'fetih');

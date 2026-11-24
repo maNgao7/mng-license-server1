@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
-  "revision": 2026112103,
-  "publishedAt": "2026-11-21T16:18:14.500Z",
+  "revision": 2026112401,
+  "publishedAt": "2026-11-24T17:12:26.047Z",
   "games": [
     {
       "id": "fetih",
@@ -23,10 +23,10 @@
       "id": "hapisten-kac",
       "title": "Hapisten Kaç",
       "description": "Hapisten çıkışa ilerle. Canlı yayın hediyeleri kaçış mücadelesine destek ve engeller ekler.",
-      "version": "0.2.0",
-      "url": "https://github.com/maNgao7/mng-license-server1/releases/download/v7.0.25/hapisten-kac.zip",
-      "sha256": "053b4e16eba615f9b49aeec3c0f1b83687585d8e905a84ab4b314c7b75e92e08",
-      "bytes": 123633159,
+      "version": "0.2.1",
+      "url": "https://github.com/maNgao7/mng-license-server1/releases/download/hapisten-kac-0.2.1/hapisten-kac.zip",
+      "sha256": "876caec9ad6732f29cc36ed71bdd972e173595ecdb88811538fc3dd7ac2afe9b",
+      "bytes": 123799413,
       "requirements": "Önce Steam'den ücretsiz Punch Your Way Out Demo (App ID: 5466880) kurulmalıdır. Ardından TikMnG üzerinden mod paketini yükle. Windows 10/11 64 bit ve canlı yayın etkileşimleri için internet bağlantısı gerekir.",
       "resources": [
         {

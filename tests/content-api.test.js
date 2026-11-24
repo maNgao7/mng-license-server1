@@ -154,7 +154,8 @@ for (const [filename, revision, arenaVersion] of [
     ['content-bootstrap-fetih-0.1.1.json', 2026112002, '0.1.31'],
     ['content-bootstrap-pre-fetih-0.1.2.json', 2026112003, '0.1.32'],
     ['content-bootstrap-pre-fetih-0.1.3.json', 2026112101, '0.1.32'],
-    ['content-bootstrap-pre-fetih-0.1.4.json', 2026112102, '0.1.32']
+    ['content-bootstrap-pre-fetih-0.1.4.json', 2026112102, '0.1.32'],
+    ['content-bootstrap-pre-hapisten-kac-0.2.1.json', 2026112103, '0.1.32']
 ]) test(`actual rev${revision} catalog receives the current games once and retains its full backup`, async t => {
     const previous = JSON.parse(fs.readFileSync(path.join(root, filename), 'utf8'));
     const current = JSON.parse(fs.readFileSync(path.join(root, 'content-defaults.json'), 'utf8'));
@@ -236,10 +237,11 @@ test("public defaults include Uslu Yaratık, Forza and Teke Tek Profil and exclu
     assert.match(byId['rezervuar-01'].url, /\/uslu-yaratik-0\.2\.10\/uslu-yaratik\.zip$/);
     assert.equal(byId['turkish-forza-05'].version, '0.5.6');
     assert.equal(byId['profile-duel'].version, '0.5.7');
-    assert.equal(byId['hapisten-kac'].version, '0.2.0');
+    assert.equal(byId['hapisten-kac'].version, '0.2.1');
     assert.match(byId['hapisten-kac'].requirements, /Punch Your Way Out Demo.*5466880/);
     for (const id of withdrawn) assert.equal(byId[id], undefined);
-    for (const id of ['profile-duel', 'hapisten-kac']) assert.equal(byId[id].url, `https://github.com/maNgao7/mng-license-server1/releases/download/v7.0.25/${id}.zip`);
+    assert.match(byId['profile-duel'].url, /\/v7\.0\.25\/profile-duel\.zip$/);
+    assert.equal(byId['hapisten-kac'].url, 'https://github.com/maNgao7/mng-license-server1/releases/download/hapisten-kac-0.2.1/hapisten-kac.zip');
     assert.equal(byId.orbit.version, '7.0.4');
     assert.match(byId.orbit.files.find(file => file.path === 'launcher-live-client.cjs').sha256, /^[a-f0-9]{64}$/);
     assert.equal(byId['profile-contest'].version, '0.3.0');
@@ -247,7 +249,7 @@ test("public defaults include Uslu Yaratık, Forza and Teke Tek Profil and exclu
     assert.equal(byId['profile-contest'].sha256, 'bfea65a15399612a8cfea4a74bc6e0718b757e220544451aa4ab583d02dca7ab');
     assert.equal(byId['crowd-control'], undefined);
     assert.equal(response.data.media.length, 285);
-    assert.equal(response.data.revision, 2026112103);
+    assert.equal(response.data.revision, 2026112401);
     assert.equal(byId.fetih.version, '0.1.4');
     assert.match(byId.fetih.url, /\/fetih-0\.1\.4\/Fetih-Windows-x64\.zip$/);
     assert.equal(byId.caahr.version, '0.6.12');
