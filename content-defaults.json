@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
-  "revision": 2026112501,
-  "publishedAt": "2026-11-25T10:14:25.370Z",
+  "revision": 2026112502,
+  "publishedAt": "2026-11-25T10:49:21.323Z",
   "games": [
     {
       "id": "fetih",
@@ -54,10 +54,10 @@
       "id": "profile-duel",
       "title": "Teke Tek Profil",
       "description": "Gül soldaki, TikTok hediyesi sağdaki profile puan kazandırır. Süre sonunda kazanan kalır, yeni rakip gelir.",
-      "version": "0.5.7",
-      "url": "https://github.com/maNgao7/mng-license-server1/releases/download/v7.0.25/profile-duel.zip",
-      "sha256": "1f32788cd6f6905659d35cf3b9c850d3b9462461e90a0ed43b6b66c46b609e0a",
-      "bytes": 123171,
+      "version": "0.5.8",
+      "url": "https://github.com/maNgao7/mng-license-server1/releases/download/profile-duel-0.5.8/profile-duel.zip",
+      "sha256": "5a6ac741231f8c28af1189ed89f786ed8a48a9eea3015e47537a43b085451d28",
+      "bytes": 122397,
       "requirements": "Windows 10/11. Oyun, ortak TikTok yayın bağlantısını kullanır. HTTPS widget adresi oyun ve yayın bağlantısı açıkken çalışır.",
       "resources": []
     },

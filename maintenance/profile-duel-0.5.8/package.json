@@ -1,0 +1,16 @@
+{
+  "name": "tikmng-profile-duel-preview",
+  "version": "0.5.8",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node src/server.mjs",
+    "test": "node --test tests/*.test.mjs"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "devDependencies": {
+    "fast-check": "4.10.2"
+  }
+}

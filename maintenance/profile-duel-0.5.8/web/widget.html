@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>Teke Tek Profil · Yayın Widget'ı</title>
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body class="widget-page">
+  <main class="duel-stage" aria-label="Teke Tek Profil karşılaşması">
+    <section class="duelist duelist-left" aria-label="Sol oyuncu">
+      <div class="gift-chip" id="left-gift"><img alt="" hidden><span>GÜL · 1 COIN</span></div>
+      <div class="portrait-wrap"><img class="portrait" id="left-avatar" alt="Sol oyuncunun profil fotoğrafı" hidden><span class="portrait-fallback" id="left-fallback">+</span></div>
+      <div class="player-caption"><strong id="left-name">Bir oyuncu seç</strong><span class="user-handle" id="left-handle"></span></div>
+      <div class="score" id="left-score">0</div>
+      <div class="score-label">GÜL PUANI</div>
+      <div class="score-track"><span id="left-track"></span></div>
+    </section>
+
+    <section class="versus-column" aria-label="Karşılaşma saati">
+      <div class="timer-label">KALAN SÜRE</div>
+      <time id="timer">02:00</time>
+      <div class="phase-label" id="phase" role="status">HAZIR</div>
+    </section>
+
+    <section class="duelist duelist-right" aria-label="Sağ oyuncu">
+      <div class="gift-chip" id="right-gift"><img alt="" hidden><span>TIKTOK · 1 COIN</span></div>
+      <div class="portrait-wrap"><img class="portrait" id="right-avatar" alt="Sağ oyuncunun profil fotoğrafı" hidden><span class="portrait-fallback" id="right-fallback">+</span></div>
+      <div class="player-caption"><strong id="right-name">Bir oyuncu seç</strong><span class="user-handle" id="right-handle"></span></div>
+      <div class="score" id="right-score">0</div>
+      <div class="score-label">TIKTOK PUANI</div>
+      <div class="score-track"><span id="right-track"></span></div>
+    </section>
+    <div class="gift-flash" id="gift-flash" aria-live="polite"></div>
+  </main>
+  <script type="module" src="./widget.mjs"></script>
+</body>
+</html>
+

@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#101419">
+  <title>Teke Tek Profil · Oyun kontrolü</title>
+  <link rel="stylesheet" href="./styles.css">
+  <script type="module" src="./launcher-control.mjs"></script>
+</head>
+<body class="control-page">
+  <main class="control-shell">
+    <header class="control-header">
+      <div class="brand-mark" aria-hidden="true">VS</div>
+      <div><p class="eyebrow">TIKMNG · YAYIN OYUNU</p><h1>Teke Tek Profil</h1></div>
+      <span class="live-status" id="connection-status">Yayın kontrol ediliyor</span>
+    </header>
+    <section class="notice" role="status"><span class="notice-dot"></span><p><strong id="live-state">Ortak yayın bağlantısı kullanılıyor</strong><br>Aşağıdaki fotoğraflara basarak oyuncu seçin. Çarpı profili kaldırır. Kazanan kendi tarafında kalır.</p></section>
+    <section class="live-connect" aria-label="Yayın hesabını seç"><label>Yayın hesabı <span><input id="live-username" autocomplete="off" spellcheck="false" placeholder="@kullaniciadi"><button class="button button-primary" id="connect-live" type="button">Yayına bağlan</button></span></label><small>Oyun açıldığında profil otomatik seçilmez. Bağlandıktan sonra oyuncuları fotoğraflı listeden sağa ve sola seçin.</small></section>
+    <div class="live-receipts" role="status"><span id="live-receipts">Hediye akışı kontrol ediliyor…</span><span id="live-gift-reason" hidden></span></div>
+    <section class="setup-panel">
+      <div class="section-title"><span>01</span><h2>Karşılaşma</h2></div>
+      <input id="owner-name" type="hidden"><input id="opponent-name" type="hidden">
+      <div class="round-controls"><div class="duration-control"><label for="duration">Tur süresi</label><span><input id="duration" type="number" min="10" max="3600" step="1" value="120" required><select id="duration-unit" aria-label="Süre birimi"><option value="seconds">Saniye</option><option value="minutes">Dakika</option></select></span></div><button class="button button-primary" id="start-round" type="button">Yarışı başlat</button><button class="button button-quiet" id="pause-round" type="button" disabled>Duraklat</button><button class="button button-quiet" id="next-round" type="button" disabled>Sonraki rakip</button><button class="button button-quiet" id="reset-round" type="button">Skoru sıfırla</button></div>
+    </section>
+    <section class="preview-panel">
+      <div class="section-title"><span>02</span><h2>Yayın görünümü</h2><a class="widget-link" href="./widget" target="_blank" rel="noopener">Widget'ı aç ↗</a></div>
+      <div class="preview-frame"><iframe data-profile-editor title="Teke Tek Profil yayın widget ön izlemesi" src="./widget" loading="eager"></iframe></div>
+      <div class="widget-url-row"><span>OBS widget adresi</span><code id="widget-url" role="status">Widget bağlantısı kontrol ediliyor…</code><button id="copy-url" class="button button-quiet" type="button" disabled>Bağlantıyı kopyala</button></div>
+    </section>
+    <section class="gift-settings" aria-labelledby="gift-settings-title">
+      <h2 id="gift-settings-title">Hediyeleri seç</h2>
+      <p>Her taraf için bir hediye seçin. Hediye başına puan, tamamlanan serideki hediye sayısıyla çarpılır. Alanı boş bırakırsanız toplam coin değeri kullanılır.</p>
+      <div class="gift-settings-grid">
+        <div class="gift-settings-slot">
+          <button class="gift-choice gift-choice-left" data-gift-slot="left" type="button" aria-haspopup="dialog" disabled><span class="gift-choice-art" aria-hidden="true">🎁</span><span class="gift-choice-copy"><small>SOL TARAF</small><strong>Hediye seç</strong><span>Katalogdan değiştir ↗</span></span></button>
+          <label>Sol taraf · Hediye başına puan<input data-gift-points="left" type="number" min="1" max="9007199254740991" step="1" placeholder="Coin değeri" disabled></label>
+        </div>
+        <div class="gift-settings-slot">
+          <button class="gift-choice gift-choice-right" data-gift-slot="right" type="button" aria-haspopup="dialog" disabled><span class="gift-choice-art" aria-hidden="true">🎁</span><span class="gift-choice-copy"><small>SAĞ TARAF</small><strong>Hediye seç</strong><span>Katalogdan değiştir ↗</span></span></button>
+          <label>Sağ taraf · Hediye başına puan<input data-gift-points="right" type="number" min="1" max="9007199254740991" step="1" placeholder="Coin değeri" disabled></label>
+        </div>
+      </div>
+      <button class="button button-quiet" id="save-gifts" type="button" disabled>Hediye seçimlerini kaydet</button><span id="settings-status" role="status"></span>
+    </section>
+    <section class="test-panel" id="synthetic-panel" hidden>
+      <div class="section-title"><span>03</span><h2>Sentetik olay testi</h2><span class="test-tag">SADECE YÖNETİCİ ÖN İZLEMESİ</span></div>
+      <p>Bu düğmeler yerel ön izlemede sentetik hediye gönderir. Girilen sayı hem toplam coin hem tekrar adedi olarak kullanılır.</p>
+      <div class="test-actions"><label>Test coin / tekrar<input id="test-coins" type="number" min="1" max="1000000" value="100"></label><button class="gift-test rose-test" data-side="left" type="button">Gül · sol</button><button class="gift-test other-test" data-side="right" type="button">TikTok hediyesi · sağ</button></div>
+    </section>
+    <output id="test-result" aria-live="polite"></output>
+    <footer>Gösterilmeyen profil fotoğrafları uydurulmaz; mevcut güvenli profil önbelleği kullanılır.</footer>
+  </main>
+</body>
+</html>
+

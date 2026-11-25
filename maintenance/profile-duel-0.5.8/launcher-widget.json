@@ -1,0 +1,12 @@
+{
+  "id": "tikmng.profile-duel",
+  "name": "Teke Tek Profil",
+  "version": "0.5.8",
+  "type": "live-widget-game",
+  "entry": "./src/launcher-entry.mjs",
+  "previewOverlay": "./web/widget.html",
+  "hostRenderer": "./web/widget-view.mjs",
+  "preview": "./web/index.html",
+  "sessionOwner": "host-launcher",
+  "portraitSource": "host-profile-cache"
+}

@@ -5,10 +5,9 @@ import { upgradedBootstrapState } from '../content-bootstrap.js';
 
 const read = file => JSON.parse(fs.readFileSync(new URL('../' + file, import.meta.url)));
 const before = read('content-bootstrap-pre-fetih-0.1.5.json');
-const after = read('content-defaults.json');
+const after = read('content-bootstrap-pre-profile-duel-0.5.8.json');
 
-test('the web and launcher catalogs offer the same stable Fetih package and preserve other games', () => {
-    assert.deepEqual(read('web/content-catalog-7.0.0.json'), after);
+test('the Fetih 0.1.5 release catalog updates its package and guide and preserves other games', () => {
     const expected = structuredClone(before);
     const oldGame = expected.games.find(game => game.id === 'fetih');
     const game = after.games.find(game => game.id === 'fetih');

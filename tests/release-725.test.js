@@ -66,14 +66,15 @@ test('website JSON, embedded catalog, static cards, counts and supplied Hapisten
     assert.equal(catalog.games.length, 18);
     assert.ok(html.includes(`${catalog.games.length} oyun. Her yayına başka bir heyecan.`));
     for (const game of [...catalog.games, ...fallback.games]) assert.equal(withdrawn.has(game.id), false);
-    for (const id of ['hapisten-kac', 'profile-duel']) {
+    for (const [id, lastCatalog] of [
+        ['hapisten-kac', 'content-bootstrap-pre-hapisten-kac-0.2.1.json'],
+        ['profile-duel', 'content-bootstrap-pre-profile-duel-0.5.8.json']
+    ]) {
         const shipped = current.games.find(g => g.id === id);
         const latest = fallback.games.find(g => g.id === id);
-        if (id === 'hapisten-kac') {
-            const { version, url, sha256, bytes } = latest;
-            assert.deepEqual(latest, { ...shipped, version, url, sha256, bytes });
-            assert.deepEqual(shipped, json('content-bootstrap-pre-hapisten-kac-0.2.1.json').games.find(g => g.id === id));
-        } else assert.deepEqual(latest, shipped);
+        const { version, url, sha256, bytes } = latest;
+        assert.deepEqual(latest, { ...shipped, version, url, sha256, bytes });
+        assert.deepEqual(shipped, json(lastCatalog).games.find(g => g.id === id));
     }
     const game = catalog.games.find(game => game.id === 'hapisten-kac');
     assert.equal(game.cover, 'hapisten-kac-v1');

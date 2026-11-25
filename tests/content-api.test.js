@@ -156,7 +156,8 @@ for (const [filename, revision, arenaVersion] of [
     ['content-bootstrap-pre-fetih-0.1.3.json', 2026112101, '0.1.32'],
     ['content-bootstrap-pre-fetih-0.1.4.json', 2026112102, '0.1.32'],
     ['content-bootstrap-pre-hapisten-kac-0.2.1.json', 2026112103, '0.1.32'],
-    ['content-bootstrap-pre-fetih-0.1.5.json', 2026112401, '0.1.32']
+    ['content-bootstrap-pre-fetih-0.1.5.json', 2026112401, '0.1.32'],
+    ['content-bootstrap-pre-profile-duel-0.5.8.json', 2026112501, '0.1.32']
 ]) test(`actual rev${revision} catalog receives the current games once and retains its full backup`, async t => {
     const previous = JSON.parse(fs.readFileSync(path.join(root, filename), 'utf8'));
     const current = JSON.parse(fs.readFileSync(path.join(root, 'content-defaults.json'), 'utf8'));
@@ -188,7 +189,7 @@ for (const [filename, revision, arenaVersion] of [
     assert.equal(fs.readFileSync(backup, 'utf8'), retained);
 });
 
-test('Arena hotfix startup and restart retain customized rev11, rev12 and rev13 catalogs and pending administrator drafts', async t => {
+test('server startup and restart retain customized published catalogs and pending administrator drafts', async t => {
     const baselines = ['content-bootstrap-7.0.15.json', 'content-bootstrap-arena-0.1.21.json', 'content-bootstrap-arena-0.1.22.json', 'content-bootstrap-arena-0.1.23.json', 'content-bootstrap-7.0.24.json', 'content-bootstrap-7.0.26.json']
         .map(filename => JSON.parse(fs.readFileSync(path.join(root, filename), 'utf8')));
     const changes = [
@@ -200,7 +201,13 @@ test('Arena hotfix startup and restart retain customized rev11, rev12 and rev13 
         ['unpublished timestamp', catalog => catalog.publishedAt = null],
         ['removed Arena', catalog => catalog.games.shift()]
     ];
-    for (const previous of baselines) for (const field of ['draft', 'published']) for (const [name, change] of changes) {
+    const cases = baselines.map(previous => ({ previous, changes }));
+    cases.push({
+        previous: JSON.parse(fs.readFileSync(path.join(root, 'content-bootstrap-pre-profile-duel-0.5.8.json'), 'utf8')),
+        changes: [['Profile Duel', catalog => catalog.games.find(game => game.id === 'profile-duel').title = 'Custom Profile Duel']]
+    });
+    for (const scenario of cases) for (const field of ['draft', 'published']) for (const [name, change] of scenario.changes) {
+        const previous = scenario.previous;
         await t.test(`rev${previous.revision} ${field}: ${name}`, async st => {
             const initialState = { draft: structuredClone(previous), published: structuredClone(previous) };
             change(initialState[field]);
@@ -237,11 +244,11 @@ test("public defaults include Uslu Yaratık, Forza and Teke Tek Profil and exclu
     assert.equal(byId['rezervuar-01'].sha256, '9af0e88b203d39b846399665a61fbce1551b4438b0c45177048b28647c299c8b');
     assert.match(byId['rezervuar-01'].url, /\/uslu-yaratik-0\.2\.10\/uslu-yaratik\.zip$/);
     assert.equal(byId['turkish-forza-05'].version, '0.5.6');
-    assert.equal(byId['profile-duel'].version, '0.5.7');
+    assert.equal(byId['profile-duel'].version, '0.5.8');
     assert.equal(byId['hapisten-kac'].version, '0.2.1');
     assert.match(byId['hapisten-kac'].requirements, /Punch Your Way Out Demo.*5466880/);
     for (const id of withdrawn) assert.equal(byId[id], undefined);
-    assert.match(byId['profile-duel'].url, /\/v7\.0\.25\/profile-duel\.zip$/);
+    assert.match(byId['profile-duel'].url, /\/profile-duel-0\.5\.8\/profile-duel\.zip$/);
     assert.equal(byId['hapisten-kac'].url, 'https://github.com/maNgao7/mng-license-server1/releases/download/hapisten-kac-0.2.1/hapisten-kac.zip');
     assert.equal(byId.orbit.version, '7.0.4');
     assert.match(byId.orbit.files.find(file => file.path === 'launcher-live-client.cjs').sha256, /^[a-f0-9]{64}$/);
@@ -250,7 +257,7 @@ test("public defaults include Uslu Yaratık, Forza and Teke Tek Profil and exclu
     assert.equal(byId['profile-contest'].sha256, 'bfea65a15399612a8cfea4a74bc6e0718b757e220544451aa4ab583d02dca7ab');
     assert.equal(byId['crowd-control'], undefined);
     assert.equal(response.data.media.length, 285);
-    assert.equal(response.data.revision, 2026112501);
+    assert.equal(response.data.revision, 2026112502);
     assert.equal(byId.fetih.version, '0.1.5');
     assert.match(byId.fetih.url, /\/fetih-0\.1\.5\/Fetih-Windows-x64\.zip$/);
     assert.equal(byId.caahr.version, '0.6.12');

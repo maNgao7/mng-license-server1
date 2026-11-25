@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#101419">
+  <title>Teke Tek Profil · Ön İzleme</title>
+  <link rel="stylesheet" href="./styles.css">
+  <script type="module" src="./control.mjs"></script>
+</head>
+<body class="control-page">
+  <main class="control-shell">
+    <header class="control-header">
+      <div class="brand-mark" aria-hidden="true">VS</div>
+      <div>
+        <p class="eyebrow">TIKMNG · YENİ OYUN ÖN İZLEMESİ</p>
+        <h1>Teke Tek Profil</h1>
+      </div>
+      <a class="widget-link" href="./widget" target="_blank" rel="noopener">Widget'ı aç ↗</a>
+    </header>
+
+    <section class="notice" role="status">
+      <span class="notice-dot"></span>
+      <p><strong>Yerel test ön izlemesi</strong><br>Yayın bağlantısını launcher yönetir. Bu sayfa ikinci TikTok bağlantısı açmaz; aşağıdaki hediye düğmeleri yalnızca sentetik test olayı üretir.</p>
+    </section>
+
+    <form id="setup-form" class="setup-panel">
+      <div class="section-title"><span>01</span><h2>Karşılaşma</h2></div>
+      <div class="players-setup">
+        <fieldset class="player-input left-input">
+          <legend>Sol · Yayıncı</legend>
+          <label>Kullanıcı adı<input name="owner" value="yayinci" maxlength="64" autocomplete="off" required></label>
+          <label>Görünen ad<input name="ownerName" value="Yayıncı" maxlength="80" autocomplete="off"></label>
+          <label>Profil fotoğrafı URL'si<input name="ownerAvatar" type="url" placeholder="https://…" autocomplete="off"></label>
+        </fieldset>
+        <div class="setup-vs" aria-hidden="true">VS</div>
+        <fieldset class="player-input right-input">
+          <legend>Sağ · Rakip</legend>
+          <label>Kullanıcı adı<input name="opponent" value="rakip" maxlength="64" autocomplete="off" required></label>
+          <label>Görünen ad<input name="opponentName" value="Rakip" maxlength="80" autocomplete="off"></label>
+          <label>Profil fotoğrafı URL'si<input name="opponentAvatar" type="url" placeholder="https://…" autocomplete="off"></label>
+        </fieldset>
+      </div>
+      <div class="round-controls">
+        <div class="duration-control"><label for="duration">Tur süresi</label><span><input id="duration" name="duration" type="number" min="10" max="3600" step="1" value="120" required><select id="duration-unit" name="durationUnit" aria-label="Süre birimi"><option value="seconds">Saniye</option><option value="minutes">Dakika</option></select></span></div>
+        <button class="button button-primary" type="submit">Sıfırdan tur başlat</button>
+        <button class="button button-quiet" id="pause-button" type="button" disabled>Duraklat</button>
+        <button class="button button-quiet" id="reset-button" type="button">Skoru sıfırla</button>
+      </div>
+    </form>
+
+    <section class="preview-panel">
+      <div class="section-title"><span>02</span><h2>Yayın görünümü</h2><span class="live-status" id="connection-status">Ön izleme bekliyor</span></div>
+      <div class="preview-frame">
+        <iframe title="Teke Tek Profil widget ön izlemesi" src="./widget" loading="eager"></iframe>
+      </div>
+      <div class="widget-url-row"><span>Widget adresi</span><code id="widget-url"></code><button id="copy-url" class="button button-quiet" type="button">Bağlantıyı kopyala</button></div>
+    </section>
+
+    <section class="test-panel">
+      <div class="section-title"><span>03</span><h2>Sentetik olay testi</h2><span class="test-tag">SADECE ÖN İZLEME</span></div>
+      <p>Her düğme tek bir tamamlanmış hediye olayını canlandırır. Seri tekrarı puanı çoğaltmaz.</p>
+      <div class="test-actions">
+        <button class="gift-test rose-test" type="button" data-gift="rose">Gül +1 · sol</button>
+        <button class="gift-test other-test" type="button" data-gift="other">TikTok hediyesi +1 · sağ</button>
+      </div>
+      <output id="test-result" aria-live="polite"></output>
+    </section>
+    <footer>Profil fotoğrafı yalnızca verilmiş URL'lerden yüklenir. Launcher entegrasyonunda URL, paylaşılan profil önbelleğinin yerel adresidir.</footer>
+  </main>
+</body>
+</html>
+
