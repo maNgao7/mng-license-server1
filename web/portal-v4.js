@@ -63,7 +63,13 @@ document.addEventListener('DOMContentLoaded', () => {
       demo.target='_blank'; demo.rel='noopener noreferrer'; demo.textContent="Steam'den ücretsiz demoyu indir";
       content.append(demo);
     }
-    if (game.giftGuide) {
+    if (game.wishesGuide) {
+      const guide = document.createElement('a');
+      guide.className = 'portal-command';
+      guide.href = game.wishesGuide;
+      guide.textContent = 'İzleyici dilekleri';
+      content.append(guide);
+    } else if (game.giftGuide) {
       const guide = document.createElement('a'); guide.className='portal-command'; guide.href=game.giftGuide;
       guide.download=game.id === 'yaratik-arena' ? 'Yaratik-Arena-Hediye-Gorseli.png' : game.giftGuide.split('/').pop();
       guide.textContent='Hediye görselini indir';
@@ -79,7 +85,7 @@ document.addEventListener('DOMContentLoaded', () => {
       : game.id === 'minecraft-snake-arena'
       ? 'Tab ile 300 kütleyle yayıncı yılan olarak katıl, WASD ile oyna. O ile savaşın 10 saniyelik geri sayımını başlat; B ile ayarları aç.'
       : 'Oyna ile aç; oyun içindeki hediye eşleşmelerini kontrol edip başla.';
-    for (const text of ['Launcher üzerinden oyunu seçip yüklemeyi tamamla.', 'Hazır hediye görseli varsa oyun sayfasından indir; yoksa Hediye Tasarımı bölümünde hazırla.', 'Canlı yayını açıp launcher içinden TikTok yayın hesabını bağla.', controls]) {
+    for (const text of ['Launcher üzerinden oyunu seçip yüklemeyi tamamla.', game.wishesGuide ? 'İzleyici dilekleri örneğini aç ve kendi hediye eşleşmelerini seç.' : 'Hazır hediye görseli varsa oyun sayfasından indir; yoksa Hediye Tasarımı bölümünde hazırla.', 'Canlı yayını açıp launcher içinden TikTok yayın hesabını bağla.', controls]) {
       const step = document.createElement('li'); step.textContent = text; notes.append(step);
     }
     content.append(notes);

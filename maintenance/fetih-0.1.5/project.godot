@@ -1,0 +1,17 @@
+config_version=5
+
+[application]
+config/name="TikMnG Fetih"
+config/version="0.1.5"
+run/main_scene="res://Main.tscn"
+config/features=PackedStringArray("4.7", "GL Compatibility")
+boot_splash/show_image=false
+boot_splash/bg_color=Color(0.027, 0.082, 0.106, 1)
+
+[display]
+window/size/viewport_width=1280
+window/size/viewport_height=800
+
+[rendering]
+renderer/rendering_method="gl_compatibility"
+

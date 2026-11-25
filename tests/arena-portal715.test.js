@@ -34,7 +34,7 @@ test('Arena public catalog keeps existing layout, free demo and original downloa
     await card.locator('img').evaluate(image=>image.decode());
     assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),true);
     await page.screenshot({path:path.join(output,`catalog-${size.width}.png`)});
-    await card.getByRole('button').click();
+    await card.getByRole('link', {name: 'Yaratık Arena oyununu incele'}).click();
     const dialog=page.locator('#portalDetail');await dialog.waitFor({state:'visible'});
     assert.equal(await dialog.getByRole('link',{name:"Steam'den ücretsiz demoyu indir"}).getAttribute('href'),'https://store.steampowered.com/app/5364590/');
     assert.equal(await dialog.getByRole('link',{name:'Hediye görselini indir'}).getAttribute('href'),'/gift-guides/yaratik-arena.png');

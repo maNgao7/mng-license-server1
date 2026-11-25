@@ -1,21 +1,21 @@
 {
   "schemaVersion": 1,
-  "revision": 2026112401,
-  "publishedAt": "2026-11-24T17:12:26.047Z",
+  "revision": 2026112501,
+  "publishedAt": "2026-11-25T10:14:25.370Z",
   "games": [
     {
       "id": "fetih",
       "title": "Fetih",
       "description": "Türkiye ve Dünya haritalarında izleyicilerinin ordularını yerleştir; asker, tank, helikopter ve jetlerle gerçek zamanlı mücadeleyi yönet. Yayın etkileşimleri orduları güçlendirir, kazanan Fetih sahnesinde ilan edilir.",
-      "version": "0.1.4",
-      "url": "https://github.com/maNgao7/mng-license-server1/releases/download/fetih-0.1.4/Fetih-Windows-x64.zip",
-      "sha256": "dcfbe10e91d5274c139242260e2247acee2f33e13c37962b792eb658bf5dee34",
-      "bytes": 179378028,
+      "version": "0.1.5",
+      "url": "https://github.com/maNgao7/mng-license-server1/releases/download/fetih-0.1.5/Fetih-Windows-x64.zip",
+      "sha256": "fafea22857e06fef45a17839af28e96d3b47d0b666869beac9dcb9a53b45808c",
+      "bytes": 178128539,
       "requirements": "Windows 10/11 64 bit. Oyun motoru pakete dahildir; Steam veya başka bir oyun kurulumu gerekmez. Canlı yayın etkileşimleri için internet bağlantısı gerekir.",
       "resources": [
         {
-          "title": "Fetih hazır hediye görseli",
-          "url": "https://github.com/maNgao7/mng-license-server1/releases/download/v7.0.28/TikMnG-Fetih-Hediyeler.png"
+          "title": "İzleyici dilekleri",
+          "url": "https://tikmng.com/rehber/fetih-izleyici-dilekleri.html"
         }
       ]
     },

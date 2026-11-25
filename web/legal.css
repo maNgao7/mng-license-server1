@@ -5,3 +5,5 @@
 .game-links { display:flex; flex-wrap:wrap; gap:12px; margin-top:24px; }
 .game-download { border-color:var(--cyan); color:var(--bg); background:var(--cyan); font-weight:700; }
 .game-page a:focus-visible { outline:2px solid var(--cyan); outline-offset:3px; }
+
+.fetih-wishes-example { display:block; max-width:100%; height:auto; }

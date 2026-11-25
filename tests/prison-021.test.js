@@ -5,8 +5,7 @@ import fs from 'node:fs';
 const read = file => JSON.parse(fs.readFileSync(new URL('../' + file, import.meta.url)));
 test('Hapisten Kaç 0.2.1 updates only the verified game and leaves launcher and other games intact', () => {
     const previous = read('content-bootstrap-pre-hapisten-kac-0.2.1.json');
-    const current = read('content-defaults.json');
-    assert.deepEqual(read('web/content-catalog-7.0.0.json'), current);
+    const current = read('content-bootstrap-pre-fetih-0.1.5.json');
     const oldGame = previous.games.find(game => game.id === 'hapisten-kac');
     const game = current.games.find(game => game.id === oldGame.id);
     assert.equal(oldGame.version, '0.2.0');

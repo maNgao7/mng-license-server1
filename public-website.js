@@ -37,7 +37,9 @@ function gamePage(game, url) {
     const cover = "/game-covers/" + escapeHtml(game.cover);
     const mobileWidth = game.id === "hapisten-kac" ? 480 : 500;
     const steam = game.steamUrl ? '<a class="back" href="' + escapeHtml(game.steamUrl) + '">Steam’den ücretsiz demoyu indir</a>' : "";
-    const guide = game.giftGuide ? '<a class="back" href="' + escapeHtml(game.giftGuide) + '" download>Hediye görselini indir</a>' : "";
+    const guide = game.wishesGuide
+        ? '<a class="back" href="' + escapeHtml(game.wishesGuide) + '">İzleyici dilekleri</a>'
+        : game.giftGuide ? '<a class="back" href="' + escapeHtml(game.giftGuide) + '" download>Hediye görselini indir</a>' : "";
     return `<!doctype html>
 <html lang="tr">
 <head>

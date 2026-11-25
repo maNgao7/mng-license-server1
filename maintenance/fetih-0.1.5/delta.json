@@ -1,0 +1,144 @@
+{
+  "baseVersion": "0.1.4",
+  "version": "0.1.5",
+  "files": [
+    {
+      "file": "README.txt",
+      "target": "payload/README.txt",
+      "sha256": "de35c4cb631b09b9d299b1509a6ed11f80eda2dbd13b395ad03bddde0d38922b"
+    },
+    {
+      "file": "assets/audio/gift-request.wav",
+      "target": "project/assets/audio/gift-request.wav",
+      "sha256": "9c34c19d0f8f220b1ee3882f25b959e9daae9da27e1fae921318de219e87dfb2"
+    },
+    {
+      "file": "assets/audio/gift-request.wav.import",
+      "target": "project/assets/audio/gift-request.wav.import",
+      "sha256": "fbaf2b121cbb33ac9685842efc8c55592256876133a89586e94b66e7d81c911d"
+    },
+    {
+      "file": "bridge/assets/guides/viewer-wishes.png",
+      "target": "payload/bridge/assets/guides/viewer-wishes.png",
+      "sha256": "fb9af11c5c6a6f84efc7f46a42cc2905e98bae72a992787eaeaff77376bc4e3e"
+    },
+    {
+      "file": "mod/ArmyCard.gd",
+      "target": "project/mod/ArmyCard.gd",
+      "sha256": "f6473b736cec4aaba1049c2585c919ce8e4dfc3ec7e4bd623ef2e1571b835d71"
+    },
+    {
+      "file": "mod/BroadcastGuide.gd",
+      "target": "project/mod/BroadcastGuide.gd",
+      "sha256": "5985db71d73541363d9e78e715e6b9dd69532477007c7800d09156076b609168"
+    },
+    {
+      "file": "mod/GiftActions.gd",
+      "target": "project/mod/GiftActions.gd",
+      "sha256": "c13ca3f8feac6e090ca16eec1271e52c154d2259eb4d28c1079f78fd86e2bcbe"
+    },
+    {
+      "file": "mod/GiftPlaytest.gd",
+      "target": "project/mod/GiftPlaytest.gd",
+      "sha256": "426bbac541f3411653cb907d6d14230e97fae89f5a8dc2171ef15cb4aa6e0668"
+    },
+    {
+      "file": "mod/GiftRequestNotice.gd",
+      "target": "project/mod/GiftRequestNotice.gd",
+      "sha256": "c72ae556622f0166b2a96a196f034104819b1efa240f7667f519e20f8311e963"
+    },
+    {
+      "file": "mod/GiftRequestNotice.gd.uid",
+      "target": "project/mod/GiftRequestNotice.gd.uid",
+      "sha256": "431baff67ad96ca9c75e2f6eb49f63946f198d4855a9c048aaeeb890e8e6e98e"
+    },
+    {
+      "file": "mod/LiveWar.gd",
+      "target": "project/mod/LiveWar.gd",
+      "sha256": "fb76d85e86620ecfa685c87050ef63f4e126a1386aabfbfe76de4f468743aa62"
+    },
+    {
+      "file": "mod/UserDownloads.gd",
+      "target": "project/mod/UserDownloads.gd",
+      "sha256": "9f0650477bbcd5145048cfcbd638565970524293b6e0237f6ef3e9f70a35e7a7"
+    },
+    {
+      "file": "mod/ViewerWishesGuide.gd",
+      "target": "project/mod/ViewerWishesGuide.gd",
+      "sha256": "0d94f800310818941f766c09ce39054ae9d999c11aefdd7d782c002f8c95e23b"
+    },
+    {
+      "file": "mod/ViewerWishesGuide.gd.uid",
+      "target": "project/mod/ViewerWishesGuide.gd.uid",
+      "sha256": "c02a10b62a392387ac1afb4491262889254e5f2f5024a4f8d88d10a243e5fc41"
+    },
+    {
+      "file": "mod/WarRules.gd",
+      "target": "project/mod/WarRules.gd",
+      "sha256": "ee6b7ad74eae2a7f0979644ea09eae7a3448c3b8c1125a9cfb55231c3ca021c4"
+    },
+    {
+      "file": "mod/WindowPlacement.gd",
+      "target": "project/mod/WindowPlacement.gd",
+      "sha256": "f3b0d0dfa19ee2f6a8615c714371ae2658cc20d19ea787b0ec698f2e1f5bae62"
+    },
+    {
+      "file": "package.py",
+      "target": "package.py",
+      "sha256": "b695ada74d7d1e1b038c01e08875ac7ce0cdf39d1deaafa5e98a348c2bba8bcc"
+    },
+    {
+      "file": "project.godot",
+      "target": "project/project.godot",
+      "sha256": "9eb4630a30d8d06394cf547657a090b9058e2a6f1dd311a6023b9b42bde3356b"
+    },
+    {
+      "file": "tests/check-air-show.gd",
+      "target": "project/qa/check-air-show.gd",
+      "sha256": "13874ff524d235d8d519374cc2a8b98a621aa8bea7762c77ff7d6b4f1bb7ea6a"
+    },
+    {
+      "file": "tests/check-chat-join.gd",
+      "target": "project/qa/check-chat-join.gd",
+      "sha256": "edf4734ba5a81f4fbdc74256086aa65c0bca66f504aa8bc9b1813ee326aabddf"
+    },
+    {
+      "file": "tests/check-gift-playtest.gd",
+      "target": "project/qa/check-gift-playtest.gd",
+      "sha256": "f44de18ca755bf6a37c8719dfe79eec96dcd579a8970f75e5c9b905cc34e277f"
+    },
+    {
+      "file": "tests/check-held-gifts.gd",
+      "target": "project/qa/check-held-gifts.gd",
+      "sha256": "ae9fe3622ebb71c40c0f2e9158bb9f7650a6123a310aeaac04c5a821809fa92e"
+    },
+    {
+      "file": "tests/check-missile-gift.gd",
+      "target": "project/qa/check-missile-gift.gd",
+      "sha256": "637ddf6bda717d0a1d0c02b1c1d83628074596cb108193613303a0cd0362b9c7"
+    },
+    {
+      "file": "tests/check-packaged-startup.gd",
+      "target": "project/qa/check-packaged-startup.gd",
+      "sha256": "880d625775c9d8e4ac0d75aeb52d7cbe516011640bae8ad58bca7470d96b2ce7"
+    },
+    {
+      "file": "tests/check-preview-live.gd",
+      "target": "project/qa/check-preview-live.gd",
+      "sha256": "e90f3c38fbac452a6d48e7fad4914560a42ae13f688eb28fd81b52873751621f"
+    },
+    {
+      "file": "tests/check-round-update.gd",
+      "target": "project/qa/check-round-update.gd",
+      "sha256": "b7fce146c204d5bd5dc8e52a3ba10d0c417008bb8bed27f9c7af734b73ec5072"
+    },
+    {
+      "file": "tests/release-gate.ps1",
+      "target": "tests/release-gate.ps1",
+      "sha256": "78a3f1b2d5eeca9dd5023c65e128c08bc781e035e4dbacf92b8e11baa9ec73ca"
+    }
+  ],
+  "remove": [
+    "payload/bridge/assets/guides/ready-gift-design.png"
+  ]
+}

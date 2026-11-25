@@ -138,3 +138,19 @@ test("checkout mode changes the homepage representation without leaving a stale 
         checkoutReady = false;
     }
 });
+
+test("Fetih resources open the viewer wishes page with the original example image", async () => {
+    const game = catalog.games.find(item => item.id === "fetih");
+    const source = (await get("/oyunlar/fetih")).body.toString();
+    assert.ok(source.includes('href="' + game.wishesGuide + '">İzleyici dilekleri</a>'));
+    assert.ok(!source.includes("TikMnG-Fetih-Hediyeler.png"));
+    const guide = await get(game.wishesGuide);
+    assert.equal(guide.status, 200);
+    assert.match(guide.headers["content-type"], /text\/html/);
+    assert.ok(guide.body.toString().includes("Böyle yapmanızı öneririm"));
+    const img = guide.body.toString().match(/<img[^>]+src="([^"]+)"/);
+    const png = await get(img[1]);
+    assert.equal(png.status, 200);
+    assert.match(png.headers["content-type"], /image\/png/);
+    assert.deepEqual([png.body.readUInt32BE(16), png.body.readUInt32BE(20)], [423, 990]);
+});

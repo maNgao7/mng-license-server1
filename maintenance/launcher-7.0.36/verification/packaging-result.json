@@ -1,0 +1,60 @@
+{
+  "version": "7.0.36",
+  "baseline": "7.0.35",
+  "build": "electron-builder 24.13.3, Electron 31.7.7, Windows x64",
+  "releaseGate": {
+    "command": "tests/release-gate.ps1",
+    "passed": 420,
+    "failed": 0,
+    "skipped": 0,
+    "exitCode": 0
+  },
+  "packagePayload": {
+    "sharedPayloadSHA256": "495cd3ad891d822d88367a83101bf8d237fb4c8e8dc78861dfe3a6fa1d81d4b2",
+    "appFiles": 2040,
+    "identicalToUnpacked": true
+  },
+  "differentialUpdate": {
+    "from": "7.0.35",
+    "to": "7.0.36",
+    "downloadBytes": 3599952,
+    "reusedBytes": 296276197,
+    "rangeRequests": 7,
+    "installerBytes": 299876149,
+    "sha512": "bqRzJvVRh3JT8r1BOSqigJf0ImDuVZZ/s7cwzRkXJ3KRQW/3cnBu2JIGpV1k8GqQc4i8kkdE0/CX+UZZCrVb8Q==",
+    "verified": true
+  },
+  "portable": {
+    "version": "7.0.36",
+    "portableStarted": true,
+    "productionLicenseScreen": true,
+    "isolatedProfile": true,
+    "exitCode": 0
+  },
+  "renderer": {
+    "baseline": "7.0.35",
+    "version": "7.0.36",
+    "packaged": true,
+    "preview": false,
+    "sameIsolatedProfile": true,
+    "catalogCases": [
+      "legacy remote on 7.0.35",
+      "legacy cache on upgrade",
+      "refreshed guide on 7.0.36"
+    ],
+    "canonicalGuideURL": "https://tikmng.com/rehber/fetih-izleyici-dilekleri.html",
+    "unrelatedFetihResource": true,
+    "otherGameResources": true,
+    "guideSteps": 6,
+    "dialogImage": [
+      423,
+      990
+    ],
+    "dialogClose": true
+  },
+  "sourceDeltaComplete": true,
+  "localOnly": [
+    "NSIS payload compared to the unpacked build; interactive installation was not run.",
+    "Differential transfer used loopback. The public feed and deployed server were not exercised."
+  ]
+}

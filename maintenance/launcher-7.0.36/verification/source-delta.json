@@ -1,0 +1,32 @@
+{
+  "version": "7.0.36",
+  "baseline": "7.0.35",
+  "baselineSourceFiles": 10682,
+  "sourceFiles": 10684,
+  "changedFiles": [
+    {
+      "name": "package-lock.json",
+      "sha256": "f4c8efa765d7c3033b6b9c590935eb6edb28ed2c7114b30a26d1017d5f1a898b"
+    },
+    {
+      "name": "package.json",
+      "sha256": "41c13f85e91d9d2b35fd4e864e9e298ee52a6ad87a07bf2e5ae789ab3aaa67b7"
+    },
+    {
+      "name": "renderer/assets/gift-guides/viewer-wishes.png",
+      "sha256": "fb9af11c5c6a6f84efc7f46a42cc2905e98bae72a992787eaeaff77376bc4e3e"
+    },
+    {
+      "name": "renderer/workspace.js",
+      "sha256": "561c893f76eff07169251676fb980f4d95d402b0716be75736d961649cd20628"
+    },
+    {
+      "name": "tests/fetih-wishes.playwright.cjs",
+      "sha256": "ebfa3e090680114f7b894325fc1b73ad9c23fddd3216f6b822a6a9dbd32f1135"
+    },
+    {
+      "name": "tests/game-resources.test.cjs",
+      "sha256": "fe61bdeea86f5ae506434fb5b238683d96d6d17102776419429d913d752dbc16"
+    }
+  ]
+}

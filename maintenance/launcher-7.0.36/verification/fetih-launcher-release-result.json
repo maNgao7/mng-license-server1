@@ -1,0 +1,21 @@
+{
+  "baseline": "7.0.35",
+  "version": "7.0.36",
+  "packaged": true,
+  "preview": false,
+  "sameIsolatedProfile": true,
+  "catalogCases": [
+    "legacy remote on 7.0.35",
+    "legacy cache on upgrade",
+    "refreshed guide on 7.0.36"
+  ],
+  "canonicalGuideURL": "https://tikmng.com/rehber/fetih-izleyici-dilekleri.html",
+  "unrelatedFetihResource": true,
+  "otherGameResources": true,
+  "guideSteps": 6,
+  "dialogImage": [
+    423,
+    990
+  ],
+  "dialogClose": true
+}

@@ -1,0 +1,33 @@
+{
+  "version": "7.0.36",
+  "baseline": "7.0.35",
+  "baselineArchiveFiles": 6238,
+  "testedArchiveFiles": 6239,
+  "changedArchiveFiles": [
+    "package.json",
+    "renderer/assets/gift-guides/viewer-wishes.png",
+    "renderer/workspace.js"
+  ],
+  "files": [
+    {
+      "name": "TikMnG-Setup-7.0.36.exe",
+      "bytes": 299876149,
+      "sha256": "489cc1da1958ad7dcc19bf3a0b7a4c7deb4e0d58fb261b3cbdc6e7e8eb1975a8"
+    },
+    {
+      "name": "TikMnG-Setup-7.0.36.exe.blockmap",
+      "bytes": 310874,
+      "sha256": "c06a057327194b72469760693797d005733114dae66464343e7f44b3322f67b8"
+    },
+    {
+      "name": "TikMnG-7.0.36-Portable.exe",
+      "bytes": 299697570,
+      "sha256": "c677b43b6b0ca78656db28f356f2939a00b214cda072fdc3bacff17d900a7a25"
+    },
+    {
+      "name": "latest.yml",
+      "bytes": 721,
+      "sha256": "655813584ea17a5803e6927d833bcd57cf3044c972c07bb5b679c2a4b6e9b6b2"
+    }
+  ]
+}
