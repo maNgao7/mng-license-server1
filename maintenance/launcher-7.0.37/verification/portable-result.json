@@ -1,0 +1,22 @@
+{
+  "version": "7.0.37",
+  "results": [
+    {
+      "preview": false,
+      "productionLicenseScreen": true,
+      "packaged": true,
+      "isolatedProfile": true,
+      "exitCode": 0
+    },
+    {
+      "preview": true,
+      "productionLicenseScreen": false,
+      "packaged": true,
+      "isolatedProfile": true,
+      "exitCode": 0,
+      "styledReportButton": true,
+      "liveConnection": "connected",
+      "disconnected": true
+    }
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "from": "7.0.36",
+  "to": "7.0.37",
+  "downloadBytes": 3472616,
+  "reusedBytes": 296403763,
+  "rangeRequests": 6,
+  "installerBytes": 299876379,
+  "sha512": "LUnFNGaWAGjfvwRQdvpH9PKBAQR3YXP//MG/ZMpul60Bn/utE6bNk2GJiooi+uHttC5s/ObQaYHfuW5gUb1MFA==",
+  "verified": true
+}

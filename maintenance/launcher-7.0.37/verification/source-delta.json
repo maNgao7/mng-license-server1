@@ -1,0 +1,70 @@
+{
+  "baseline": "7.0.36",
+  "version": "7.0.37",
+  "changedFiles": [
+    {
+      "name": "lib/live-failure.cjs",
+      "sha256": "e924b1fb889eadc3d240dd529db4b1f3393fd0757ab80b72b85639393b0caa83"
+    },
+    {
+      "name": "lib/live-report.cjs",
+      "sha256": "44a733048eab797643da0d6385827991e243a97dac2e4a93e8bd06c4743725f5"
+    },
+    {
+      "name": "lib/live-session.cjs",
+      "sha256": "d0beb67e4f8bc1ba11149a611e2f6e974c3fe28d9cfa43662058a7ba77b20181"
+    },
+    {
+      "name": "lib/tiktok-connection.cjs",
+      "sha256": "f79ed5519e367c980d040e6377d59e817b20e069c1f5513ad498be2524dd1597"
+    },
+    {
+      "name": "main.js",
+      "sha256": "3c0e380fc647c340875482fa56795f711425ef68f5ee52186b794b80c4f16176"
+    },
+    {
+      "name": "package-lock.json",
+      "sha256": "9e374807c48a1b403773847063949e569eb38c48dde5fda6227de9aae2a353dd"
+    },
+    {
+      "name": "package.json",
+      "sha256": "62f2ab2bdd13bc8eff9e17f178d3b496c7780bac65c8ef1c71b59daed533a59d"
+    },
+    {
+      "name": "preload.js",
+      "sha256": "051be2741fa3dcd74987d1397ff5cab2eb2dcf2608f2431cd8c9715a2e613ca7"
+    },
+    {
+      "name": "renderer/app.js",
+      "sha256": "1e017c57e876a18e285480ee0fe064ce840f5aae1e72a80ba446bfa1eafb196f"
+    },
+    {
+      "name": "renderer/index.html",
+      "sha256": "09a4ce15a8945cc708b37b5a9581bfd004a31633771ff16a4143def7624b7b19"
+    },
+    {
+      "name": "tests/live-failure.test.cjs",
+      "sha256": "848e9136386128d60bbccc8ef996502656fba86a81cb9b1837a4280c39ca28d0"
+    },
+    {
+      "name": "tests/live-report.test.cjs",
+      "sha256": "e10eb987c2384d540957f50d52248c75f0185e3d21c6eb55799fb9ad3cacd4c7"
+    },
+    {
+      "name": "tests/live-session.test.cjs",
+      "sha256": "4dd88862ab10204d54fcffddaf5cfe97d454e0550aa588e743b985b14f033d10"
+    },
+    {
+      "name": "tests/tiktok-connection.test.cjs",
+      "sha256": "7bfa74c82a163382ff9515bfa7507dd35f4849f5f97ffc36e5e2f99fce588854"
+    },
+    {
+      "name": "tools/connection-acceptance.cjs",
+      "sha256": "fdce0f7e823e61fc8560292dc72b0dcbd0c9b10a5d0a372f060a4423074a7cfd"
+    },
+    {
+      "name": "tools/connection-ui-check.cjs",
+      "sha256": "5c1ef19daba7c74604a04d88fa006d91ce55f8b1e3193b326a40c5808d153b88"
+    }
+  ]
+}

@@ -1,0 +1,38 @@
+{
+  "at": "2026-11-26T13:06:33.458Z",
+  "status": "connected",
+  "reason": "connected",
+  "events": {
+    "pk": 1,
+    "chat": 15,
+    "viewer": 7,
+    "like": 11,
+    "member": 4
+  },
+  "diagnostic": null,
+  "readOnly": true,
+  "sentMessages": 0,
+  "sentGifts": 0,
+  "report": {
+    "schema": 1,
+    "version": "7.0.37-connection.1",
+    "node": "24.20.0",
+    "electron": "unknown",
+    "platform": "win32",
+    "arch": "x64",
+    "entries": [
+      {
+        "at": "2026-11-26T13:06:12.633Z",
+        "status": "connecting",
+        "reason": "connecting",
+        "attempt": 1
+      },
+      {
+        "at": "2026-11-26T13:06:18.449Z",
+        "status": "connected",
+        "reason": "connected",
+        "attempt": 1
+      }
+    ]
+  }
+}

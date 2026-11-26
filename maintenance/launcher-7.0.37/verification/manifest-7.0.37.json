@@ -1,0 +1,39 @@
+{
+  "version": "7.0.37",
+  "baseline": "7.0.36",
+  "baselineArchiveFiles": 6239,
+  "testedArchiveFiles": 6242,
+  "changedArchiveFiles": [
+    "lib/live-failure.cjs",
+    "lib/live-report.cjs",
+    "lib/live-session.cjs",
+    "lib/tiktok-connection.cjs",
+    "main.js",
+    "package.json",
+    "preload.js",
+    "renderer/app.js",
+    "renderer/index.html"
+  ],
+  "files": [
+    {
+      "name": "TikMnG-Setup-7.0.37.exe",
+      "bytes": 299876379,
+      "sha256": "9261504e65bdd61d5a24196dd3ff2a57b5f60c5e8b8f3237eafbf32db5af66a5"
+    },
+    {
+      "name": "TikMnG-Setup-7.0.37.exe.blockmap",
+      "bytes": 310991,
+      "sha256": "7d406befeae86c2b00875d817688ec8437681e4f9c1c5db5000c638ef64fc663"
+    },
+    {
+      "name": "TikMnG-7.0.37-Portable.exe",
+      "bytes": 299697805,
+      "sha256": "089fc63e03fbd535db9006725dc06c61f3398f11aba3ce60afe756ab9e94f9c1"
+    },
+    {
+      "name": "latest.yml",
+      "bytes": 1105,
+      "sha256": "05fc5985b26e192e0b49c393164d1cc9f46bf713204b881b0f522615a8241fb1"
+    }
+  ]
+}

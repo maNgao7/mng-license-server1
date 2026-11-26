@@ -1,0 +1,14 @@
+{
+  "changes": [
+    "lib/live-failure.cjs",
+    "lib/live-report.cjs",
+    "lib/live-session.cjs",
+    "lib/tiktok-connection.cjs",
+    "main.js",
+    "package.json",
+    "preload.js",
+    "renderer/app.js",
+    "renderer/index.html"
+  ],
+  "removed": []
+}
