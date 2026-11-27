@@ -1,8 +1,28 @@
 {
   "schemaVersion": 1,
-  "revision": 2026112502,
-  "publishedAt": "2026-11-25T10:49:21.323Z",
+  "revision": 2026112701,
+  "publishedAt": "2026-11-27T16:00:00.000Z",
   "games": [
+    {
+      "id": "ring",
+      "title": "Ring",
+      "description": "İzleyicileriniz mavi ve kırmızı köşede boksör olur. Hediye ve beğenilerle yumruk atar; kazanan ringde kalır, sıradaki rakip gelir. FPS puanı bekleyenlerin ringe giriş önceliğini belirler.",
+      "version": "0.1.0",
+      "url": "https://github.com/maNgao7/mng-license-server1/releases/download/ring-0.1.0/Ring-Windows-x64.zip",
+      "sha256": "a2f3bf8e56e2f0ea71e90a54193e3ba456e1afff9881bcbc857ca01181a85f8e",
+      "bytes": 349970774,
+      "requirements": "Windows 10/11 64 bit. Steam üzerinden ücretsiz Online Boxing 3D Demo (4793540) bir kez kurulmalıdır. Ring modunu TikMnG üzerinden indirip oynayın; Python kurulumu gerekmez. Canlı etkileşimler için internet gerekir.",
+      "resources": [
+        {
+          "title": "Kurulum ve kullanım videosu",
+          "url": "https://www.youtube.com/watch?v=Il6t2jrBy1c"
+        },
+        {
+          "title": "Steam · Online Boxing 3D Demo indir",
+          "url": "https://store.steampowered.com/app/4793540/"
+        }
+      ]
+    },
     {
       "id": "fetih",
       "title": "Fetih",

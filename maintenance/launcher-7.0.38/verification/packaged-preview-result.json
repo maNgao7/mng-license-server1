@@ -1,0 +1,9 @@
+{
+  "passed": true,
+  "version": "7.0.38",
+  "title": "TikMnG",
+  "hasBridge": true,
+  "gameRows": 0,
+  "ring": false,
+  "hasLicenseGate": false
+}

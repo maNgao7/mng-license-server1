@@ -167,8 +167,7 @@ for (const [filename, revision, arenaVersion] of [
     const f = await fixture(t, {}, { initialCatalog: previous });
     const published = await f.public();
     assert.deepEqual(published, current);
-    assert.deepEqual(published.games.find(game => game.id === 'yaratik-arena'), current.games.find(game => game.id === 'yaratik-arena'));
-    const changed = new Set(['fetih', 'yaratik-arena', 'minecraft-snake-arena', 'orbit', 'vs', 'puanlama', 'duck-hunt', 'pony-life', 'frog-river', 'turkish-forza-05', 'profile-duel', 'rezervuar-01', 'hapisten-kac', ...withdrawn]);
+    const changed = new Set(['ring', 'fetih', 'yaratik-arena', 'minecraft-snake-arena', 'orbit', 'vs', 'puanlama', 'duck-hunt', 'pony-life', 'frog-river', 'turkish-forza-05', 'profile-duel', 'rezervuar-01', 'hapisten-kac', ...withdrawn]);
     assert.deepEqual(published.games.filter(game => !changed.has(game.id)), previous.games.filter(game => !changed.has(game.id)));
     assert.deepEqual(published.media, previous.media);
     assert.deepEqual(published.launcher, previous.launcher);
@@ -178,15 +177,20 @@ for (const [filename, revision, arenaVersion] of [
     assert.deepEqual(JSON.parse(retained), { draft: previous, published: previous });
     assert.deepEqual(JSON.parse(fs.readFileSync(path.join(f.dir, 'content-state.json'), 'utf8')), { draft: current, published: current });
     assert.deepEqual(fs.readdirSync(path.join(f.dir, 'content-revisions')), []);
-    const version = (await f.request('/api/version', 'GET', undefined, false)).data;
-    assert.equal(version.latestVersion, '7.0.37');
-    assert.equal(version.downloadUrl, 'https://github.com/maNgao7/mng-license-server1/releases/download/v7.0.37/TikMnG-Setup-7.0.37.exe');
-    assert.equal(version.webUrl, 'https://tikmng.com/download/setup');
     for (const name of licenseFiles) assert.deepEqual(JSON.parse(fs.readFileSync(path.join(f.dir, `${name}.json`))), []);
     await f.stop(); await f.start();
     assert.deepEqual(await f.public(), current);
     assert.deepEqual(await f.get(), { draft: current, published: current });
     assert.equal(fs.readFileSync(backup, 'utf8'), retained);
+});
+
+test('server advertises the Ring launcher release and the stable website download route', async t => {
+    const f = await fixture(t);
+    const response = await f.request('/api/version', 'GET', undefined, false);
+    assert.equal(response.status, 200);
+    assert.equal(response.data.latestVersion, '7.0.38');
+    assert.equal(response.data.downloadUrl, 'https://github.com/maNgao7/mng-license-server1/releases/download/v7.0.38/TikMnG-Setup-7.0.38.exe');
+    assert.equal(response.data.webUrl, 'https://tikmng.com/download/setup');
 });
 
 test('server startup and restart retain customized published catalogs and pending administrator drafts', async t => {
@@ -226,7 +230,7 @@ test('server startup and restart retain customized published catalogs and pendin
     }
 });
 
-test("public defaults include Uslu Yaratık, Forza and Teke Tek Profil and exclude Crowd Control", async t => {
+test("public defaults include Ring and the existing games and exclude withdrawn games", async t => {
     const f = await fixture(t, {}, {seed:false});
     const response = await f.request("/api/content/catalog", "GET", undefined, false);
     assert.equal(response.status, 200); assert.equal(response.data.schemaVersion, 1);
@@ -234,7 +238,7 @@ test("public defaults include Uslu Yaratık, Forza and Teke Tek Profil and exclu
     assert.match(response.headers.get("etag"), /^"[a-f0-9]{64}"$/);
     assert.equal(response.data.launcher, undefined);
     const byId = Object.fromEntries(response.data.games.map(item => [item.id, item]));
-    assert.equal(response.data.games.length, 19);
+    assert.equal(response.data.games.length, 20);
     assert.equal(byId['yaratik-arena'].version, '0.1.32');
     assert.match(byId['yaratik-arena'].url, /\/yaratik-arena-0\.1\.32\/yaratik-arena\.zip$/);
     assert.equal(byId['yaratik-arena'].bytes, 155446368);
@@ -257,7 +261,7 @@ test("public defaults include Uslu Yaratık, Forza and Teke Tek Profil and exclu
     assert.equal(byId['profile-contest'].sha256, 'bfea65a15399612a8cfea4a74bc6e0718b757e220544451aa4ab583d02dca7ab');
     assert.equal(byId['crowd-control'], undefined);
     assert.equal(response.data.media.length, 285);
-    assert.equal(response.data.revision, 2026112502);
+    assert.equal(response.data.revision, 2026112701);
     assert.equal(byId.fetih.version, '0.1.5');
     assert.match(byId.fetih.url, /\/fetih-0\.1\.5\/Fetih-Windows-x64\.zip$/);
     assert.equal(byId.caahr.version, '0.6.12');

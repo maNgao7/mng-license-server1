@@ -1,0 +1,168 @@
+{
+  "version": 4,
+  "createdAt": "2026-10-21",
+  "policy": "Every current and future catalog game needs its own original concept-based cover, never a gameplay, settings, login or loading screenshot. Preserve historical manifests and versioned assets.",
+  "covers": [
+    {
+      "id": "ring",
+      "title": "Ring",
+      "currentFile": "ring-v1.png",
+      "source": "apps/hediye-box/assets/loading-ring-gold-v1.png",
+      "concept": "User-selected Ring composition with the centered gold Ring title, edited through ImageGen.",
+      "sha256": "4b3a01817af9a11baf493bacd8388e7c97ff3475e8a172dd0c0a66e62f95c2fd"
+    },
+    {
+      "id": "hapisten-kac",
+      "title": "Hapisten Kaç",
+      "currentFile": "hapisten-kac-v1.png",
+      "concept": "Mahkûm, bloklardan oluşan hapishane duvarında gün ışığına doğru kazıyor. Kullanıcının seçtiği ilk kapak.",
+      "source": "built-in image_gen",
+      "sha256": "1d6ce3cc8c41ddf995bbb2d20754e24cc38cffb2915eca344132fcdef1ec31fd"
+    },
+    {
+      "id": "turkish-forza-05",
+      "title": "Turkish Forza 0.5",
+      "currentFile": "turkish-forza-05-v1.png",
+      "concept": "Two Turkish classic sedans race around Tsukuba at golden hour: a deep-red Tofaş Şahin and an ivory Murat 131, with Turkish rear-window sayings, cherry blossoms, Fuji and the circuit grandstand.",
+      "source": "outputs/tikmng-arcade-racing/assets/loading-turkish-classics-v2.png",
+      "sha256": "ee0e8299aca63644000730a1ece2999258c6ccf93c4a72778e1e38cdedd99430"
+    },
+    {
+      "id": "yaratik-arena",
+      "title": "Yaratık Arena",
+      "currentFile": "yaratik-arena-v1.png",
+      "concept": "Colorful small creatures and giant bosses charge through the game's orange and green industrial arena, with its blue pipes and yellow catwalk, a gloved baseball-bat hand and vacuum, under the YARATIK ARENA title.",
+      "source": "built-in image_gen",
+      "sha256": "91d33391754bc875505fe42bf26ecead00eedebe23e8be556bddef9bab736f20"
+    },
+    {
+      "id": "profile-contest",
+      "title": "Profil Yarışması",
+      "currentFile": "profile-contest-v1.png",
+      "concept": "Four fictional adult portraits compete side by side inside sculpted Ottoman gold, ruby and emerald frames with marble mythological statues, audience hearts, numbered slots and a prominent Turkish title.",
+      "source": "built-in image_gen"
+    },
+    {
+      "id": "caahr",
+      "title": "Sesli Sürüş",
+      "currentFile": "caahr-v2.png",
+      "concept": "A vivid green compact car with a shocked face on its rear races along a four-lane alpine obstacle course with rotating industrial hammers, ramps and a finish arch in warm daylight.",
+      "source": "built-in image_gen"
+    },
+    {
+      "id": "battle-royale",
+      "title": "Minecraft, PUBG",
+      "currentFile": "battle-royale-v3.png",
+      "concept": "Voxel soldiers take cover beside an airdrop crate while parachutists descend from a cargo plane over an island village inside a closing electric-blue zone.",
+      "source": "built-in image_gen"
+    },
+    {
+      "id": "snow-war",
+      "title": "Minecraft Kartopu Savaşı",
+      "currentFile": "snow-war-v3.png",
+      "concept": "Red and turquoise voxel teams throw bursting snowballs in a festive winter arena beneath a decorated Christmas tree and towering snowman.",
+      "source": "built-in image_gen"
+    },
+    {
+      "id": "vs",
+      "title": "TikTok VS Profil",
+      "currentFile": "vs-v4.png",
+      "concept": "Two realistic creator portraits face off in blue and pink neon profile rings around a metallic PK emblem, audience hearts, gift boxes and a gold winner trophy.",
+      "source": "built-in image_gen"
+    },
+    {
+      "id": "puanlama",
+      "title": "Profil Puanlama",
+      "currentFile": "puanlama-v4.png",
+      "concept": "A featured realistic creator portrait is surrounded by smaller profile medallions, audience likes and hearts, five gold stars and a large gold 9.8 rating.",
+      "source": "built-in image_gen"
+    },
+    {
+      "id": "orbit",
+      "title": "MNG Orbit",
+      "currentFile": "orbit-v4.png",
+      "concept": "Colorful profile discs sweep across a dark pellet-filled arena; a large turquoise portrait consumes a smaller coral rival while equal yellow rivals burst into fragments.",
+      "source": "built-in image_gen"
+    },
+    {
+      "id": "battle-game",
+      "title": "Şövalye Savaşı",
+      "currentFile": "battle-game-v3.png",
+      "concept": "Turquoise and crimson knight armies charge across a castle battlefield with swords, shields, mounted fighters, siege engines and parachuting supply chests.",
+      "source": "built-in image_gen"
+    },
+    {
+      "id": "gelene-gecene",
+      "title": "Gelene Geçene",
+      "currentFile": "gelene-gecene-v3.png",
+      "concept": "A low-poly survivor with a green backpack reaches for a rescue terminal's red emergency button as angular monsters pursue through an abandoned mountain forest outpost.",
+      "source": "built-in image_gen"
+    },
+    {
+      "id": "duck-hunt",
+      "title": "MNG Dodge Hunter",
+      "currentFile": "duck-hunt-v3.png",
+      "concept": "Glossy yellow toy ducks move along turquoise rails in a bright carnival shooting gallery; a foreground cork rifle knocks one target back in a burst of paper stars.",
+      "source": "built-in image_gen"
+    },
+    {
+      "id": "pony-life",
+      "title": "Pony Katırı",
+      "currentFile": "pony-life-v3.png",
+      "concept": "Three expressive ponies race toward the viewer on a grassy track, led by a chestnut pony in turquoise tack with a white rival, colorful boost trails and packed grandstands.",
+      "source": "built-in image_gen"
+    },
+    {
+      "id": "frog-river",
+      "title": "Vak Vak Jump",
+      "currentFile": "frog-river-v3.png",
+      "concept": "A bright green frog leaps toward the viewer above a rushing turquoise river, following a winding lily-pad route past water lilies, a gift crate and mountain waterfalls.",
+      "source": "built-in image_gen"
+    },
+    {
+      "id": "penalty-kick",
+      "title": "Süper Lig (Penaltı)",
+      "currentFile": "penalty-kick-v3.png",
+      "concept": "A striker in a turquoise-and-black kit drives a football toward goal while a coral-clad goalkeeper dives across the net in a floodlit stadium filled with confetti.",
+      "source": "built-in image_gen"
+    },
+    {
+      "id": "tightrope-balance",
+      "title": "Dengesiz Yayıncı",
+      "currentFile": "tightrope-balance-v4.png",
+      "concept": "A realistic mountain adventurer balances on a narrow suspended plank bridge over an alpine canyon, holding a wooden pole with two glass jars carrying unequal audience gift tokens.",
+      "source": "built-in image_gen"
+    },
+    {
+      "id": "zombie-war",
+      "title": "Zombie War",
+      "currentFile": "zombie-war-v3.png",
+      "concept": "A voxel tactical survivor and glowing iron guardian defend a sunlit desert alley against advancing zombies and a giant chained mutant behind the sandstone walls.",
+      "source": "built-in image_gen"
+    },
+    {
+      "id": "minecraft-snake-arena",
+      "title": "Minecraft Yılan Oyunu",
+      "currentFile": "minecraft-yilan-cover-v2.png",
+      "source": "D:/TikMnG-Snake-Arena-Prototype/assets/minecraft-yilan-cover-v2.png",
+      "previousSource": "D:/TikMnG-Snake-Arena-Prototype/assets/minecraft-yilan-cover-v1.png",
+      "concept": "Original voxel snake arena key art supplied by parent. Version 2 has no typography; title stays in the launcher UI.",
+      "sha256": "592ee28889c2f5739f81145a01990d78a0a4b3a4e9c87d0b68e304b5457f8237"
+    },
+    {
+      "id": "profile-duel",
+      "title": "Teke Tek Profil",
+      "currentFile": "profile-duel-v1.png",
+      "concept": "Original rose versus cyan profile duel key art, two fictional adult portraits, crown and contrasting gift symbols.",
+      "source": "built-in image_gen",
+      "sha256": "a37e14940f5246006d1d9ea8a870ccfec41983cb77a9f67929a402499e3fa030"
+    },
+    {
+      "id": "rezervuar-01",
+      "title": "Uslu Yaratık",
+      "currentFile": "uslu-yaratik.png",
+      "source": "existing approved launcher cover",
+      "sha256": "d5199a6233d250f6c6daf35b66c7a612f6288da2f11761c7e2c781c57a02c03a"
+    }
+  ]
+}

@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="tr">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<title>{{title}} · Hediye Box</title>
+<style>
+  * { box-sizing: border-box }
+  html,body { margin: 0; background: transparent }
+  body { color: #fff; font: 600 16px/1.25 "Barlow", "Segoe UI", sans-serif }
+  main { max-width: 31rem; margin: .45rem; padding: .9rem 1rem; border-radius: .65rem;
+    background: rgb(17 21 30 / 94%); border: 1px solid #48515d }
+  header,.line { display: flex; align-items: center; gap: .65rem }
+  header { justify-content: space-between; margin-bottom: .5rem }
+  h1 { font-size: 1.2rem; margin: 0 }
+  #total,.handle,small,#status { color: #bec6d3; font-size: .85rem }
+  #status { margin: .4rem 0 0 }
+  .line { --accent: #e7bb63; min-height: 2.65rem; border-top: 1px solid #46505b; padding: .35rem 0 }
+  .line.left { --accent: #75b7ff }
+  .line.right { --accent: #ff938a }
+  .marker { flex: 0 0 2.2em; text-align: center; color: var(--accent); font-variant-numeric: tabular-nums }
+  .identity { flex: 1; min-width: 0 }
+  .name,.handle { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis }
+  .value { font-variant-numeric: tabular-nums; color: var(--accent); white-space: nowrap }
+  .photo { display: grid; place-items: center; position: relative; width: 2rem; height: 2rem;
+    flex: none; border-radius: 50%; overflow: hidden; color: #fff; background: #394454 }
+  .photo img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover }
+  .gift { width: 2rem; height: 2rem; object-fit: contain }
+  .champ { color: #ffe5a4 }
+  main[data-kind="winners"] { max-width:16rem; padding:.75rem; }
+  main[data-kind="winners"] #rows { display:flex; flex-direction:column; }
+  main[data-kind="winners"] .line { display:grid; grid-template-columns:1rem minmax(0,1fr) max-content; gap:.4rem; align-items:start; padding:.65rem 0; }
+  main[data-kind="winners"] .marker { font-size:.75rem; padding-top:.2rem; text-align:left; }
+  main[data-kind="winners"] .line:not(.champ) .photo { display:none; }
+  main[data-kind="winners"] .identity { grid-column:2; }
+  main[data-kind="winners"] .name { white-space:normal; overflow:visible; overflow-wrap:anywhere; font-size:1.125rem; line-height:1.25; }
+  main[data-kind="winners"] .value { grid-column:3; font-size:1.125rem; }
+  main[data-kind="winners"] .handle { white-space:normal; overflow-wrap:anywhere; }
+  main[data-kind="winners"] .champ .marker { grid-column:1 / 3; padding:0; }
+  main[data-kind="winners"] .champ .photo { grid-column:3; grid-row:1; justify-self:end; }
+  main[data-kind="winners"] .champ .identity { grid-column:1 / 3; }
+  main[data-kind="fighters"] { max-width: 68rem; padding: 1rem 1.1rem 1.1rem; border-color:#3b4656; background:rgb(11 17 27 / 96%); }
+  main[data-kind="fighters"] header { margin-bottom:.8rem; }
+  main[data-kind="fighters"] h1 { font-size:1rem; text-transform:uppercase; letter-spacing:.1em; }
+  main[data-kind="fighters"] #rows { position:relative; display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:1.5rem; }
+  main[data-kind="fighters"] #rows::after { content:'VS'; position:absolute; left:50%; top:48%; transform:translate(-50%,-50%); background:#141d2b; border:1px solid #526074; border-radius:50%; width:2.6rem; height:2.6rem; display:grid; place-items:center; font-size:1rem; font-weight:900; font-style:italic; }
+  .fighter-card { --accent:#65b5ff; --corner:#143b66; min-width:0; border:1px solid var(--corner); border-top:3px solid var(--accent); border-radius:.4rem; overflow:hidden; background:linear-gradient(160deg,var(--corner),#111923 75%); }
+  .fighter-card.right { --accent:#ff757e; --corner:#5c2434; }
+  .corner-name { display:block; padding:.65rem .9rem 0; color:var(--accent); font-size:.9rem; font-weight:900; letter-spacing:.08em; }
+  .fighter-content { display:grid; grid-template-columns: minmax(150px,58%) minmax(0,42%); align-items:center; }
+  .mascot { position:relative; width:100%; aspect-ratio:1; }
+  .boxer-art { position:absolute; inset:0; background-image:url('{{boxerArtwork}}'); background-size:200% 100%; background-position:left; background-repeat:no-repeat; }
+  .right .boxer-art { background-position:right; }
+  .mascot .photo { position:absolute; left:50%; top:23%; transform:translateX(-50%); width:58%; height:58%; border:4px solid var(--accent); background:#152335; box-shadow:0 0 0 5px #0e1823; font-size:2.5rem; }
+  .jersey-gift { position:absolute; left:50%; top:78%; transform:translateX(-50%); width:20%; height:20%; display:grid; place-items:center; border-radius:25%; background:rgb(255 255 255 / 94%); border:2px solid rgb(255 255 255 / 55%); }
+  .jersey-gift .gift { width:92%; height:92%; }
+  .fighter-info { min-width:0; padding:.6rem .85rem .8rem 0; }
+  .fighter-info .name { white-space:normal; overflow-wrap:anywhere; font-size:1.4rem; font-weight:850; line-height:1.12; }
+  .fighter-info .handle { margin-top:.35rem; font-size:.8rem; }
+  .gift-caption { display:block; color:#c9d3df; font-size:.68rem; letter-spacing:.07em; margin:1rem 0 .2rem; }
+  .gift-name { display:block; color:var(--accent); font-size:1.05rem; overflow-wrap:anywhere; }
+  .fighter-hp { margin-top:.9rem; display:flex; align-items:center; gap:.45rem; font-size:.8rem; }
+  .hp-track { flex:1; height:.42rem; border-radius:1rem; background:#050c14; overflow:hidden; }
+  .hp-fill { display:block; height:100%; background:var(--accent); transition:width .18s ease; }
+  .fighter-card.empty .boxer-art { opacity:.35; }
+  .fighter-card.empty .photo { color:var(--accent); }
+  @media(max-width:680px){
+    main[data-kind="fighters"] { margin:.25rem; padding:.7rem; }
+    main[data-kind="fighters"] #rows { gap:.9rem; }
+    .fighter-content { grid-template-columns:1fr; }
+    .mascot { width:min(100%,240px); margin:auto; }
+    .fighter-info { padding:.3rem .7rem .8rem; text-align:center; }
+    .fighter-info .name { font-size:1.15rem; }
+    .gift-caption { margin-top:.65rem; }
+    .corner-name { padding:.65rem .6rem 0; font-size:.8rem; }
+  }
+  [hidden] { display: none }
+</style>
+<main data-kind="{{kind}}">
+  <header><h1>{{title}}</h1><small id="total"></small></header>
+  <div id="rows"></div>
+  <p id="status" role="status">Bağlanıyor…</p>
+</main>
+<script>
+  'use strict';
+  const kind = document.querySelector('main').dataset.kind;
+  const rows = document.getElementById('rows');
+  const total = document.getElementById('total');
+  const status = document.getElementById('status');
+  const stateUrl = new URL('../../api/widget/state', location.href);
+  stateUrl.searchParams.set('type', 'hediye-box-' + kind);
+  const number = new Intl.NumberFormat('tr-TR');
+
+  function element(tag, className, text) {
+    const node = document.createElement(tag);
+    node.className = className;
+    if (text) node.textContent = text;
+    return node;
+  }
+  function row(marker, person, value, style = '') {
+    const line = element('div', 'line ' + style);
+    line.append(element('small', 'marker', marker));
+    if (person) {
+      const photo = element('span', 'photo', Array.from(person.name.replace(/^@/, ''))[0]?.toLocaleUpperCase('tr'));
+      photo.setAttribute('aria-hidden', 'true');
+      if (person.portrait) {
+        const img = element('img', '');
+        img.alt = '';
+        img.referrerPolicy = 'no-referrer';
+        img.onerror = () => img.remove();
+        img.src = person.portrait;
+        photo.append(img);
+      }
+      line.append(photo);
+    }
+    const identity = element('div', 'identity');
+    identity.append(element('bdi', 'name', person?.name || 'Boksör bekleniyor'));
+    const handle = person?.handle && '@' + person.handle;
+    if (handle && handle !== person.name && person.handle !== person.name) identity.append(element('bdi', 'handle', handle));
+    line.append(identity, element('span', 'value', value));
+    return line;
+  }
+  function fighterCard({side,fighter,hp,gift}) {
+    const card=element('article','fighter-card '+side+(fighter?'':' empty'));
+    card.dataset.side=side;
+    card.append(element('span','corner-name',side==='left'?'MAVİ TAKIM':'KIRMIZI TAKIM'));
+    const content=element('div','fighter-content'),mascot=element('div','mascot');
+    mascot.append(element('div','boxer-art'));
+    const photo=element('span','photo',fighter?Array.from(fighter.name.replace(/^@/,''))[0]?.toLocaleUpperCase('tr'):'…');
+    if(fighter?.portrait){const img=element('img','');img.src=fighter.portrait;img.alt=fighter.name;img.referrerPolicy='no-referrer';img.onerror=()=>img.remove();photo.append(img);}
+    mascot.append(photo);
+    if(gift){const badge=element('span','jersey-gift'),icon=element('img','gift');icon.src=new URL('../gift-assets/'+gift.id+'.png',location.href);icon.alt=icon.title=gift.name;badge.append(icon);mascot.append(badge);}
+    const info=element('div','fighter-info');info.append(element('bdi','name',fighter?.name||'Yeni eşleşme'));
+    if(fighter?.handle)info.append(element('bdi','handle','@'+fighter.handle));
+    info.append(element('small','gift-caption','YUMRUK HEDİYESİ'),element('strong','gift-name',gift?.name||'Hediye seçilmedi'));
+    if(fighter&&hp!=null){const health=element('div','fighter-hp'),track=element('span','hp-track'),fill=element('span','hp-fill');fill.style.width=Math.max(0,Math.min(100,hp))+'%';track.append(fill);health.append(track,element('span','',hp+'/100'));info.append(health);}
+    content.append(mascot,info);card.append(content);return card;
+  }
+  function render(data) {
+    const fragment = document.createDocumentFragment();
+    if (kind === 'fighters') {
+      for (const side of ['left','right'])fragment.append(fighterCard(data.rows.find(row=>row.side===side)||{side}));
+    } else if (kind === 'queue') {
+      total.textContent = number.format(data.total) + ' kişi';
+      data.rows.forEach((person, index) => fragment.append(row(String(index + 1), person, number.format(person.coins) + ' FPS')));
+    } else {
+      if (data.champion) fragment.append(row('Son galip', data.champion, '×' + number.format(data.champion.wins), 'champ'));
+      data.rows.forEach((person, index) => fragment.append(row(String(index + 1), person, '×' + number.format(person.wins))));
+    }
+    status.textContent = fragment.childElementCount ? '' : kind === 'queue' ? 'Sırada bekleyen yok.' : 'Henüz galibiyet yok.';
+    status.hidden = !status.textContent;
+    rows.replaceChildren(fragment);
+  }
+  async function refresh() {
+    try {
+      const response = await fetch(stateUrl, { credentials: 'omit', referrerPolicy: 'no-referrer', redirect: 'error',
+        cache: 'no-store', signal: AbortSignal.timeout(5000) });
+      if (response.status !== 204) {
+        if (!response.ok) throw new Error();
+        const data = await response.json();
+        render(data);
+        stateUrl.searchParams.set('revision', data.revision);
+      }
+    } catch {
+      rows.replaceChildren();
+      total.textContent = '';
+      status.hidden = false;
+      status.textContent = 'Yayın bağlantısı bekleniyor…';
+      stateUrl.searchParams.delete('revision');
+    } finally {
+      setTimeout(refresh, kind === 'fighters' ? 1000 : 2500);
+    }
+  }
+  refresh();
+</script>
+</html>

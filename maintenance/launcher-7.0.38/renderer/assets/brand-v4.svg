@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256" role="img" aria-labelledby="title desc">
+  <title id="title">TikMnG</title>
+  <desc id="desc">Blue lowercase m, black uppercase N, red lowercase g, with Tik below.</desc>
+  <rect x="5" y="5" width="246" height="246" rx="38" fill="#ffffff"/>
+  <rect x="5.75" y="5.75" width="244.5" height="244.5" rx="37.25" fill="none" stroke="#dce2e7" stroke-width="1.5"/>
+  <g id="m" fill="#009ed0">
+    <path d="M21 166V106H37V114C41 107 47 104 55 104C64 104 70 108 74 115C79 108 85 104 94 104C109 104 116 114 116 130V166H99V132C99 124 96 120 90 120C84 120 81 125 81 133V166H64V132C64 124 61 120 55 120C49 120 38 125 38 133V166Z"/>
+  </g>
+  <g id="N" fill="#111111">
+    <path d="M124 166V72H141L163 126V72H180V166H163L141 112V166Z"/>
+  </g>
+  <g id="g" fill="#ed2449">
+    <path fill-rule="evenodd" d="M239 106V164C239 187 228 199 207 199C199 199 192 197 186 194V177C193 181 199 183 206 183C217 183 222 177 222 166V162C218 167 213 169 207 169C192 169 184 157 184 137C184 117 193 104 208 104C215 104 220 107 223 111V106ZM212 120C205 120 201 126 201 137C201 148 205 154 212 154C219 154 223 148 223 137C223 126 219 120 212 120Z"/>
+  </g>
+  <g id="Tik" fill="#111111">
+    <path d="M174 209H198V215H189V238H183V215H174Z"/>
+    <path d="M202 218H208V238H202ZM202 209H208V215H202Z"/>
+    <path d="M213 209H219V226L225 218H233L225 227L234 238H226L219 229V238H213Z"/>
+  </g>
+</svg>

@@ -1,0 +1,5 @@
+27b4bc2b7ccb0b948df8c88805d816ca42b11eb226c5a2bff7e2e4acce55a1b4  TikMnG-Setup-7.0.38.exe
+c03f57d0674fc20aec332ae408a790a5cafd472e7c370b37009ee172dfd40497  TikMnG-Setup-7.0.38.exe.blockmap
+14b423f2bd41f52dbc7405b1284ac1c23e695c4c86ca3f4da012a66d19ad0421  TikMnG-7.0.38-Portable.exe
+5509316374aab2fc87dd05be13a87e9aa1aa16ed9a0ae89de3c696e27f7d8a2b  latest.yml
+a2f3bf8e56e2f0ea71e90a54193e3ba456e1afff9881bcbc857ca01181a85f8e  Ring-Windows-x64.zip

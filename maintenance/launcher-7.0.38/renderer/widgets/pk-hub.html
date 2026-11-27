@@ -1,0 +1,754 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>TikMnG</title>
+<style>
+*{box-sizing:border-box;letter-spacing:0}html,body{width:100%;height:100%;margin:0;background:transparent;overflow:hidden;color:#fff;font-family:Arial,Helvetica,sans-serif}body{pointer-events:none} [hidden]{display:none!important}
+#scene{--accent:#58e1c2;--rival:#ff7289;position:absolute;left:50%;top:16px;width:920px;height:304px;transform-origin:top center;isolation:isolate;user-select:none}
+.scoreboard{position:relative;display:grid;grid-template-columns:minmax(0,1fr) 88px minmax(0,1fr);align-items:center;min-height:112px}
+.side{--side:var(--accent);display:grid;grid-template-columns:minmax(0,1fr) 104px;gap:12px;align-items:center;min-width:0;height:112px;padding:12px 18px;background:rgba(17,18,21,.93);border:1px solid #ffffff1c;border-top:3px solid var(--side);border-radius:6px;box-shadow:0 8px 22px #00000022}
+.side[data-side="right"]{--side:var(--rival);grid-template-columns:104px minmax(0,1fr)}.side[data-side="right"] .total{grid-column:1;grid-row:1}.side[data-side="right"] .members{grid-column:2;grid-row:1}
+.members{display:grid;gap:6px;min-width:0}.member{display:grid;grid-template-columns:42px minmax(0,1fr);gap:10px;align-items:center;min-width:0;height:38px}.member:only-child{height:64px;grid-template-columns:54px minmax(0,1fr)}
+.portrait{position:relative;display:grid;place-items:center;width:38px;height:38px;border-radius:50%;overflow:hidden;background:#303137;color:#ffffffaa;font-size:16px;font-weight:700;outline:1px solid #ffffff22;flex:none}.member:only-child .portrait{width:52px;height:52px;font-size:22px}.portrait img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}.portrait .demo-sheet{width:200%;max-width:none;object-fit:fill;left:calc(var(--photo,0)*-100%)}
+.identity{min-width:0;overflow:hidden}.name{display:block;max-width:100%;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;font-size:16px;line-height:21px;font-weight:700}.handle{display:block;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;color:#a9a9b2;font-size:11px;line-height:17px}.member-score{font-variant-numeric:tabular-nums;color:#d9d9df;font-size:11px;margin-right:6px}.total{min-width:0;text-align:center}.total strong{display:block;font-size:36px;line-height:42px;white-space:nowrap;font-variant-numeric:tabular-nums;font-weight:800}.total small{display:block;color:#a7a7b0;font-size:10px;line-height:17px}
+.bridge{position:relative;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:7px;align-self:stretch;padding-top:20px}.versus{font-size:13px;font-weight:800;color:#c6c6ce;line-height:20px}.clock{display:flex;justify-content:center;align-items:center;gap:4px;min-width:76px;height:28px;font-size:13px;font-weight:700;font-variant-numeric:tabular-nums;color:#efeff4;background:#17181b;border:1px solid #ffffff20;border-radius:4px}.icon{width:16px;height:16px;display:inline-block;flex:none;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}.clock.final{border-color:#f8c86d;color:#f8c86d}.clock.final .icon{animation:clockBeat 1s ease-in-out infinite}
+.balance{position:absolute;left:18px;right:18px;bottom:-8px;display:flex;gap:4px;height:3px;overflow:hidden;border-radius:1px}.balance span{display:block;background:var(--accent);width:50%;transition:width .6s ease}.balance span+span{background:var(--rival)}
+.side.winner{border-color:#ffda88}.member.winner .portrait{outline:2px solid #ffda88}.winner-mark{display:inline-flex;align-items:center;color:#ffda88;margin-left:5px;vertical-align:middle}.winner-mark .icon{width:13px;height:13px}
+.individual{grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;padding-top:32px}.individual .side{height:112px;grid-template-columns:minmax(0,1fr);gap:4px;padding:10px 12px;--side:var(--accent)}.individual .side:nth-child(even){--side:var(--rival)}.individual .member:only-child{height:40px;grid-template-columns:38px minmax(0,1fr);gap:8px}.individual .member:only-child .portrait{width:36px;height:36px;font-size:16px}.individual .total strong{font-size:25px;line-height:30px}.individual .total small,.individual .handle{display:none}.individual .bridge{position:absolute;top:0;left:50%;height:28px;transform:translateX(-50%);padding:0}.individual .bridge .versus{display:none}.individual .name{font-size:13px;line-height:18px}
+.boosts{height:32px;display:flex;align-items:end;justify-content:center;gap:8px;overflow:hidden}.boost{display:flex;gap:6px;align-items:center;max-width:260px;height:24px;padding:2px 8px;border:1px solid #ffffff24;border-radius:4px;background:#15171aee;font-size:11px;color:var(--accent);white-space:nowrap;font-variant-numeric:tabular-nums}.boost .who{max-width:130px;overflow:hidden;text-overflow:ellipsis;color:#dedee5}.boost b{color:#fff}
+.alert-slot{height:136px;display:flex;justify-content:center;align-items:start;padding-top:17px}.alert{position:relative;display:grid;grid-template-columns:60px minmax(0,1fr) auto;align-items:center;gap:12px;min-height:84px;width:398px;max-width:100%;padding:12px 16px;border:1px solid #ffffff28;border-left:3px solid var(--accent);border-radius:6px;background:rgba(17,18,21,.95);box-shadow:0 9px 24px #00000025;overflow:hidden}.alert.arrival{animation:arrive .42s cubic-bezier(.2,.8,.25,1)}.alert-art{position:relative;width:60px;height:60px;display:grid;place-items:center;color:var(--accent)}.alert-art>img{width:66px;height:66px;object-fit:contain;filter:drop-shadow(0 4px 4px #0005);animation:glove .7s cubic-bezier(.2,.8,.25,1)}.alert-art>.icon{width:35px;height:35px}.alert-copy{min-width:0}.alert-copy strong{display:block;line-height:26px;font-size:21px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}.alert-copy small{display:block;line-height:18px;font-size:12px;color:#bfc0c9;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}.alert-number{font-size:31px;line-height:40px;font-weight:800;font-variant-numeric:tabular-nums;min-width:42px;text-align:right;color:var(--accent)}.alert-life{position:absolute;bottom:0;left:0;height:2px;background:var(--accent);width:100%;transform-origin:left;transform:scaleX(var(--life,1))}.alert[data-kind="round-winner"]{border-left-color:#ffda88}.alert[data-kind="round-winner"] .alert-art{color:#ffda88}.alert[data-kind="critical"]{border-left-color:#f8c86d}.alert[data-kind="critical"] .alert-number,.alert[data-kind="critical"] .alert-art{color:#f8c86d}
+.only-alerts .boosts{height:28px}.only-alerts .alert-slot{padding-top:5px}
+#scene[data-layout="arena"] .scoreboard:not(.individual){grid-template-columns:minmax(0,1fr) 160px minmax(0,1fr)}#scene[data-layout="arena"] .side{height:146px;grid-template-columns:minmax(0,1fr);gap:8px;padding:12px 18px}#scene[data-layout="arena"] .side .members{grid-column:1;grid-row:1}#scene[data-layout="arena"] .side .total{grid-column:1;grid-row:2;text-align:left;padding-left:52px}#scene[data-layout="arena"] .side .total small{display:none}#scene[data-layout="arena"] .side .total strong{font-size:32px;line-height:34px}#scene[data-layout="arena"] .member:only-child{height:48px;grid-template-columns:42px minmax(0,1fr)}#scene[data-layout="arena"] .member:only-child .portrait{height:40px;width:40px}#scene[data-layout="arena"] .bridge{justify-content:center;padding-top:0}#scene[data-layout="arena"] .balance{left:18px;right:18px}#scene[data-layout="arena"] .individual .side{height:112px;padding:10px 12px;gap:4px}#scene[data-layout="arena"] .individual .total{padding-left:0;text-align:center}#scene[data-layout="arena"] .individual .total strong{font-size:25px;line-height:30px}#scene[data-layout="arena"] .individual .member:only-child{grid-template-columns:38px minmax(0,1fr);height:40px}#scene[data-layout="arena"] .individual .member:only-child .portrait{width:36px;height:36px}
+@keyframes arrive{from{opacity:0;transform:translateY(12px) scale(.97)}to{opacity:1;transform:none}}@keyframes glove{0%{transform:rotate(-20deg) scale(.6)}60%{transform:rotate(7deg) scale(1.12)}100%{transform:none}}@keyframes clockBeat{50%{opacity:.55}}@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+</style>
+<style>
+#impact-stage{position:fixed;inset:0;z-index:20;pointer-events:none;display:grid;place-content:center;text-align:center}
+.pk-impact-fallback-value{font-size:96px;color:#ffd28a}.pk-impact-fallback-status{display:block;font-size:12px;color:#ddd}
+.side{background:linear-gradient(115deg,#14181ef5,#24252bed 48%,#101217f5);border-top:2px solid var(--side);border-bottom-color:#d2e9ff45;box-shadow:inset 0 1px #fff2,inset 0 -2px #0008,0 8px 22px #0004}
+.portrait{border:3px solid #e6cf93;outline:1px solid var(--side);background:linear-gradient(145deg,#6c572f,#171b22 48%,#b59b65);box-shadow:0 0 0 3px #161a21,0 0 0 4px #b4a78277,0 4px 9px #0009;isolation:isolate}
+.portrait::after{content:"";position:absolute;inset:0;z-index:2;border:1px solid #fff8;border-radius:50%;box-shadow:inset 0 0 0 2px #0005,inset 2px 2px 5px #ffffff42;pointer-events:none}
+.side[data-side="right"] .portrait{border-color:#d9e5f7}.name{text-shadow:0 2px 3px #0009}.total strong{font-family:Impact,'Arial Black',Arial,sans-serif;font-weight:900;font-size:39px;line-height:44px;color:#fce9bf;background:linear-gradient(#fff9eb 10%,#f9d984 48%,#ae7532 52%,#ffe8ad 88%);background-clip:text;-webkit-text-fill-color:transparent;filter:drop-shadow(0 2px 1px #000);font-variant-numeric:tabular-nums}
+.side[data-side="right"] .total strong{background-image:linear-gradient(#fff 10%,#d7efff 48%,#718aa6 52%,#ecf7ff 88%)}.total small{color:#e8d5ae;font-weight:700}.member-score{color:#ffdfa1}.winner .portrait{box-shadow:0 0 0 3px #171a20,0 0 0 5px #ffe28f,0 0 16px #ffbb4055}
+#scene[data-motif="wolf"]{--accent:#8de2ff;--rival:#f2b6d1}#scene[data-motif="serpent"]{--accent:#76efb7;--rival:#f4cd72}#scene[data-motif="dragon"]{--rival:#ffc66c}#scene[data-motif="floral"]{--rival:#f2abcf}
+.portrait-frame{position:relative;display:block;width:38px;height:38px;isolation:isolate;flex:none}
+.member:only-child .portrait-frame{width:52px;height:52px}.individual .member:only-child .portrait-frame{width:36px;height:36px}
+#scene[data-layout="arena"] .member:only-child .portrait-frame{width:40px;height:40px}#scene[data-layout="arena"] .individual .member:only-child .portrait-frame{width:36px;height:36px}
+.portrait-frame>.portrait{width:100%;height:100%}
+#scene[data-portrait-style="cloud"] .portrait-frame{--cloud:#f2fbff;--cloud-edge:#92d8ed;--cloud-glow:#5ad9e8}
+#scene[data-portrait-style="cloud"] .portrait-frame[data-portrait-index="1"]{--cloud:#fff4f8;--cloud-edge:#f2a6c6;--cloud-glow:#ed7daf;transform:translateY(-2px) rotate(5deg)}
+#scene[data-portrait-style="cloud"] .portrait-frame[data-portrait-index="2"]{--cloud:#f5f3ff;--cloud-edge:#bca8ef;--cloud-glow:#a890f5;transform:translateY(1px) rotate(-5deg)}
+#scene[data-portrait-style="cloud"] .portrait-frame[data-portrait-index="3"]{--cloud:#fff9e9;--cloud-edge:#e5c879;--cloud-glow:#f4c95d;transform:translateY(-1px) rotate(7deg)}
+#scene[data-portrait-style="cloud"] .portrait{border-color:var(--cloud-edge);border-radius:50%;box-shadow:0 0 0 2px #111820,0 0 14px color-mix(in srgb,var(--cloud-glow) 45%,transparent),inset 0 0 5px #09131c}
+#scene[data-portrait-style="cloud"] .portrait-frame::before{inset:-8px;background:radial-gradient(circle at 50% 54%,var(--cloud) 0 43%,transparent 45%),radial-gradient(circle at 21% 58%,var(--cloud) 0 23%,transparent 25%),radial-gradient(circle at 78% 58%,var(--cloud) 0 23%,transparent 25%),radial-gradient(circle at 33% 29%,var(--cloud) 0 22%,transparent 24%),radial-gradient(circle at 66% 28%,var(--cloud) 0 22%,transparent 24%);border:0;border-radius:0;filter:drop-shadow(0 2px 2px #0008);transform:rotate(-4deg);animation:cloudFloat 4.2s ease-in-out infinite}
+#scene[data-portrait-style="cloud"] .member:nth-child(even) .portrait-frame::before{animation-delay:-2.1s;transform:rotate(5deg)}
+#scene[data-portrait-style="cloud"] .portrait-frame::after{content:"";position:absolute;inset:-10px;border:1px solid color-mix(in srgb,var(--cloud-edge) 65%,transparent);border-radius:50%;opacity:.55;pointer-events:none}
+@keyframes cloudFloat{0%,100%{translate:0 0;scale:1}50%{translate:0 -2px;scale:1.04}}
+#scene[data-portrait-style="cloud"] .portrait{border:2px solid #f3fbff;outline:none;border-radius:43% 49% 42% 48%;background:#7992a6;box-shadow:inset 0 0 4px #101c39}
+#scene[data-portrait-style="cloud"] .portrait::after{border-radius:inherit;border-color:#fff9;box-shadow:inset 0 0 4px #244a6d66}
+#scene[data-portrait-style="cloud"] .portrait-frame::before{content:"";position:absolute;inset:-4px;z-index:-1;background:#d7effb;border:1px solid #ffffffcc;border-radius:41% 49% 43% 48%;box-shadow:-5px 1px 0 -1px #c8e6f6,4px 3px 0 0 #e6f7ff,-1px -5px 0 -1px #effbff,1px 5px 0 -1px #a8cde4,0 3px 8px #0006;transform:rotate(-9deg)}
+#scene[data-portrait-style="cloud"] .portrait{border-color:var(--cloud-edge);border-radius:50%;box-shadow:0 0 0 2px #111820,0 0 14px color-mix(in srgb,var(--cloud-glow) 45%,transparent),inset 0 0 5px #09131c}
+#scene[data-portrait-style="cloud"] .portrait-frame::before{inset:-10px;background:radial-gradient(circle at 50% 54%,var(--cloud) 0 43%,transparent 45%),radial-gradient(circle at 21% 58%,var(--cloud) 0 23%,transparent 25%),radial-gradient(circle at 78% 58%,var(--cloud) 0 23%,transparent 25%),radial-gradient(circle at 33% 29%,var(--cloud) 0 22%,transparent 24%),radial-gradient(circle at 66% 28%,var(--cloud) 0 22%,transparent 24%);border:0;border-radius:0;filter:drop-shadow(0 2px 3px #000a);transform:rotate(-4deg);animation:cloudFloat 4.2s ease-in-out infinite}
+#scene[data-portrait-style="cloud"] .portrait-frame::after{border:0;border-radius:0;box-shadow:none}
+#scene[data-portrait-style="floral"] .portrait{border:2px solid #f8d5e2;outline:none;border-radius:44% 48% 46% 42%;box-shadow:0 1px 6px #0008;background:#493444}
+#scene[data-portrait-style="floral"] .portrait::after{border-radius:inherit;border-color:#f6dba7;box-shadow:inset 0 0 3px #8a466e66}
+#scene[data-portrait-style="floral"] .portrait-frame::before{content:"";position:absolute;inset:-8px;z-index:-1;background:radial-gradient(ellipse at 22% 16%,#eaa3c2 0 15%,transparent 16%),radial-gradient(ellipse at 86% 72%,#f7c3d4 0 16%,transparent 17%),radial-gradient(ellipse at 70% 9%,#8cae77 0 13%,transparent 14%),radial-gradient(ellipse at 9% 71%,#668d69 0 14%,transparent 15%),radial-gradient(ellipse at 49% 95%,#a7c183 0 13%,transparent 14%);filter:drop-shadow(0 2px 2px #0005);transform:rotate(-12deg)}
+#scene[data-profile-layout="center"] .scoreboard:not(.individual){grid-template-columns:minmax(0,1fr) 92px minmax(0,1fr)}
+#scene[data-profile-layout="center"] .side{height:154px;grid-template-columns:minmax(0,1fr);padding:16px 18px 10px;gap:8px}
+#scene[data-profile-layout="center"] .side .members{grid-column:1;grid-row:1}#scene[data-profile-layout="center"] .side .total{grid-column:1;grid-row:2;padding:0;text-align:center}
+#scene[data-profile-layout="center"] .member{grid-template-columns:42px minmax(0,1fr);gap:12px}#scene[data-profile-layout="center"] .member:only-child{grid-template-columns:52px minmax(0,1fr)}
+#scene[data-profile-layout="center"] .individual{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+#scene[data-profile-layout="center"] .individual .side{height:126px}
+#scene:is([data-profile-layout="left"],[data-profile-layout="right"]) .scoreboard{grid-template-columns:minmax(0,1fr);gap:0}
+#scene:is([data-profile-layout="left"],[data-profile-layout="right"]) .side{height:126px;grid-template-columns:minmax(0,1fr) 94px;gap:14px;padding:16px 20px}
+#scene:is([data-profile-layout="left"],[data-profile-layout="right"]) .side .members{grid-column:1;grid-row:1}
+#scene:is([data-profile-layout="left"],[data-profile-layout="right"]) .side .total{grid-column:2;grid-row:1;padding:0;text-align:center}
+#scene:is([data-profile-layout="left"],[data-profile-layout="right"]) .bridge{height:48px;padding:0;flex-direction:row;gap:14px}
+#scene:is([data-profile-layout="left"],[data-profile-layout="right"]) .balance{bottom:-9px}
+#scene:is([data-profile-layout="left"],[data-profile-layout="right"]) .individual{gap:10px;padding-top:38px}
+#scene:is([data-profile-layout="left"],[data-profile-layout="right"]) .individual .side{height:96px}
+#scene:is([data-profile-layout="left"],[data-profile-layout="right"]) .individual .bridge{height:28px}
+#scene:is([data-profile-layout="left"],[data-profile-layout="right"]) .alert{grid-template-columns:44px minmax(0,1fr) auto;gap:8px;padding:10px 12px}
+#scene:is([data-profile-layout="left"],[data-profile-layout="right"]) .alert-art{width:44px;height:44px}#scene:is([data-profile-layout="left"],[data-profile-layout="right"]) .alert-art>img{width:44px;height:44px}
+#scene:is([data-profile-layout="left"],[data-profile-layout="right"]) .alert-copy strong{font-size:18px}
+</style>
+<style>
+#scene{position:fixed;inset:0;width:100%;height:100%;transform-origin:center;overflow:hidden}
+#scene #scoreboard{position:absolute;inset:0;display:block;min-height:0;padding:0}
+#scene #scoreboard .side{position:absolute;left:24px;top:45%;width:235px;max-width:24%;height:auto;min-height:100px;display:grid;grid-template-columns:minmax(0,1fr);gap:10px;padding:10px 4px;background:transparent;border:0;box-shadow:none;border-radius:0;transform:translateY(-50%)}
+#scene #scoreboard .side[data-side="right"]{left:auto;right:24px}
+#scene #scoreboard .side{scale:var(--profile-scale,1);transform-origin:left center}
+#scene #scoreboard .side[data-side="right"]{transform-origin:right center}
+#scene #scoreboard .side .members{grid-column:1;grid-row:1;display:grid;gap:10px;min-width:0}
+#scene #scoreboard .side .member{height:auto;min-height:68px;grid-template-columns:62px minmax(0,1fr);gap:13px}
+#scene #scoreboard .side .portrait-frame,#scene #scoreboard .side .portrait{width:60px;height:60px}
+#scene #scoreboard .side .identity{overflow:visible;min-width:0}
+#scene #scoreboard .side .name{font-size:18px;line-height:24px;text-shadow:0 2px 5px #000,0 0 8px #0009}
+#scene #scoreboard .side .handle{display:block;font-size:12px;color:#f0f4f6;text-shadow:0 2px 4px #000}
+#scene[data-portrait-style="cloud"] .portrait-frame::before{box-shadow:none}
+#scene #scoreboard .side .total{grid-column:1;grid-row:2;text-align:left;padding:0 0 0 75px}
+#scene #scoreboard .side .total strong{display:inline-block;font-size:30px;line-height:35px;max-width:100%;color:#fff}
+#scene #scoreboard .side .total small{display:none}
+#scene #scoreboard .bridge{position:absolute;top:20px;left:50%;height:auto;transform:translateX(-50%);padding:0;display:flex;gap:6px}
+#scene #scoreboard .balance{display:none}
+#scene #scoreboard.individual .side:nth-child(odd){left:24px;right:auto}
+#scene #scoreboard.individual .side:nth-child(even){right:24px;left:auto}
+#scene #scoreboard.individual .side:nth-child(-n+2){top:15%}
+#scene #scoreboard.individual .side:nth-child(n+3){top:78%}
+#scene[data-profile-layout="corners"] #scoreboard .side{top:12%;transform:none}
+#scene[data-profile-layout="corners"] #scoreboard.individual .side:nth-child(n+3){top:60%}
+#scene:is([data-profile-layout="split"],[data-profile-layout="corners"],[data-profile-layout="center"]) #scoreboard .side:has(.member:nth-child(2)){top:14%;height:72%;min-height:0;transform:none;display:block}
+#scene:is([data-profile-layout="split"],[data-profile-layout="corners"],[data-profile-layout="center"]) #scoreboard .side:has(.member:nth-child(2)) .members{position:absolute;inset:0;display:block}
+#scene:is([data-profile-layout="split"],[data-profile-layout="corners"],[data-profile-layout="center"]) #scoreboard .side:has(.member:nth-child(2)) .member{position:absolute;left:0;right:0;width:100%}
+#scene:is([data-profile-layout="split"],[data-profile-layout="corners"],[data-profile-layout="center"]) #scoreboard .side:has(.member:nth-child(2)) .member:first-child{top:0}
+#scene:is([data-profile-layout="split"],[data-profile-layout="corners"],[data-profile-layout="center"]) #scoreboard .side:has(.member:nth-child(2)) .member:nth-child(2){bottom:0}
+#scene:is([data-profile-layout="split"],[data-profile-layout="corners"],[data-profile-layout="center"]) #scoreboard .side:has(.member:nth-child(2)) .total{position:absolute;left:0;top:78px;padding-left:75px}
+#scene[data-profile-layout="left"] #scoreboard .side{left:24px;right:auto;max-width:28%}
+#scene[data-profile-layout="right"] #scoreboard .side{right:24px;left:auto;max-width:28%}
+#scene:is([data-profile-layout="left"],[data-profile-layout="right"]) #scoreboard .side:nth-child(1){top:20%}
+#scene:is([data-profile-layout="left"],[data-profile-layout="right"]) #scoreboard .side:nth-child(3){top:70%}
+#scene .boosts{position:absolute;bottom:20px;left:28%;right:28%}
+#scene .alert-slot{position:absolute;bottom:55px;left:26%;right:26%;height:auto;display:flex;padding:0}
+#scene .alert{background:#101318dd;border:0;border-radius:4px;box-shadow:none}
+#impact-stage{inset:0 25%;overflow:hidden}
+@media(max-width:760px){
+#scene #scoreboard .side{left:16px;width:180px;max-width:44%;top:14%}
+#scene #scoreboard .side[data-side="right"]{right:16px}
+#scene #scoreboard .side .member{grid-template-columns:42px minmax(0,1fr);gap:9px;min-height:48px}
+#scene #scoreboard .side .portrait-frame,#scene #scoreboard .side .portrait{height:40px;width:40px}
+#scene #scoreboard .side .name{font-size:14px;line-height:20px}
+#scene #scoreboard .side .handle{font-size:10px;line-height:15px}
+#scene #scoreboard .side .total{padding-left:51px}
+#scene #scoreboard .side .total strong{font-size:25px;line-height:30px}
+#scene:is([data-profile-layout="split"],[data-profile-layout="corners"],[data-profile-layout="center"]) #scoreboard .side:has(.member:nth-child(2)) .total{top:54px;padding-left:51px}
+#scene #scoreboard.individual .side:nth-child(odd){left:16px}
+#scene #scoreboard.individual .side:nth-child(even){right:16px}
+#scene #scoreboard.individual .side:nth-child(-n+2){top:15%}
+#scene #scoreboard.individual .side:nth-child(n+3){top:82%}
+#scene .boosts{left:12px;right:12px}
+#scene .alert-slot{left:12px;right:12px;bottom:12px}
+#scene:has(.boosts:not(:empty)) .alert-slot{bottom:55px}
+#impact-stage{inset:18% 3% 12%}
+}
+</style>
+<style>
+#scene #scoreboard .side .member{grid-template-columns:80px minmax(0,1fr);min-height:84px;gap:14px}
+#scene #scoreboard .side .portrait-frame,#scene #scoreboard .side .portrait{width:76px;height:76px}
+#scene #scoreboard .portrait{border-width:3px;border-color:#fff0cf;box-shadow:0 0 0 2px #10151c,0 0 0 4px #d8e7ee77,0 7px 18px #0009;filter:contrast(1.04) saturate(1.06)}
+#scene #scoreboard .side[data-side="right"] .portrait{border-color:#dcefff}
+#scene #scoreboard .side .total strong{letter-spacing:.02em;text-shadow:0 3px 8px #0008;filter:drop-shadow(0 2px 2px #0009);font-variant-numeric:tabular-nums}
+#scene #scoreboard .side .total{padding-left:94px}
+#scene:is([data-profile-layout="split"],[data-profile-layout="corners"],[data-profile-layout="center"]) #scoreboard .side:has(.member:nth-child(2)) .total{top:98px}
+#scene #scoreboard .bridge{top:34%;gap:10px;flex-direction:column}
+#scene #scoreboard .versus{font-size:30px;line-height:36px}
+#scene #scoreboard .clock{font-size:24px;height:40px;min-width:110px}
+#scene #scoreboard .clock .icon{width:22px;height:22px}
+@media(max-width:700px){#scene #scoreboard .side .member{grid-template-columns:56px minmax(0,1fr);gap:8px;min-height:60px}#scene #scoreboard .side .portrait-frame,#scene #scoreboard .side .portrait{width:52px;height:52px}#scene #scoreboard .side .total{padding-left:0}#scene:is([data-profile-layout="split"],[data-profile-layout="corners"],[data-profile-layout="center"]) #scoreboard .side:has(.member:nth-child(2)) .total{top:70px}#scene #scoreboard .versus{font-size:22px}#scene #scoreboard .clock{font-size:18px;min-width:84px;height:34px}}
+</style>
+<style>
+#scene #scoreboard .member-score{display:block;margin:2px 0 0;color:#ffe1a2;font-size:clamp(16px,2.4vw,23px);line-height:1;white-space:nowrap;text-shadow:0 2px 5px #000}
+#scene #scoreboard [data-side="right"] .member-score{color:#e1efff}
+#scene #scoreboard .side .team-total small{display:block;font-size:9px;letter-spacing:.14em;text-align:inherit;line-height:12px}
+#scene[data-portrait-style="cloud"] .portrait-frame::before{inset:-5px;border-radius:50%;background:conic-gradient(from 215deg,#242c39,var(--cloud-edge),#fcf8eb,#3b3b48,var(--cloud-edge));animation:none;transform:none}
+#scene[data-portrait-style="cloud"] .portrait-frame::after{inset:-7px;border:1px solid #fff5;border-radius:50%;opacity:.65}
+.portrait-companion{position:absolute;z-index:3;right:-9%;bottom:-9%;width:48%;aspect-ratio:1;filter:drop-shadow(0 2px 2px #000b);background-repeat:no-repeat}
+#scene #scoreboard .member-viewers{display:block;overflow:hidden;text-overflow:ellipsis;color:#fff3cf;font-size:clamp(11px,1.1vw,14px);line-height:1.2;font-weight:650;white-space:nowrap;font-variant-numeric:tabular-nums;text-shadow:0 2px 4px #000}
+#active-bonus{position:fixed;z-index:30;left:50%;top:55%;display:flex;justify-content:center;gap:8px;max-width:94vw;transform:translate(-50%,-50%);pointer-events:none}
+#active-bonus .boost{height:auto;gap:clamp(6px,1.4vw,14px);padding:clamp(6px,1vw,12px) clamp(10px,2vw,22px);border:1px solid #f3c570;border-radius:999px;background:#171522f5;color:#ffe5a4;box-shadow:0 6px 26px #0009;font-size:clamp(14px,2vw,25px)}
+#active-bonus .boost b{font-size:clamp(24px,4vw,50px);line-height:1;color:#fff2cb;text-shadow:0 2px 4px #000}
+#active-bonus .who:empty{display:none}
+#bonus-artwork{position:fixed;z-index:19;left:50%;top:42%;width:min(57vw,56vh,400px);aspect-ratio:1;transform:translate(-50%,-50%);pointer-events:none;filter:drop-shadow(0 9px 18px #000a)}
+#bonus-artwork span{display:block;width:100%;height:100%;background-repeat:no-repeat;animation:bonus-artwork-breathe 2.8s ease-in-out infinite}
+@keyframes bonus-artwork-breathe{0%,100%{transform:scale(.95) translateY(3%)}50%{transform:scale(1.04) translateY(-3%)}}
+#impact-stage[data-renderer="three"][data-assets-ready="true"]:not([hidden])~#bonus-artwork,
+#impact-stage[data-renderer="fallback"]:not([hidden]) .pk-impact-fallback-status,
+#impact-stage[data-renderer="fallback"]:not([hidden]) .pk-impact-fallback-value{display:none}
+body:has(#scene[data-source="preview"]) #impact-stage[data-renderer="fallback"]:not([hidden]) .pk-impact-fallback-status,
+body:has(#scene[data-source="preview"]) #impact-stage[data-renderer="fallback"]:not([hidden]) .pk-impact-fallback-value{display:block}
+#live-glove-stage{position:fixed;z-index:29;top:48%;left:50%;display:flex;align-items:center;justify-content:center;width:min(56vw,460px);transform:translate(-50%,-50%);pointer-events:none}
+#live-glove-stage[hidden]{display:none}
+#live-glove-stage[data-stacked="true"]{top:69%;width:min(39vw,300px)}
+.live-glove-fist{position:relative;width:50%;aspect-ratio:1.5;background:var(--glove-atlas) 0 50%/200% 100% no-repeat;filter:drop-shadow(0 8px 10px #050915aa);animation:live-glove-strike 2.7s ease-in-out infinite}
+.live-glove-fist:last-child{--direction:-1;background-position:100% 50%}
+.live-glove-fist:first-child{--direction:1}
+.live-glove-flare{position:absolute;inset:7% 25%;background:radial-gradient(ellipse,#fff7c1 2%,#efb65c77 24%,transparent 67%);animation:live-glove-flare 2.7s ease-out infinite}
+@keyframes live-glove-strike{0%{transform:translateX(calc(var(--direction) * -18%)) rotate(calc(var(--direction) * -9deg))}18%{transform:translateX(calc(var(--direction) * 11%)) rotate(calc(var(--direction) * 4deg))}32%,78%{transform:translateX(calc(var(--direction) * -4%))}100%{transform:translateX(calc(var(--direction) * -18%)) rotate(calc(var(--direction) * -9deg))}}
+@keyframes live-glove-flare{0%,12%,50%,100%{opacity:0;transform:scale(.45)}20%{opacity:1;transform:scale(1)}38%{opacity:.1;transform:scale(1.45)}}
+@media(prefers-reduced-motion:reduce){.live-glove-fist,.live-glove-flare{animation:none}.live-glove-flare{opacity:.32}}
+#result-confetti{position:absolute;z-index:2;inset:0;overflow:hidden;pointer-events:none}
+#result-confetti i{position:absolute;left:50%;top:44%;width:7px;height:12px;border-radius:2px;background:var(--paper);opacity:0;animation:pk-confetti 1.8s ease-out var(--delay) both}
+@keyframes pk-confetti{12%{opacity:1}100%{transform:translate(var(--dx),var(--dy)) rotate(var(--spin));opacity:0}}
+#result-stage{position:absolute;z-index:3;left:50%;top:48%;transform:translate(-50%,-50%);display:grid;justify-items:center;gap:clamp(8px,2vw,16px);width:max-content;max-width:94%;padding:clamp(10px,2.4vw,28px);text-align:center;color:#fff5d9;border:1px solid #f1c8798c;border-radius:18px;background:linear-gradient(145deg,#30251aef,#121827f5);box-shadow:0 15px 48px #0009,0 0 30px color-mix(in srgb,var(--accent) 28%,transparent)}
+#result-stage h2{display:flex;align-items:center;gap:8px;margin:0;font-size:clamp(16px,2.7vw,32px);line-height:1.1}
+#result-stage .result-players{display:flex;justify-content:center;gap:clamp(8px,2vw,24px);max-width:100%}
+.result-person{display:grid;justify-items:center;gap:8px;min-width:0;width:clamp(88px,17vw,165px)}
+#result-stage .portrait-frame{width:clamp(62px,12vw,128px);height:clamp(62px,12vw,128px)}
+.result-person strong{width:100%;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:clamp(13px,2vw,23px)}
+#scene[data-result="winner"] #scoreboard{opacity:.48}
+#scene[data-result="winner"] #scoreboard .member.winner .portrait-frame{visibility:hidden}
+@media(prefers-reduced-motion:reduce){#result-confetti{display:none}}
+</style>
+</head>
+<body>
+<main id="scene" data-type="pkhub" data-layout="bar" hidden>
+  <section id="scoreboard" class="scoreboard" aria-label="PK skorları"></section>
+  <div id="result-confetti" aria-hidden="true"></div>
+  <section id="result-stage" role="status" hidden></section>
+  <div id="boosts" class="boosts"></div>
+  <div class="alert-slot"><div id="alert" class="alert" role="status" aria-live="polite" hidden></div></div>
+</main>
+<div id="impact-stage" hidden></div>
+<div id="bonus-artwork" aria-hidden="true" hidden><span></span></div>
+<div id="active-bonus" hidden></div>
+<div id="live-glove-stage" aria-hidden="true" hidden><i class="live-glove-fist"></i><i class="live-glove-flare"></i><i class="live-glove-fist"></i></div>
+<script>
+(() => {
+    'use strict';
+    const type = 'pkhub', params = new URLSearchParams(location.search);
+    globalThis.__TIKMNG_WIDGET_PARAMS?.(params);
+    const preview = params.get('preview') === '1';
+    const requestedType = params.get('type'), engine = params.get('engine') || params.get('base') || type,
+        actualId = engine === type && /^pk-[a-z0-9-]{1,80}$/.test(requestedType || '') ? requestedType : type;
+    const prefix = location.pathname.match(/^\/overlays\/[A-Za-z0-9_-]{43}(?=\/)/)?.[0] || '';
+    const endpoint = path => { const url = new URL(prefix + path, location.origin);
+        for (const key of ['key', 'channel']) if (params.has(key)) url.searchParams.set(key, params.get(key)); return url; };
+    const stateURL = endpoint('/api/widget/state'); stateURL.searchParams.set('type', actualId);
+    if (preview) stateURL.searchParams.set('preview', '1');
+    const scene = document.getElementById('scene'), board = document.getElementById('scoreboard'),
+        boostHost = document.getElementById('boosts'), alertHost = document.getElementById('alert');
+    const bonusHost = document.getElementById('active-bonus'),
+        resultHost = document.getElementById('result-stage'), confetti = document.getElementById('result-confetti');
+    const defaults = Object.freeze({ showScores: true, showGlove: true, showMultiplier: true, showResults: true,
+        showCountdown: true, accent: '#58e1c2', scale: 100, opacity: 100, offsetX: 0, offsetY: 0,
+        layout: 'bar', profileLayout: 'split', portraitStyle: 'cloud', showCompanions: true, duration: 6, sound: false, volume: 50, theme: 'inferno', motif: 'flame', entrance: 'bottom', notification: 'both', impactScale: 100, quality: 'auto' });
+    const object = value => value !== null && typeof value === 'object' && !Array.isArray(value);
+    const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    const id = value => (typeof value === 'string' || typeof value === 'number' && Number.isSafeInteger(value)) && /^[1-9]\d{0,31}$/.test(String(value)) ? String(value) : '';
+    const score = value => (typeof value === 'number' || typeof value === 'string' && /^\d{1,16}$/.test(value)) && Number.isSafeInteger(Number(value)) && Number(value) >= 0 ? Number(value) : null;
+    const bound = (value, fallback, min, max) => value !== '' && value !== null && Number.isFinite(Number(value)) ? Math.max(min, Math.min(max, Number(value))) : fallback;
+    const time = value => typeof value === 'number' && Number.isSafeInteger(value) && value >= 1000000000000 ? value : null;
+    const count = value => value === null ? '\u2014' : value.toLocaleString('tr-TR');
+    const clockText = seconds => String(Math.floor(seconds / 60)).padStart(2, '0') + ':' + String(seconds % 60).padStart(2, '0');
+    // Lucide 0.468.0 (ISC): timer, zap, trophy and crown. Inline for relay sources.
+    const paths = { timer: '<line x1="10" x2="14" y1="2" y2="2"/><line x1="12" x2="15" y1="14" y2="11"/><circle cx="12" cy="14" r="8"/>',
+        zap: '<path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.9 5.96A1 1 0 0 0 14 10h6a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.9-5.96A1 1 0 0 0 11 14z"/>',
+        trophy: '<path d="M8 21h8m-4-4v4M7 4h10v5a5 5 0 0 1-10 0V4ZM7 4H4v3a4 4 0 0 0 4 4m9-7h3v3a4 4 0 0 1-4 4"/>',
+        crown: '<path d="m2 4 3 12h14l3-12-6 7-4-8-4 8Zm3 16h14"/>' };
+    const icon = name => '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true">' + (paths[name] || paths.zap) + '</svg>';
+    let settings = { ...defaults }, draft = {}, snapshot = {}, disposed = false, controller = null, pollTimer = null,
+        failures = 0, stateKey = '', boardSignature = '', boostSignature = '', current = null, queue = [],
+        demo = null, demoKey = '', lastRoom = '', lastReceivedAt = Date.now(), audio = null, configured = false, readySent = false;
+    let bonusSignature = '', gloveSignature = '', resultSignature = '', resultKey = '';
+    const seen = new Map();
+    scene.dataset.type = actualId;
+    const impactHost = document.getElementById('impact-stage'), liveGloveHost = document.getElementById('live-glove-stage');
+    const bonusArtwork = document.getElementById('bonus-artwork');
+    let impact = null, pendingImpact = null;
+    const assetBase = prefix + (globalThis.__TIKMNG_CINEMATIC_BASE || '/widget/cinematic/');
+    liveGloveHost.style.setProperty('--glove-atlas', 'url("' + new URL(assetBase + 'assets/pk-gloves-atlas.png', location.origin).href + '")');
+    import(new URL(assetBase + 'pk-impact.js', location.origin).href).then(async module => {
+        const instance = await module.createPKImpact(impactHost, { settings, preview });
+        if (disposed) { instance.dispose(); return; }
+        impact = instance; impact.update(settings);
+        if (pendingImpact && pendingImpact.expiresAt > Date.now()) launchImpact(pendingImpact);
+    }).catch(error => { impactHost.dataset.renderer = 'unavailable'; impactHost.dataset.error = error.message; });
+    function launchImpact(note) {
+        if (!preview && note.kind !== 'boost-start') return;
+        pendingImpact = note;
+        if (impact && note.expiresAt > Date.now() && enabled(note.kind)) impact.trigger({ id: [actualId, lastRoom, note.source, note.battleId, note.scope || '', note.id].join(':'),
+            kind: note.kind, multiplier: note.data.multiplier, duration: note.expiresAt - Date.now(), hold: !preview });
+    }
+
+    function config(saved = {}) {
+        const raw = { ...saved, ...draft }, result = { ...defaults };
+        for (const key of ['showScores', 'showGlove', 'showMultiplier', 'showResults', 'showCountdown', 'showCompanions', 'sound'])
+            if (raw[key] !== undefined) result[key] = [true, 1, '1', 'true'].includes(raw[key]);
+        if (params.get('companions') === '0') result.showCompanions = false;
+        if (/^#[0-9a-f]{6}$/i.test(raw.accent || '')) result.accent = raw.accent;
+        for (const [key, min, max] of [['scale', 40, 180], ['opacity', 0, 100], ['offsetX', -1920, 1920],
+            ['offsetY', -1080, 1080], ['duration', 1, 30], ['volume', 0, 100]]) result[key] = bound(raw[key], defaults[key], min, max);
+        result.layout = raw.layout === 'arena' ? 'arena' : 'bar';
+        result.profileLayout = ['split','corners','center','left','right'].includes(raw.profileLayout) ? raw.profileLayout : 'split';
+        result.portraitStyle = ['auto','cloud','metal','floral'].includes(raw.portraitStyle) ? raw.portraitStyle : 'auto';
+        result.theme = ['inferno','rose','botanical','platinum'].includes(raw.theme) ? raw.theme : defaults.theme;
+        if (preview && ['inferno','rose','botanical','platinum'].includes(params.get('theme'))) result.theme = params.get('theme');
+        const motifs=['flame','inferno','rose','botanical','floral','floral-rose','floral-lotus','platinum','crystal','rainbow','dragon','wolf','lion','serpent','butterfly','turtle','rabbit','gloves'];
+        result.motif = motifs.includes(raw.motif) ? raw.motif
+            : result.theme === 'botanical' ? 'floral' : result.theme === 'rose' ? 'rose' : result.theme === 'platinum' ? 'platinum' : 'flame';
+        result.entrance = ['bottom','top','left','right','burst'].includes(raw.entrance) ? raw.entrance : 'bottom';
+        result.notification = ['multiplier','glove','both'].includes(raw.notification) ? raw.notification : 'both';
+        if (preview) {
+            if (motifs.includes(params.get('motif'))) result.motif = params.get('motif');
+            if (['bottom','top','left','right','burst'].includes(params.get('entrance'))) result.entrance = params.get('entrance');
+            if (['multiplier','glove','both'].includes(params.get('notification'))) result.notification = params.get('notification');
+            if (['split','corners','center','left','right'].includes(params.get('profileLayout'))) result.profileLayout = params.get('profileLayout');
+            if (['auto','cloud','metal','floral'].includes(params.get('portraitStyle'))) result.portraitStyle = params.get('portraitStyle');
+        }
+        result.impactScale = bound(raw.impactScale, 100, 70, 140);
+        result.quality = ['auto','high','low'].includes(raw.quality) ? raw.quality : 'auto';
+        impact?.update(result); return result;
+    }
+    function imageURL(value) {
+        if (typeof value !== 'string' || value.length > 2048 || !value) return '';
+        try { const url = new URL(value, location.href), local = url.pathname.replace(/^\/overlays\/[A-Za-z0-9_-]{43}(?=\/)/, '');
+            if (url.origin === location.origin && /^\/widget\/gift-assets\/[A-Za-z0-9_-]+\.(png|webp|jpe?g)$/.test(local)) return endpoint(local).href;
+            return url.origin !== location.origin && url.protocol === 'https:' && !url.username && !url.password ? url.href : ''; } catch { return ''; }
+    }
+    function validStage(raw, now, legacy = false, fallback = null) {
+        if (!object(raw) || !id(raw.battleId) || !Array.isArray(raw.players) || ![2, 4].includes(raw.players.length) ||
+            !['waiting', 'active', 'finished', 'unknown'].includes(raw.status || 'unknown') || !legacy && raw.source !== 'native') return null;
+        const seenAt = time(raw.seenAt) || time(raw.updatedAt);
+        if (seenAt && now - seenAt >= 300000 || !seenAt && now - lastReceivedAt >= 30000 ||
+            time(raw.endsAt) && now >= raw.endsAt + 15000 || raw.status === 'finished' && time(raw.finishedAt) && now >= raw.finishedAt + 15000) return null;
+        const players = [], ids = new Set();
+        const profileRows = fallback?.battleId === raw.battleId && Array.isArray(fallback.players) ? fallback.players : [];
+        for (const row of raw.players) {
+            if (!object(row) || !id(row.id) || ids.has(id(row.id))) return null;
+            const key = id(row.id); ids.add(key);
+            const cached = profileRows.find(profile => id(profile?.id) === key);
+            const nativeAvatar = imageURL(row.avatar), cachedAvatar = imageURL(cached?.avatar);
+            const preferCache = cachedAvatar && (!nativeAvatar || cached?.avatarWidth > 0);
+            const avatar = preferCache ? cachedAvatar : nativeAvatar;
+            const viewerCount = raw.status === 'active' && (!raw.endsAt || raw.endsAt > now) &&
+                time(row.viewerCountExpiresAt) > now && Number.isSafeInteger(row.viewerCount) ? score(row.viewerCount) : null;
+            players.push({ id: key, score: score(row.score), username: String(row.username || cached?.username || '').slice(0, 64),
+                nickname: String(row.nickname || cached?.nickname || '').slice(0, 64), avatar,
+                avatarFallback: preferCache ? nativeAvatar : cachedAvatar, viewerCount });
+        }
+        let teams = [];
+        if (Array.isArray(raw.teams) && raw.teams.length === 2) {
+            const members = new Set();
+            for (const row of raw.teams) {
+                if (!object(row) || typeof row.id !== 'string' || row.id.length > 128 || !Array.isArray(row.memberIds) || row.memberIds.length !== players.length / 2) { teams = []; break; }
+                const memberIds = row.memberIds.map(id);
+                if (memberIds.some(key => !ids.has(key) || members.has(key)) || new Set(memberIds).size !== memberIds.length) { teams = []; break; }
+                memberIds.forEach(key => members.add(key)); teams.push({ id: row.id, memberIds, score: score(row.score) });
+            }
+            if (teams.length === 2 && teams[0].id === teams[1].id) teams = [];
+        }
+        const stage = { ...raw, players, teams, source: 'native', endsAt: time(raw.endsAt), winner: null,
+            notifications: legacy ? [] : Array.isArray(raw.notifications) ? raw.notifications.slice(-24) : [], effects: [] };
+        const handle = value => String(value || '').trim().replace(/^@/, '').toLowerCase();
+        const owner = handle(snapshot.channel || params.get('channel'));
+        const ownerId = owner && players.find(p => handle(p.username) === owner)?.id;
+        if (ownerId) {
+            players.sort((a, b) => Number(b.id === ownerId) - Number(a.id === ownerId));
+            teams.sort((a, b) => Number(b.memberIds.includes(ownerId)) - Number(a.memberIds.includes(ownerId)));
+            for (const team of teams) team.memberIds.sort((a, b) => Number(b === ownerId) - Number(a === ownerId));
+        }
+        if (!legacy && stage.status === 'active' && (!stage.endsAt || stage.endsAt > now)) stage.effects = (Array.isArray(raw.effects) ? raw.effects : []).filter(row =>
+            object(row) && row.source === 'native' && row.official === true && row.evidence === 'native-task-settle' &&
+            typeof row.boostId === 'string' && [2, 3].includes(row.multiplier) && time(row.startsAt) <= now &&
+            time(row.startsAt) && time(row.expiresAt) > now && row.expiresAt > row.startsAt && row.expiresAt - row.startsAt <= 60000 &&
+            (!stage.endsAt || row.expiresAt <= stage.endsAt)).slice(-4);
+        if (players.length === 2 && teams.length !== 2) stage.teams = players.map(row => ({ id: 'host:' + row.id, memberIds: [row.id], score: row.score }));
+        const winner = raw.winner;
+        if (!legacy && raw.status === 'finished' && object(winner) && winner.official === true &&
+            ['participant', 'team', 'draw'].includes(winner.kind) && Array.isArray(winner.ids) && winner.ids.length <= 4 &&
+            winner.ids.every(key => winner.kind === 'team' ? stage.teams.some(t => t.id === key) : ids.has(key)) &&
+            (winner.kind === 'draw' ? winner.ids.length === 0 : winner.ids.length > 0)) stage.winner = winner;
+        return stage;
+    }
+    function startDemo(key, source, now, participants = 2) {
+        demoKey = key; demo = { startedAt: now, source, participants: participants === 4 ? 4 : 2, forced: null };
+    }
+    function demoStage(now) {
+        if (!demo) return null;
+        const elapsed = Math.max(0, now - demo.startedAt), cycle = Math.floor(elapsed / 42000), t = elapsed % 42000,
+            start = demo.startedAt + cycle * 42000, battleId = String(990001 + cycle), source = demo.source;
+        const names = ['deniz.live', 'arda.live', 'selin.live', 'efe.live'];
+        const players = names.slice(0, demo.participants).map((username, index) => ({ id: String(111 + index), username,
+            nickname: ['Deniz', 'Arda', 'Selin', 'Efe'][index], avatar: endpoint('/widget/gift-assets/royal-demo.png').href,
+            demoPhoto: index % 2, score: [1280, 1060, 940, 830][index] + Math.floor(Math.min(t, 36000) / [220, 280, 310, 360][index]) }));
+        const teams = players.length === 2 ? players.map(p => ({ id: 'host:' + p.id, memberIds: [p.id], score: p.score }))
+            : [{ id: '11', memberIds: ['111', '112'], score: 3240 + Math.floor(Math.min(t, 36000) / 70) },
+                { id: '22', memberIds: ['113', '114'], score: 2890 + Math.floor(Math.min(t, 36000) / 90) }];
+        const winner = t >= 36000 ? { kind: players.length === 2 ? 'participant' : 'team', ids: [players.length === 2 ? '111' : '11'], official: false, evidence: 'manual' } : null;
+        const first = settings.notification === 'glove' || settings.motif === 'gloves' && settings.notification !== 'multiplier' ? ['glove', { participantId: '111', action: 'arrival', evidence: 'manual' }] : ['multiplier', { multiplier: 3 }];
+        const events = [[0, ...first],
+            [7000, 'glove', { participantId: '111', action: 'arrival', evidence: 'manual' }], [12500, 'multiplier', { multiplier: 2 }],
+            [18500, 'boost-start', { boostId: 'demo-boost', multiplier: 3, expiresAt: start + 26500 }],
+            [26500, 'boost-end', { boostId: 'demo-boost', reason: 'expired' }],
+            [28000, 'critical', { endsAt: start + 36000 }], [36000, 'round-winner', winner]];
+        const notifications = events.filter(([at]) => t >= at).map(([at, kind, data]) => ({ id: demoKey + ':' + cycle + ':' + at + ':' + kind,
+            source, official: false, battleId, kind, data, occurredAt: start + at,
+            expiresAt: kind === 'critical' ? start + 36000 : start + at + settings.duration * 1000 }));
+        if (demo.forced && now < demo.forced.expiresAt) notifications.push({ ...demo.forced, source, battleId });
+        return { source, official: false, battleId, status: winner ? 'finished' : 'active', players, teams, endsAt: start + 36000,
+            winner, notifications, effects: t >= 18500 && t < 26500 ? [{ boostId: 'demo-boost', multiplier: 3, expiresAt: start + 26500 }] : [] };
+    }
+    function chooseStage(now) {
+        const studio = snapshot.studio || {};
+        if (preview) {
+            if (!demo || demo.source !== 'preview') startDemo('preview', 'preview', now, Number(params.get('participants')));
+            return demoStage(now);
+        }
+        demo = null; demoKey = '';
+        const primary = validStage(studio.pkStage, now, false, studio.pk);
+        if (primary) return primary;
+        if (object(studio.pkStage) && studio.pkStage.battleId !== studio.pk?.battleId) return null;
+        return validStage(studio.pk, now, true);
+    }
+    function playerName(player) { return player?.nickname || (player?.username ? '@' + player.username : '\u2014'); }
+    function participantName(stage, participantId) { return participantId ? playerName(stage.players.find(p => p.id === participantId)) : ''; }
+    function winningIds(stage) {
+        if (stage.winner?.kind === 'team') return stage.teams.filter(t => stage.winner.ids.includes(t.id)).flatMap(t => t.memberIds);
+        return stage.winner?.kind === 'participant' ? stage.winner.ids : [];
+    }
+    function winnerName(stage, winner) {
+        if (winner.kind === 'draw') return 'Berabere';
+        return winningIds(stage).map(key => participantName(stage, key)).join(' + ');
+    }
+    const companionTiles = { dragon: '0% 0%', wolf: '100% 0%', lion: '0% 100%', serpent: '100% 100%',
+        butterfly: '0% 50%', turtle: '50% 50%', rabbit: '100% 50%', gloves: '50% 50%' };
+    function sceneArtwork(motif) {
+        const smallAtlas = ['butterfly', 'turtle', 'rabbit'].includes(motif);
+        const file = motif === 'gloves' ? 'pk-gloves-atlas.png' : smallAtlas ? 'pk-companions-v1.png' : 'pk-creatures-atlas.png';
+        return { url: new URL(assetBase + 'assets/' + file, location.origin).href,
+            size: motif === 'gloves' ? '100% auto' : smallAtlas ? '300% 100%' : '200% 200%' };
+    }
+    function portrait(player, portraitIndex) {
+        const label = playerName(player), initial = label.replace(/^@/, '').slice(0, 1);
+        const url = player.avatar, fallback = player.avatarFallback && player.avatarFallback !== url
+            ? ' data-fallback="' + esc(player.avatarFallback) + '"' : '';
+        const tile = settings.showCompanions && settings.motif !== 'gloves' && companionTiles[settings.motif];
+        const asset = tile && sceneArtwork(settings.motif);
+        const companion = tile ? '<span class="portrait-companion" aria-hidden="true" style="background-image:url(' + esc(asset.url) +
+            ');background-position:' + tile + ';background-size:' + asset.size + '"></span>' : '';
+        return '<span class="portrait-frame" data-portrait-index="' + portraitIndex + '"><span class="portrait" style="--photo:' + (player.demoPhoto || 0) + '">' + esc(initial) + (url
+            ? '<img' + (player.demoPhoto !== undefined ? ' class="demo-sheet"' : '') + ' src="' + esc(url) + '"' + fallback +
+                ' alt="" referrerpolicy="no-referrer">' : '') + '</span>' + companion + '</span>';
+    }
+    function renderBoard(stage, now) {
+        if (!stage || !settings.showScores) { board.hidden = true; return; }
+        board.hidden = false;
+        const grouped = [2, 4].includes(stage.players.length) && stage.teams.length === 2 && stage.teams.every(team => team.memberIds.length === stage.players.length / 2 && team.memberIds.every(id => stage.players.some(player => player.id === id))), sides = grouped ? stage.teams : stage.players.map(p => ({ id: 'host:' + p.id, memberIds: [p.id], score: p.score }));
+        board.classList.toggle('individual', !grouped);
+        const winnerIds = new Set(winningIds(stage));
+        const winnerVisible = settings.showResults;
+        const html = sides.map((side, index) => {
+            const won = winnerVisible && side.memberIds.every(key => winnerIds.has(key));
+            return '<section class="side' + (won ? ' winner' : '') + '" data-side="' + (grouped && index === 1 ? 'right' : 'left') + '" data-team="' + esc(side.id) + '"><div class="members">' + side.memberIds.map(key => {
+                const p = stage.players.find(row => row.id === key), winner = winnerVisible && winnerIds.has(key);
+                return '<div class="member' + (winner ? ' winner' : '') + '" data-person="' + esc(p.id) + '">' + portrait(p, stage.players.indexOf(p))
+                    + '<div class="identity"><span class="name" title="' + esc(playerName(p)) + '">' + esc(playerName(p)) + (winner ? '<span class="winner-mark">' + icon('crown') + '</span>' : '')
+                    + '</span>' + (p.username ? '<span class="handle">@' + esc(p.username) + '</span>' : '') +
+                    (p.viewerCount != null ? '<span class="member-viewers">' + count(p.viewerCount) + ' izleyici</span>' : '') +
+                    (side.memberIds.length > 1 ? '<b class="member-score" data-score="' + (p.score ?? 'unknown') + '">' + count(p.score) + '</b>' : '') +
+                    '</div></div>';
+            }).join('') + '</div><div class="total' + (side.memberIds.length > 1 ? ' team-total' : '') + '"><strong data-score="' +
+                esc(side.score === null ? 'unknown' : side.score) + '">' + count(side.score) + '</strong><small>' +
+                (side.memberIds.length > 1 ? 'TAKIM PUANI' : 'PUAN') + '</small></div></section>';
+        });
+        const remaining = stage.endsAt ? Math.max(0, Math.ceil((stage.endsAt - now) / 1000)) : null;
+        const bridge = '<div class="bridge"><span class="versus">VS</span><span class="clock"' + (!settings.showCountdown || remaining === null || stage.status === 'finished' ? ' hidden' : '') + '>' + icon('timer') + '<span class="clock-value"></span></span></div>';
+        let balance = '';
+        if (grouped && sides.every(s => s.score !== null)) {
+            const maximum = Math.max(sides[0].score, sides[1].score), share = maximum ? (sides[0].score / maximum) / (sides[0].score / maximum + sides[1].score / maximum) * 100 : 50;
+            balance = '<div class="balance" aria-hidden="true"><span style="width:' + share + '%"></span><span style="width:' + (100 - share) + '%"></span></div>';
+        }
+        const markup = grouped ? html[0] + bridge + html[1] + balance : html.join('') + bridge;
+        if (boardSignature !== markup) {
+            const template = document.createElement('template'); template.innerHTML = markup;
+            const previous = new Map([...board.querySelectorAll('.member')].map(node => [node.dataset.person, node.querySelector('.portrait')]));
+            for (const node of template.content.querySelectorAll('.member')) {
+                const old = previous.get(node.dataset.person), next = node.querySelector('.portrait');
+                if (old && old.outerHTML === next.outerHTML) next.replaceWith(old);
+            }
+            board.replaceChildren(template.content); boardSignature = markup; fitText();
+        }
+        const clock = board.querySelector('.clock');
+        if (clock && remaining !== null) { clock.querySelector('.clock-value').textContent = clockText(remaining); clock.classList.toggle('final', remaining > 0 && remaining <= 10); }
+    }
+    function renderResult(stage) {
+        const ids = settings.showResults && stage.status === 'finished' ? winningIds(stage) : [];
+        if (!ids.length) {
+            resultHost.hidden = true;
+            delete scene.dataset.result;
+            confetti.replaceChildren();
+            return;
+        }
+        const players = stage.players.filter(p => ids.includes(p.id));
+        const markup = '<h2>' + icon('trophy') + (stage.winner.kind === 'team' ? 'Kazanan tak\u0131m' : 'Turun kazanan\u0131') +
+            '</h2><div class="result-players">' + players.map(p => '<div class="result-person" data-person="' + esc(p.id) + '">' +
+                portrait(p, stage.players.indexOf(p)) + '<strong>' + esc(playerName(p)) + '</strong></div>').join('') + '</div>';
+        if (markup !== resultSignature) { resultHost.innerHTML = markup; resultSignature = markup; }
+        resultHost.hidden = false;
+        scene.dataset.result = 'winner';
+        const key = [stage.battleId, stage.winner.kind, ...ids].join(':');
+        if (key === resultKey) return;
+        resultKey = key;
+        if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+        for (const card of resultHost.querySelectorAll('.result-person')) {
+            const source = board.querySelector('.member[data-person="' + card.dataset.person + '"] .portrait-frame');
+            const target = card.querySelector('.portrait-frame');
+            if (!source || board.hidden) continue;
+            const a = source.getBoundingClientRect(), b = target.getBoundingClientRect();
+            target.animate([{ transform: 'translate(' + (a.x + (a.width - b.width) / 2 - b.x) + 'px,' +
+                (a.y + (a.height - b.height) / 2 - b.y) + 'px) scale(' + a.width / b.width + ')' },
+                { transform: 'none' }], { duration: 680, easing: 'cubic-bezier(.2,.7,.25,1)' });
+        }
+        const colors = ['#f8d480', '#f390a5', '#8ce1d5', '#a8bbff'];
+        confetti.replaceChildren(...Array.from({ length: 28 }, (_, i) => {
+            const paper = document.createElement('i'), angle = 2 * Math.PI * i / 28, reach = 15 + i % 5 * 3;
+            paper.style.setProperty('--dx', (Math.cos(angle) * reach) + 'vw');
+            paper.style.setProperty('--dy', (Math.sin(angle) * reach * .7 + 12) + 'vh');
+            paper.style.setProperty('--spin', ((i % 2 ? -1 : 1) * (220 + i * 17)) + 'deg');
+            paper.style.setProperty('--delay', (i % 7 * 28) + 'ms');
+            paper.style.setProperty('--paper', colors[i % colors.length]);
+            paper.addEventListener('animationend', () => paper.remove(), { once: true });
+            return paper;
+        }));
+    }
+    function enabled(kind) {
+        // Directional presets used a single demo category. Live sources use the explicit visibility toggles.
+        return kind === 'glove' ? settings.showGlove && (!preview || settings.notification !== 'multiplier') : ['multiplier', 'boost-start', 'boost-end'].includes(kind)
+            ? settings.showMultiplier && (!preview || settings.notification !== 'glove') : kind === 'round-winner' ? settings.showResults : kind === 'critical' ? settings.showCountdown : false;
+    }
+    const activeBattle = (stage, now) => stage.status === 'active' && (!stage.endsAt || stage.endsAt > now);
+    const isGloveUse = data => data.action === 'used' && ['useCriticalStrikeCard', 'useVaultGloveCard'].includes(data.evidence);
+    function notification(note, stage, now) {
+        if (!object(note) || typeof note.id !== 'string' || note.id.length > 256 || note.battleId !== stage.battleId ||
+            note.source !== stage.source || !object(note.data) || !time(note.occurredAt) || note.occurredAt > now ||
+            !time(note.expiresAt) || note.expiresAt <= now || now - note.occurredAt > 30000 || !enabled(note.kind)) return null;
+        const data = note.data, manual = stage.source === 'preview' || stage.source === 'test';
+        const nativeGift = !manual && note.official === true && note.roomId === lastRoom &&
+            data.battleEvidence === 'active-room-context' && stage.players.some(p => p.id === data.participantId);
+        if (note.kind === 'glove' && (!stage.players.some(p => p.id === data.participantId) ||
+            !['arrival', 'used'].includes(data.action) || !manual && (!activeBattle(stage, now) || !(note.official === true && isGloveUse(data) ||
+                nativeGift && data.action === 'arrival' && data.arrivalType === 'gift' &&
+                data.evidence === 'WebcastGiftMessage.giftId' && ['6007', '5853'].includes(data.giftId))))) return null;
+        if (note.kind === 'multiplier' && !manual) return null;
+        if (['boost-start', 'boost-end'].includes(note.kind) && !manual && !(note.kind === 'boost-start' &&
+            stage.effects.some(row => row.boostId === data.boostId && row.multiplier === data.multiplier && row.expiresAt === data.expiresAt))) return null;
+        if (['multiplier', 'boost-start'].includes(note.kind) && ![2, 3].includes(data.multiplier)) return null;
+        if (note.kind === 'round-winner' && (!stage.winner || !manual && data.official !== true)) return null;
+        if (note.kind === 'critical' && (!stage.endsAt || stage.endsAt <= now || stage.endsAt - now > 10000)) return null;
+        return { ...note, expiresAt: Math.min(note.expiresAt, time(note.presentationExpiresAt) ?? Infinity,
+            note.occurredAt + settings.duration * 1000) };
+    }
+    function receive(stage, now) {
+        for (const [key, expiry] of seen) if (expiry <= now) seen.delete(key);
+        const activations = stage.source === 'native' ? stage.effects.map(row => ({ id: row.boostId, source: 'native',
+            battleId: stage.battleId, kind: 'boost-start', data: row, occurredAt: row.startsAt,
+            expiresAt: row.expiresAt })) : [];
+        const notices = stage.source === 'native' ? stage.notifications.filter(note => note?.kind !== 'boost-start') : stage.notifications;
+        for (const raw of [...notices.slice(-24), ...activations]) {
+            const note = notification(raw, stage, now);
+            if (!note || note.expiresAt <= now) continue;
+            const key = String(note.scope ?? '') + ':' + note.id;
+            if (seen.has(key)) continue;
+            seen.set(key, Math.max(note.expiresAt, now + 30000));
+            if (seen.size > 512) seen.delete(seen.keys().next().value);
+            queue.push(note); if (queue.length > 12) queue.shift();
+        }
+        const stillValid = note => enabled(note.kind) && note.expiresAt > now && (note.source !== 'native' ||
+            (note.kind !== 'glove' || activeBattle(stage, now)) &&
+            (note.kind !== 'boost-start' || stage.effects.some(effect => effect.boostId === note.data.boostId)));
+        queue = queue.filter(stillValid);
+        if (current && !stillValid(current)) current = null;
+        if (current?.source === 'native' && current.kind === 'boost-start' &&
+            queue.some(row => row.source === 'native' && row.kind === 'glove')) current = null;
+        if (current?.source === 'native' && ['glove', 'multiplier'].includes(current.kind)) {
+            const pending = queue.filter(row => row.source === 'native' && ['glove', 'multiplier'].includes(row.kind));
+            if (pending.length) {
+                // Share the remaining presentation TTL; simultaneous facts must both be visible.
+                const deadline = Math.min(current.expiresAt, ...pending.map(row => row.expiresAt));
+                if (now - current.shownAt >= Math.max(250, (deadline - current.shownAt) / (pending.length + 1))) current = null;
+            }
+        }
+        if (!current && queue.length) { current = queue.shift(); current.shownAt = now; drawAlert(stage); playSound(current.kind); }
+    }
+    function drawAlert(stage) {
+        const data = current.data, who = participantName(stage, data.participantId);
+        if (preview && ['multiplier','boost-start','glove'].includes(current.kind)) launchImpact(current);
+        let title = '', subtitle = who, number = '', art = icon('zap');
+        if (current.kind === 'glove') { title = data.action === 'used' ? 'Eldiven kullan\u0131ld\u0131' : 'Eldiven geldi';
+            if (data.arrivalType === 'gift') subtitle = [who, 'Hediye'].filter(Boolean).join(' \u00b7 ');
+            const giftId = data.arrivalType === 'gift' && data.giftId === '5853' ? '5853' : '6007';
+            art = '<img src="' + esc(endpoint('/widget/gift-assets/' + giftId + '.png').href) + '" alt="">'; }
+        if (current.kind === 'multiplier') { title = data.multiplier + '\u00d7' + (data.appliesTo === 'gift' ? ' hediye puan\u0131' : ' puan'); subtitle = who; number = data.multiplier + '\u00d7'; }
+        if (current.kind === 'boost-start') { title = 'Hediye puan\u0131 ba\u015flad\u0131'; subtitle = who; number = data.multiplier + '\u00d7'; }
+        if (current.kind === 'boost-end') { title = 'Boost sona erdi'; subtitle = who; art = icon('timer'); }
+        if (current.kind === 'critical') { title = 'Son saniyeler'; subtitle = ''; art = icon('timer'); }
+        if (current.kind === 'round-winner') { title = stage.winner.kind === 'draw' ? 'Berabere' : 'Turun kazanan\u0131'; subtitle = winnerName(stage, stage.winner); art = icon('trophy'); }
+        alertHost.dataset.kind = current.kind;
+        alertHost.innerHTML = '<div class="alert-art">' + art + '</div><div class="alert-copy"><strong>' + esc(title)
+            + '</strong><small title="' + esc(subtitle) + '">' + esc(subtitle) + '</small></div><span class="alert-number">' + esc(number) + '</span><span class="alert-life"></span>';
+        alertHost.classList.remove('arrival'); void alertHost.offsetWidth; alertHost.classList.add('arrival');
+    }
+    function drawBoosts(stage, now) {
+        const effects = enabled('multiplier') ? (stage?.effects || []).slice(-4)
+            .filter(row => [2, 3].includes(row.multiplier) && time(row.expiresAt) > now) : [];
+        const gloves = new Map();
+        if (stage.source === 'native' && activeBattle(stage, now) && enabled('glove')) {
+            for (const note of stage.notifications) {
+                const data = note?.data;
+                if (note?.kind !== 'glove' || note.source !== 'native' || note.official !== true || note.battleId !== stage.battleId ||
+                    !lastRoom || note.roomId !== lastRoom || data?.battleEvidence !== 'native-battleId' || !isGloveUse(data) ||
+                    !time(note.occurredAt) || note.occurredAt > now || !time(data.effectStartsAt) || data.effectStartsAt > Math.min(now, note.occurredAt + 10000) ||
+                    !time(data.effectExpiresAt) || data.effectExpiresAt - data.effectStartsAt > 60000 ||
+                    !stage.players.some(p => p.id === data.participantId)) continue;
+                const expiresAt = Math.min(data.effectExpiresAt, time(note.expiresAt) || 0, stage.endsAt ?? Infinity);
+                const previous = gloves.get(data.participantId);
+                if (expiresAt > now && (!previous || expiresAt > previous.expiresAt))
+                    gloves.set(data.participantId, { id: note.id, participantId: data.participantId, expiresAt });
+            }
+        }
+        const badge = (row, label, glove = false) => '<span class="boost' + (glove ? ' glove-clock' : '') + '">' + icon(glove ? 'timer' : 'zap') + '<b>' + label + '</b>'
+            + '<span class="who">' + esc(participantName(stage, row.participantId)) + '</span><span>' + clockText(Math.ceil((row.expiresAt - now) / 1000)) + '</span></span>';
+        const gloveNotice = !preview && current?.kind === 'glove' && !time(current.data.effectStartsAt) &&
+            current.expiresAt > now ? current.id : '';
+        const gloveKey = [...gloves.values()].map(row => row.id).join('|') || gloveNotice;
+        if (gloveKey !== gloveSignature) {
+            liveGloveHost.hidden = true;
+            void liveGloveHost.offsetWidth;
+            liveGloveHost.hidden = !gloveKey;
+            gloveSignature = gloveKey;
+        }
+        liveGloveHost.dataset.stacked = String(effects.length > 0);
+        const multipliers = effects.map(row => badge(row, row.multiplier + '\u00d7')).join('');
+        const markup = (preview ? multipliers : '') + [...gloves.values()].map(row => badge(row, 'Eldiven', true)).join('');
+        if (markup !== boostSignature) { boostHost.innerHTML = markup; boostSignature = markup; }
+        const foreground = preview ? '' : multipliers;
+        if (foreground !== bonusSignature) { bonusHost.innerHTML = foreground; bonusSignature = foreground; }
+        bonusHost.hidden = !foreground;
+        const art = companionTiles[settings.motif];
+        bonusArtwork.hidden = !foreground || !art;
+        if (!bonusArtwork.hidden && bonusArtwork.dataset.motif !== settings.motif) {
+            const asset = sceneArtwork(settings.motif);
+            Object.assign(bonusArtwork.firstElementChild.style, {
+                backgroundImage: 'url("' + asset.url + '")', backgroundPosition: art, backgroundSize: asset.size
+            });
+            bonusArtwork.dataset.motif = settings.motif;
+        }
+    }
+    function clearStage() {
+        queue = []; current = null; pendingImpact = null; impact?.stop(); seen.clear();
+        boardSignature = boostSignature = bonusSignature = gloveSignature = resultSignature = resultKey = '';
+        liveGloveHost.hidden = true;
+        bonusArtwork.hidden = true;
+        for (const host of [board, boostHost, bonusHost, alertHost, resultHost, confetti]) host.replaceChildren();
+        alertHost.hidden = bonusHost.hidden = resultHost.hidden = true;
+        delete scene.dataset.result;
+    }
+    function render() {
+        if (disposed || preview && document.hidden) return;
+        if (preview && actualId !== type && !configured) { scene.hidden = true; return; }
+        const now = Date.now(), stage = chooseStage(now), key = [lastRoom, stage?.source, stage?.battleId].join(':');
+        if (pendingImpact && (!enabled(pendingImpact.kind) || pendingImpact.expiresAt <= now)) { pendingImpact = null; impact?.stop(); }
+        if (key !== stateKey) { clearStage(); stateKey = key; }
+        if (!preview) {
+            const effect = enabled('multiplier') ? stage?.effects?.at(-1) : null;
+            if (pendingImpact && (!effect || pendingImpact.id !== effect.boostId)) { pendingImpact = null; impact?.stop(); }
+            if (effect && !pendingImpact) launchImpact({ id: effect.boostId, source: 'native', battleId: stage.battleId,
+                kind: 'boost-start', data: effect, expiresAt: effect.expiresAt });
+        }
+        if (!stage) { scene.hidden = true; return; }
+        scene.hidden = false; scene.dataset.source = stage.source; scene.dataset.layout = settings.layout; scene.dataset.motif = settings.motif;
+        if (preview && !readySent && parent !== window) { readySent = true;parent.postMessage({type:'tikmng-widget-ready',id:actualId}, '*'); }
+        scene.dataset.profileLayout = !preview && ['left', 'right'].includes(settings.profileLayout) ? 'split' : settings.profileLayout;
+        scene.dataset.portraitStyle = settings.portraitStyle === 'auto' ? 'cloud' : settings.portraitStyle;
+        scene.classList.toggle('only-alerts', !settings.showScores);
+        renderBoard(stage, now); renderResult(stage); receive(stage, now); drawBoosts(stage, now);
+        const impactCoversAlert = current && preview && ['multiplier', 'boost-start', 'glove'].includes(current.kind);
+        alertHost.hidden = !current || current.kind === 'round-winner' && !resultHost.hidden ||
+            impactCoversAlert && impactHost.dataset.renderer === 'three' && !impactHost.hidden && impactHost.dataset.phase !== 'loading';
+        if (current) {
+            if (current.kind === 'critical') alertHost.querySelector('.alert-number').textContent = String(Math.max(0, Math.ceil((stage.endsAt - now) / 1000)));
+            alertHost.style.setProperty('--life', String(Math.max(0, (current.expiresAt - now) / Math.max(1, current.expiresAt - current.shownAt))));
+        }
+        fit();
+    }
+    function fitText() {
+        for (const node of board.querySelectorAll('.total strong,.member-score')) { node.style.fontSize = ''; let size = parseFloat(getComputedStyle(node).fontSize); node.style.fontSize = size + 'px';
+            while (size > 8 && node.scrollWidth > node.clientWidth) node.style.fontSize = --size + 'px'; }
+    }
+    function fit() {
+        scene.style.width = innerWidth + 'px';
+        scene.style.transform = 'translate(' + settings.offsetX + 'px,' + settings.offsetY + 'px)';
+        scene.style.setProperty('--profile-scale',String(settings.scale/100));
+        scene.style.opacity = String(settings.opacity / 100); scene.style.setProperty('--accent', settings.accent);
+        bonusHost.style.opacity = scene.style.opacity;
+        bonusArtwork.style.opacity = scene.style.opacity;
+        bonusHost.style.transform = 'translate(calc(-50% + ' + settings.offsetX + 'px),calc(-50% + ' + settings.offsetY + 'px))';
+        fitText();
+    }
+    function playSound(kind) {
+        if (!settings.sound || !settings.volume || preview && !demo?.audition) return;
+        try {
+            const Audio = window.AudioContext || window.webkitAudioContext;
+            if (!Audio) return;
+            audio ||= new Audio(); const context = audio;
+            Promise.resolve(context.resume()).then(() => {
+                if (disposed || !settings.sound || preview && document.hidden) return;
+                const osc = context.createOscillator(), gain = context.createGain(), at = context.currentTime;
+                osc.type = 'sine'; osc.frequency.setValueAtTime(kind === 'round-winner' ? 660 : 440, at);
+                osc.frequency.exponentialRampToValueAtTime(kind === 'round-winner' ? 990 : 660, at + .15);
+                gain.gain.setValueAtTime(settings.volume / 100 * .12, at); gain.gain.exponentialRampToValueAtTime(.001, at + .22);
+                osc.connect(gain); gain.connect(context.destination); osc.onended = () => { osc.disconnect(); gain.disconnect(); };
+                osc.start(at); osc.stop(at + .24);
+            }).catch(() => {});
+        } catch {}
+    }
+    function accept(data) {
+        if (!object(data)) throw new Error('Invalid widget state');
+        const room = String(data.studio?.session?.roomId || '');
+        if (room !== lastRoom) { clearStage(); stateKey = ''; demo = null; demoKey = ''; lastRoom = room; }
+        snapshot = data; lastReceivedAt = Date.now(); settings = config(data.studio?.settings?.[actualId]); impact?.update(settings); configured = true;
+        scene.dataset.connection = 'ready'; render();
+    }
+    async function poll() {
+        clearTimeout(pollTimer); pollTimer = null;
+        if (disposed || controller || preview && document.hidden) return;
+        const request = new AbortController(); controller = request;
+        let timedOut = false;
+        const deadline = setTimeout(() => { timedOut = true; request.abort(); }, 30000);
+        try {
+            const response = await fetch(stateURL.href, { cache: 'no-store', signal: request.signal });
+            if (!response.ok) throw new Error('Widget state unavailable');
+            const data = await response.json();
+            if (!disposed && !request.signal.aborted) { failures = 0; accept(data); }
+        } catch {
+            if (!disposed && !(preview && document.hidden) && (!request.signal.aborted || timedOut)) { failures = Math.min(5, failures + 1); scene.dataset.connection = 'retrying'; }
+        } finally {
+            clearTimeout(deadline); if (controller === request) controller = null;
+            if (!disposed && !(preview && document.hidden)) pollTimer = setTimeout(poll, request.signal.aborted && !timedOut ? 0 : failures ? Math.min(30000,2000*2**Math.min(4,failures)) : window.TikMnGWidgetTransport?.changesSupported ? 0 : 2000);
+        }
+    }
+    addEventListener('message', event => {
+        if (!preview || event.source !== parent || ![location.origin, 'null', 'file://'].includes(event.origin) || !object(event.data)) return;
+        if (event.data.widgetId && event.data.widgetId !== actualId) return;
+        if (event.data.type === 'tikmng-widget-draft' && object(event.data.settings)) { draft = event.data.settings; settings = config(snapshot.studio?.settings?.[actualId]); impact?.update(settings); boardSignature = ''; render(); }
+        if (event.data.type === 'tikmng-widget-audition') { startDemo('preview:' + Date.now(), 'preview', Date.now(), demo?.participants); demo.audition = true; clearStage(); render(); }
+        if (event.data.type === 'tikmng-widget-pk-preview' && demo) {
+            if ([2, 4].includes(event.data.participants)) { startDemo('preview:' + Date.now(), 'preview', Date.now(), event.data.participants); clearStage(); }
+            const kinds = { glove: ['glove', { action: 'arrival', participantId: '111', evidence: 'manual' }],
+                '2x': ['multiplier', { multiplier: 2 }], '3x': ['multiplier', { multiplier: 3 }] };
+            const entry = Object.hasOwn(kinds, event.data.event) ? kinds[event.data.event] : null;
+            if (entry) { const at = Date.now(), sequence = (demo.forcedSequence || 0) + 1; demo.forcedSequence = sequence;
+                demo.forced = { id: 'manual:' + at + ':' + sequence, kind: entry[0], data: entry[1], occurredAt: at, expiresAt: at + settings.duration * 1000 }; current = null; queue = []; }
+            render();
+        }
+    });
+    document.addEventListener('visibilitychange', () => {
+        if (!preview) return;
+        if (document.hidden) { clearTimeout(pollTimer); pollTimer = null; controller?.abort(); audio?.suspend().catch(() => {}); }
+        else { render(); if (!controller) poll(); }
+    });
+    scene.addEventListener('error', event => {
+        const image = event.target;
+        if (image.tagName !== 'IMG' || !image.closest('.portrait')) return;
+        const fallback = image.dataset.fallback;
+        if (fallback) { delete image.dataset.fallback; image.src = fallback; }
+        else image.remove();
+    }, true);
+    addEventListener('resize', () => { fitText(); fit(); });
+    const localClock = setInterval(render, 250);
+    addEventListener('pagehide', () => { disposed = true; pendingImpact = null; impact?.dispose(); clearInterval(localClock); clearTimeout(pollTimer); controller?.abort(); audio?.close().catch(() => {}); }, { once: true });
+    render(); poll();
+})();
+</script>
+</body>
+</html>

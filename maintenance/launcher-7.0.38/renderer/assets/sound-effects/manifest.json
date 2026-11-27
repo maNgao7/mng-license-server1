@@ -1,0 +1,138 @@
+{
+  "schemaVersion": 1,
+  "name": "TikMnG Özgün Sentetik Ses Efektleri Başlangıç Paketi",
+  "version": 1,
+  "createdFor": "TikMnG launcher",
+  "origin": "Original programmatic oscillator and seeded-noise synthesis created for TikMnG; not TikOyun assets.",
+  "rights": {
+    "statement": "Created for TikMnG from scratch. No third-party recordings, samples, music, melodies, models or sound libraries were used.",
+    "permission": "These original generated effects may be used, copied, modified and redistributed with TikMnG and in games, videos and live streams, including commercial use. No attribution is required.",
+    "thirdPartyAssets": false,
+    "thirdPartyAttribution": [],
+    "affiliation": "Not sourced from, licensed by or affiliated with TikOyun."
+  },
+  "generator": "tools/build-sound-effects.cjs (Node.js built-ins only; deterministic xorshift32 noise)",
+  "regenerate": "node tools/build-sound-effects.cjs",
+  "verify": "node tools/build-sound-effects.cjs --check",
+  "format": {
+    "container": "WAV",
+    "codec": "PCM",
+    "sampleRate": 32000,
+    "channels": 1,
+    "bitsPerSample": 16
+  },
+  "preview": "Resolve each registered file relative to renderer/assets/sound-effects/. No network access is needed.",
+  "totalAudioBytes": 511160,
+  "sounds": [
+    {
+      "id": "gift-chime",
+      "title": "Hediye bildirimi",
+      "category": "Hediyeler",
+      "file": "gift-chime.wav",
+      "bytes": 61484,
+      "sha256": "34b6b45d02234726c15bb9645ce62ef6786da9f6f0edd2c2307e5d63a8f7db6f",
+      "durationSeconds": 0.96,
+      "description": "Four bright glass droplets bloom into a soft sparkling tail for a received gift.",
+      "synthesis": "Inharmonic sine partials at 784, 1176, 1568 and 2093 Hz; staggered strikes and short reflections."
+    },
+    {
+      "id": "success",
+      "title": "Zafer",
+      "category": "Sonuçlar",
+      "file": "success.wav",
+      "bytes": 49964,
+      "sha256": "7b1330bfaba36ea6ac802783f9cba9003736d95209b5806a350942e29bee5bad",
+      "durationSeconds": 0.78,
+      "description": "A quick warm brass lift resolves into one compact celebratory chord.",
+      "synthesis": "Soft additive brass strikes, two rising pickups and a three-voice final hit with low reinforcement."
+    },
+    {
+      "id": "fail",
+      "title": "Kaybetme",
+      "category": "Sonuçlar",
+      "file": "fail.wav",
+      "bytes": 56364,
+      "sha256": "f0514ae43a5206f3c6bc9bc75e3ebb5f1f515ad9e16e11ccbc94424122a90f08",
+      "durationSeconds": 0.88,
+      "description": "A rubbery low pitch collapses with a wobble and a quiet dry rattle.",
+      "synthesis": "Descending 310-to-73 Hz triangle glide, phase vibrato and seeded band-limited rattle."
+    },
+    {
+      "id": "countdown",
+      "title": "Geri sayım",
+      "category": "Zamanlayıcılar",
+      "file": "countdown.wav",
+      "bytes": 89644,
+      "sha256": "ece583b7602fb08a63218db0963f151471730a12e4f85e66b4ccb08fa3e49b15",
+      "durationSeconds": 1.4,
+      "description": "Three evenly spaced clock pips end in a brighter, longer go signal.",
+      "synthesis": "Three 760 Hz sine/triangle pips at 320 ms intervals; final 1520/2280 Hz go pair."
+    },
+    {
+      "id": "turbo",
+      "title": "Turbo",
+      "category": "Güçlendirmeler",
+      "file": "turbo.wav",
+      "bytes": 58924,
+      "sha256": "6964a2b01fb111bf54112c1380ac055d74fcde081d2807453b3a1f6799abe996",
+      "durationSeconds": 0.92,
+      "description": "An accelerating engine buzz rushes upward through a grainy air sweep.",
+      "synthesis": "Three-harmonic exponential 95-to-1850 Hz sweep, accelerating pulse envelope and filtered seeded noise."
+    },
+    {
+      "id": "dramatic-sting",
+      "title": "Gerilim",
+      "category": "Dramatik",
+      "file": "dramatic-sting.wav",
+      "bytes": 76844,
+      "sha256": "3039cd7ab5da1077ce524fbd5138d07f67f79293757c2a2fa697c6f44c4a633e",
+      "durationSeconds": 1.2,
+      "description": "A deep synthetic impact supports a tense metallic stab and a dark tail.",
+      "synthesis": "105-to-39 Hz descending kick, dissonant 146.83/155.56/220 Hz FM voices and a seeded noise impact."
+    },
+    {
+      "id": "alert",
+      "title": "Yayın uyarısı",
+      "category": "Bildirimler",
+      "file": "alert.wav",
+      "bytes": 43564,
+      "sha256": "f067bd5792046975ddb436026fa88ffaea3549a876dfdb150543df7f9f25ff9d",
+      "durationSeconds": 0.68,
+      "description": "Two crisp alternating electronic double-pulses cut through a busy stream.",
+      "synthesis": "Four separated 920/1360 Hz odd-harmonic pulses with short rounded gates."
+    },
+    {
+      "id": "coin",
+      "title": "Coin",
+      "category": "Ödüller",
+      "file": "coin.wav",
+      "bytes": 26924,
+      "sha256": "e1195e2da6726954c8ba7087de25e6a1ba7de61560afe2c72117648a25b896b0",
+      "durationSeconds": 0.42,
+      "description": "A tiny double metallic ping jumps upward and rings out quickly.",
+      "synthesis": "1180/1730 Hz sine strikes with decaying 3.41-ratio FM overtones; offset by 67 ms."
+    },
+    {
+      "id": "bubble-pop",
+      "title": "Baloncuk",
+      "category": "Oyun efektleri",
+      "file": "bubble-pop.wav",
+      "bytes": 15404,
+      "sha256": "25ff344e708335b8af7db35bb3625b841cbc7a40fe4b6903c9c3a68559cd1430",
+      "durationSeconds": 0.24,
+      "description": "A short hollow bubble plop with a tiny breathy snap.",
+      "synthesis": "Curved 920-to-125 Hz sine drop, weak subharmonic and a 22 ms filtered noise transient."
+    },
+    {
+      "id": "laser-zap",
+      "title": "Lazer",
+      "category": "Oyun efektleri",
+      "file": "laser-zap.wav",
+      "bytes": 32044,
+      "sha256": "8a8d1ce7b924b05d7d6f88ba1df000b18d8eabd454f2b97925d332ae0bfcdaea",
+      "durationSeconds": 0.5,
+      "description": "A sharp sci-fi shot falls through a resonant, lightly echoed tail.",
+      "synthesis": "2600-to-180 Hz exponential phase-modulated sweep, 37 Hz amplitude ripple and two short echoes."
+    }
+  ]
+}

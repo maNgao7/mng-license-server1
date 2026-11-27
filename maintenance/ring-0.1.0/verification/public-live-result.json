@@ -1,0 +1,33 @@
+{
+  "schemaVersion": 2,
+  "appVersion": "0.1.0",
+  "username": "rasimbisakin",
+  "startedAt": "2026-11-27T16:21:38.711Z",
+  "connected": true,
+  "locallySeated": 0,
+  "matchingLiveGiftPackets": 0,
+  "nativeHealthDecreased": false,
+  "displayedPortraits": 2,
+  "visibleHealthBars": 2,
+  "chatPackets": 41,
+  "giftPackets": 6,
+  "likePackets": 90,
+  "acceptedLiveCommands": 2,
+  "nativeHits": 2,
+  "files": {},
+  "statusHistory": [
+    "disconnected",
+    "connecting",
+    "connected"
+  ],
+  "testSettings": {
+    "likeThreshold": 100,
+    "likePunchCount": 2,
+    "blueGift": "5269",
+    "redGift": "5655"
+  },
+  "gameCaptureImage": true,
+  "passed": false,
+  "error": "No selected live gift from an active fighter was observed in this window",
+  "finishedAt": "2026-11-27T16:24:21.552Z"
+}

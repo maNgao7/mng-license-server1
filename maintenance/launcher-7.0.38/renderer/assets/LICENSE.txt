@@ -1,0 +1,7 @@
+TikMnG — Kullanım Sözleşmesi ve Lisans Şartları
+
+1. Bu yazılım MNG tarafından geliştirilmiştir.
+2. Yazılımın kullanımı geçerli bir lisans anahtarı gerektirir.
+3. Her lisans anahtarı belirlenen süre (1, 7 veya 30 gün vb.) boyunca geçerlidir.
+4. Lisans süresi dolduğunda uygulamalara erişim otomatik olarak kilitlenir.
+5. Her lisans anahtarı tek bir bilgisayara/cihaza bağlanır.

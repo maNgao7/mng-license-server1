@@ -1,0 +1,4 @@
+.account-connect-actions{display:flex;gap:8px;margin:0 0 10px}
+.account-connect-actions button{flex:1;padding:11px 14px;border:0;border-radius:5px;background:#25f4ee;color:#052023;font-weight:900}
+.account-connect-actions .secondary{background:#27405f;color:#fff}
+.account-connection-status{min-height:20px;margin:8px 0;color:#a9bed4;font-size:12px}

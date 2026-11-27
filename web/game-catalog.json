@@ -1,7 +1,24 @@
 {
-  "revision": "20261120-7.0.28",
-  "heading": "18 oyun. Her yayına başka bir heyecan.",
+  "revision": "20261127-7.0.38",
+  "heading": "19 oyun. Her yayına başka bir heyecan.",
   "games": [
+    {
+      "id": "ring",
+      "title": "Ring",
+      "category": "Aksiyon & Rekabet",
+      "cover": "ring-v1",
+      "isNew": true,
+      "tagline": "Yayınınız ringe çıksın.",
+      "description": "İzleyicileriniz mavi ve kırmızı köşede boksör olur. Hediye ve beğenilerle yumruk atar; kazanan ringde kalır, sıradaki rakip gelir. FPS puanı bekleyenlerin ringe giriş önceliğini belirler.",
+      "features": [
+        "Mavi ve kırmızı köşe · Beğeni ve hediyeyle yumruk",
+        "100 beğeni = 2 yumruk · B menüsünden değiştirilebilir",
+        "FPS ile sıra önceliği · Kazanan ringde kalır"
+      ],
+      "requirements": "Windows 10/11 64 bit. Steam üzerinden ücretsiz Online Boxing 3D Demo (4793540) bir kez kurulmalıdır. Ring modunu TikMnG üzerinden indirip oynayın; Python kurulumu gerekmez. Canlı etkileşimler için internet gerekir.",
+      "steamUrl": "https://store.steampowered.com/app/4793540/",
+      "tutorialUrl": "https://www.youtube.com/watch?v=Il6t2jrBy1c"
+    },
     {
       "id": "fetih",
       "title": "Fetih",

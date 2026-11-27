@@ -1,0 +1,25 @@
+
+Native physics steps and largest unexplained displacement: 3223 9.790675089994355e-16
+Native stun prevented before KO: [ 0, 0 ]
+Original native punch keyframes: { '7': 28, '12': 28 }
+Punch start intervals (simulation milliseconds): [ 451, 451, 458 ]
+Native glove motion relative to the head: [ 1.4145412697052226, 1.4296074518174982 ]
+Post-hit native travel and widest glove separation: [ 16.484436658073697, 17.508065499589048 ] [ 0.8389621174787186, 0.34552390707969 ]
+Post-hit glove depth in front of the chest (10th percentile): [ 0.43381935853337805, 0.3283114370798397 ]
+Both corners held their native guard with one HP.
+Round transition 1
+Native physics steps and largest unexplained displacement: 2476 9.76340376409391e-16
+Native stun prevented before KO: [ 0, 4.787169933319092 ]
+Original native punch keyframes: { '7': 28, '12': 28 }
+Punch start intervals (simulation milliseconds): [ 451, 451, 451 ]
+Native glove motion relative to the head: [ 1.1883815651993737, 1.1405378446164192 ]
+Post-hit native travel and widest glove separation: [ 15.803906322909171, 15.309248580213325 ] [ 0.7221140740619709, 1.6463524094614679 ]
+Post-hit glove depth in front of the chest (10th percentile): [ 0.42623066964775685, 0.6576121621985722 ]
+Both corners held their native guard with one HP.
+Round transition 2
+Fastest measured horizontal travel: 10.27
+Median fight spacing, center drift, and physics rates: {"spacing":2.5348228350569686,"centerDrift":6.875848081685598,"betweenStrikes":0.5577981510464478,"duringStrikes":0.5380530837527682}
+Motion across both matches: {"samples":532,"exchangeSamples":78,"fastest":10.271664713832873,"longestLean":0.04799999878741801,"maxShoeOverHip":-1.665600380070283,"maxShoeLift":0.5050609991810648,"longestHighStep":0,"lean95":16.849064064624308,"maxLean":39.87101664952355}
+Longest extended-arm anomaly (simulation seconds): 0.04799999878741801
+2 full-app bouts, fixed corners, KO, winner and challenger passed.
+Manual P reset staged the queue, cleared old strikes and started the new match.

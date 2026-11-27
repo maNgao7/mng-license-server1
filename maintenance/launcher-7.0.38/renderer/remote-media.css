@@ -1,0 +1,9 @@
+.remote-media-row .media-thumb video,
+.remote-media-row .media-thumb img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    background: #050708;
+}
+.remote-media-row .media-thumb > .workspace-icon { width: 48px; height: 48px; }

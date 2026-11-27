@@ -1,0 +1,580 @@
+:root {
+    --launcher-yellow: #ffe34d;
+    --launcher-pink: #ff7f9d;
+    --launcher-purple: #7954e8;
+    --launcher-ink: #191b28;
+    --launcher-cream: #fff9ed;
+    --launcher-violet: #eee6ff;
+    --launcher-deep-purple: #492aa0;
+    --launcher-muted: #5a4e62;
+    --launcher-line: #cdbfae;
+    --launcher-hover: #fff0b3;
+    --launcher-good: #1b6444;
+    --launcher-warning: #784114;
+    --launcher-error: #922642;
+    --launcher-scrim: #251446b8;
+    --launcher-purple-backdrop: radial-gradient(ellipse at top left, var(--launcher-purple), #5632ba 68%, #45278f);
+}
+
+body {
+    background: var(--launcher-yellow);
+    color: var(--launcher-ink);
+}
+
+/* Workspace chrome */
+#workspaceRoot {
+    --ink: var(--launcher-ink);
+    --muted: var(--launcher-muted);
+    --line: var(--launcher-line);
+    --paper: var(--launcher-cream);
+    --teal: var(--launcher-deep-purple);
+    color-scheme: light;
+    background: var(--launcher-yellow);
+}
+
+.workspace-sidebar {
+    color: var(--launcher-ink);
+    background: var(--launcher-pink);
+    border-left-color: #a53657;
+    border-bottom-color: #a53657;
+}
+
+.workspace-brand {
+    display: grid;
+    place-items: center;
+    width: 66px;
+    height: 66px;
+    padding: 0;
+    background: transparent;
+}
+
+.workspace-brand img { display: block; width: 66px; height: 66px; }
+
+.workspace-sidebar button,
+.workspace-sidebar .sidebar-bottom { color: var(--launcher-ink); }
+.workspace-sidebar button:hover { color: var(--launcher-ink); background: #ffafc0; }
+.workspace-sidebar button.selected {
+    color: var(--launcher-cream);
+    background: var(--launcher-ink);
+    box-shadow: inset 3px 0 var(--launcher-yellow);
+}
+#workspaceRoot .workspace-sidebar button.selected:focus-visible { outline-color: var(--launcher-ink); }
+.workspace-support .workspace-icon:first-child { color: var(--launcher-good); }
+.workspace-support .workspace-icon:last-child { color: var(--launcher-error); }
+
+.workspace-license {
+    background: var(--launcher-cream);
+    border-color: #aa425f;
+}
+.workspace-license .license-status { color: var(--launcher-muted); }
+.workspace-license .license-remaining { color: var(--launcher-ink); }
+.workspace-license .license-dot.aktif { background: var(--launcher-good); }
+.workspace-license[data-license-state="warning"] {
+    background: #fff0ca;
+    border-color: #996024;
+}
+.workspace-license[data-license-state="warning"] .license-status { color: var(--launcher-warning); }
+.workspace-license[data-license-state="warning"] .license-dot {
+    background: #a55515;
+    box-shadow: none;
+}
+
+.workspace-header { border-bottom-color: #191b2840; }
+.workspace-header small,
+.live-label { color: var(--launcher-ink); }
+.preview-edition {
+    background: var(--launcher-violet);
+    border-color: var(--launcher-deep-purple);
+    color: var(--launcher-deep-purple) !important;
+}
+.live-label::before { background: #60556a; }
+.live-label.connected::before { background: var(--launcher-good); }
+.live-label.connecting::before,
+.live-label.waiting::before { background: var(--launcher-warning); }
+.live-label.error::before { background: var(--launcher-error); }
+
+/* Shared library and settings controls */
+#workspaceRoot :is(input, select, textarea) {
+    background: var(--launcher-cream);
+    border-color: #988873;
+    color: var(--launcher-ink);
+}
+#workspaceRoot :is(input, textarea)::placeholder { color: var(--launcher-muted); opacity: 1; }
+#workspaceRoot label { color: var(--launcher-ink); }
+.workspace-button,
+.workspace-icon {
+    background: var(--launcher-cream);
+    border-color: #988873;
+    color: var(--launcher-ink);
+}
+.workspace-button:hover,
+.workspace-icon:hover {
+    background: var(--launcher-hover);
+    border-color: var(--launcher-deep-purple);
+}
+.workspace-button.primary,
+#workspaceRoot [data-action="update"] {
+    background: var(--launcher-deep-purple);
+    border-color: var(--launcher-deep-purple);
+    color: var(--launcher-cream);
+}
+.workspace-button.primary:hover,
+#workspaceRoot [data-action="update"]:hover { background: #382078; }
+.workspace-icon.danger,
+#mediaEditorError { color: var(--launcher-error); }
+
+.library-tabs { border-bottom-color: #191b2840; }
+.library-tabs small { color: inherit; }
+.library-tabs button[aria-selected=true] {
+    color: var(--launcher-deep-purple);
+    border-color: var(--launcher-deep-purple);
+}
+.library-card {
+    background: var(--launcher-cream);
+    border-color: #a68a44;
+}
+.library-card:hover,
+.library-card:focus-within {
+    border-color: var(--launcher-deep-purple);
+    box-shadow: 0 5px 18px #40286330;
+}
+.cover-button { background: var(--launcher-violet); color: var(--launcher-ink); }
+.cover-caption,
+.library-card:hover .cover-caption {
+    background: var(--launcher-cream);
+    border-top-color: var(--launcher-line);
+}
+.cover-caption small { color: var(--launcher-muted); }
+.cover-badge {
+    background: var(--launcher-cream);
+    border-color: var(--launcher-line);
+    color: var(--launcher-ink);
+}
+.cover-badge.ready {
+    background: #e6f5e8;
+    border-color: #86b295;
+    color: var(--launcher-good);
+}
+.cover-enter { background: var(--launcher-pink); color: var(--launcher-ink); }
+.cover-new { background: var(--launcher-yellow); color: var(--launcher-ink); }
+.game-letter { background: var(--launcher-violet); color: var(--launcher-deep-purple); }
+
+/* Game details occupy the content column, independent of the sidebar. */
+#workspaceRoot[data-game-detail] .workspace-content { background: var(--launcher-purple-backdrop); }
+#workspaceRoot[data-game-detail] .workspace-header,
+#workspaceRoot[data-game-detail] .workspace-header small,
+#workspaceRoot[data-game-detail] .live-label { color: var(--launcher-cream); }
+#workspaceRoot[data-game-detail] .workspace-header {
+    background: #38207882;
+    border-bottom-color: #fff9ed48;
+}
+#workspaceRoot[data-game-detail] .live-label::before { background: currentColor; }
+#workspaceRoot[data-game-detail] .live-label.connected::before { background: #b9efc9; }
+#workspaceRoot[data-game-detail] .live-label:is(.waiting, .connecting)::before { background: var(--launcher-yellow); }
+#workspaceRoot[data-game-detail] .live-label.error::before { background: var(--launcher-pink); }
+#workspaceRoot[data-game-detail] #workspaceBody > .back-command {
+    color: var(--launcher-ink);
+    background: var(--launcher-cream);
+    padding: 8px 12px;
+    margin-bottom: 18px;
+    border-radius: 5px;
+}
+#workspaceRoot[data-game-detail] #workspaceBody > .back-command:hover { background: var(--launcher-hover); }
+#workspaceRoot[data-game-detail] :is(.workspace-header, #workspaceBody > .back-command) button:focus-visible,
+#workspaceRoot[data-game-detail] #workspaceBody > .back-command:focus-visible {
+    outline-color: var(--launcher-cream);
+}
+.game-detail-info,
+#workspaceRoot[data-game-detail] #workspaceBody > .detail-band {
+    padding: clamp(16px, 2vw, 24px);
+    border: 1px solid #d4c3f3;
+    border-radius: 8px;
+    background: var(--launcher-cream);
+    color: var(--launcher-ink);
+}
+.game-detail-info { background: var(--launcher-violet); }
+@media (min-width: 1180px) {
+    .game-detail { grid-template-columns: minmax(0, min(49%, 780px)) minmax(0, 1fr); }
+}
+.game-detail-info .back-command { margin-top: 16px; }
+.install-state { color: var(--launcher-warning); }
+.install-state.ready { color: var(--launcher-good); }
+.game-update-required { color: var(--launcher-warning); }
+.detail-band ol,
+.game-setup p,
+.game-guide-video-copy > span,
+.game-guide-video > svg { color: var(--launcher-muted); }
+.game-setup h2,
+.game-setup strong { color: var(--launcher-ink); }
+.game-setup h2 > svg { color: var(--launcher-deep-purple); }
+.game-setup .setup-step-number {
+    background: var(--launcher-violet);
+    border-color: #bba4e9;
+    color: var(--launcher-deep-purple);
+}
+.game-guide-video,
+#workspaceRoot .guide-download {
+    background: var(--launcher-cream);
+    border-color: #a288cc;
+    color: var(--launcher-ink);
+    box-shadow: none;
+}
+.game-guide-video:hover,
+#workspaceRoot .guide-download:hover,
+#workspaceRoot .guide-download:focus-visible {
+    background: var(--launcher-hover);
+    border-color: var(--launcher-deep-purple);
+    box-shadow: none;
+}
+.game-guide-video:focus-visible { outline-color: var(--launcher-deep-purple); }
+.game-guide-video-play { background: var(--launcher-deep-purple); }
+
+.download-track { background: #d2bef4; }
+.download-track > span { background: var(--launcher-deep-purple); }
+.download-meta,
+.download-idle,
+.installed-list small,
+.storage-row p,
+.connection-settings p,
+.connection-advanced summary,
+.workspace-load-error p { color: var(--launcher-muted); }
+.workspace-load-error h2 { color: var(--launcher-ink); }
+
+.media-row,
+.asset-choice,
+.voice-pack,
+.entry-video-row,
+.connection-settings,
+.connection-advanced,
+.download-row,
+.installed-list > article {
+    background: var(--launcher-cream);
+    border-color: var(--launcher-line);
+}
+.connection-settings,
+.connection-advanced,
+.download-row,
+.installed-list > article {
+    padding: 16px;
+    border: 1px solid var(--launcher-line);
+    border-radius: 6px;
+}
+.connection-advanced,
+.download-row + .download-row { margin-top: 12px; }
+.installed-list > article + article { margin-top: 8px; }
+.media-row:hover,
+.asset-choice:is(:hover, :focus-visible) { border-color: var(--launcher-deep-purple); }
+.asset-choice:is(:hover, :focus-visible) { background: var(--launcher-violet); }
+.asset-choice strong,
+.gift-assignment,
+.voice-pack strong,
+.entry-identity strong,
+.entry-trigger > span,
+.entry-repeat > span { color: var(--launcher-ink); }
+.asset-choice small,
+#assetCount,
+.asset-sound-row small,
+.media-info > small,
+.entry-column-labels,
+.entry-identity small,
+.entry-trigger > small,
+.entry-repeat > small,
+.voice-pack small,
+.voice-pack p,
+.voice-common,
+.voice-latency,
+.broadcast-service-status { color: var(--launcher-muted); }
+.gift-assignment svg,
+.asset-add,
+.sound-row .sound-file-kind,
+.voice-pack [role=status],
+.voice-download-status,
+.speech-account summary,
+#workspaceRoot #entryBroadcastUrl { color: var(--launcher-deep-purple); }
+.overlay-connection,
+.assignment-status,
+#speechAccountStatus,
+.provider-tag { color: var(--launcher-warning); }
+.overlay-connection.connected,
+.assignment-status.enabled { color: var(--launcher-good); }
+.provider-tag {
+    background: #fff0ca;
+    border-color: #b99160;
+}
+.provider-tag.ready,
+#speechForm .speech-availability,
+.voice-recommended {
+    background: #e6f5e8;
+    border-color: #86b295;
+    color: var(--launcher-good);
+}
+.voice-recommended { color: var(--launcher-good) !important; }
+#speechForm .speech-availability.unavailable {
+    background: #fff0ca;
+    border-color: #b99160;
+    color: var(--launcher-warning);
+}
+.speech-voice-choice { color: var(--launcher-ink); }
+.speech-voice-choice small { color: var(--launcher-muted); }
+.speech-voice-row.chosen {
+    background: var(--launcher-violet);
+    box-shadow: inset 3px 0 var(--launcher-deep-purple);
+}
+.voice-monogram,
+#speechForm > .band-heading .toggle-label,
+#speechForm > .band-heading .toggle-label:has(input:checked),
+.media-kind-tabs .workspace-button[aria-pressed=true],
+.sound-row .media-thumb .sound-play {
+    background: var(--launcher-violet);
+    border-color: #a288cc;
+    color: var(--launcher-deep-purple);
+}
+#speechForm > .band-heading .toggle-label input { accent-color: var(--launcher-deep-purple); }
+.asset-sound-row [aria-pressed=true],
+.sound-row [aria-pressed=true] {
+    border-color: var(--launcher-deep-purple) !important;
+    color: var(--launcher-deep-purple) !important;
+}
+
+/* Keep the artwork and video stages in their existing dark frames. */
+#workspaceRoot .widget-hub {
+    --wh-bg: var(--launcher-yellow);
+    --wh-panel: var(--launcher-cream);
+    --wh-line: var(--launcher-line);
+    --wh-text: var(--launcher-ink);
+    --wh-muted: var(--launcher-muted);
+    --wh-teal: var(--launcher-deep-purple);
+    --wh-gold: var(--launcher-warning);
+    color-scheme: light;
+}
+#workspaceRoot .widget-hub :is(.wh-button, .wh-inspect-button, .wh-search input, select) {
+    background: var(--launcher-cream);
+    border-color: #988873;
+    color: var(--launcher-ink);
+}
+#workspaceRoot .widget-hub :is(.wh-button, .wh-inspect-button, .wh-icon, .wh-nav-item):hover:not(:disabled) {
+    background: var(--launcher-hover);
+    border-color: var(--launcher-deep-purple);
+    color: var(--launcher-deep-purple);
+}
+#workspaceRoot .widget-hub :is(.wh-connect, .wh-nav-item[aria-current=page]) {
+    background: var(--launcher-violet);
+    color: var(--launcher-deep-purple);
+}
+#workspaceRoot .widget-hub .wh-nav-item[aria-current=page] { box-shadow: inset 2px 0 var(--launcher-deep-purple); }
+#workspaceRoot .widget-hub :is(.wh-nav-item, .wh-icon, .wh-section-heading h4, .wh-metrics dd) { color: var(--launcher-ink); }
+#workspaceRoot .widget-hub :is(.wh-icon.wh-danger, .wh-notice) { color: var(--launcher-error); }
+#workspaceRoot .widget-hub :is(
+    .wh-nav-label, .wh-nav-item > small, .wh-results, .wh-eyebrow, .wh-storage, .wh-search > svg,
+    .wh-sort, .wh-section-heading > span, .wh-card-category, .wh-card-footer p, .wh-empty,
+    .wh-mobile-category, .wh-format, .wh-inspect-state, .wh-inspect-description,
+    .wh-health-band-heading > span, .wh-health-band > p, .wh-metrics dt, .wh-health-band .wh-measured-at, .wh-diagnostics li
+) { color: var(--launcher-muted); }
+#workspaceRoot .widget-hub .wh-diagnostics li[data-severity=warning],
+#workspaceRoot .widget-hub .wh-icon.wh-favorite[aria-pressed=true] { color: var(--launcher-warning); }
+#workspaceRoot .widget-hub .wh-favorite[aria-pressed=true] svg { fill: var(--launcher-yellow); }
+#workspaceRoot .widget-hub :is(.wh-sidebar, .wh-card, .wh-card-footer, .wh-metrics > div, .wh-health-band) { border-color: var(--launcher-line); }
+#workspaceRoot .widget-hub .wh-card:is(:hover, :focus-within, .is-selected) { border-color: var(--launcher-deep-purple); }
+#workspaceRoot .widget-hub :is(.wh-health-drawer, .wh-inspector, .wh-inspection) {
+    background: var(--launcher-cream);
+    color: var(--launcher-ink);
+}
+.workspace-widget { background: var(--launcher-cream) !important; border-color: var(--launcher-line) !important; }
+.workspace-widget p { color: var(--launcher-muted) !important; }
+.widget-total,
+.widget-demo-label { color: var(--launcher-muted); }
+
+/* Launcher dialogs and account forms */
+#workspaceRoot :is(#mediaEditor, #giftPicker, #mediaAssetPicker, .entry-video-dialog),
+#gameAnnouncement .announcement-panel,
+.game-launch-overlay,
+#tiktokAccountModal .compact-dialog {
+    background: var(--launcher-cream);
+    border-color: var(--launcher-line);
+    color: var(--launcher-ink);
+    color-scheme: light;
+    box-shadow: 0 18px 50px #2514464d;
+}
+#workspaceRoot dialog::backdrop,
+.game-launch-overlay::backdrop,
+#tiktokAccountModal { background: var(--launcher-scrim); }
+.game-launch-overlay > p { color: var(--launcher-muted); }
+.game-launch-status { border-top-color: var(--launcher-line); }
+.game-launch-status p { color: var(--launcher-deep-purple); }
+.game-launch-indicator { border-color: #cdb8f2; border-top-color: var(--launcher-deep-purple); }
+.gift-selector,
+.gift-choice,
+.entry-source-modes,
+.media-preview-panel {
+    background: var(--launcher-violet);
+    border-color: #bca7df;
+    color: var(--launcher-ink);
+}
+.gift-choice:is(:hover, [aria-pressed=true]),
+.entry-source-modes button[aria-pressed=true] {
+    background: var(--launcher-hover);
+    border-color: var(--launcher-deep-purple);
+    color: var(--launcher-deep-purple);
+}
+.gift-choice small,
+.trim-caption span:last-child,
+.entry-video-dialog footer > span,
+#entrySourceFilename,
+.entry-source-modes button { color: var(--launcher-muted); }
+.trim-caption,
+.entry-rule-fields label output,
+.entry-video-dialog header small { color: var(--launcher-deep-purple); }
+.trim-track {
+    background: linear-gradient(to right, #cdb8e8 var(--start), var(--launcher-deep-purple) var(--start) var(--end), #cdb8e8 var(--end)) center / 100% 5px no-repeat;
+}
+.trim-track input[type=range]::-webkit-slider-thumb { background: var(--launcher-cream); border-color: var(--launcher-deep-purple); }
+.trim-track input[type=range]:focus-visible::-webkit-slider-thumb { outline-color: var(--launcher-deep-purple); }
+#entryEditorError { background: #ffe0e8; border-color: #c0768a; color: var(--launcher-error); }
+#workspaceNotice {
+    background: var(--launcher-violet);
+    border-color: #a288cc;
+    color: var(--launcher-ink);
+}
+#workspaceNotice.error { background: #ffe0e8; border-color: #c0768a; }
+#tiktokAccountModal :is(input, .modal-x, .account-item, .secondary) {
+    background: var(--launcher-violet);
+    border-color: #a288cc;
+    color: var(--launcher-ink);
+}
+#tiktokAccountModal .account-item.active { border-color: var(--launcher-deep-purple); }
+#tiktokAccountModal :is(.account-entry button, .account-connect-actions button:not(.secondary)) {
+    background: var(--launcher-deep-purple);
+    color: var(--launcher-cream);
+}
+#tiktokAccountModal :is(.account-connection-status, .compact-dialog small) { color: var(--launcher-muted); }
+
+/* License entry retains its existing illustration. */
+#licensePage {
+    --entry-bg: var(--launcher-cream);
+    --entry-text: var(--launcher-ink);
+    --entry-muted: var(--launcher-muted);
+    --entry-line: #988873;
+    --entry-teal: var(--launcher-deep-purple);
+    color-scheme: light;
+}
+#licensePage .license-entry-visual { background-color: var(--launcher-yellow); }
+#licensePage .license-entry-brand .license-entry-slogan { color: var(--launcher-deep-purple); }
+#licensePage .license-entry-field label { color: var(--launcher-ink); }
+#licensePage input { background: #fffdf7; }
+#licensePage input::placeholder,
+#licensePage .license-entry-footer { color: var(--launcher-muted); }
+#licensePage input:hover,
+#licensePage input:focus { border-color: var(--launcher-deep-purple); }
+#licensePage .license-btn {
+    background: var(--launcher-yellow);
+    color: var(--launcher-ink);
+    box-shadow: none;
+}
+#licensePage .license-btn:hover:not(:disabled) { background: #f4ce25; }
+#licensePage .license-cancel-btn:hover { background: var(--launcher-violet); }
+#licensePage .license-error {
+    background: #ffe0e8;
+    border-color: #c0768a;
+    color: var(--launcher-error);
+}
+#licensePage .license-info { border-color: var(--launcher-line); }
+#licensePage .update-direct-btn {
+    background: var(--launcher-deep-purple);
+    border-color: var(--launcher-deep-purple);
+    color: var(--launcher-cream);
+}
+#licensePage .update-direct-btn:hover:not(:disabled) { background: #382078; }
+
+/* App update offer, download and installation */
+.update-modal,
+.installing-overlay {
+    padding: 16px;
+    background: var(--launcher-purple-backdrop);
+    color: var(--launcher-ink);
+    color-scheme: light;
+}
+.update-modal { backdrop-filter: none; }
+.update-card,
+.installing-card {
+    box-sizing: border-box;
+    width: min(460px, 100%);
+    max-height: calc(100dvh - 32px);
+    overflow: auto;
+    padding: clamp(20px, 4vw, 32px);
+    border: 1px solid #e4d5ff;
+    border-radius: 16px;
+    background: var(--launcher-cream);
+    box-shadow: 0 20px 60px #27164b66;
+    text-align: center;
+}
+.update-badge {
+    background: var(--launcher-pink);
+    border-color: transparent;
+    color: var(--launcher-ink);
+}
+.ver-box.current { background: #f7efe1; border-color: var(--launcher-line); }
+.ver-box.next,
+.update-changelog-box,
+.update-progress-box {
+    background: var(--launcher-violet);
+    border-color: #c1a9ed;
+    box-shadow: none;
+}
+.ver-box.current .ver-label,
+.update-description,
+.update-progress-stats { color: var(--launcher-muted); }
+.ver-box.current .ver-value,
+.ver-box.next .ver-value,
+.changelog-list li { color: var(--launcher-ink); }
+.ver-box.next .ver-label,
+.ver-arrow-box,
+.changelog-title,
+.changelog-list li::before,
+.update-status-msg { color: var(--launcher-deep-purple); }
+.ver-box.next .ver-value,
+.changelog-title,
+.changelog-list li::before { text-shadow: none; }
+.ver-arrow-box { filter: none; }
+.changelog-header { border-bottom-color: #c1a9ed; }
+.update-progress-track { background: #d3c0f6; }
+.update-progress-bar { background: var(--launcher-deep-purple); }
+.btn-update-now,
+.btn-update-now:hover {
+    background: var(--launcher-yellow);
+    color: var(--launcher-ink);
+    box-shadow: none;
+}
+.btn-update-now:hover:not(:disabled) { background: #f4ce25; }
+.btn-update-later {
+    border-color: #a288cc;
+    color: var(--launcher-deep-purple);
+}
+.btn-update-later:hover {
+    background: var(--launcher-violet);
+    border-color: var(--launcher-deep-purple);
+    color: var(--launcher-deep-purple);
+}
+:is(.update-modal, #tiktokAccountModal) :is(button, input):focus-visible {
+    outline: 2px solid var(--launcher-deep-purple);
+    outline-offset: 3px;
+}
+.installing-card { background: var(--launcher-violet); }
+.installing-brand,
+.installing-brand span { color: var(--launcher-deep-purple); }
+.installing-overlay p { margin-inline: auto; color: var(--launcher-muted); }
+.installing-spinner {
+    margin-inline: auto;
+    border-color: #cdb8f2;
+    border-top-color: var(--launcher-deep-purple);
+    border-right-color: var(--launcher-purple);
+    box-shadow: none;
+}
+.installing-track { width: 100%; background: #d3c0f6; }
+.installing-track i { background: var(--launcher-deep-purple); }
+
+@media (prefers-reduced-motion: reduce) {
+    .update-modal,
+    .installing-spinner,
+    .installing-track i { animation: none; }
+    .update-progress-bar { transition: none; }
+}

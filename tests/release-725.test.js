@@ -63,7 +63,7 @@ test('website JSON, embedded catalog, static cards, counts and supplied Hapisten
     const html = read('web/index.html');
     assert.deepEqual(JSON.parse(html.match(/<script id="publicGameCatalog" type="application\/json">([\s\S]*?)<\/script>/)[1]), catalog);
     assert.deepEqual([...html.matchAll(/<article class="catalog-card" data-game="([^"]+)"/g)].map(match => match[1]), catalog.games.map(game => game.id));
-    assert.equal(catalog.games.length, 18);
+    assert.equal(catalog.games.length, 19);
     assert.ok(html.includes(`${catalog.games.length} oyun. Her yayına başka bir heyecan.`));
     for (const game of [...catalog.games, ...fallback.games]) assert.equal(withdrawn.has(game.id), false);
     for (const [id, lastCatalog] of [
@@ -82,8 +82,9 @@ test('website JSON, embedded catalog, static cards, counts and supplied Hapisten
     assert.equal(game.steamUrl, 'https://store.steampowered.com/app/5466880/');
     for (const width of [480, 720, 1000, 1440]) assert.ok(fs.statSync(new URL(`../web/game-covers/${game.cover}-${width}.webp`, import.meta.url)).size > 0);
     assert.ok(fs.statSync(new URL('../web' + game.giftGuide, import.meta.url)).size > 0);
-    assert.match(html, /<div>© 2026 TikMnG · v7\.0\.37\./);
-    assert.match(html, /"softwareVersion": "7\.0\.37"/);
-    assert.equal(json('package.json').version, '7.0.37');
-    assert.equal(json('package-lock.json').packages[''].version, '7.0.37');
+    const version = json('package.json').version;
+    assert.ok(html.includes(`<div>© 2026 TikMnG · v${version}.`));
+    assert.ok(html.includes(`"softwareVersion": "${version}"`));
+    assert.equal(json('package-lock.json').version, version);
+    assert.equal(json('package-lock.json').packages[''].version, version);
 });

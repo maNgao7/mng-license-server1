@@ -1,0 +1,379 @@
+'use strict';
+
+const fs = require('node:fs');
+const fsp = fs.promises;
+const path = require('node:path');
+const { createHash, randomUUID } = require('node:crypto');
+const { execFileSync, spawn } = require('node:child_process');
+const { checkFiles } = require('./native-package-checks.cjs');
+const vdf = require('./vendor/steam-vdf/lib/index.js');
+const { assertSafePath, safeRelativePath } = require('./download.cjs');
+
+const APP_ID = '4041470';
+const EXECUTABLE = 'iracing-arcade.exe';
+const TYPE = 'tikmng-forza-support';
+const STORE_URL = 'https://store.steampowered.com/app/4041470/';
+const NODE = 'C:/Program Files/nodejs/node.exe';
+const REQUIRED = ['desktop.cjs', 'splash.html', 'bridge/service.cjs', 'support/winhttp.dll',
+    'support/doorstop_config.ini', 'support/dotnet/coreclr.dll',
+    'support/BepInEx/core/BepInEx.Unity.IL2CPP.dll', 'support/BepInEx/plugins/TikMnG.Arcade.Mod.dll',
+    'defaults/settings.json', 'assets/effects/forward-rescue.json', 'assets/effects/forward-rocket.json',
+    'assets/gifts.json', 'assets/loading-turkish-classics-v2.png', 'assets/audio/startup-music.mp3'];
+
+// A fresh process and explicit verification both hash the actual bytes.
+const verifiedFiles = new Map();
+const fileIdentity = stat => [stat.dev, stat.ino, stat.mode, stat.size, stat.mtimeNs, stat.birthtimeNs].join(':');
+const fingerprint = stat => `${fileIdentity(stat)}:${stat.ctimeNs}`;
+const statOptions = { bigint: true };
+
+function rememberFile(file, stat, sha256) {
+    if (verifiedFiles.size >= 50000) verifiedFiles.delete(verifiedFiles.keys().next().value);
+    verifiedFiles.set(file, { metadata: fingerprint(stat), sha256 });
+}
+
+// Callers check the path or the containing package directory. lstat checks the leaf.
+async function fileMatches(file, row, { useCache = false, signal, inPackageWalk = false }) {
+    signal?.throwIfAborted();
+    let before;
+    try { before = await fsp.lstat(file, statOptions); }
+    catch (error) { if (error.code === 'ENOENT') { verifiedFiles.delete(file); return false; } throw error; }
+    if (before.isSymbolicLink()) throw new Error('Linked or special package entry.');
+    const metadata = fingerprint(before), cached = verifiedFiles.get(file);
+    if (!before.isFile() || before.size !== BigInt(row.bytes)) { verifiedFiles.delete(file); return false; }
+    if (useCache && before.ino && cached?.metadata === metadata && cached.sha256 === row.sha256) return before;
+    verifiedFiles.delete(file);
+    const hash = createHash('sha256');
+    for await (const chunk of fs.createReadStream(file, { highWaterMark: 1024 * 1024, signal })) hash.update(chunk);
+    signal?.throwIfAborted();
+    const after = await fsp.lstat(inPackageWalk ? file : assertSafePath(file), statOptions);
+    if (hash.digest('hex') !== row.sha256 || fingerprint(after) !== metadata) return false;
+    rememberFile(file, after, row.sha256);
+    return after;
+}
+
+async function installVerifiedCopy(source, target, row, signal) {
+    const integrityError = 'Steam/package file integrity failed: ' + row.path;
+    await fsp.mkdir(path.dirname(target), { recursive: true });
+    const temporary = assertSafePath(target + '.' + randomUUID() + '.tikmng-copy');
+    await fsp.copyFile(assertSafePath(source), temporary, fs.constants.COPYFILE_EXCL);
+    try {
+        const staged = await fileMatches(temporary, row, { signal });
+        signal?.throwIfAborted();
+        assertSafePath(target);
+        if (!staged || fingerprint(fs.lstatSync(temporary, statOptions)) !== fingerprint(staged)) throw new Error(integrityError);
+        fs.renameSync(temporary, target);
+        const installed = fs.lstatSync(target, statOptions);
+        // Rename changes ctime. Carry the verified digest only to the same file,
+        // then use the final fingerprint (including ctime) for subsequent launches.
+        if (staged.ino && installed.isFile() && fileIdentity(installed) === fileIdentity(staged)) {
+            rememberFile(target, installed, row.sha256);
+        } else if (!await fileMatches(assertSafePath(target), row, { signal })) throw new Error(integrityError);
+    } finally {
+        verifiedFiles.delete(temporary);
+        await fsp.rm(temporary, { force: true });
+    }
+}
+
+function findSteamDemo({ roots, readFile = file => fs.readFileSync(file, 'utf8'),
+    isFile = file => { try { const s = fs.statSync(file); return s.isFile() && s.size > 0; } catch { return false; } } } = {}) {
+    const candidates = roots ? [...roots] : [path.join(process.env['ProgramFiles(x86)'] || 'C:/Program Files (x86)', 'Steam')];
+    if (!roots) {
+        try {
+            const value = execFileSync('reg.exe', ['query', 'HKCU\\Software\\Valve\\Steam', '/v', 'SteamPath'],
+                { encoding: 'utf8', timeout: 1500, windowsHide: true, stdio: ['ignore', 'pipe', 'ignore'] });
+            const match = /SteamPath\s+REG_SZ\s+(.+)/i.exec(value);
+            if (match) candidates.unshift(match[1].trim());
+        } catch {}
+        for (let c = 67; c <= 90; c++) candidates.push(String.fromCharCode(c) + ':/SteamLibrary');
+    }
+    const seen = new Set();
+    for (const root of candidates) {
+        if (typeof root !== 'string' || !path.isAbsolute(root) || seen.has(path.resolve(root).toLowerCase())) continue;
+        seen.add(path.resolve(root).toLowerCase());
+        try {
+            const folders = vdf.parse(readFile(path.join(root, 'steamapps/libraryfolders.vdf'))).libraryfolders;
+            for (const row of Object.values(folders || {})) {
+                const folder = typeof row === 'string' ? row : row?.path;
+                if (typeof folder === 'string' && path.isAbsolute(folder)) candidates.push(folder);
+            }
+        } catch {}
+        try {
+            const state = vdf.parse(readFile(path.join(root, `steamapps/appmanifest_${APP_ID}.acf`))).AppState;
+            if (String(state?.appid) !== APP_ID || !(Number(state.StateFlags) & 4)
+                || typeof state.installdir !== 'string' || /[\\/:]|^\.+$/.test(state.installdir)) continue;
+            const directory = assertSafePath(path.join(root, 'steamapps/common', state.installdir));
+            if ([EXECUTABLE, 'UnityPlayer.dll', 'GameAssembly.dll', 'iracing-arcade_Data/il2cpp_data/Metadata/global-metadata.dat']
+                .every(file => isFile(path.join(directory, file)))) return { directory, buildId: String(state.buildid || '') };
+        } catch {}
+    }
+    return null;
+}
+
+function defaultDataDirectory(steam = findSteamDemo(), userData = '') {
+    if (!steam?.directory) return path.join(path.resolve(userData), 'forza-preview');
+    // The native demo is much larger than a normal launcher profile. Keep its
+    // private runtime on the same roomy drive as Steam instead of filling C:.
+    const drive = path.parse(path.resolve(steam.directory)).root;
+    return path.join(drive, 'TikMnG-GameData', 'forza-preview');
+}
+
+function allowedFile(relative) {
+    safeRelativePath(relative);
+    if (/^(desktop\.cjs|splash\.html|bridge\/service\.cjs)$/.test(relative)) return relative;
+    if (relative === 'defaults/settings.json') return relative;
+    if (/(?:^|\/)(?:\.env[^/]*|token|userdata|control|logs|cache|interop|unity-libs|reference-photos|comparisons)(?:\/|$)/i.test(relative)) throw new Error('Private or generated Forza file: ' + relative);
+    if (/^(?:assets|licenses|provenance)\//.test(relative) && !/\.(?:exe|dll|cjs|js)$/i.test(relative)) return relative;
+    if (/^support\/(?:winhttp\.dll|doorstop_config\.ini|BepInEx\/config\/BepInEx\.cfg|BepInEx\/plugins\/TikMnG\.Arcade\.Mod\.dll|BepInEx\/(?:core|patchers)\/.+|dotnet\/.+)$/.test(relative)
+        && !/(?:^|\/)(?:GameAssembly|UnityPlayer|Assembly-CSharp|steam_api64)\.dll$/i.test(relative)) return relative;
+    throw new Error('Unknown Forza package file: ' + relative);
+}
+
+function baseFile(relative) {
+    safeRelativePath(relative);
+    if ([EXECUTABLE, 'GameAssembly.dll', 'UnityPlayer.dll', 'UnityCrashHandler64.exe', 'baselib.dll', 'steam_appid.txt', 'FishNet.SDK.Id'].includes(relative)
+        || relative.startsWith('iracing-arcade_Data/') || relative.startsWith('D3D12/')) return relative;
+    throw new Error('Unknown Steam demo file: ' + relative);
+}
+
+async function walk(directory, prefix, visit, signal) {
+    signal?.throwIfAborted();
+    assertSafePath(directory);
+    for (const entry of await fsp.readdir(directory, { withFileTypes: true })) {
+        const relative = safeRelativePath(prefix + entry.name);
+        if (entry.isDirectory()) await walk(path.join(directory, entry.name), relative + '/', visit, signal);
+        else if (entry.isFile()) await visit(relative);
+        else throw new Error('Linked or special package entry.');
+    }
+    assertSafePath(directory);
+}
+
+async function filesIn(directory, prefix = '') {
+    const files = [];
+    await walk(directory, prefix, file => files.push(file));
+    return files;
+}
+
+function readManifest(directory) {
+    const file = assertSafePath(path.join(directory, 'manifest.json'));
+    if (fs.statSync(file).size > 8 * 1024 ** 2) throw new Error('Forza manifest too large.');
+    const m = JSON.parse(fs.readFileSync(file, 'utf8'));
+    if (m.type !== TYPE || m.schemaVersion !== 1 || m.platform !== 'win32-x64'
+        || !/^\d+\.\d+\.\d+(?:-preview\.\d+)?$/.test(m.version) || m.steam?.appId !== APP_ID
+        || !/^\d+$/.test(m.steam.buildId) || !Array.isArray(m.files) || !Array.isArray(m.baseFiles)
+        || !m.files.length || m.files.length > 20000 || !m.baseFiles.length || m.baseFiles.length > 20000) throw new Error('Invalid Forza manifest.');
+    return m;
+}
+
+function validatePackageDirectory(directory) {
+    try { readManifest(directory); return REQUIRED.every(file => fs.statSync(assertSafePath(path.join(directory, file))).isFile()); }
+    catch { return false; }
+}
+
+function descriptors(rows, allow) {
+    const map = new Map();
+    for (const row of rows) {
+        const key = allow(row.path).toLowerCase();
+        if (map.has(key) || !/^[a-f0-9]{64}$/.test(row.sha256) || !Number.isSafeInteger(row.bytes) || row.bytes < 0) throw new Error('Invalid Forza file descriptor.');
+        map.set(key, row);
+    }
+    return map;
+}
+
+async function verifyPackageFiles(directory, useCache = false, signal) {
+    directory = path.resolve(directory);
+    const manifest = readManifest(directory), files = descriptors(manifest.files, allowedFile), base = descriptors(manifest.baseFiles, baseFile);
+    for (const name of REQUIRED) if (!files.has(name.toLowerCase())) throw new Error('Incomplete Forza support package: ' + name);
+    for (const name of [EXECUTABLE, 'UnityPlayer.dll', 'GameAssembly.dll', 'iracing-arcade_Data/il2cpp_data/Metadata/global-metadata.dat']) {
+        if (!base.has(name.toLowerCase())) throw new Error('Incomplete Forza Steam file index.');
+    }
+    const remaining = new Set(files.keys());
+    const listed = [];
+    // Inspect the tree and check the metadata of every listed file.
+    await walk(directory, '', name => {
+        if (['manifest.json', '.tikmng-package.json', '.tikmng-content.json'].includes(name)) return;
+        const entry = name.toLowerCase(), row = files.get(entry);
+        if (!remaining.delete(entry)) throw new Error('Unlisted Forza package files.');
+        listed.push(row);
+    }, signal);
+    if (remaining.size) throw new Error('Unlisted Forza package files.');
+    await checkFiles(listed, async row => {
+        if (!await fileMatches(path.join(directory, row.path), row, { useCache, signal, inPackageWalk: true })) {
+            throw new Error('Forza package integrity failed: ' + row.path);
+        }
+    }, signal);
+    return { manifest, files, base };
+}
+
+// Public install/repair verification always reads and hashes every listed file.
+async function verifyPackage(directory) { return verifyPackageFiles(directory); }
+
+async function atomicJson(file, value) {
+    assertSafePath(file);
+    await fs.promises.mkdir(path.dirname(file), { recursive: true });
+    const temp = file + '.' + randomUUID() + '.tmp';
+    try {
+        const handle = await fs.promises.open(temp, 'wx');
+        try { await handle.writeFile(JSON.stringify(value)); await handle.sync(); } finally { await handle.close(); }
+        await fs.promises.rename(temp, file);
+    } finally { await fs.promises.rm(temp, { force: true }); }
+}
+
+async function prepareLaunch({ directory, dataDirectory, steam = findSteamDemo(), signal, onProgress = () => {} }) {
+    if (!steam) throw new Error('Once Steam uzerinden ucretsiz iRacing Arcade Demo kurun.');
+    signal?.throwIfAborted();
+    const verified = await verifyPackageFiles(directory, true, signal);
+    if (steam.buildId !== verified.manifest.steam.buildId) throw new Error('Steam demosunun bu surumu desteklenmiyor. Oyun paketini guncelleyin.');
+    const data = assertSafePath(path.resolve(dataDirectory)), game = path.join(data, 'runtime');
+    for (const input of [directory, steam.directory]) {
+        const a = path.resolve(input).toLowerCase(), b = data.toLowerCase();
+        if (a === b || a.startsWith(b + path.sep) || b.startsWith(a + path.sep)) throw new Error('Forza data must be separate from package and Steam.');
+    }
+    const markerFile = assertSafePath(path.join(data, '.tikmng-forza-install.json'));
+    let marker;
+    try { marker = JSON.parse(await fs.promises.readFile(markerFile, 'utf8')); } catch (e) { if (e.code !== 'ENOENT') throw new Error('Unrecognized Forza installation marker.'); }
+    if (marker && (marker.schemaVersion !== 1 || marker.appId !== APP_ID)) throw new Error('Unrecognized Forza installation marker.');
+    if (!marker && fs.existsSync(data) && (await fs.promises.readdir(data)).some(name => name !== '.launch-lock')) throw new Error('Unrecognized Forza data directory.');
+    const markerData = { schemaVersion: 1, appId: APP_ID, buildId: steam.buildId };
+    let completed = marker?.complete === true && marker.buildId === steam.buildId && marker.version === verified.manifest.version;
+    if (!completed) await atomicJson(markerFile, { ...markerData, complete: false });
+    let copiedBytes = 0;
+    async function copyVerified(source, target, row) {
+        signal?.throwIfAborted();
+        if (await fileMatches(assertSafePath(target), row, { useCache: true, signal })) return;
+        source = assertSafePath(source);
+        if ((await fs.promises.stat(source)).size !== row.bytes) throw new Error('Steam/package file size mismatch: ' + row.path);
+        if (completed) {
+            await atomicJson(markerFile, { ...markerData, complete: false });
+            completed = false;
+        }
+        await installVerifiedCopy(source, target, row, signal);
+        copiedBytes += row.bytes; onProgress({ copiedBytes });
+    }
+    for (const row of verified.base.values()) {
+        await copyVerified(path.join(steam.directory, row.path), path.join(game, row.path), row);
+    }
+    for (const row of verified.files.values()) {
+        const relative = row.path.startsWith('support/') ? 'runtime/' + row.path.slice(8) : row.path;
+        await copyVerified(path.join(directory, row.path), path.join(data, relative), row);
+    }
+    signal?.throwIfAborted();
+    await fs.promises.mkdir(path.join(data, 'control'), { recursive: true });
+    const settingsFile = assertSafePath(path.join(data, 'control/settings.json'));
+    if (!fs.existsSync(settingsFile)) await atomicJson(settingsFile, JSON.parse(await fs.promises.readFile(path.join(directory, 'defaults/settings.json'), 'utf8')));
+    if (!completed) await atomicJson(markerFile, { ...markerData, complete: true, version: verified.manifest.version });
+    return { directory: data, game, copiedBytes, version: verified.manifest.version };
+}
+
+function assertNoDemoProcess(run = execFileSync) {
+    const output = run('tasklist.exe', ['/FI', 'IMAGENAME eq ' + EXECUTABLE, '/FO', 'CSV', '/NH'],
+        { windowsHide: true, timeout: 5000, encoding: 'utf8' });
+    if (/"iracing-arcade\.exe"/i.test(output)) throw new Error('iRacing Arcade Demo zaten acik. Mevcut oyunu kapatip yeniden deneyin.');
+}
+
+async function launchForza({ directory, dataDirectory, steam, session, BrowserWindow, events, getChannel, getStatus,
+    portrait, username = '', spawnProcess = spawn, prepare = prepareLaunch, checkProcess = assertNoDemoProcess,
+    checkNode = () => fs.existsSync(NODE), showNativeWindow = require('./native-window.cjs').showNativeWindow,
+    ensureSteam = async () => {
+        const out = execFileSync('tasklist.exe', ['/FI', 'IMAGENAME eq steam.exe', '/FO', 'CSV', '/NH'], { encoding: 'utf8', windowsHide: true, timeout: 5000 });
+        if (!/"steam\.exe"/i.test(out)) throw new Error('Steam hesabini acip yeniden deneyin.');
+    } }) {
+    checkProcess();
+    await ensureSteam();
+    const controller = new AbortController();
+    session.disposers.add(() => controller.abort());
+    assertSafePath(dataDirectory);
+    await fs.promises.mkdir(dataDirectory, { recursive: true });
+    const releaseLaunchLock = await require('./forza-launch-lock.cjs').acquireForzaLaunchLock(dataDirectory, assertSafePath, checkProcess);
+    if (session.closed) {
+        await releaseLaunchLock();
+        throw new Error('Forza başlatma iptal edildi.');
+    }
+    session.disposers.add(releaseLaunchLock);
+    const prepared = await session.stage('forza-files', 'Steam demosu ve Turkish Forza dosyalari dogrulaniyor...',
+        () => prepare({ directory, dataDirectory, steam, signal: controller.signal }), 240000);
+    if (session.closed) throw new Error('Forza baslatma iptal edildi.');
+    const usesLauncherRuntime = require('semver').gte(prepared.version, '0.5.1');
+    if (!usesLauncherRuntime && !checkNode()) throw new Error('Turkish Forza oyun paketini güncelleyin. Bu eski paket node.exe gerektiriyor.');
+    const { createForzaPublisher } = require('./forza-publisher.cjs');
+    const feed = await createForzaPublisher({ events, getChannel, getStatus, portrait, username, directory: prepared.directory,
+        onError: error => { void session.close(error); } });
+    session.disposers.add(() => feed.close());
+    const cover = require(path.join(prepared.directory, 'desktop.cjs')).createCover({ BrowserWindow, directory: prepared.directory });
+    session.disposers.add(() => { if (!cover.isDestroyed()) cover.destroy(); });
+    const onCoverClosed = () => { if (!session.ready) void session.close(new Error('Forza acilisi kapatildi.')); };
+    cover.once('closed', onCoverClosed);
+    await cover.loadFile(path.join(prepared.directory, 'splash.html')); cover.maximize(); cover.show();
+    void cover.webContents.executeJavaScript("(async()=>{const audio=document.getElementById('opening-music');if(!audio)throw new Error('Açılış müziği bulunamadı.');await audio.play();})()").catch(error => {
+        if (!cover.isDestroyed()) console.warn('[Turkish Forza] Açılış müziği başlatılamadı:', error.message);
+    });
+    checkProcess();
+    const started = Date.now();
+    const currentState = state => {
+        const utc = Date.parse(state?.utc), now = Date.now();
+        return state?.pid === child.pid && Number.isFinite(utc) && utc >= started && utc <= now && now - utc <= 4000;
+    };
+    const control = path.join(prepared.directory, 'control');
+    await atomicJson(path.join(control, 'command.json'), { id: started, command: 'none' });
+    const child = session.ownChild(spawnProcess(path.join(prepared.game, EXECUTABLE), ['-screen-fullscreen', '0'], {
+        cwd: prepared.game, stdio: ['ignore', 'pipe', 'pipe'], windowsHide: false,
+        env: { ...process.env, MNG_FORZA_PUBLISHER_URL: feed.url, MNG_FORZA_PUBLISHER_TOKEN: feed.token,
+            MNG_FORZA_LAUNCHER_RUNTIME: usesLauncherRuntime ? process.execPath : '' }
+    }), { normalExit: true });
+    session.nativeChild = child;
+    await atomicJson(path.join(control, 'launch-session.json'), { schemaVersion: 1, pid: child.pid });
+    let timer;
+    const wait = new Promise((resolve, reject) => {
+        timer = setInterval(() => {
+            try {
+                const state = JSON.parse(fs.readFileSync(path.join(control, 'status.json'), 'utf8'));
+                if (!currentState(state)) return;
+                if (state.error || state.phase === 'error') return reject(new Error(state.error || 'Forza native startup error.'));
+                if (state.phase === 'staging' && state.appReady && state.camera && state.cars?.length === 0 && !state.startRequested) resolve(state);
+            } catch (e) { if (!['ENOENT', 'SyntaxError'].includes(e.code || e.name)) reject(e); }
+        }, 150);
+    });
+    const stop = () => clearInterval(timer); session.disposers.add(stop);
+    try { await session.wait(wait, 240000, 'Turkish Forza piste zamaninda ulasamadi. control/status.json ve runtime/BepInEx/LogOutput.log kayitlarini kontrol edin.'); }
+    finally { stop(); session.disposers.delete(stop); }
+    controller.signal.throwIfAborted();
+    // Fade while Windows reveals the ready track; the soundtrack never gates startup.
+    void cover.webContents.executeJavaScript(`(() => {
+        const audio = document.getElementById('opening-music');
+        if (!audio || audio.paused) return;
+        const start = performance.now(), initialVolume = audio.volume;
+        function fade(now) {
+            const left = Math.max(0, 1 - (now - start) / 200);
+            audio.volume = initialVolume * left;
+            if (left > 0) requestAnimationFrame(fade);
+            else audio.pause();
+        }
+        requestAnimationFrame(fade);
+    })()`).catch(() => {});
+    await showNativeWindow(child.pid, { maximize: true });
+    cover.removeListener('closed', onCoverClosed);
+    cover.destroy();
+    await atomicJson(path.join(control, 'command.json'), { id: Date.now(), command: 'track-intro' });
+    if (username) {
+        // The command slot is acknowledged before account handoff to avoid overwriting the intro.
+        await session.stage('forza-bridge', 'Yayinci olay akisi hazirlaniyor...', async () => {
+            const intro = JSON.parse(fs.readFileSync(path.join(control, 'command.json'), 'utf8')).id;
+            while (true) {
+                controller.signal.throwIfAborted();
+                let state; try { state = JSON.parse(fs.readFileSync(path.join(control, 'status.json'), 'utf8')); }
+                catch (error) { if (!['ENOENT', 'SyntaxError'].includes(error.code || error.name)) throw error; }
+                if (currentState(state)) {
+                    if (state.error || state.phase === 'error') throw new Error(state.error || 'Forza native startup error.');
+                    if (state.commandId >= intro) break;
+                }
+                await new Promise(resolve => setTimeout(resolve, 100));
+            }
+            await atomicJson(path.join(control, 'command.json'), { id: Math.max(Date.now(), intro + 1), command: 'connect', username });
+            await session.wait(feed.clientAttached, 15000, 'Native oyun launcher yayin akisina baglanamadi. Node.js ve control/status.json kaydini kontrol edin.');
+        }, 26000);
+    }
+    session.markReady('Turkish Forza hazir.');
+    return { basarili: true };
+}
+
+module.exports = { APP_ID, TYPE, EXECUTABLE, STORE_URL, NODE, REQUIRED, findSteamDemo, defaultDataDirectory, allowedFile, baseFile,
+    filesIn, readManifest, verifyPackage, validatePackageDirectory, prepareLaunch, atomicJson, assertNoDemoProcess, launchForza };

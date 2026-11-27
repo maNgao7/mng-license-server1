@@ -1,0 +1,58 @@
+{
+  "launcherVersion": "7.0.38",
+  "completedAt": "2026-11-27T19:20:00.8521534+03:00",
+  "scope": "tests, environment fixtures, isolated development dependencies; no application/server/catalog edits",
+  "runtimeBehaviorChanged": false,
+  "modifiedTest": "launcher/tests/fetih-public.test.cjs",
+  "fetihExpectation": {
+    "version": "0.1.5",
+    "bytes": 178128539,
+    "sha256": "fafea22857e06fef45a17839af28e96d3b47d0b666869beac9dcb9a53b45808c",
+    "url": "https://github.com/maNgao7/mng-license-server1/releases/download/fetih-0.1.5/Fetih-Windows-x64.zip"
+  },
+  "fixtureCopies": [
+    {
+      "file": "hapisten-kac-package/bridge.cjs",
+      "source": "../launcher-connection-20261126/hapisten-kac-package/bridge.cjs",
+      "sha256": "baa6041ff637f8fe53e38ee765feb21b5e2c27a766896fe17bb20679282785c0"
+    },
+    {
+      "file": "hapisten-kac-package/shared/normalize.cjs",
+      "source": "../launcher-connection-20261126/hapisten-kac-package/shared/normalize.cjs",
+      "sha256": "e07a0a79212a5cef530a8c4766306224880fa9925e608b6c14140079d4992539"
+    }
+  ],
+  "devDependencies": {
+    "directory": "launcher/tests/node_modules",
+    "source": "../../outputs/profile-duel-release-0.1.0/node_modules",
+    "fast-check": "4.10.2",
+    "pure-rand": "8.4.2",
+    "sharedLauncherNodeModulesModified": false,
+    "packageJsonAndLockModifiedThisTurn": false
+  },
+  "narrowRegression": {
+    "pass": 21,
+    "fail": 0,
+    "skipped": 0,
+    "exitCode": 0,
+    "log": "qa/launcher-environment-regression.log",
+    "includedInFullGate": true
+  },
+  "releaseGate": {
+    "command": "pwsh -NoProfile -NonInteractive -File ./tests/release-gate.ps1",
+    "cwd": "launcher",
+    "pass": 467,
+    "fail": 0,
+    "skipped": 0,
+    "cancelled": 0,
+    "exitCode": 0,
+    "durationMs": 23995.5107,
+    "log": "qa/launcher-gate-final.log",
+    "sha256": "38760018a21a337a6953dcf4a3e7f5c6248b8b8598b30cb51fda024ec152ce1d"
+  },
+  "remainingValidation": [
+    "Parent-owned 7.0.38 installer build/package checks",
+    "Real packaged Ring gameplay and live-event verification; no Ring/user application launched or controlled in this task"
+  ],
+  "published": false
+}

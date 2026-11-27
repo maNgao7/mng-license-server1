@@ -1,0 +1,351 @@
+#licensePage {
+    --entry-bg: #111315;
+    --entry-text: #f5f6f7;
+    --entry-muted: #a3a9ae;
+    --entry-line: #3b4045;
+    --entry-teal: #37dad2;
+    align-items: stretch;
+    justify-content: flex-start;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    overscroll-behavior: contain;
+    background: var(--entry-bg);
+    color: var(--entry-text);
+    color-scheme: dark;
+    font: 14px/1.5 'Segoe UI', Arial, sans-serif;
+    text-align: left;
+}
+
+#licensePage * {
+    box-sizing: border-box;
+    letter-spacing: 0;
+}
+
+#licensePage .license-entry-visual {
+    flex: 1 1 56%;
+    min-width: 0;
+    background: #202528 url('assets/streamer-entry-v3.png') center center / cover no-repeat;
+}
+
+#licensePage .license-entry-panel {
+    flex: 0 0 44%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 48px;
+    min-width: 440px;
+    min-height: 100%;
+    padding: 40px 48px 24px;
+    overflow-y: auto;
+    background: var(--entry-bg);
+}
+
+#licensePage .license-entry-brand {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    flex-shrink: 0;
+    width: 100%;
+    max-width: 392px;
+    margin-bottom: 28px;
+}
+
+#licensePage .license-entry-brand > div {
+    min-width: 0;
+}
+
+#licensePage .license-entry-brand img {
+    display: block;
+    flex: none;
+    width: 52px;
+    height: 52px;
+    object-fit: contain;
+    border-radius: 6px;
+}
+
+#licensePage .license-entry-brand h1 {
+    margin: 0;
+    font-size: 26px;
+    font-weight: 750;
+    line-height: 1.2;
+}
+
+#licensePage .license-brand-tik {
+    color: #25f4ee;
+}
+
+#licensePage .license-brand-g {
+    color: #fe2c55;
+}
+
+#licensePage .license-entry-brand p {
+    margin: 4px 0 0;
+    color: var(--entry-muted);
+    font-size: 12px;
+}
+
+#licensePage .license-entry-brand .license-entry-slogan {
+    min-height: 3em;
+    margin-top: 10px;
+    color: #9be9e2;
+    font-size: 14px;
+    line-height: 1.5;
+    overflow-wrap: anywhere;
+}
+
+#licensePage .license-box {
+    flex: 0 0 auto;
+    width: 100%;
+    max-width: 392px;
+    margin: auto 0;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+    text-align: left;
+}
+
+#licensePage .license-entry-eyebrow {
+    margin: 0 0 10px;
+    color: var(--entry-muted);
+    font-size: 11px;
+    font-weight: 650;
+}
+
+#licensePage .license-title {
+    margin: 0 0 12px;
+    color: var(--entry-text);
+    font-size: 30px;
+    font-weight: 650;
+    line-height: 1.2;
+}
+
+#licensePage .license-desc {
+    margin: 0 0 30px;
+    color: var(--entry-muted);
+    font-size: 14px;
+    line-height: 1.65;
+    overflow-wrap: anywhere;
+}
+
+#licensePage .license-entry-field {
+    min-width: 0;
+    margin: 0 0 22px;
+}
+
+#licensePage .license-entry-field label {
+    display: block;
+    margin-bottom: 9px;
+    color: #dce0e3;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+#licensePage .license-entry-username-wrap {
+    position: relative;
+}
+
+#licensePage .license-entry-username-wrap > span {
+    position: absolute;
+    top: 0;
+    left: 15px;
+    display: flex;
+    align-items: center;
+    height: 48px;
+    color: var(--entry-muted);
+    pointer-events: none;
+}
+
+#licensePage input {
+    display: block;
+    width: 100%;
+    min-width: 0;
+    min-height: 48px;
+    margin: 0;
+    padding: 12px 14px;
+    border: 1px solid var(--entry-line);
+    border-radius: 5px;
+    outline: none;
+    background: #191c20;
+    color: var(--entry-text);
+    font: 16px/1.4 'Segoe UI', Arial, sans-serif;
+    text-align: left;
+    text-transform: none;
+    transition: border-color 150ms ease;
+}
+
+#licensePage #licenseUsername {
+    padding-left: 36px;
+}
+
+#licensePage .license-input {
+    font-family: Consolas, 'Courier New', monospace;
+    text-transform: uppercase;
+}
+
+#licensePage input::placeholder {
+    color: #929ba2;
+    text-transform: none;
+}
+
+#licensePage input:hover {
+    border-color: #697279;
+}
+
+#licensePage input:focus {
+    border-color: var(--entry-teal);
+}
+
+#licensePage input:focus-visible,
+#licensePage button:focus-visible {
+    outline: 2px solid var(--entry-teal);
+    outline-offset: 3px;
+}
+
+#licensePage .license-actions {
+    gap: 10px;
+    margin-top: 28px;
+}
+
+#licensePage button {
+    min-height: 46px;
+    border-radius: 5px;
+    font-family: inherit;
+    line-height: 1.5;
+    touch-action: manipulation;
+    overflow-wrap: anywhere;
+    transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease;
+}
+
+#licensePage .license-btn {
+    min-height: 48px;
+    padding: 12px 16px;
+    background: var(--entry-teal);
+    color: #102323;
+    font-size: 15px;
+    font-weight: 700;
+}
+
+#licensePage .license-btn:hover:not(:disabled) {
+    transform: none;
+    background: #74eee8;
+    opacity: 1;
+}
+
+#licensePage .license-btn:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+
+#licensePage .license-btn.loading::after {
+    border-color: #10232340;
+    border-top-color: #102323;
+}
+
+#licensePage .license-cancel-btn {
+    padding: 10px 16px;
+    border-color: transparent;
+    color: var(--entry-muted);
+    font-size: 13px;
+}
+
+#licensePage .license-cancel-btn:hover {
+    border-color: var(--entry-line);
+    background: #191c20;
+    color: var(--entry-text);
+}
+
+#licensePage .license-error {
+    margin: 0;
+    padding: 11px 13px;
+    border-color: #9d4559;
+    border-radius: 5px;
+    background: #301c23;
+    color: #ffb2c2;
+    line-height: 1.6;
+    overflow-wrap: anywhere;
+    -webkit-user-select: text;
+    user-select: text;
+}
+
+#licensePage input {
+    -webkit-app-region: no-drag;
+    -webkit-user-select: text;
+    user-select: text;
+}
+
+#licensePage .update-direct-btn {
+    padding: 12px 14px;
+    border: 1px solid #447570;
+    background: #1b302e;
+    color: #a6f2e6;
+    box-shadow: none;
+}
+
+#licensePage .update-direct-btn:hover:not(:disabled) {
+    transform: none;
+    background: #24413e;
+    box-shadow: none;
+}
+
+#licensePage .update-direct-btn:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+
+#licensePage .license-info {
+    margin-top: 24px;
+    padding-top: 20px;
+    border-color: #303438;
+    color: var(--entry-muted);
+    font-size: 12px;
+    line-height: 1.65;
+}
+
+#licensePage .license-entry-footer {
+    flex-shrink: 0;
+    width: 100%;
+    max-width: 392px;
+    color: #929ba2;
+    font-size: 11px;
+}
+
+@media (max-width: 760px) {
+    #licensePage {
+        flex-direction: column;
+    }
+
+    #licensePage .license-entry-visual {
+        flex: none;
+        width: 100%;
+        height: clamp(180px, 28svh, 260px);
+        background-position: center 12%;
+    }
+
+    #licensePage .license-entry-panel {
+        flex: 1 0 auto;
+        gap: 32px;
+        width: 100%;
+        min-width: 0;
+        min-height: 0;
+        padding: 28px 24px 20px;
+        overflow: visible;
+    }
+
+    #licensePage .license-title {
+        font-size: 28px;
+    }
+
+    #licensePage .license-desc {
+        margin-bottom: 26px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    #licensePage input,
+    #licensePage button {
+        transition: none;
+    }
+}

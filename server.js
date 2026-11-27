@@ -966,10 +966,10 @@ function logEkle(lisansKod, cihazKimlik, islem, ip) {
 // =====================================================================
 // SÜRÜM BİLGİLERİ & İNDİRME LİNKLERİ
 // =====================================================================
-const EN_GUNCEL_SURUM = "7.0.37";
+const EN_GUNCEL_SURUM = "7.0.38";
 const EN_DUSUK_SURUM = "1.0.0";
-const SETUP_INDIRME_LINKI = "https://github.com/maNgao7/mng-license-server1/releases/download/v7.0.37/TikMnG-Setup-7.0.37.exe";
-const PORTABLE_INDIRME_LINKI = "https://github.com/maNgao7/mng-license-server1/releases/download/v7.0.37/TikMnG-7.0.37-Portable.exe";
+const SETUP_INDIRME_LINKI = "https://github.com/maNgao7/mng-license-server1/releases/download/v7.0.38/TikMnG-Setup-7.0.38.exe";
+const PORTABLE_INDIRME_LINKI = "https://github.com/maNgao7/mng-license-server1/releases/download/v7.0.38/TikMnG-7.0.38-Portable.exe";
 const SETUP_WEB_LINKI = 'https://tikmng.com/download/setup';
 const resolveLatestInstaller = createLatestInstallerResolver({ fallbackUrl: SETUP_INDIRME_LINKI });
 const VARSAYILAN_PAKET_LINKLERI = Object.freeze({

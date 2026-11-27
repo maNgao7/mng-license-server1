@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="tr">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; frame-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'">
+    <title>TikMnG Kaplamalar | Tasarım incelemesi</title>
+    <link rel="icon" href="/assets/icon-v5.png">
+    <link rel="stylesheet" href="/widget-hub.css">
+    <link rel="stylesheet" href="/widget-preview.css">
+</head>
+<body>
+    <div class="review-shell">
+        <main class="review-workspace">
+            <header class="preview-app-bar">
+                <div class="review-breadcrumb"><span>Yönetici</span><i data-lucide="chevron-right"></i><strong>Kaplamalar</strong></div>
+                <span class="review-mode"><span></span>Tasarım incelemesi</span>
+            </header>
+            <div id="preview-root" aria-busy="true"><div class="review-loading" role="status">Kaplamalar yükleniyor…</div></div>
+            <div id="load-error" role="alert" hidden><p></p><button type="button" id="retry"><i data-lucide="refresh-cw"></i>Yeniden dene</button></div>
+        </main>
+        <aside class="review-sidebar" aria-label="TikMnG yönetici">
+            <div class="review-brand"><img src="/assets/icon-v5.png" alt=""><div><strong>TikMnG</strong><span>Yönetici</span></div></div>
+            <nav aria-label="Ana menü">
+                <span class="review-nav-label">ÇALIŞMA ALANI</span>
+                <button type="button" disabled title="Tasarım incelemesi"><i data-lucide="radio"></i><span>Yayın merkezi</span></button>
+                <button type="button" disabled title="Tasarım incelemesi"><i data-lucide="gamepad-2"></i><span>Oyunlar</span></button>
+                <button type="button" aria-current="page" id="nav-overlays"><i data-lucide="layers"></i><span>Kaplamalar</span><i data-lucide="chevron-left"></i></button>
+                <button type="button" disabled title="Tasarım incelemesi"><i data-lucide="zap"></i><span>Eylemler</span></button>
+                <button type="button" disabled title="Tasarım incelemesi"><i data-lucide="clapperboard"></i><span>Medya</span></button>
+            </nav>
+            <footer><i data-lucide="monitor"></i><div><strong>Tasarım incelemesi</strong><span>Yerel örnek veriler</span></div></footer>
+        </aside>
+    </div>
+    <dialog id="settings" aria-labelledby="settings-title">
+        <header class="settings-heading"><div><span class="review-nav-label">KAPLAMA AYARLARI</span><h2 id="settings-title"></h2></div><button type="button" id="close-settings" class="icon-button" aria-label="Ayarları kapat" title="Kapat"><i data-lucide="x"></i></button></header>
+        <form>
+            <div class="settings-body">
+                <section class="settings-preview"><div class="settings-preview-heading"><strong>Önizleme</strong><span>Örnek veriler</span></div><div class="settings-stage"><iframe id="settings-preview" title="Kaplama ayarları önizlemesi" sandbox="allow-scripts allow-same-origin" allow="autoplay" referrerpolicy="no-referrer"></iframe></div><p id="preview-error" role="alert" hidden>Önizleme yüklenemedi.</p></section>
+                <div id="fields"></div>
+            </div>
+            <footer><button type="button" id="test-settings"><i data-lucide="play"></i>Test</button><button type="button" id="reset-settings"><i data-lucide="rotate-ccw"></i>Sıfırla</button><button type="submit"><i data-lucide="check"></i>Kaydet</button></footer>
+        </form>
+    </dialog>
+    <div id="notice" role="status" hidden></div>
+    <script src="/vendor/lucide.js"></script>
+    <script src="/widget-hub.js"></script>
+    <script src="/widget-preview.js"></script>
+</body>
+</html>
