@@ -2,10 +2,8 @@
   "launcher": "7.0.38",
   "game": "ring",
   "gameVersion": "0.1.0",
-  "stage": "draft",
-  "readyForPublicRelease": false,
+  "stage": "github-publication-requested",
   "renderDeployed": false,
-  "blockingCheck": "Current packaged game: selected live corner gift from an active real fighter -> native damage remains unobserved. No evidence is fabricated.",
   "passed": {
     "launcherTests": 467,
     "serverTestsPassed": 435,
@@ -45,5 +43,9 @@
     "exitCode": 1,
     "reason": "Current live selected-gift evidence is missing; foundation checks passed.",
     "evidenceReplacedOrBypassed": false
-  }
+  },
+  "releaseVerificationComplete": false,
+  "publicationRequestedByUserAfterDisclosure": true,
+  "publicationDecision": "User cannot perform the live gift check now and explicitly requested completion of GitHub publication; Render is left to the user.",
+  "outstandingCheck": "Current packaged game: selected live corner gift from an active real fighter -> native damage remains unobserved. No evidence is fabricated."
 }

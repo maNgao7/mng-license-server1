@@ -1,8 +1,7 @@
 {
   "version": "7.0.38",
   "gameVersion": "0.1.0",
-  "stage": "draft-awaiting-current-live-gift-check",
-  "readyForPublicRelease": false,
+  "stage": "github-release-live-gift-unverified",
   "renderDeployed": false,
   "files": [
     {
@@ -30,5 +29,8 @@
       "bytes": 349970774,
       "sha256": "a2f3bf8e56e2f0ea71e90a54193e3ba456e1afff9881bcbc857ca01181a85f8e"
     }
-  ]
+  ],
+  "releaseVerificationComplete": false,
+  "publicationRequestedByUserAfterDisclosure": true,
+  "unverified": "Selected live corner gift from an active fighter -> native damage on this exact packaged build."
 }

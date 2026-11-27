@@ -1,26 +1,19 @@
-# Ring yayın adayı — 27 Kasım 2026
+# Ring 0.1.0 ve TikMnG 7.0.38 — GitHub yayını
 
-Ring 0.1.0 ve TikMnG 7.0.38 bu dalda hazırlanmıştır. Kurulum videosu, altın Ring kapağı, altı kural, FPS sıra puanı ve doğrudan GitHub indirme katalogları eklidir.
+Kurulum videosu, altın Ring kapağı, altı kural, FPS sıra puanı ve GitHub indirme katalogları bu sürümdedir. Kullanıcı GitHub yayınının tamamlanmasını istedi; Render dağıtımını istediği zaman kendisi yapacak. Render'a dağıtım yapılmadı. Main commit mesajı otomatik dağıtımı atlamak için `[skip render]` içerir.
 
-## Yayın durumu
+## Doğrulama durumu
 
-**Henüz herkese açık güncelleme değildir.** Güncel taşınabilir pakette seçili köşe hediyesi → native hasar gerçek yayında tamamlanamadığından Ring tam kapısı durur. Bağlantı, doğal katılımcılar, iki profil/can barı ve gerçek beğeniden iki isabet gözlendi. Sentetik hediye testi gerçek hediye kanıtı olarak sayılmaz. GitHub sürümleri taslaktır; mevcut 7.0.37 son sürümü ve main dalı değişmez.
+Launcher 467/467, sunucu 435 başarılı / 6 atlanan, Ring 228 temel + 69 kamera + 49 spectator kontrolü geçti. Yeni taşınabilir pakette iki yerel maç, iki köşede 1 canla gard, nakavt, kazananın kalması, yeni rakip ve P sıfırlaması çıkış 0 verdi. @rasimbisakin gerçek yayınında bağlantı, iki profil/can barı ve beğeniden iki native isabet gözlendi.
 
-Bu dalı Render'a henüz dağıtmayın. Son gerçek hediye kontrolü, oyun tam kapısı ve taslakların yayımlanması tamamlandıktan sonra main'e alınacak commit ayrıca bildirilir. Render dağıtımını kullanıcı yapar; otomatik dağıtım yapılmadı.
+**Güncel paketin son gerçek köşe hediyesi → native hasar kontrolü yapılmadı.** Aktif dövüşçüden seçili hediye gözlenmedi ve kullanıcı şu anda hediye denemesi yapamıyor. Bu nedenle Ring'in tam yayın kapısı eksik kanıtla çıkış 1 verdi; geçmiş kanıt kopyalanmadı, test sonucu değiştirilmedi. Kullanıcının bu durum açıklandıktan sonraki doğrudan GitHub yayın isteğiyle paket sunulur. Bu eksik doğrulama sürüm notunda da yazılıdır; tüm senaryoların hatasızlığı iddia edilmez.
 
-## Kurulum
+## Kurulum ve Render
 
-Ring bir mod paketidir. Steam üzerinden ücretsiz Online Boxing 3D Demo (4793540) önce kurulmalıdır. Oyun EXE'si, Steamworks ve MuJoCo ikilileri Ring ZIP'inde dağıtılmaz. Mevcut doğrulanmış Steam sürümüne 6,6 MB Windows MSDelta uyumluluk farkı yalnız Ring'in kullanıcı veri klasöründeki kopyasında uygulanır; sonuç SHA-256 ile doğrulanır. Steam kurulumu değişmez. Python ve Frida çalışma zamanı pakete dahildir.
+Ring bir mod paketidir. Steam üzerinden ücretsiz Online Boxing 3D Demo (4793540) önce kurulmalıdır. Oyun EXE'si, Steamworks ve MuJoCo ikilileri Ring ZIP'inde dağıtılmaz. Doğrulanmış mevcut Steam sürümüne uyumluluk farkı yalnız Ring'in kullanıcı veri klasöründeki kopyasında uygulanır; Steam kurulumu değişmez. Python ve Frida çalışma zamanı pakete dahildir.
 
-## Sonraki işlem
+GitHub yayınları: https://github.com/maNgao7/mng-license-server1/releases/tag/ring-0.1.0 ve https://github.com/maNgao7/mng-license-server1/releases/tag/v7.0.38
 
-1. Güncel sürümün doğal ring katılımcılarından, B menüsünde seçili köşe hediyesinin native isabetini ve iki profil/can barını doğrula.
-2. `apps/hediye-box/tests/release-gate.ps1` tam kapısını geçir; kaynak fingerprint'lerini yeni kanıta bağla.
-3. Paket SHA-256 değerlerini ve updater feed'ini yeniden denetle. Sürüm/kurallar güncelse GitHub taslaklarını yayımla ve en son launcher sürümünü 7.0.38 yap.
-4. Main commit'ini kullanıcıya Render için bildir. Oyun indirmeleri Render üzerinden proxy edilmez.
+Render'da yeni main commit'i kullanıcı istediği zaman elle dağıtabilir. İndirmeler GitHub'dan yapılır; Render üzerinden ZIP proxy edilmez. Kalıcı ayar ve kazananlar silinmedi. Geri dönüş gerekirse önceki main `fa2de28fe02c0203ac1f40e2fba7aafc103f8921` ve launcher `v7.0.37` korunmaktadır.
 
 Kurulum videosu: https://www.youtube.com/watch?v=Il6t2jrBy1c
-
-## Tamamlanan taşınabilir akış kontrolü
-
-Yeni pakette iki tam yerel maç ve P sıfırlaması çıkış 0 verdi. İki köşede 1 canla gard, nakavt, kazananın kalması ve yeni rakip geçişi gözlendi. Ayrıntılar `maintenance/ring-0.1.0/verification` altındadır. Bu yerel kanıt eksik gerçek hediye kontrolünün yerine geçmez.
