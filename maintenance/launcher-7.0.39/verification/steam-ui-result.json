@@ -1,0 +1,15 @@
+{
+  "passed": true,
+  "version": "7.0.39",
+  "packaged": true,
+  "isolatedProfile": true,
+  "steamRegistered": true,
+  "tested": [
+    "Ring detail Steam button",
+    "nested icon click and failed-protocol fallback",
+    "Ring resource Steam button"
+  ],
+  "nativeStoreOpened": false,
+  "liveGiftTested": false,
+  "pageErrors": []
+}

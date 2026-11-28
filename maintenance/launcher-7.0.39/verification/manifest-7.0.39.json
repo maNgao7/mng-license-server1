@@ -1,0 +1,43 @@
+{
+  "version": "7.0.39",
+  "scope": "Launcher Steam store links only; Ring 0.1.0 game package unchanged",
+  "renderDeployed": false,
+  "launcherTestsPassed": 475,
+  "packagedUi": {
+    "passed": true,
+    "version": "7.0.39",
+    "packaged": true,
+    "isolatedProfile": true,
+    "steamRegistered": true,
+    "tested": [
+      "Ring detail Steam button",
+      "nested icon click and failed-protocol fallback",
+      "Ring resource Steam button"
+    ],
+    "nativeStoreOpened": false,
+    "liveGiftTested": false,
+    "pageErrors": []
+  },
+  "files": [
+    {
+      "name": "TikMnG-Setup-7.0.39.exe",
+      "bytes": 301435614,
+      "sha256": "5f5672385e8c4a61ebcb38627a62d416280275aa6dc1c0cbe7be9111606e9773"
+    },
+    {
+      "name": "TikMnG-Setup-7.0.39.exe.blockmap",
+      "bytes": 312391,
+      "sha256": "383ff7e63f662f654a0bf90ebbd581b2afd2c04fb8a57d2c273ae724e3042538"
+    },
+    {
+      "name": "TikMnG-7.0.39-Portable.exe",
+      "bytes": 301257037,
+      "sha256": "b61a3d6b5f3ca182cc0972f1f928f42a0445f720c4d7a2dac82c5e8a07624721"
+    },
+    {
+      "name": "latest.yml",
+      "bytes": 586,
+      "sha256": "a62cf91b0653021a683d940184a6f051e3f1173bc2363e84a7dc07761fc91620"
+    }
+  ]
+}
