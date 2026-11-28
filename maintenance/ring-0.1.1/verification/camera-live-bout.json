@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "appVersion": "0.1.1",
+  "username": "tenhaa.34",
+  "startedAt": "2026-11-28T13:45:58.744Z",
+  "realLiveConnected": true,
+  "completedBouts": 1,
+  "liveCallbacks": {
+    "chat": 8,
+    "gift": 2,
+    "like": 13,
+    "follow": 1
+  },
+  "localEntryCommands": 0,
+  "acceptedPunches": {
+    "live": 4,
+    "local": 7
+  },
+  "hits": {
+    "live": 3,
+    "local": 7
+  },
+  "connectionChanges": [
+    {
+      "at": "2026-11-28T13:46:12.089Z",
+      "status": "connected",
+      "reason": "connected"
+    }
+  ],
+  "rounds": [
+    {
+      "round": 1,
+      "samples": 186,
+      "connectedSamples": 186
+    }
+  ],
+  "screens": [
+    "hotfix-camera-live-contact-1.png"
+  ],
+  "cameraApproach": {
+    "wide": 34.972356067922746,
+    "close": 8.76141202626443,
+    "mode": "ring"
+  },
+  "motion": {
+    "samples": 186,
+    "exchangeSamples": 44,
+    "fastest": 11.053155194624132,
+    "longestLean": 0,
+    "maxShoeOverHip": -1.6346229229028588,
+    "maxShoeLift": 0.4828517869321982,
+    "longestHighStep": 0,
+    "lean95": 20.800339687842385,
+    "maxLean": 33.96996268253102,
+    "longestOpenArms": 0,
+    "postKoOpenArms": 0
+  },
+  "connectedSeconds": 44.934,
+  "passed": true,
+  "finishedAt": "2026-11-28T13:46:57.025Z"
+}

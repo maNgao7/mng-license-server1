@@ -1,0 +1,35 @@
+✔ 7.0.25 changes only the new game, Profile Duel and three retired defaults; media stays exact (1.816ms)
+✔ the exact 7.0.24 baseline upgrades once, while every personal draft and publication remains untouched (42.0314ms)
+✔ website JSON, embedded catalog, static cards, counts and supplied Hapisten Kaç assets agree (6.0431ms)
+✔ Ring 0.1.1 metadata identifies the supplied video and Steam demo without a gift image (0.9793ms)
+✔ the Ring catalog adds exactly one game and preserves all 19 previous game records, media and launcher (1.5597ms)
+✔ fresh content storage publishes Ring with the full current catalog and does not migrate again on restart (150.6656ms)
+✔ untouched Ring 0.1.0 storage moves to 0.1.1 once, retaining its complete backup (54.1649ms)
+✔ Ring hotfix preserves a manually edited administrator catalog (44.8932ms)
+✔ the untouched pre-Ring state migrates once with a complete unchanged backup (74.7016ms)
+▶ Ring bootstrap preserves administrator changes in either draft or published storage across restart
+  ✔ rev2026112502 draft: game title (81.6097ms)
+  ✔ rev2026112502 draft: game removal (84.1675ms)
+  ✔ rev2026112502 draft: game order (84.6027ms)
+  ✔ rev2026112502 draft: media (75.1449ms)
+  ✔ rev2026112502 draft: launcher (83.6775ms)
+  ✔ rev2026112502 draft: revision (75.8278ms)
+  ✔ rev2026112502 draft: unpublished timestamp (77.6072ms)
+  ✔ rev2026112502 published: game title (78.2708ms)
+  ✔ rev2026112502 published: game removal (78.13ms)
+  ✔ rev2026112502 published: game order (76.507ms)
+  ✔ rev2026112502 published: media (88.0427ms)
+  ✔ rev2026112502 published: launcher (82.5247ms)
+  ✔ rev2026112502 published: revision (87.3052ms)
+  ✔ rev2026112502 published: unpublished timestamp (91.575ms)
+  ✔ rev2026112801 draft: removed Ring (75.3993ms)
+  ✔ rev2026112801 published: removed Ring (78.1845ms)
+✔ Ring bootstrap preserves administrator changes in either draft or published storage across restart (1300.9947ms)
+ℹ tests 26
+ℹ suites 0
+ℹ pass 26
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1839.8145

@@ -1,0 +1,35 @@
+{
+  "game": "ring",
+  "version": "0.1.1",
+  "stage": "verified-github-publication",
+  "checkedAt": "2026-11-28T13:50:45.473259+00:00",
+  "renderDeployed": false,
+  "ringReleaseGateExit": 0,
+  "serverReleaseGateExit": 0,
+  "automaticTests": 294,
+  "cameraMathChecks": 69,
+  "spectatorInputChecks": 49,
+  "realLiveGiftNativeHit": true,
+  "realLikeNativeHits": true,
+  "loadedPortraits": 2,
+  "liveConnectedBouts": 3,
+  "additionalCameraBout": 1,
+  "syntheticActionsReportedSeparately": true,
+  "cloudStudioWidgetVisuallyVerified": false,
+  "artifact": {
+    "game": "ring",
+    "version": "0.1.1",
+    "file": "Ring-Windows-x64.zip",
+    "bytes": 349981062,
+    "sha256": "9b91d9c108cb827d9be2d8f74f4302708a4ff71d653834bfeb3c8a82d133984c",
+    "requiresSteamApp": "4793540",
+    "tutorial": "https://www.youtube.com/watch?v=Il6t2jrBy1c"
+  },
+  "rollback": "Revert catalog to content-bootstrap-pre-ring-0.1.1.json; prior ring-0.1.0 asset remains untouched.",
+  "knownLimits": [
+    "No unlimited-time or all-hardware guarantee",
+    "No TikTok violation guarantee",
+    "Widget relay tested with real server locally; LIVE Studio online source acceptance not observed",
+    "Visual desktop capture timed out in some QA screenshots; native state and gameplay checks remained separate"
+  ]
+}

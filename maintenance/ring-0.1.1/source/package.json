@@ -1,0 +1,16 @@
+{
+  "name": "tikmng-hediye-box-native-adapter",
+  "version": "0.1.1",
+  "main": "main.cjs",
+  "productName": "TikMnG Ring",
+  "private": true,
+  "description": "TikMnG Ring canlı yayın boks adaptörü",
+  "scripts": {
+    "start": "electron .",
+    "test": "node --test tests/*.test.cjs",
+    "check": "node --check src/match-core.cjs && node --check src/gift-normalizer.cjs"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data: https:; connect-src 'none'; font-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+  <title>Hediye Box · TikMnG</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="../src/channel-field.js" defer></script>
+  <script src="renderer.js" defer></script>
+</head>
+<body>
+  <img class="ring-background" src="../assets/loading-ring-v2.png" alt="" aria-hidden="true">
+  <div class="scrim" aria-hidden="true"></div>
+  <div class="desktop-shell">
+    <header class="topbar">
+      <div class="brand"><img src="../assets/tikmng.png" alt="TikMnG" width="112" height="42"><span>Masaüstü kumandası</span></div>
+      <div class="topbar-actions">
+        <div class="status-badge" id="live-badge" data-tone="neutral"><span class="status-dot" aria-hidden="true"></span><span id="live-status">Yayın durumu bekleniyor</span></div>
+        <div class="status-badge" id="native-badge" data-tone="neutral"><span class="status-dot" aria-hidden="true"></span><span id="native-status">Oyun kontrolü bekleniyor</span></div>
+        <button id="panel-toggle" class="panel-toggle" type="button" aria-expanded="false" aria-controls="control-panel" aria-label="Kontrol panelini aç" title="Kontrol panelini aç">+</button>
+      </div>
+    </header>
+
+    <main class="stage">
+      <div class="hero">
+        <p class="eyebrow">TIKMNG · CANLI YAYIN</p>
+        <h1>HEDİYE BOX</h1>
+        <p class="hero-caption">Ringin iki köşesi. Yayının hediyeleri.</p>
+      </div>
+      <section class="session-state" aria-label="Oyun durumu">
+        <p class="session-label" id="game-status">Oyun durumu bekleniyor</p>
+        <p id="state-message" role="status">Masaüstü bağlantısı kontrol ediliyor.</p>
+        <p id="bridge-error" class="inline-error" role="alert" hidden></p>
+      </section>
+
+      <div class="sides">
+        <section class="side-card side-left" aria-labelledby="left-title">
+          <div class="side-heading"><span class="corner-mark" aria-hidden="true"></span><h2 id="left-title">SOL KÖŞE</h2><img src="../assets/gifts/5655.png" alt="" width="38" height="38"><span class="gift-name">Gül</span></div>
+          <div class="leader"><div class="avatar"><span id="left-initial" aria-hidden="true">—</span><img id="left-portrait" alt="" width="38" height="38" hidden referrerpolicy="no-referrer"></div><div class="leader-copy"><span class="micro-label">LİDER</span><p id="left-leader">Lider bekleniyor</p><span id="left-username" class="leader-username"></span></div></div>
+          <dl class="side-stats"><div><dt>Bekleyen yumruk</dt><dd id="left-pending">—</dd></div><div><dt>Hediye adedi</dt><dd id="left-units">—</dd></div></dl>
+        </section>
+        <section class="side-card side-right" aria-labelledby="right-title">
+          <div class="side-heading"><span class="corner-mark" aria-hidden="true"></span><h2 id="right-title">SAĞ KÖŞE</h2><img src="../assets/gifts/5269.png" alt="" width="38" height="38"><span class="gift-name">TikTok</span></div>
+          <div class="leader"><div class="avatar"><span id="right-initial" aria-hidden="true">—</span><img id="right-portrait" alt="" width="38" height="38" hidden referrerpolicy="no-referrer"></div><div class="leader-copy"><span class="micro-label">LİDER</span><p id="right-leader">Lider bekleniyor</p><span id="right-username" class="leader-username"></span></div></div>
+          <dl class="side-stats"><div><dt>Bekleyen yumruk</dt><dd id="right-pending">—</dd></div><div><dt>Hediye adedi</dt><dd id="right-units">—</dd></div></dl>
+        </section>
+      </div>
+    </main>
+
+    <aside id="control-panel" class="control-panel" aria-labelledby="panel-title" hidden>
+      <div class="panel-heading"><h2 id="panel-title">Yayın kontrolü</h2><span>HEDİYE BOX</span></div>
+      <form id="connect-form" novalidate>
+        <label for="username">TikTok kullanıcı adı</label>
+        <div class="connect-row"><div class="username-field"><span aria-hidden="true">@</span><input id="username" name="username" placeholder="kullanici.adi" maxlength="65" autocomplete="off" autocapitalize="none" spellcheck="false" aria-describedby="connect-message connect-error"></div><button id="connect-button" class="button button-primary" type="submit">Bağlan</button></div>
+        <p id="connect-message" class="helper">Yayın bağlantısı bekleniyor.</p>
+        <p id="connect-error" class="inline-error" role="alert" hidden></p>
+      </form>
+      <section class="panel-section" aria-labelledby="game-heading">
+        <div class="section-heading"><h3 id="game-heading">Orijinal oyun</h3><span id="panel-game-status">Durum bekleniyor</span></div>
+        <button id="game-button" class="button button-wide" type="button">Oyunu Aç</button>
+        <p id="native-message" class="helper">Oyun kontrolü doğrulanmadı.</p>
+        <p id="game-error" class="inline-error" role="alert" hidden></p>
+      </section>
+      <section class="panel-section" aria-labelledby="test-heading">
+        <div class="section-heading"><h3 id="test-heading">Hediye testi</h3><span class="test-label">TEST</span></div>
+        <div class="test-buttons"><button id="test-left" class="button test-button" type="button" disabled><img src="../assets/gifts/5655.png" alt="" width="24" height="24"><span>Sol · Gül</span><small>TEST</small></button><button id="test-right" class="button test-button" type="button" disabled><img src="../assets/gifts/5269.png" alt="" width="24" height="24"><span>Sağ · TikTok</span><small>TEST</small></button></div>
+        <p id="test-message" class="helper">Test için yumruk bağlantısı hazır olmalı.</p>
+        <p id="test-error" class="inline-error" role="alert" hidden></p>
+      </section>
+      <section class="panel-section" aria-labelledby="camera-heading">
+        <div class="section-heading"><h3 id="camera-heading">Kamera</h3></div>
+        <div class="camera-buttons" role="group" aria-label="Kamera açısı"><button class="button camera-button" type="button" data-camera="free" aria-pressed="false" disabled>Serbest</button><button class="button camera-button" type="button" data-camera="back" aria-pressed="false" disabled>Arkadan <kbd>E</kbd></button><button class="button camera-button" type="button" data-camera="first" aria-pressed="false" disabled>Birinci şahıs <kbd>R</kbd></button></div>
+        <p id="camera-message" class="helper">Kamera bağlantısı bekleniyor.</p>
+        <p id="camera-error" class="inline-error" role="alert" hidden></p>
+      </section>
+    </aside>
+    <footer class="footer"><span>ORİJİNAL OYUN · MASAÜSTÜ KUMANDASI</span><span>Kontroller için <span class="plus-hint">+</span></span></footer>
+  </div>
+</body>
+</html>

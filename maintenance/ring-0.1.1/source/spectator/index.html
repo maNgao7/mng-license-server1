@@ -1,0 +1,222 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' https: file:; media-src 'self' file:; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+  <title>Ring · TikMnG</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="game-audio.js" defer></script>
+  <script src="ringside.bundle.js" defer></script>
+  <script src="../src/channel-field.js" defer></script>
+  <script src="../broadcast/hud-bridge.js" defer></script>
+  <script src="renderer.js" defer></script>
+</head>
+<body>
+  <div id="loading-screen" class="loading-screen" role="status" hidden>
+    <img src="../assets/loading-ring-gold-v1.png" alt="" aria-hidden="true">
+    <div class="loading-copy"><p id="loading-label">Ring hazırlanıyor…</p><progress id="loading-progress" max="100" value="5" aria-label="Ring yükleme ilerlemesi"></progress></div>
+  </div>
+
+  <div class="participants" aria-label="Ringdeki katılımcılar">
+    <canvas id="phone-flash" class="phone-flash" width="36" height="36" aria-hidden="true" hidden></canvas>
+    <canvas id="stadium" aria-hidden="true" hidden></canvas>
+    <canvas id="ringside" aria-hidden="true" hidden></canvas>
+    <div id="participant-0" class="participant participant-left" hidden>
+      <div class="participant-avatar" role="img" aria-labelledby="profile-0-name">
+        <img id="profile-0-image" alt="" referrerpolicy="no-referrer" hidden>
+        <span id="profile-0-name" class="portrait-fallback"></span>
+      </div>
+      <span id="handle-0" class="fighter-handle"></span>
+      <span id="damage-0" class="damage-number" aria-hidden="true"></span>
+      <div id="health-0" class="health-bar" role="progressbar" aria-label="Mavi köşe canı" aria-valuemin="0" aria-valuemax="100" hidden><div id="health-0-fill" class="health-fill"></div></div>
+    </div>
+    <div id="participant-1" class="participant participant-right" hidden>
+      <div class="participant-avatar" role="img" aria-labelledby="profile-1-name">
+        <img id="profile-1-image" alt="" referrerpolicy="no-referrer" hidden>
+        <span id="profile-1-name" class="portrait-fallback"></span>
+      </div>
+      <span id="handle-1" class="fighter-handle"></span>
+      <span id="damage-1" class="damage-number" aria-hidden="true"></span>
+      <div id="health-1" class="health-bar" role="progressbar" aria-label="Kırmızı köşe canı" aria-valuemin="0" aria-valuemax="100" hidden><div id="health-1-fill" class="health-fill"></div></div>
+    </div>
+  </div>
+  <div id="back-brand-left" class="body-brand" aria-hidden="true" hidden>TikMnG</div>
+  <div id="back-brand-right" class="body-brand" aria-hidden="true" hidden>TikMnG</div>
+  <span id="crosshair" class="crosshair" aria-hidden="true" hidden></span>
+  <p id="opponent-wait" class="opponent-wait" role="status" aria-label="Yeni eşleşme bekleniyor" hidden>
+    <span aria-hidden="true"></span><span aria-hidden="true"></span><span aria-hidden="true"></span>
+  </p>
+  <div id="countdown" class="countdown" role="status" aria-label="Maç geri sayımı" hidden></div>
+  <div id="impact-left" class="impact-edge" aria-hidden="true"></div>
+  <div id="impact-right" class="impact-edge" aria-hidden="true"></div>
+  <section id="winner" class="winner" role="status" hidden>
+    <span class="winner-kicker">MAÇIN KAZANANI</span>
+    <div class="winner-portrait"><span id="winner-initial"></span><img id="winner-image" alt="" referrerpolicy="no-referrer" hidden></div>
+    <strong id="winner-name"></strong><span id="winner-total"></span>
+  </section>
+  <aside id="standings" class="standings" aria-label="Kazananlar" hidden>
+    <header class="list-heading"><h2>Kazananlar</h2><button id="standings-minimize" class="list-window-button" type="button" aria-label="Kazananlar listesini küçült" aria-controls="standings-list" aria-expanded="true">−</button></header><ol id="standings-list" role="list"></ol>
+  </aside>
+
+  <p id="overlay-error" class="overlay-error" role="alert" hidden></p>
+  <span id="camera-status" class="visually-hidden" aria-label="Kamera" role="img" hidden></span>
+
+  <div class="right-rail">
+  <aside id="game-options" class="control-panel game-options" role="dialog" aria-modal="true" aria-labelledby="options-title" hidden>
+    <header class="panel-heading"><h1 id="options-title">Ses ve grafik</h1><button id="options-close" type="button" class="close-button" aria-label="Ayarları kapat">×</button></header>
+    <form id="options-form">
+      <label for="game-volume">Oyun sesi <output id="game-level" for="game-volume"></output></label>
+      <input id="game-volume" type="range" min="0" max="100" step="1">
+      <label for="effects-volume">Gong, yumruk ve seyirci <output id="effects-level" for="effects-volume"></output></label>
+      <input id="effects-volume" type="range" min="0" max="100" step="1">
+      <label for="scene-quality">Sıradaki boksörlerin görüntü kalitesi</label>
+      <select id="scene-quality"><option value="low">Düşük</option><option value="medium">Orta</option><option value="high">Yüksek</option></select>
+      <label class="check-row"><input id="crowd-flashes" type="checkbox"> Seyirci telefon flaşları</label>
+      <button class="connect-button" id="apply-options" type="submit">Uygula</button>
+      <p class="helper" id="options-status" role="status"></p>
+    </form>
+  </aside>
+  <aside id="control-panel" class="control-panel" aria-labelledby="panel-title" hidden>
+    <header class="panel-heading">
+      <h1 id="panel-title">Yayın ve maç ayarları</h1>
+      <button id="panel-close" class="close-button" type="button" aria-label="Yayın panelini kapat (Esc)" title="Kapat · Esc">×</button>
+    </header>
+    <p id="waiting-hint" class="waiting-hint" hidden>
+      <span id="ring-status" class="ring-status" role="status"></span>
+      <span><kbd id="start-key">P</kbd> <span id="start-label">Başlat</span></span>
+    </p>
+    <div class="panel-grid">
+    <div class="connection-settings">
+    <form id="connect-form" novalidate>
+      <label for="username">TikTok kullanıcı adı</label>
+      <div class="username-field"><span aria-hidden="true">@</span><input id="username" name="username" placeholder="kullanici.adi" maxlength="65" autocomplete="off" autocapitalize="none" spellcheck="false" aria-describedby="live-status action-error"></div>
+      <button id="connect-button" class="connect-button" type="submit">Bağlan</button>
+    </form>
+    <p id="live-status" class="live-status" role="status">Yayın durumu bekleniyor.</p>
+    <section class="settings-section" aria-labelledby="camera-title">
+      <h2 id="camera-title">Kamera</h2>
+      <div class="camera-buttons"><button id="camera-free" class="secondary-button" type="button"><kbd>F</kbd> Serbest</button><button id="camera-ring" class="secondary-button" type="button"><kbd>Home</kbd> Ring</button><button id="camera-follow" class="secondary-button" type="button"><kbd>E</kbd> Uzak arka</button></div>
+      <p class="helper">Serbest kamerada fareyle bak · WASD hareket</p>
+      <p class="helper"><kbd>Boşluk</kbd> Yüksel · <kbd>Ctrl</kbd> Alçal<br>Yakınlaşmak için sağ tuşu basılı tut.</p>
+    </section>
+    <p id="audio-status" class="helper" role="status" hidden></p>
+    <section class="settings-section" aria-labelledby="capture-title">
+      <h2 id="capture-title">Oyun görüntüsü</h2>
+      <p class="helper">Profiller, can barları ve listeler oyun görüntüsüne dahildir. OBS veya LIVE Studio’da oyun olarak Online Boxing 3D / boxing.exe seçin.</p>
+      <h3>Widget bağlantıları</h3>
+      <div id="widget-links">
+        <label for="widget-fighters">Ringdeki boksörler</label>
+        <div><input id="widget-fighters" readonly><button type="button" data-copy="fighters" aria-label="Boksör bağlantısını kopyala">Kopyala</button></div>
+        <label for="widget-queue">Sıradakiler</label>
+        <div><input id="widget-queue" readonly><button type="button" data-copy="queue" aria-label="Sıra bağlantısını kopyala">Kopyala</button></div>
+        <label for="widget-winners">Kazananlar</label>
+        <div><input id="widget-winners" readonly><button type="button" data-copy="winners" aria-label="Kazananlar bağlantısını kopyala">Kopyala</button></div>
+      </div>
+      <button id="refresh-links" type="button" class="secondary-button">Bağlantıları yenile</button>
+      <p id="link-status" class="helper" role="status"></p>
+    </section>
+    <section class="settings-section" aria-labelledby="hud-title">
+      <h2 id="hud-title">Ekrandaki listeler</h2>
+      <label class="check-row"><input id="show-standings" type="checkbox" checked> Kazananları göster</label>
+      <label for="standings-scale">Kazananların boyutu <output for="standings-scale" id="standings-percent"></output></label>
+      <div class="list-size-buttons"><button id="standings-smaller" class="secondary-button" type="button" aria-label="Kazananlar listesini küçült">− Küçült</button><button id="standings-larger" class="secondary-button" type="button" aria-label="Kazananlar listesini büyüt">+ Büyüt</button></div>
+      <input id="standings-scale" type="range" min="60" max="140" step="5" value="100">
+      <label class="check-row"><input id="show-queue" type="checkbox" checked> Sıradakileri göster</label>
+      <label for="queue-scale">Sıranın boyutu <output for="queue-scale" id="queue-percent"></output></label>
+      <div class="list-size-buttons"><button id="queue-smaller" class="secondary-button" type="button" aria-label="Sıradakiler listesini küçült">− Küçült</button><button id="queue-larger" class="secondary-button" type="button" aria-label="Sıradakiler listesini büyüt">+ Büyüt</button></div>
+      <input id="queue-scale" type="range" min="60" max="140" step="5" value="100">
+      <button id="reset-standings" class="secondary-button" type="button">Kazananları sıfırla</button>
+      <div id="reset-confirmation" hidden>
+        <p>Kayıtlı tüm galibiyetler silinsin mi?</p>
+        <button id="cancel-reset" type="button" class="secondary-button">Vazgeç</button>
+        <button id="confirm-reset" type="button" class="secondary-button">Evet, sıfırla</button>
+      </div>
+      <p id="reset-status" class="helper" role="status"></p>
+    </section>
+    </div>
+    <form id="audience-form" class="audience-settings" novalidate>
+      <details id="live-risk-guide" class="settings-section">
+        <summary>Yayın rehberi · ihlal riskini azaltma</summary>
+        <p class="helper">Hiçbir ayar ihlal olmayacağını garanti etmez. Yayını yönet, izleyicilerle konuş ve maçı P ile kendin başlat. Oyunu uzun süre gözetimsiz veya tekrar eden bir hediye talebi ekranıyla bırakma.</p>
+        <ol class="helper">
+          <li>Ücretsiz katılım için “Katıl yorumu” içeren bir katılım şekli seç. Hediye göndermeyi katılmanın zorunlu koşulu yapma.</li>
+          <li>Hediye için baskı, sürekli çağrı, bahis, para veya gerçek ödül vaadi kullanma. Oyundaki galibiyet bir para ödülü değildir.</li>
+          <li>FPS burada oyun içi sıra puanıdır: hediye coin değeri, her 100 kişisel beğenide 1 puan ve ilk takipte 5 puan. Bu adlandırma TikTok kurallarından muafiyet sağlamaz.</li>
+          <li>Seçilen hediyenin hangi köşeyi etkilediğini ve beğeni eşiğini doğru açıkla. Hediye veya beğeniyle otomatik eylem olması tek başına uygunluk onayı değildir.</li>
+          <li>Gençlerden hediye isteme. Kullanıcı adları veya yorumlarda uygunsuz içerik varsa yayında göstermeden yönet.</li>
+          <li>Bir kısıtlama gelirse bildirimin gerçek nedenini incele ve TikTok içinden itiraz et. Ekranı veya hediye ilişkisini gizleyerek denetimi atlatmaya çalışma.</li>
+        </ol>
+        <p class="helper">Kaynak: TikTok Topluluk Kuralları → CANLI Yayın Para Kazanma Kuralları; TikTok Creator Network Content Monetization Policy, Ekim 2026. Bu rehber ürün önerisidir; TikTok onayı değildir.</p>
+      </details>
+      <h2>Katılım ve yumruk</h2><p class="helper">1 · Katılımı ayarla &nbsp; 2 · Yumruk kaynağını seç &nbsp; 3 · Hasarı belirle</p>
+      <fieldset id="audience-fields" disabled>
+        <label for="participation-mode">Katılım şekli</label>
+        <select id="participation-mode" name="participationMode"><option value="both">Katıl yorumu veya herhangi bir hediye</option><option value="chat">Sadece katıl yorumu</option><option value="gift">Seçilen katılım hediyesi</option></select>
+        <p id="participation-help" class="helper"></p>
+        <div id="participation-gift-field" hidden>
+          <label id="participation-label">Katılım hediyesi</label>
+          <details id="participation-picker" class="gift-picker">
+            <summary aria-labelledby="participation-label participation-selected"><img id="participation-image" class="gift-image" alt="" hidden><span id="participation-selected">Durum bekleniyor</span><span class="dropdown-arrow" aria-hidden="true">▾</span></summary>
+            <label class="search-label" for="participation-search">Hediye adı veya ID ara</label>
+            <input id="participation-search" class="gift-search" type="search" placeholder="Gül veya 5655" autocomplete="off" spellcheck="false">
+            <p id="participation-results-status" class="helper" role="status"></p>
+            <ul id="participation-results" class="gift-results" aria-label="Katılım hediyeleri"></ul>
+          </details>
+        </div>
+        <div class="join-rules"><label class="check-row"><input id="follow-join" type="checkbox"> Takip ederek katıl</label><label class="check-row"><input id="like-join" type="checkbox"> Beğenerek katıl</label><label for="like-join-threshold">Sıraya girmek için gereken beğeni</label><input id="like-join-threshold" class="number-input" type="number" min="1" max="1000000" step="1" required><p class="helper">Boş köşeye girer; ring doluysa sıraya eklenir. Sıra puanı: hediye FPS + her 100 beğenide 1 FPS + ilk takipte 5 FPS. “Katıl” ile yeni giriş: 0 FPS. Eşitlikte önce katılan öndedir.</p></div>
+        <label for="punch-source">Yumruk kaynağı</label>
+        <select id="punch-source" name="punchSource"><option value="all">Beğeni ve köşe hediyesi</option><option value="gift">Sadece köşe hediyesi</option><option value="like">Sadece beğeni</option></select>
+        <p class="helper">Yumruklar P ile başlatılan maçta, gongdan sonra sayılır.</p>
+        <p class="helper">Her boksörün 100 canı var. Köşe hediyesi açıkken seçili hediyeyi hangi izleyici gönderirse o köşe yumruk atar. Her hediye 1 yumruk verir; seriler tek tek işlenir. Beğeni eşiği tamamlanır tamamlanmaz seçili sayıdaki yumruk sıraya alınır. Hasarı aşağıdan seç.</p>
+        <div id="like-settings" hidden>
+          <label for="like-threshold">Yumruk için gereken beğeni</label>
+          <input id="like-threshold" class="number-input" type="number" name="likeThreshold" min="1" step="1" value="100" inputmode="numeric" aria-describedby="like-help" required>
+          <label for="like-punch-count">Eşik başına yumruk sayısı</label>
+          <input id="like-punch-count" class="number-input" type="number" name="likePunchCount" min="1" max="100" step="1" value="2" inputmode="numeric" aria-describedby="like-help" required>
+          <p id="like-help" class="helper"></p>
+          <label for="like-damage">Beğeni yumruğunun hasarı</label><input class="number-input" id="like-damage" type="number" min="1" max="100" step="1" required>
+        </div>
+        <div id="corner-gifts" class="corner-gifts">
+          <section class="corner-picker corner-blue" aria-labelledby="left-label">
+            <h3 id="left-label">MAVİ · Sol köşe</h3>
+            <details id="left-picker" class="gift-picker">
+              <summary aria-labelledby="left-label left-selected"><img id="left-image" class="gift-image" alt="" hidden><span id="left-selected">Durum bekleniyor</span><span class="dropdown-arrow" aria-hidden="true">▾</span></summary>
+              <label class="search-label" for="left-search">Hediye adı veya ID ara</label>
+              <input id="left-search" class="gift-search" type="search" placeholder="Gül veya 5655" autocomplete="off" spellcheck="false">
+              <p id="left-results-status" class="helper" role="status"></p>
+              <ul id="left-results" class="gift-results" aria-label="Mavi köşe hediyeleri"></ul>
+            </details>
+            <label for="left-damage">Hediye yumruğunun hasarı</label><input class="number-input" id="left-damage" type="number" min="1" max="100" step="1" required>
+          </section>
+          <section class="corner-picker corner-red" aria-labelledby="right-label">
+            <h3 id="right-label">KIRMIZI · Sağ köşe</h3>
+            <details id="right-picker" class="gift-picker">
+              <summary aria-labelledby="right-label right-selected"><img id="right-image" class="gift-image" alt="" hidden><span id="right-selected">Durum bekleniyor</span><span class="dropdown-arrow" aria-hidden="true">▾</span></summary>
+              <label class="search-label" for="right-search">Hediye adı veya ID ara</label>
+              <input id="right-search" class="gift-search" type="search" placeholder="TikTok veya 5269" autocomplete="off" spellcheck="false">
+              <p id="right-results-status" class="helper" role="status"></p>
+              <ul id="right-results" class="gift-results" aria-label="Kırmızı köşe hediyeleri"></ul>
+            </details>
+            <label for="right-damage">Hediye yumruğunun hasarı</label><input class="number-input" id="right-damage" type="number" min="1" max="100" step="1" required>
+          </section>
+        </div>
+        <button id="save-audience" class="connect-button" type="submit" disabled>Ayarları kaydet</button>
+      </fieldset>
+      <p id="settings-status" class="helper" role="status">Katılım ayarları bekleniyor.</p>
+      <p id="catalog-error" class="action-error" role="alert" hidden></p>
+      <button id="catalog-retry" class="secondary-button" type="button" hidden>Hediyeleri yeniden yükle</button>
+    </form>
+    </div>
+    <p id="action-error" class="action-error" role="alert" hidden></p>
+    <p class="panel-hint"><kbd>B</kbd> Yayın <span>·</span> <kbd>P</kbd> Başlat <span>·</span> <kbd>Esc</kbd> Kapat</p>
+  </aside>
+  <section id="audience-queue" class="audience-queue" aria-labelledby="queue-title" hidden>
+    <header><h2 id="queue-title">Sıradakiler</h2><span id="queue-count"></span><button id="queue-minimize" class="list-window-button" type="button" aria-label="Sıradakiler listesini küçült" aria-expanded="true">−</button></header>
+    <ol id="queue-list"></ol>
+    <p id="queue-more" class="helper" hidden></p>
+    <div id="queue-pages" hidden><button id="queue-prev" type="button" aria-label="Önceki beş kişi">‹</button><button id="queue-next" type="button" aria-label="Sonraki beş kişi">›</button></div>
+  </section>
+  </div>
+</body>
+</html>

@@ -51,13 +51,13 @@ async function fixture(t, initialState) {
     };
 }
 
-test('Ring 0.1.0 metadata identifies the supplied video and Steam demo without a gift image', () => {
+test('Ring 0.1.1 metadata identifies the supplied video and Steam demo without a gift image', () => {
     const ring = current.games.find(game => game.id === 'ring');
     const publicRing = website.games.find(game => game.id === 'ring');
     assert.equal(read('package.json').version, '7.0.38');
     assert.equal(ring.title, 'Ring');
-    assert.equal(ring.version, '0.1.0');
-    assert.equal(ring.url, 'https://github.com/maNgao7/mng-license-server1/releases/download/ring-0.1.0/Ring-Windows-x64.zip');
+    assert.equal(ring.version, '0.1.1');
+    assert.equal(ring.url, 'https://github.com/maNgao7/mng-license-server1/releases/download/ring-0.1.1/Ring-Windows-x64.zip');
     assert.deepEqual(ring.resources.map(resource => resource.url), [videoUrl, steamUrl]);
     assert.equal(publicRing.tutorialUrl, videoUrl);
     assert.equal(publicRing.steamUrl, steamUrl);
@@ -71,7 +71,7 @@ test('Ring 0.1.0 metadata identifies the supplied video and Steam demo without a
 test('the Ring catalog adds exactly one game and preserves all 19 previous game records, media and launcher', () => {
     assert.equal(previous.revision, 2026112502);
     assert.equal(previous.games.length, 19);
-    assert.equal(current.revision, 2026112701);
+    assert.equal(current.revision, 2026112801);
     assert.ok(Date.parse(current.publishedAt) > Date.parse(previous.publishedAt));
     const ring = current.games.find(game => game.id === 'ring');
     assert.deepEqual(current, {
@@ -96,6 +96,26 @@ test('fresh content storage publishes Ring with the full current catalog and doe
         assert.deepEqual(fs.readdirSync(path.join(f.dataDir, 'content-revisions')), []);
         if (attempt === 0) await f.restart();
     }
+});
+
+test('untouched Ring 0.1.0 storage moves to 0.1.1 once, retaining its complete backup', async t => {
+    const baseline = read('content-bootstrap-pre-ring-0.1.1.json');
+    const old = stateFor(baseline);
+    const f = await fixture(t, old);
+    assert.deepEqual(await f.get('/api/content/catalog'), current);
+    assert.deepEqual(JSON.parse(fs.readFileSync(f.backupFile, 'utf8')), old);
+    const saved = fs.readFileSync(f.stateFile, 'utf8');
+    await f.restart();
+    assert.equal(fs.readFileSync(f.stateFile, 'utf8'), saved);
+});
+
+test('Ring hotfix preserves a manually edited administrator catalog', async t => {
+    const baseline = read('content-bootstrap-pre-ring-0.1.1.json');
+    const customized = stateFor(baseline);
+    customized.draft.games.find(game => game.id === 'ring').description = 'Yöneticiye ait özel açıklama';
+    const f = await fixture(t, customized);
+    assert.deepEqual(await f.get('/api/admin/content'), customized);
+    assert.equal(fs.existsSync(f.backupFile), false);
 });
 
 test('the untouched pre-Ring state migrates once with a complete unchanged backup', async t => {

@@ -261,7 +261,7 @@ test("public defaults include Ring and the existing games and exclude withdrawn 
     assert.equal(byId['profile-contest'].sha256, 'bfea65a15399612a8cfea4a74bc6e0718b757e220544451aa4ab583d02dca7ab');
     assert.equal(byId['crowd-control'], undefined);
     assert.equal(response.data.media.length, 285);
-    assert.equal(response.data.revision, 2026112701);
+    assert.equal(response.data.revision, 2026112801);
     assert.equal(byId.fetih.version, '0.1.5');
     assert.match(byId.fetih.url, /\/fetih-0\.1\.5\/Fetih-Windows-x64\.zip$/);
     assert.equal(byId.caahr.version, '0.6.12');

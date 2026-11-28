@@ -1,0 +1,9 @@
+{
+  "game": "ring",
+  "version": "0.1.1",
+  "file": "Ring-Windows-x64.zip",
+  "bytes": 349981062,
+  "sha256": "9b91d9c108cb827d9be2d8f74f4302708a4ff71d653834bfeb3c8a82d133984c",
+  "requiresSteamApp": "4793540",
+  "tutorial": "https://www.youtube.com/watch?v=Il6t2jrBy1c"
+}
