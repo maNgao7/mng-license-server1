@@ -1,0 +1,6 @@
+{
+  "tool": "built-in image_gen",
+  "asset": "loading-ring.png",
+  "purpose": "Loading artwork prepared; native loading-screen integration not implemented",
+  "prompt": "Use case: stylized-concept. Asset type: widescreen 16:9 loading screen background for Turkish TikMnG Hediye Box game. A polished low polygon boxing ring, two distinctly original stylized blocky human boxers face each other in guard, red gloves and shorts for left boxer, turquoise blue gloves and shorts for right boxer, both with anatomically clear arms and gloves, warm skin, expressive focused faces, no blood. Dark arena with dramatic overhead lamps, realistic matte ring canvas and three ropes, atmospheric but restrained. Crisp game art with faceted materials, cinematic perspective looking from just above the near ring corner. Reserve top central third for title typography to be added later in game. No written text, no watermark, no interface, no logos. Composition clean and readable on desktop. Original game loading artwork, not a phone mockup."
+}

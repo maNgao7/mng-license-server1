@@ -157,7 +157,8 @@ for (const [filename, revision, arenaVersion] of [
     ['content-bootstrap-pre-fetih-0.1.4.json', 2026112102, '0.1.32'],
     ['content-bootstrap-pre-hapisten-kac-0.2.1.json', 2026112103, '0.1.32'],
     ['content-bootstrap-pre-fetih-0.1.5.json', 2026112401, '0.1.32'],
-    ['content-bootstrap-pre-profile-duel-0.5.8.json', 2026112501, '0.1.32']
+    ['content-bootstrap-pre-profile-duel-0.5.8.json', 2026112501, '0.1.32'],
+    ['content-bootstrap-pre-ring-0.1.2.json', 2026112801, '0.1.32']
 ]) test(`actual rev${revision} catalog receives the current games once and retains its full backup`, async t => {
     const previous = JSON.parse(fs.readFileSync(path.join(root, filename), 'utf8'));
     const current = JSON.parse(fs.readFileSync(path.join(root, 'content-defaults.json'), 'utf8'));
@@ -239,6 +240,8 @@ test("public defaults include Ring and the existing games and exclude withdrawn 
     assert.equal(response.data.launcher, undefined);
     const byId = Object.fromEntries(response.data.games.map(item => [item.id, item]));
     assert.equal(response.data.games.length, 20);
+    assert.equal(byId.ring.version, '0.1.2');
+    assert.equal(byId.ring.url, 'https://github.com/maNgao7/mng-license-server1/releases/download/ring-0.1.2/Ring-Windows-x64.zip');
     assert.equal(byId['yaratik-arena'].version, '0.1.32');
     assert.match(byId['yaratik-arena'].url, /\/yaratik-arena-0\.1\.32\/yaratik-arena\.zip$/);
     assert.equal(byId['yaratik-arena'].bytes, 155446368);
@@ -261,7 +264,7 @@ test("public defaults include Ring and the existing games and exclude withdrawn 
     assert.equal(byId['profile-contest'].sha256, 'bfea65a15399612a8cfea4a74bc6e0718b757e220544451aa4ab583d02dca7ab');
     assert.equal(byId['crowd-control'], undefined);
     assert.equal(response.data.media.length, 285);
-    assert.equal(response.data.revision, 2026112801);
+    assert.equal(response.data.revision, 2026112802);
     assert.equal(byId.fetih.version, '0.1.5');
     assert.match(byId.fetih.url, /\/fetih-0\.1\.5\/Fetih-Windows-x64\.zip$/);
     assert.equal(byId.caahr.version, '0.6.12');

@@ -1,0 +1,11 @@
+{
+  "file_format_version": "1.2.0",
+  "layer": {
+    "name": "VK_LAYER_TikMnG_native_hud",
+    "type": "GLOBAL",
+    "library_path": ".\\tikmng-native-hud.dll",
+    "api_version": "1.3.0",
+    "implementation_version": "1",
+    "description": "TikMnG private in-game HUD"
+  }
+}

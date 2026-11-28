@@ -33,6 +33,7 @@ const fetih013Baseline = JSON.parse(fs.readFileSync(new URL("./content-bootstrap
 const fetih015Baseline = JSON.parse(fs.readFileSync(new URL("./content-bootstrap-pre-fetih-0.1.5.json", import.meta.url), "utf8"));
 const ring010Baseline = JSON.parse(fs.readFileSync(new URL("./content-bootstrap-pre-ring-0.1.0.json", import.meta.url), "utf8"));
 const ring011Baseline = JSON.parse(fs.readFileSync(new URL("./content-bootstrap-pre-ring-0.1.1.json", import.meta.url), "utf8"));
+const ring012Baseline = JSON.parse(fs.readFileSync(new URL("./content-bootstrap-pre-ring-0.1.2.json", import.meta.url), "utf8"));
 const profileDuel058Baseline = JSON.parse(fs.readFileSync(new URL("./content-bootstrap-pre-profile-duel-0.5.8.json", import.meta.url), "utf8"));
 const prison021Baseline = JSON.parse(fs.readFileSync(new URL("./content-bootstrap-pre-hapisten-kac-0.2.1.json", import.meta.url), "utf8"));
 const fetih014Baseline = JSON.parse(fs.readFileSync(new URL("./content-bootstrap-pre-fetih-0.1.4.json", import.meta.url), "utf8"));
@@ -269,7 +270,8 @@ export function registerContentRoutes(app, { dataDir, adminKontrol }) {
         atomicWrite(stateFile, JSON.stringify(state));
     }
     const currentDefaults = catalogShape(defaults, assetsDir).catalog;
-    const upgraded = upgradedBootstrapState(state, catalogShape(ring011Baseline, assetsDir).catalog, currentDefaults, { allowReleasedBaseline: true })
+    const upgraded = upgradedBootstrapState(state, catalogShape(ring012Baseline, assetsDir).catalog, currentDefaults, { allowReleasedBaseline: true })
+        || upgradedBootstrapState(state, catalogShape(ring011Baseline, assetsDir).catalog, currentDefaults, { allowReleasedBaseline: true })
         || upgradedBootstrapState(state, catalogShape(ring010Baseline, assetsDir).catalog, currentDefaults, { allowReleasedBaseline: true })
         || upgradedBootstrapState(state, catalogShape(profileDuel058Baseline, assetsDir).catalog, currentDefaults, { allowReleasedBaseline: true })
         || upgradedBootstrapState(state, catalogShape(fetih015Baseline, assetsDir).catalog, currentDefaults, { allowReleasedBaseline: true })

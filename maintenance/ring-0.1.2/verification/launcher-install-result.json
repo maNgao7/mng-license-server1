@@ -1,0 +1,14 @@
+{
+  "passed": true,
+  "launcher": "7.0.39",
+  "oldArchiveRejected": true,
+  "existingInstallUpdated": true,
+  "freshInstallPassed": true,
+  "userSettingsAndSavesPreserved": true,
+  "otherGameUnchanged": true,
+  "repeatInstallDidNotDownload": true,
+  "sha256": "bbdcf8b0e66e0e28a631b7a3946de6ef3ae89d44be2605f8139960728002e879",
+  "bytes": 349981070,
+  "renderDeployedByAgent": false,
+  "gameplayBytesUnchangedFrom": "0.1.1"
+}
